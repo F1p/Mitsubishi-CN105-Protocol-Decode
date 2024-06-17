@@ -284,15 +284,14 @@ void ECODANDECODER::Process0x05(uint8_t *Buffer, EcodanStatus *Status) {
   uint8_t HotWaterBoost, DHWActive;
   uint8_t DHWHeatSourcePhase;
 
-  //TempDropActive = Buffer[5];     // 0 in Timer or Inhibit, was 7 in on Temp Drop mode (Play)
-  if (Buffer[5] == 7) {
+  //if (Buffer[5] == 7)         // Eco Hot Water Running
+  //HeatSource = Buffer[6];     // 0 = H/P, 1 = IH, 2 = BH, 3 = IH + BH, 4 = Boiler but doesn't seem to change
+  DHWHeatSourcePhase = Buffer[7];  // Heat Source Phase for DHW (0 = Normal, 1 = HP, 2 = Immersion or Booster)
+  if (DHWHeatSourcePhase != 0) {
     DHWActive = 1;
   } else {
     DHWActive = 0;
   }
-
-  //HeatSource = Buffer[6];     // 0 = H/P, 1 = IH, 2 = BH, 3 = IH + BH, 4 = Boiler but doesn't seem to change
-  DHWHeatSourcePhase = Buffer[7];  // Heat Source Phase for DHW (0 = Normal, 1 = HP, 2 = Immersion or Booster)
   //Unknown = Buffer[9];        // Always 6?
 
   //Status->HeatSource = HeatSource;
@@ -742,7 +741,7 @@ void ECODANDECODER::EncodeFlowTemperature(float Setpoint, uint8_t ControlMode, u
 
   if (Zone == ZONE1) {
     TxMessage.Payload[1] = 0x80;
-    TxMessage.Payload[6] = ControlMode;          // Thermostat or Flow Setpoint Flag (Thermostat = 0x00, Flow = 0x01/0x03 for Cooling)
+    TxMessage.Payload[6] = ControlMode;  // Thermostat or Flow Setpoint Flag (Thermostat = 0x00, Flow = 0x01/0x03 for Cooling)
 
     ScaledTarget = Setpoint * 100;
     UpperByte = (uint8_t)(ScaledTarget >> 8);
@@ -752,7 +751,7 @@ void ECODANDECODER::EncodeFlowTemperature(float Setpoint, uint8_t ControlMode, u
     TxMessage.Payload[11] = LowerByte;
 
   } else if (Zone == ZONE2) {
-    TxMessage.Payload[7] = ControlMode;         // Thermostat or Flow Setpoint Flag
+    TxMessage.Payload[7] = ControlMode;  // Thermostat or Flow Setpoint Flag
 
     ScaledTarget = Setpoint * 100;
     UpperByte = (uint8_t)(ScaledTarget >> 8);
