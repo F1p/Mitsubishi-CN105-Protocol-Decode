@@ -28,7 +28,7 @@
 #include <ESPTelnet.h>
 #include "Ecodan.h"
 
-String FirmwareVersion = "v5.1.2";
+String FirmwareVersion = "v5.1.3";
 
 
 int RxPin = 14;  //Rx
@@ -465,7 +465,7 @@ void EnergyReport(void) {
   }
 
   // CoP Totals
-  ctotal = (HeatPump.Status.ConsumedHeatingEnergy + HeatPump.Status.DeliveredCoolingEnergy + HeatPump.Status.ConsumedHotWaterEnergy);
+  ctotal = (HeatPump.Status.ConsumedHeatingEnergy + HeatPump.Status.ConsumedCoolingEnergy + HeatPump.Status.ConsumedHotWaterEnergy);
   dtotal = (HeatPump.Status.DeliveredHeatingEnergy + HeatPump.Status.DeliveredCoolingEnergy + HeatPump.Status.DeliveredHotWaterEnergy);
 
   if (ctotal != 0) {
