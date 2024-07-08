@@ -28,7 +28,7 @@
 #include <ESPTelnet.h>
 #include "Ecodan.h"
 
-String FirmwareVersion = "v5.1.3";
+String FirmwareVersion = "v5.1.4";
 
 
 int RxPin = 14;  //Rx
@@ -108,6 +108,10 @@ void EnergyReport(void);
 TimerCallBack HeatPumpQuery1(500, HeatPumpQueryStateEngine);
 TimerCallBack HeatPumpQuery2(30000, HeatPumpKeepAlive);
 
+unsigned long looppreviousMillis = 0;  // variable for comparing millis counter
+int CPULoopSpeed;                      // variable for holding loop time in ms
+unsigned long ftcpreviousMillis = 0;  // variable for comparing millis counter
+int FTCLoopSpeed;                      // variable for holding loop time in ms
 
 unsigned long wifipreviousMillis = 0;  // variable for comparing millis counter
 bool WiFiOneShot = true;
@@ -157,6 +161,9 @@ void setup() {
 
 
 void loop() {
+
+  // Loop Speed Check
+  looppreviousMillis = millis();
 
   handleMqttState();
   TelnetServer.loop();
@@ -215,21 +222,25 @@ void loop() {
     delay(500);
     ESP.reset();  // Then reset
   }
+  
+  // Loop Speed End
+  CPULoopSpeed = millis() - looppreviousMillis;
 }
 
 void HeatPumpKeepAlive(void) {
+  ftcpreviousMillis = millis();
   HeatPump.KeepAlive();
   HeatPump.TriggerStatusStateMachine();
 }
 
 void HeatPumpQueryStateEngine(void) {
-
   // Full Read trigged by CurrentMessage
   HeatPump.StatusStateMachine();
 
   // Call Once Full Update is complete
   if (HeatPump.UpdateComplete()) {
     DEBUG_PRINTLN("Update Complete");
+    FTCLoopSpeed = millis() - ftcpreviousMillis;  // Loop Speed End
     Zone1_Update_in_Progress = false;
     Zone2_Update_in_Progress = false;
     if (MQTTReconnect()) { PublishAllReports(); }
@@ -530,13 +541,15 @@ void AdvancedTwoReport(void) {
 }
 
 void StatusReport(void) {
-  StaticJsonDocument<256> doc;
-  char Buffer[256];
+  StaticJsonDocument<512> doc;
+  char Buffer[512];
 
   doc["SSID"] = WiFi.SSID();
   doc["RSSI"] = WiFi.RSSI();
   doc["IP"] = WiFi.localIP().toString();
   doc["Firmware"] = FirmwareVersion;
+  doc["CPULoopTime"] = CPULoopSpeed;
+  doc["FTCLoopTime"] = FTCLoopSpeed;
   doc["FTCVersion"] = FTCString[HeatPump.Status.FTCVersion];
 
   serializeJson(doc, Buffer);

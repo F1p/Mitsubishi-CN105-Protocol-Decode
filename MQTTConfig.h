@@ -69,7 +69,7 @@ void readSettingsFromConfig() {
 
   // Read configuration from LittleFS JSON
   DEBUG_PRINTLN("Mounting File System...");
-  if (LittleFS.begin()) {
+  if (LittleFS.begin()) {                     // On ESP32 use storage mount point: if (LittleFS.begin("/storage")) {
     DEBUG_PRINTLN("Mounted File System");
     if (LittleFS.exists("/config.json")) {
       //file exists, reading and loading
