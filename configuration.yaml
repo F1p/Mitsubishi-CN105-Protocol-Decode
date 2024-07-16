@@ -247,6 +247,7 @@ mqtt:
     - unique_id: "ashp_consumed_heat"
       name: "Consumed Heat"
       state_topic: "Ecodan/ASHP/Status/Energy"
+      device_class: energy
       unit_of_measurement: "kWh"
       value_template: "{{ value_json.CHEAT|round(2) }}"
     - unique_id: "ashp_delivered_heat"
@@ -266,6 +267,7 @@ mqtt:
       value_template: "{{ value_json.DCOOL|round(2) }}"
     - unique_id: "ashp_comsumed_dhw"
       name: "Consumed DHW"
+      device_class: energy
       state_topic: "Ecodan/ASHP/Status/Energy"
       unit_of_measurement: "kWh"
       value_template: "{{ value_json.CDHW|round(2) }}"
@@ -293,6 +295,7 @@ mqtt:
     - unique_id: "ashp_consumed_energy"
       name: "ASHP Consumed Energy"
       state_topic: "Ecodan/ASHP/Status/Energy"
+      device_class: energy
       unit_of_measurement: "kWh"
       icon: "mdi:meter-electric-outline"
       value_template: "{{ value_json.CTOTAL|round(2) }}"
