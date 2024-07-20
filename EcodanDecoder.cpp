@@ -584,9 +584,14 @@ void ECODANDECODER::Process0xC9(uint8_t *Buffer, EcodanStatus *Status) {
 }
 
 
-bool ECODANDECODER::WriteOK(uint8_t *Buffer, EcodanStatus *Status) {
-  return true;
+void ECODANDECODER::WriteOK(uint8_t *Buffer, EcodanStatus *Status) {
+  bool Write_To_Ecodan_OK;
+
+  Write_To_Ecodan_OK = true;
+
+  Status->Write_To_Ecodan_OK = Write_To_Ecodan_OK;
 }
+
 
 float ECODANDECODER::ExtractEnergy(uint8_t *Buffer, uint8_t index) {
   float Energy;

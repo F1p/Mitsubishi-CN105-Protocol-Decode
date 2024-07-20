@@ -259,6 +259,9 @@ typedef struct _EcodanStatus {
   //From Message 0xc9
   uint8_t FTCVersion;
 
+  // From Message 0x61
+  bool Write_To_Ecodan_OK;
+
 
 } EcodanStatus;
 
@@ -329,7 +332,7 @@ private:
   void Process0xA2(uint8_t *Payload, EcodanStatus *Status);
   void Process0xC9(uint8_t *Payload, EcodanStatus *Status);
   
-  bool WriteOK(uint8_t *Payload, EcodanStatus *Status);
+  void WriteOK(uint8_t *Payload, EcodanStatus *Status);
 };
 
 #endif

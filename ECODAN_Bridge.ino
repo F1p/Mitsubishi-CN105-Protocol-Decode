@@ -22,7 +22,6 @@
 #include <DNSServer.h>
 #include <WiFiManager.h>  //https://github.com/tzapu/WiFiManager
 #include <PubSubClient.h>
-#include <ArduinoOTA.h>
 #include <SoftwareSerial.h>
 #include <ArduinoJson.h>
 #include <ESPTelnet.h>
@@ -92,7 +91,6 @@ WiFiManagerParameter custom_mqtt_basetopic("basetopic", "MQTT Base Topic", "TEMP
 #include "config.h"
 #include "TimerCallBack.h"
 #include "Debug.h"
-#include "OTA.h"
 #include "MQTTConfig.h"
 
 void HeatPumpQueryStateEngine(void);
@@ -105,12 +103,12 @@ void AdvancedReport(void);
 void AdvancedTwoReport(void);
 void EnergyReport(void);
 
-TimerCallBack HeatPumpQuery1(500, HeatPumpQueryStateEngine);
+TimerCallBack HeatPumpQuery1(500, HeatPumpQueryStateEngine);      // Set to 500ms (Safe), 300-350ms best
 TimerCallBack HeatPumpQuery2(30000, HeatPumpKeepAlive);
 
 unsigned long looppreviousMillis = 0;  // variable for comparing millis counter
 int CPULoopSpeed;                      // variable for holding loop time in ms
-unsigned long ftcpreviousMillis = 0;  // variable for comparing millis counter
+unsigned long ftcpreviousMillis = 0;   // variable for comparing millis counter
 int FTCLoopSpeed;                      // variable for holding loop time in ms
 
 unsigned long wifipreviousMillis = 0;  // variable for comparing millis counter
@@ -150,40 +148,40 @@ void setup() {
   setupTelnet();
   startTelnet();
 
-  OTASetup(HostName.c_str());
-
   MQTTClient.setBufferSize(1024);  // Increase MQTT Buffer Size
   RecalculateMQTTTopics();
   initializeMqttClient();
   MQTTClient.setCallback(MQTTonData);
   wifiManager.startWebPortal();
+  
+  HeatPump.Status.Write_To_Ecodan_OK = false;
 }
 
 
 void loop() {
+  looppreviousMillis = millis();          // Loop Speed Check
 
-  // Loop Speed Check
-  looppreviousMillis = millis();
-
-  handleMqttState();
-  TelnetServer.loop();
-
+  // -- Process Handlers -- //
   HeatPumpQuery1.Process();
   HeatPumpQuery2.Process();
-
+  handleMqttState();
+  TelnetServer.loop();
   HeatPump.Process();
-  ArduinoOTA.handle();
-
   wifiManager.process();
-  if (shouldSaveConfig) {
-    saveConfig();
+  
+  if (shouldSaveConfig) { saveConfig(); }  // Handles WiFiManager Settings Changes
+
+  
+  // -- Heat Pump Write Command Handler -- //
+  if (HeatPump.Status.Write_To_Ecodan_OK) {          // A write command has just been written
+    DEBUG_PRINTLN("Write OK!");                      // Pause normal processsing until complete
+    HeatPump.Status.Write_To_Ecodan_OK = false;      // Set back to false
+    HeatPumpKeepAlive();                             // Initiate a Read after Write OK
   }
 
-  if (HeatPumpQueryOneShot) {
-    HeatPump.GetFTCVersion();
-    HeatPumpQueryOneShot = false;
-  }
 
+
+  // -- WiFi Status Handler -- //
   if (WiFi.status() != WL_CONNECTED) {
     digitalWrite(Green_RGB_LED, LOW);  // Turn the Green LED Off
     digitalWrite(Red_RGB_LED, HIGH);   // Turn the Red LED On
@@ -208,6 +206,7 @@ void loop() {
     digitalWrite(Red_RGB_LED, LOW);  // Turn the Red LED Off
   }
 
+  // -- Push Button Action Handler -- //
   if (digitalRead(Reset_Button) == LOW) {  // Inverted (Button Pushed is LOW)
     digitalWrite(Red_RGB_LED, HIGH);       // Flash the Red LED
     delay(500);
@@ -223,8 +222,15 @@ void loop() {
     ESP.reset();  // Then reset
   }
   
-  // Loop Speed End
-  CPULoopSpeed = millis() - looppreviousMillis;
+
+  // -- Start Sequence -- //
+  if (HeatPumpQueryOneShot) {
+    HeatPump.GetFTCVersion();
+    HeatPumpQueryOneShot = false;
+  }
+
+
+  CPULoopSpeed = millis() - looppreviousMillis;  // Loop Speed End Monitor
 }
 
 void HeatPumpKeepAlive(void) {
