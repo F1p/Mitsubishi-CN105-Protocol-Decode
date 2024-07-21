@@ -68,7 +68,8 @@ mqtt:
       name: "Heat Pump Power"
       state_topic: "Ecodan/ASHP/Status/System"
       icon: "mdi:lightning-bolt"
-      unit_of_measurement: "kWh"
+      unit_of_measurement: "kW"
+      device_class: energy
       value_template: "{{ value_json.HeaterPower }}"
     - unique_id: "ashp_compressor_freq"
       name: "Compressor Frequency"
@@ -253,16 +254,19 @@ mqtt:
     - unique_id: "ashp_delivered_heat"
       name: "Delivered Heat"
       state_topic: "Ecodan/ASHP/Status/Energy"
+      device_class: energy
       unit_of_measurement: "kWh"
       value_template: "{{ value_json.DHEAT|round(2) }}"
     - unique_id: "ashp_consumed_cool"
       name: "Consumed Cooling"
       state_topic: "Ecodan/ASHP/Status/Energy"
+      device_class: energy
       unit_of_measurement: "kWh"
       value_template: "{{ value_json.CCOOL|round(2) }}"
     - unique_id: "ashp_delivered_cool"
       name: "Delivered Cooling"
       state_topic: "Ecodan/ASHP/Status/Energy"
+      device_class: energy
       unit_of_measurement: "kWh"
       value_template: "{{ value_json.DCOOL|round(2) }}"
     - unique_id: "ashp_comsumed_dhw"
@@ -274,6 +278,7 @@ mqtt:
     - unique_id: "ashp_delivered_dhw"
       name: "Delivered DHW"
       state_topic: "Ecodan/ASHP/Status/Energy"
+      device_class: energy
       unit_of_measurement: "kWh"
       value_template: "{{ value_json.DDHW|round(2) }}"
     - unique_id: "ashp_dhw_cop"
@@ -302,6 +307,7 @@ mqtt:
     - unique_id: "ashp_delivered_energy"
       name: "ASHP Delivered Energy"
       state_topic: "Ecodan/ASHP/Status/Energy"
+      device_class: energy
       unit_of_measurement: "kWh"
       icon: "mdi:meter-electric-outline"
       value_template: "{{ value_json.DTOTAL|round(2) }}"
