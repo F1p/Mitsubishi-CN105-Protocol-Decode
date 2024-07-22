@@ -681,4 +681,4 @@ template:
       unit_of_measurement: "kWh"
       state_class: total
       device_class: energy
-      state: "{{(states('sensor.computed_power_output')|float * 60 / 3600)}}"
+      state: "{{(states('sensor.computed_power_output')|float * 30 / 3600)}}"
