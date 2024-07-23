@@ -43,8 +43,8 @@ Active commands so far identified.
 | Command | Brief Description |
 | ------- | ----------- |
 | 0x32 | Update Settings |
-| 0x34 | Hot Water and Holiday |
-| 0x35 | Unknown |
+| 0x34 | Hot Water, Holiday and Prohibits |
+| 0x35 | Thermostat Setpoints |
 ### 0x32 - Set Options
 |   0   |   1   |   2   | 3 | 4 |  5  |  6  |  7  |   8   |   9   |  10  |  11  |  12  |  13  | 14 | 15 | 16 |
 |-------|-------|-------|---|---|-----|-----|-----|-------|-------|------|------|------|------|----|----|----|
@@ -118,7 +118,7 @@ Active commands so far identified.
   * 0x01 0x00 : Cooling/Heating
   * 0x02 0x00 : Zone 1 Setpoint
   * 0x04 0x00 : Not Required (uint16)
-  * 0x08 0x00 : Zone 2 Setpoint  * 
+  * 0x08 0x00 : Zone 2 Setpoint
   * 0x10 0x00 : Not Required (uint16)
   * 0x20 0x00 : Unknown (Byte 8)
   * 0x40 0x00 : Unknown (Byte 9)
