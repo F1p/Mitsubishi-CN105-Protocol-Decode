@@ -48,7 +48,7 @@ Active commands so far identified.
 ### 0x32 - Set Options
 |   0   |   1   |   2   | 3 | 4 |  5  |  6  |  7  |   8   |   9   |  10  |  11  |  12  |  13  | 14 | 15 | 16 |
 |-------|-------|-------|---|---|-----|-----|-----|-------|-------|------|------|------|------|----|----|----|
-| 0x32  | Flags | Flags | P |Unk| DHW | HC1 | HC2 | DHWSP | DHWSP | Z1SP | Z1SP | Z2SP | Z2SP | Unk| Unk|CHK |  
+| 0x32  | Flags | Flags | P |Unk| DHW | HC1 | HC2 | DHWSP | DHWSP | Z1SP | Z1SP | Z2SP | Z2SP | MRC| MRC|CHK |  
 
 * Flags (2 Bytes) : Flags to Indicate which fields are active
   * 0x01 0x00 : Set System Power Power
@@ -62,8 +62,8 @@ Active commands so far identified.
   * 0x00 0x01 : Not Required (uint16)
   * 0x00 0x02 : Set Zone 2 Setpoints
   * 0x00 0x04 : Not Required (uint16)
-  * 0x00 0x08 : Unknown (Byte 14)
-  * 0x00 0x10 : Unknown (Byte 15)
+  * 0x00 0x08 : MRC Prohibit (uint16)
+  * 0x00 0x10 : Not Required (uint16)
 * P : System Power
   * 0x00 : Standby
   * 0x01 : Power On
@@ -95,20 +95,20 @@ Active commands so far identified.
   * 0x20 0x00 : Heating Z2 Inhibit (Only When in "Server Control Mode")
   * 0x40 0x00 : Cooling Z2 Inhibit (Only When in "Server Control Mode")
   * 0x80 0x00 : Server Control Mode
-  * 0x00 0x01 : Unknown 1 (Byte 11)
-  * 0x00 0x02 : Unknown 2 (Byte 12)
-  * 0x00 0x04 : Unknown 3 (Byte 13)
-  * 0x00 0x08 : Unknown 4 (Byte 14)
-  * 0x00 0x10 : Unknown 5 (Byte 15)
+  * 0x00 0x01 : Unused 1 (Byte 11)
+  * 0x00 0x02 : Unused 2 (Byte 12)
+  * 0x00 0x04 : Unused 3 (Byte 13)
+  * 0x00 0x08 : Unused 4 (Byte 14)
+  * 0x00 0x10 : Unused 5 (Byte 15)
 * DHW : On (1) / Off (0)
 * HOL : On (1) / Off (0)
 * SCM : Server Control Mode On (1) / Off (0)
 * IDHW : Inhibit DHW On (1) / Off (0)
-* Unk1 : Unknown (Sets 0x28 Byte 11)
-* Unk2 : Unknown (Sets 0x28 Byte 12 - suspected)
-* Unk3 : Unknown (Sets 0x28 Byte 13 - suspected)
-* Unk4 : Unknown (Sets 0x28 Byte 14 - suspected)
-* Unk5 : Unknown (Sets 0x28 Byte 15 - suspected)
+* Unk1 : Unused (Sets 0x28 Byte 11)
+* Unk2 : Unused (Sets 0x28 Byte 12 - suspected)
+* Unk3 : Unused (Sets 0x28 Byte 13 - suspected)
+* Unk4 : Unused (Sets 0x28 Byte 14 - suspected)
+* Unk5 : Unused (Sets 0x28 Byte 15 - suspected)
 ### 0x35 - Set Thermostat Setpoints 
 |   0   |  1  |  2  | 3  |   4  |  5   |   6  |   7  |   8   |   9   |  10  |  11  |  12  |  13  | 14 | 15 | 16 |
 |-------|-----|-----|----|------|------|------|------|-------|-------|------|------|------|------|----|----|----|
@@ -120,14 +120,14 @@ Active commands so far identified.
   * 0x04 0x00 : Not Required (uint16)
   * 0x08 0x00 : Zone 2 Setpoint
   * 0x10 0x00 : Not Required (uint16)
-  * 0x20 0x00 : Unknown (Byte 8)
-  * 0x40 0x00 : Unknown (Byte 9)
-  * 0x80 0x00 : Unknown (Byte 10)
-  * 0x00 0x01 : Unknown (Byte 11)
-  * 0x00 0x02 : Unknown (Byte 12)
-  * 0x00 0x04 : Unknown (Byte 13)
-  * 0x00 0x08 : Unknown (Byte 14)
-  * 0x00 0x10 : Unknown (Byte 15)
+  * 0x20 0x00 : Unused (Byte 8)
+  * 0x40 0x00 : Unused (Byte 9)
+  * 0x80 0x00 : Unused (Byte 10)
+  * 0x00 0x01 : Unused (Byte 11)
+  * 0x00 0x02 : Unused (Byte 12)
+  * 0x00 0x04 : Unused (Byte 13)
+  * 0x00 0x08 : Unused (Byte 14)
+  * 0x00 0x10 : Unused (Byte 15)
 * CH : Cooling (1) /Heating (0)
 * Z1SP : Zone 1 Setpoint (* 100)
 * Z2SP : Zone 2 Setpoint (* 100)
