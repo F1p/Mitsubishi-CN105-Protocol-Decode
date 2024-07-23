@@ -69,7 +69,6 @@ mqtt:
       state_topic: "Ecodan/ASHP/Status/System"
       icon: "mdi:lightning-bolt"
       unit_of_measurement: "kW"
-      device_class: energy
       value_template: "{{ value_json.HeaterPower }}"
     - unique_id: "ashp_compressor_freq"
       name: "Compressor Frequency"
