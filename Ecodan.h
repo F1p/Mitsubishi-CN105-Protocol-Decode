@@ -15,6 +15,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+
+
 #ifndef ECODAN_h
 #define ECODAN_h
 
@@ -27,9 +29,9 @@ public:
   ECODAN(void);
   void Process(void);
   void SetStream(Stream *HeatPumpStream);
+  void RequestStatus(uint8_t TargetMessage);
   void TriggerStatusStateMachine(void);
   void StopStateMachine(void);
-  void StatusStateMachineTarget(uint8_t TargetMessage);
   void StatusStateMachine(void);
   void KeepAlive(void);
   uint8_t UpdateComplete(void);

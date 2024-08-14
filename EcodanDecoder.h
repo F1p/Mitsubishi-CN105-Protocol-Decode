@@ -72,7 +72,7 @@ const char DHWPhaseString[3][10] = { "Off", "Heat Pump", "Heater" };
 #define DEFROST_STANDBY 1
 #define DEFROST_ON 2
 #define DEFROST_AWAIT 3
-const char DefrostModeString[4][16] = { "Off", "Standby", "Defrosting", "Waiting Restart"};
+const char DefrostModeString[4][16] = { "Off", "Standby", "Defrosting", "Waiting Restart" };
 
 #define SYSTEM_POWER_MODE_STANDBY 0
 #define SYSTEM_POWER_MODE_ON 1
@@ -117,8 +117,8 @@ const char HotWaterTimerString[2][4] = { "On", "Off" };
 const char COMPRESSORString[4][8] = { "Normal", "Standby", "Defrost", "Wait" };
 
 const char RefrigeFltCodeString[4][12] = { "Normal", "System", "Startup", "Maintenance" };
-const char FltCodeLetterOne[9][2] = {"A","B","E","F","J","L","P","U"};
-const char FltCodeLetterTwo[22][2] = {"1","2","3","4","5","6","7","8","9","A","B","C","D","E","F","O","H","J","L","P","U"};
+const char FltCodeLetterOne[9][2] = { "A", "b", "E", "F", "J", "L", "P", "U" };
+const char FltCodeLetterTwo[22][2] = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F", "O", "H", "J", "L", "P", "U" };
 
 #define FTC2 0
 #define FTC4 1
@@ -139,11 +139,11 @@ const char FTCString[4][6] = { "FTC2B", "FTC4", "FTC5", "FTC6" };
 #define SET_SYSTEM_POWER 0x01
 #define SET_HOT_WATER_BOOST 0x01
 
-#define ZONE1 0x00  // Zone1
-#define ZONE1_TSTAT 0x02 // Zone 1 Thermostat
-#define ZONE2 0x02  // Zone2
-#define ZONE2_TSTAT 0x08 // Zone 2 Thermostat
-#define BOTH 0x03   // BOTH
+#define ZONE1 0x00        // Zone1
+#define ZONE1_TSTAT 0x02  // Zone 1 Thermostat
+#define ZONE2 0x02        // Zone2
+#define ZONE2_TSTAT 0x08  // Zone 2 Thermostat
+#define BOTH 0x03         // BOTH
 
 
 
@@ -262,6 +262,9 @@ typedef struct _EcodanStatus {
   // From Message 0x61
   bool Write_To_Ecodan_OK;
 
+  // Non-Ecodan Internal Process - Readback
+  bool PostWriteReadComplete;
+
 
 } EcodanStatus;
 
@@ -285,7 +288,7 @@ public:
   void EncodeFTCVersion(void);
   void EncodeServerControlMode(uint8_t OnOff);
   void EncodeProhibit(uint8_t Flags, uint8_t OnOff);
-  
+
   EcodanStatus Status;
 protected:
 
@@ -331,7 +334,7 @@ private:
   void Process0xA1(uint8_t *Payload, EcodanStatus *Status);
   void Process0xA2(uint8_t *Payload, EcodanStatus *Status);
   void Process0xC9(uint8_t *Payload, EcodanStatus *Status);
-  
+
   void WriteOK(uint8_t *Payload, EcodanStatus *Status);
 };
 

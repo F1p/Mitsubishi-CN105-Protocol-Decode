@@ -1,6 +1,4 @@
 /*
-    Copyright (C) <2023>  <Phil Thomson>
-
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
@@ -13,33 +11,71 @@
 
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
 
-#include <FS.h>  // This needs to be first
+// -- Supported Hardware -- //
+/* As sold Witty ESP8266 based               / Core 3.1.2 / Flash 4MB (1MB FS / 1MB OTA)                */
+/* ESP32 M5Stack-ATOMS3 (ESP32S3 Dev Module) / Core 2.0.17 / Flash 4M with SPIFFS                       */
+/* ESP32 Ethernet WT32-ETH01                 / Core 3.0.3 / Flash 4MB (1.2MB APP / 1.5MB SPIFFS)        */
+
+
+#if defined(ESP8266) || defined(ESP32)  // ESP32 or ESP8266 Compatiability
+
+#include <FS.h>                         // Define File System First
 #include <LittleFS.h>
-#include <ESP8266WiFi.h>  // needed for EPS8266
+#ifdef ESP8266
+#include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
-#include <DNSServer.h>
-#include <WiFiManager.h>  //https://github.com/tzapu/WiFiManager
-#include <PubSubClient.h>
 #include <SoftwareSerial.h>
+#endif
+#ifdef ESP32
+#include <WiFi.h>
+#include <WebServer.h>
+#endif
+#include <DNSServer.h>
+#include <WiFiManager.h>
+#include <PubSubClient.h>
 #include <ArduinoJson.h>
 #include <ESPTelnet.h>
 #include "Ecodan.h"
 
-String FirmwareVersion = "v5.1.4";
+
+String FirmwareVersion = "v5.1.5";
 
 
-int RxPin = 14;  //Rx
-int TxPin = 16;  //Tx
+#ifdef ESP8266
+#define HEATPUMP_STREAM SwSerial
+#define SERIAL_CONFIG SWSERIAL_8E1
+#define RxPin 14
+#define TxPin 16
+#endif
+#ifdef ARDUINO_ESP32S3_DEV  // Define the M5Stack Serial Pins
+#define HEATPUMP_STREAM Serial2
+#define SERIAL_CONFIG SERIAL_8E1
+#define RxPin 2
+#define TxPin 1
+#endif
+unsigned long SERIAL_BAUD = 2400;
+
+
+#ifdef ARDUINO_ESP32S3_DEV  // Define the M5Stack LED
+#define FASTLED_INTERNAL
+#include <FastLED.h>
+#define NUM_LEDS 1
+#define DATA_PIN 35
+CRGB leds[NUM_LEDS];
+int Reset_Button = 41;
+#endif
+#ifdef ESP8266  // Define the Witty ESP8266 Ports
 int Activity_LED = 2;
 int Reset_Button = 4;
 int LDR = A0;
 int Red_RGB_LED = 15;
 int Green_RGB_LED = 12;
 int Blue_RGB_LED = 13;
-bool shouldSaveConfig = false;
+#endif
 
+
+bool shouldSaveConfig = false;
 const int clientId_max_length = 25;
 const int hostname_max_length = 200;
 const int port_max_length = 10;
@@ -70,10 +106,12 @@ struct MqttSettings {
 };
 
 MqttSettings mqttSettings;
-
 ECODAN HeatPump;
+#ifdef ESP8266
 SoftwareSerial SwSerial;
+#endif
 WiFiClient NetworkClient;
+//WiFiClientSecure NetworkClient;              // Encryption Support
 PubSubClient MQTTClient(NetworkClient);
 ESPTelnet TelnetServer;
 WiFiManager wifiManager;
@@ -103,8 +141,8 @@ void AdvancedReport(void);
 void AdvancedTwoReport(void);
 void EnergyReport(void);
 
-TimerCallBack HeatPumpQuery1(500, HeatPumpQueryStateEngine);      // Set to 500ms (Safe), 300-350ms best
-TimerCallBack HeatPumpQuery2(30000, HeatPumpKeepAlive);
+TimerCallBack HeatPumpQuery1(500, HeatPumpQueryStateEngine);  // Set to 500ms (Safe), 320-350ms best time between messages
+TimerCallBack HeatPumpQuery2(30000, HeatPumpKeepAlive);       // Set to 10-30s for heat pump query frequency
 
 unsigned long looppreviousMillis = 0;  // variable for comparing millis counter
 int CPULoopSpeed;                      // variable for holding loop time in ms
@@ -115,30 +153,37 @@ unsigned long wifipreviousMillis = 0;  // variable for comparing millis counter
 bool WiFiOneShot = true;
 bool HeatPumpQueryOneShot = true;
 bool PostWriteUpdateRequired = false;
+bool PostWriteReadComplete = false;
 bool Zone1_Update_in_Progress = false;
 bool Zone2_Update_in_Progress = false;
 float Zone1TemperatureSetpoint_UpdateValue, Zone2TemperatureSetpoint_UpdateValue;
-int Zone1FlowSetpoint_UpdateValue, Zone2FlowSetpoint_UpdateValue;
-
+int Zone1FlowSetpoint_UpdateValue, Zone2FlowSetpoint_UpdateValue, MessageNumber;
 
 
 void setup() {
   WiFi.mode(WIFI_STA);                                              // explicitly set mode, esp defaults to STA+AP
   DEBUGPORT.begin(DEBUGBAUD);                                       // Start Debug
   HEATPUMP_STREAM.begin(SERIAL_BAUD, SERIAL_CONFIG, RxPin, TxPin);  // Rx, Tx
-  pinMode(Activity_LED, OUTPUT);                                    // Onboard LED
-  pinMode(Reset_Button, INPUT);                                     // Pushbutton
-  pinMode(LDR, INPUT);                                              // LDR
-  pinMode(Red_RGB_LED, OUTPUT);                                     // Red (RGB) LED
-  pinMode(Green_RGB_LED, OUTPUT);                                   // Green (RGB) LED
-  pinMode(Blue_RGB_LED, OUTPUT);                                    // Blue (RGB) LED
+  HeatPump.SetStream(&HEATPUMP_STREAM);
+
+  pinMode(Reset_Button, INPUT);  // Pushbutton
+
+// -- Lights for ESP8266 and ESP32 -- //
+#ifdef ARDUINO_ESP32S3_DEV                                 // Define the M5Stack LED
+  FastLED.addLeds<WS2812, DATA_PIN, GRB>(leds, NUM_LEDS);  // ESP32 M5 Stack Atom S3
+#endif
+#ifdef ESP8266                     // Define the Witty ESP8266 Ports
+  pinMode(Activity_LED, OUTPUT);   // ESP8266 Onboard LED
+  pinMode(LDR, INPUT);             // LDR
+  pinMode(Red_RGB_LED, OUTPUT);    // Red (RGB) LED
+  pinMode(Green_RGB_LED, OUTPUT);  // Green (RGB) LED
+  pinMode(Blue_RGB_LED, OUTPUT);   // Blue (RGB) LED
 
   digitalWrite(Activity_LED, HIGH);  // Set On (Inverted)
   digitalWrite(Red_RGB_LED, LOW);    // Set Off
   digitalWrite(Green_RGB_LED, LOW);  // Set Off
   digitalWrite(Blue_RGB_LED, LOW);   // Set Off
-
-  HeatPump.SetStream(&HEATPUMP_STREAM);
+#endif
 
   readSettingsFromConfig();
   initializeWifiManager();
@@ -153,13 +198,14 @@ void setup() {
   initializeMqttClient();
   MQTTClient.setCallback(MQTTonData);
   wifiManager.startWebPortal();
-  
+
   HeatPump.Status.Write_To_Ecodan_OK = false;
 }
 
 
 void loop() {
-  looppreviousMillis = millis();          // Loop Speed Check
+  // -- Loop Start -- //
+  looppreviousMillis = millis();  // Loop Speed Check
 
   // -- Process Handlers -- //
   HeatPumpQuery1.Process();
@@ -168,28 +214,45 @@ void loop() {
   TelnetServer.loop();
   HeatPump.Process();
   wifiManager.process();
-  
+
+  // -- Config Saver -- //
   if (shouldSaveConfig) { saveConfig(); }  // Handles WiFiManager Settings Changes
 
-  
   // -- Heat Pump Write Command Handler -- //
-  if (HeatPump.Status.Write_To_Ecodan_OK) {          // A write command has just been written
-    DEBUG_PRINTLN("Write OK!");                      // Pause normal processsing until complete
-    HeatPump.Status.Write_To_Ecodan_OK = false;      // Set back to false
-    HeatPumpKeepAlive();                             // Initiate a Read after Write OK
+  if (HeatPump.Status.Write_To_Ecodan_OK && PostWriteUpdateRequired) {  // A write command has just been written (Not Keep Alive)
+    DEBUG_PRINTLN("Write OK!");                                         // Pause normal processsing until complete
+    HeatPump.Status.Write_To_Ecodan_OK = false;                         // Set back to false
+    PostWriteUpdateRequired = false;                                    // Set back to false
+    HeatPump.RequestStatus(MessageNumber);                              // Initate a readback
+    HeatPump.Status.PostWriteReadComplete = false;                      // Set false, will return true when Rx message comes in
+    PostWriteReadComplete = true;                                       // Await the response by allowing the next statement to be entered
   }
-
-
+  if (HeatPump.Status.PostWriteReadComplete && PostWriteReadComplete) {  // When the critria is met
+    if (MQTTReconnect()) { PublishAllReports(); }                        // Publish update to the MQTT Topics
+    HeatPump.Status.PostWriteReadComplete = false;                       // Set readback to false
+    PostWriteReadComplete = false;                                       // Set this readback false
+  }
 
   // -- WiFi Status Handler -- //
   if (WiFi.status() != WL_CONNECTED) {
+
+#ifdef ESP8266                         // Define the Witty ESP8266 Ports
     digitalWrite(Green_RGB_LED, LOW);  // Turn the Green LED Off
     digitalWrite(Red_RGB_LED, HIGH);   // Turn the Red LED On
+#endif
+#ifdef ARDUINO_ESP32S3_DEV  // Define the M5Stack LED
+    leds[0] = CRGB::Black;  // Turn the Green LED Off
+    leds[0] = CRGB::Red;    // Turn the Red LED On
+    leds[0].fadeLightBy(0);
+    FastLED.show();
+#endif
+
     if (WiFiOneShot) {
       wifipreviousMillis = millis();
       WiFiOneShot = false;
     }  // Oneshot to start the timer
     if (millis() - wifipreviousMillis >= 300000) {
+#ifdef ESP8266                          // Define the Witty ESP8266 Ports
       digitalWrite(Red_RGB_LED, HIGH);  // Flash the Red LED
       delay(500);
       digitalWrite(Red_RGB_LED, LOW);
@@ -200,14 +263,43 @@ void loop() {
       delay(500);
       digitalWrite(Red_RGB_LED, HIGH);
       ESP.reset();
+#endif
+#ifdef ARDUINO_ESP32S3_DEV  // Define the M5Stack LED
+      leds[0] = CRGB::Red;  // Flash the Red LED
+      FastLED.show();
+      delay(500);
+      leds[0] = CRGB::Black;
+      FastLED.show();
+      delay(500);
+      leds[0] = CRGB::Red;
+      FastLED.show();
+      delay(500);
+      leds[0] = CRGB::Black;
+      FastLED.show();
+      delay(500);
+      leds[0] = CRGB::Red;
+      FastLED.show();
+#endif
+#ifdef ESP32
+      ESP.restart();
+#endif
     }  // Wait for 5 mins to try reconnects then force restart
   } else {
+#ifdef ESP8266                       // Define the Witty ESP8266 Ports
     analogWrite(Green_RGB_LED, 30);  // Green LED on, 25% brightness
     digitalWrite(Red_RGB_LED, LOW);  // Turn the Red LED Off
+#endif
+#ifdef ARDUINO_ESP32S3_DEV  // Define the M5Stack LED
+    leds[0] = CRGB::Green;
+    leds[0].fadeLightBy(175);
+    FastLED.show();
+#endif
   }
 
   // -- Push Button Action Handler -- //
   if (digitalRead(Reset_Button) == LOW) {  // Inverted (Button Pushed is LOW)
+    HeatPump.SetSvrControlMode(0);         // Exit Server Control Mode
+#ifdef ESP8266                             // Define the Witty ESP8266 Ports
     digitalWrite(Red_RGB_LED, HIGH);       // Flash the Red LED
     delay(500);
     digitalWrite(Red_RGB_LED, LOW);
@@ -217,11 +309,28 @@ void loop() {
     digitalWrite(Red_RGB_LED, LOW);
     delay(500);
     digitalWrite(Red_RGB_LED, HIGH);
-    HeatPump.SetSvrControlMode(0);  // Exit Server Control Mode
     delay(500);
-    ESP.reset();  // Then reset
+    ESP.reset();
+#endif
+#ifdef ARDUINO_ESP32S3_DEV  // Define the M5Stack LED
+    leds[0] = CRGB::Red;    // Flash the Red LED
+    FastLED.show();
+    delay(500);
+    leds[0] = CRGB::Black;
+    FastLED.show();
+    delay(500);
+    leds[0] = CRGB::Red;
+    FastLED.show();
+    delay(500);
+    leds[0] = CRGB::Black;
+    FastLED.show();
+    delay(500);
+    leds[0] = CRGB::Red;
+    FastLED.show();
+    delay(500);
+    ESP.restart();
+#endif
   }
-  
 
   // -- Start Sequence -- //
   if (HeatPumpQueryOneShot) {
@@ -229,7 +338,7 @@ void loop() {
     HeatPumpQueryOneShot = false;
   }
 
-
+  // -- CPU Loop Time End -- //
   CPULoopSpeed = millis() - looppreviousMillis;  // Loop Speed End Monitor
 }
 
@@ -240,8 +349,7 @@ void HeatPumpKeepAlive(void) {
 }
 
 void HeatPumpQueryStateEngine(void) {
-  // Full Read trigged by CurrentMessage
-  HeatPump.StatusStateMachine();
+  HeatPump.StatusStateMachine();  // Full Read trigged by CurrentMessage
 
   // Call Once Full Update is complete
   if (HeatPump.UpdateComplete()) {
@@ -270,84 +378,84 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
   // Curve or Temp Independent Thermostat Setting
   // Heating & Cooling Zone 1 Commands
   if (Topic == MQTTCommandZone1NoModeSetpoint) {
-    DEBUG_PRINTLN("MQTT Set Zone1 Temperature Setpoint");
+    MQTTWriteReceived("MQTT Set Zone1 Temperature Setpoint", 6);
     HeatPump.SetZoneTempSetpoint(Payload.toFloat(), HeatPump.Status.HeatingControlModeZ1, ZONE1);
   }
   // Flow Setpoint Commands
   // Heating & Cooling Zone 1 Commands
   if (Topic == MQTTCommandZone1FlowSetpoint) {
-    DEBUG_PRINTLN("MQTT Set Zone1 Flow Setpoint");
+    MQTTWriteReceived("MQTT Set Zone1 Flow Setpoint", 6);
     HeatPump.SetFlowSetpoint(Payload.toInt(), HeatPump.Status.HeatingControlModeZ1, ZONE1);
   }
 
   // Thermostat Setpoint
   // Heating & Cooling Zone 2 Commands
   if (Topic == MQTTCommandZone2NoModeSetpoint) {
-    DEBUG_PRINTLN("MQTT Set Zone2 Temperature Setpoint");
+    MQTTWriteReceived("MQTT Set Zone2 Temperature Setpoint", 6);
     HeatPump.SetZoneTempSetpoint(Payload.toFloat(), HeatPump.Status.HeatingControlModeZ2, ZONE2);
   }
   // Flow Setpoint Commands
   // Heating & Cooling Zone 2 Commands
   if (Topic == MQTTCommandZone2FlowSetpoint) {
-    DEBUG_PRINTLN("MQTT Set Zone2 Flow Setpoint");
+    MQTTWriteReceived("MQTT Set Zone2 Flow Setpoint", 6);
     HeatPump.SetFlowSetpoint(Payload.toInt(), HeatPump.Status.HeatingControlModeZ2, ZONE2);
   }
 
 
   // Prohibits for Server Control Mode
   if (Topic == MQTTCommandZone1ProhibitHeating) {
-    DEBUG_PRINTLN("MQTT Zone 1 Prohibit Heating");
+    MQTTWriteReceived("MQTT Zone 1 Prohibit Heating", 16);
     HeatPump.SetProhibits(TX_MESSAGE_SETTING_HEAT_Z1_INH_Flag, Payload.toInt());
   }
   if (Topic == MQTTCommandZone1ProhibitCooling) {
-    DEBUG_PRINTLN("MQTT Zone 1 Prohibit Cooling");
+    MQTTWriteReceived("MQTT Zone 1 Prohibit Cooling", 16);
     HeatPump.SetProhibits(TX_MESSAGE_SETTING_COOL_Z1_INH_Flag, Payload.toInt());
   }
   if (Topic == MQTTCommandZone2ProhibitHeating) {
-    DEBUG_PRINTLN("MQTT Zone 2 Prohibit Heating");
+    MQTTWriteReceived("MQTT Zone 2 Prohibit Heating", 16);
     HeatPump.SetProhibits(TX_MESSAGE_SETTING_HEAT_Z2_INH_Flag, Payload.toInt());
   }
   if (Topic == MQTTCommandZone2ProhibitCooling) {
-    DEBUG_PRINTLN("MQTT Zone 2 Prohibit Cooling");
+    MQTTWriteReceived("MQTT Zone 2 Prohibit Cooling", 16);
     HeatPump.SetProhibits(TX_MESSAGE_SETTING_COOL_Z2_INH_Flag, Payload.toInt());
   }
   if (Topic == MQTTCommandHotwaterProhibit) {
-    DEBUG_PRINTLN("MQTT DHW Prohibit");
+    MQTTWriteReceived("MQTT DHW Prohibit", 16);
     HeatPump.SetProhibits(TX_MESSAGE_SETTING_DHW_INH_Flag, Payload.toInt());
   }
 
 
   // Other Commands
   if (Topic == MQTTCommandHotwaterMode) {
-    DEBUG_PRINTLN("MQTT Set HW Mode");
+    MQTTWriteReceived("MQTT Set HW Mode", 15);
     HeatPump.SetDHWMode(&Payload);
   }
   if (Topic == MQTTCommandHotwaterBoost) {
-    DEBUG_PRINTLN("MQTT Set HW Boost");
+    MQTTWriteReceived("MQTT Set HW Boost", 16);
     HeatPump.ForceDHW(Payload.toInt());
   }
   if (Topic == MQTTCommandHotwaterNormalBoost) {
-    DEBUG_PRINTLN("MQTT Normal DHW Boost Run");
+    MQTTWriteReceived("MQTT Normal DHW Boost Run", 16);
     HeatPump.SetProhibits(TX_MESSAGE_SETTING_Normal_DHW_Flag, Payload.toInt());
   }
   if (Topic == MQTTCommandSystemHolidayMode) {
-    DEBUG_PRINTLN("MQTT Set Holiday Mode");
+    MQTTWriteReceived("MQTT Set Holiday Mode", 16);
     HeatPump.SetHolidayMode(Payload.toInt());
   }
   if (Topic == MQTTCommandHotwaterSetpoint) {
-    DEBUG_PRINTLN("MQTT Set HW Setpoint");
+    MQTTWriteReceived("MQTT Set HW Setpoint", 6);
     HeatPump.SetHotWaterSetpoint(Payload.toInt());
   }
   if (Topic == MQTTCommandSystemHeatingMode) {
-    DEBUG_PRINTLN("MQTT Set Heating Mode");
+    MQTTWriteReceived("MQTT Set Heating Mode", 4);
     HeatPump.SetHeatingControlMode(&Payload);
   }
   if (Topic == MQTTCommandSystemSvrMode) {
-    DEBUG_PRINTLN("MQTT Server Control Mode");
+    MQTTWriteReceived("MQTT Server Control Mode", 16);
     HeatPump.SetSvrControlMode(Payload.toInt());
   }
   if (Topic == MQTTCommandSystemPower) {
-    DEBUG_PRINTLN("MQTT Set System Power Mode");
+    MQTTWriteReceived("MQTT Set System Power Mode", 15);
     HeatPump.SetSystemPowerMode(&Payload);
   }
 }
@@ -553,7 +661,10 @@ void StatusReport(void) {
   doc["SSID"] = WiFi.SSID();
   doc["RSSI"] = WiFi.RSSI();
   doc["IP"] = WiFi.localIP().toString();
-  doc["Firmware"] = FirmwareVersion;
+  doc["Firmware"] = FirmwareVersion;  
+#ifdef ESP32  // Define the M5Stack LED
+  doc["CPUTemp"] = round2(temperatureRead());
+#endif
   doc["CPULoopTime"] = CPULoopSpeed;
   doc["FTCLoopTime"] = FTCLoopSpeed;
   doc["FTCVersion"] = FTCString[HeatPump.Status.FTCVersion];
@@ -575,11 +686,19 @@ void PublishAllReports(void) {
   StatusReport();
 
   FlashGreenLED();
+  DEBUG_PRINTLN("MQTT Published!");
 }
 
 void FlashGreenLED(void) {
+#ifdef ARDUINO_ESP32S3_DEV  // Define the M5Stack LED
+  leds[0] = CRGB::Green;    // Flash the Green LED
+  leds[0].fadeLightBy(0);
+  FastLED.show();
+#endif
+#ifdef ESP8266                        // Define the Witty ESP8266 Ports
   digitalWrite(Green_RGB_LED, HIGH);  // Flash the Green LED full brightness
-  delay(10);                          // Hold for 10ms then WiFi brightness will return it to 25%
+#endif
+  delay(10);  // Hold for 10ms then WiFi brightness will return it to 25%
 }
 
 void setupTelnet() {
@@ -632,3 +751,11 @@ void onTelnetConnectionAttempt(String ip) {
 double round2(double value) {
   return (int)(value * 100 + 0.5) / 100.0;
 }
+
+void MQTTWriteReceived(String message, int MsgNumber) {
+  DEBUG_PRINTLN(message);
+  PostWriteUpdateRequired = true;  // Trigger a read after a successful write
+  MessageNumber = MsgNumber;       // Set the post write readback number
+}
+
+#endif

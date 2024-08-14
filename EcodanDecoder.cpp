@@ -32,6 +32,7 @@ uint8_t ECODANDECODER::Process(uint8_t c) {
   if (BuildRxMessage(&RxMessage, c)) {
     ReturnValue = true;
     if (RxMessage.PacketType == GET_RESPONSE) {
+      Status.PostWriteReadComplete = true;  // Any message returned, mark complete
       switch (RxMessage.Payload[0]) {
         case 0x01:
           Process0x01(RxMessage.Payload, &Status);
@@ -340,24 +341,24 @@ void ECODANDECODER::Process0x0B(uint8_t *Buffer, EcodanStatus *Status) {
   float RefrigeTemp, CondensingTemp;
 
   fZone1 = ((float)ExtractUInt16(Buffer, 1) / 100);
-  if (Buffer[3] != 0xf0) {
+  if (Buffer[3] != 0xf0) {  // Extract if zone connected (not default value)
     fZone2 = ((float)ExtractUInt16(Buffer, 3) / 100);
   } else {
     fZone2 = 0;
   }
 
-  //Unknown = ((float)ExtractUInt16(Buffer, 5) / 100);
+  //Unknown = ((float)ExtractUInt16(Buffer, 5) / 100);         // Suspected value held here
   //Unknown = ((float)ExtractUInt16(Buffer, 7) / 100);
-  RefrigeTemp = ((float)ExtractUInt16(Buffer, 8) / 100);
+  RefrigeTemp = ((float)ExtractUInt16(Buffer, 8) / 100);  //
   //Unknown = ((float)ExtractUInt16(Buffer, 9) / 100);
   CondensingTemp = ((float)Buffer[10] / 2) - 40;
   fOutside = ((float)Buffer[11] / 2) - 40;
 
   Status->Zone1Temperature = fZone1;
   Status->Zone2Temperature = fZone2;
-  Status->OutsideTemperature = fOutside;
-  Status->CondensingTemp = CondensingTemp;
-  Status->RefrigeTemp = RefrigeTemp;
+  Status->OutsideTemperature = fOutside;    // TH7
+  Status->CondensingTemp = CondensingTemp;  //
+  Status->RefrigeTemp = RefrigeTemp;        //
 }
 
 void ECODANDECODER::Process0x0C(uint8_t *Buffer, EcodanStatus *Status) {
@@ -372,10 +373,10 @@ void ECODANDECODER::Process0x0C(uint8_t *Buffer, EcodanStatus *Status) {
   fHotWaterTHW5A = ((float)ExtractUInt16(Buffer, 10) / 100);
   //Unknown = ((float)Buffer[12] / 2) - 40;
 
-  Status->HeaterOutputFlowTemperature = fWaterHeatingFeed;
-  Status->HeaterReturnFlowTemperature = fWaterHeatingReturn;
-  Status->HotWaterTemperature = fHotWater;
-  Status->HotWaterTemperatureTHW5A = fHotWaterTHW5A;
+  Status->HeaterOutputFlowTemperature = fWaterHeatingFeed;    // THW1
+  Status->HeaterReturnFlowTemperature = fWaterHeatingReturn;  // THW2
+  Status->HotWaterTemperature = fHotWater;                    // THW5
+  Status->HotWaterTemperatureTHW5A = fHotWaterTHW5A;          // THW5A
 }
 
 void ECODANDECODER::Process0x0D(uint8_t *Buffer, EcodanStatus *Status) {
@@ -383,9 +384,11 @@ void ECODANDECODER::Process0x0D(uint8_t *Buffer, EcodanStatus *Status) {
 
   fBoilerFlow = ((float)ExtractUInt16(Buffer, 1) / 100);
   fBoilerReturn = ((float)ExtractUInt16(Buffer, 4) / 100);
+  //Unknown = ((float)ExtractUInt16(Buffer, 7) / 100);             // Suspected values here
+  //Unknown = ((float)ExtractUInt16(Buffer, 10) / 100);            // Suspected values here
 
-  Status->ExternalBoilerFlowTemperature = fBoilerFlow;
-  Status->ExternalBoilerReturnTemperature = fBoilerReturn;
+  Status->ExternalBoilerFlowTemperature = fBoilerFlow;      // THWB1
+  Status->ExternalBoilerReturnTemperature = fBoilerReturn;  // THWB2
 }
 
 

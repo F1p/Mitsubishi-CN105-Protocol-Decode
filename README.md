@@ -1,7 +1,26 @@
-# Mitsubishi-CN105-Protocol-Decode
-For Ecodan ASHP Units
-I have included my reference implemenataion, but all very much work in progress
+# Mitsubishi Ecodan Bridge CN105
 
+This software between the Mitsubishi Ecodan FTC controller and a MQTT Broker allows data to be read and commands to be sent.
+
+# Hardware
+
+Supported Hardware is ESP8266 ebay sold hardware: https://www.ebay.co.uk/itm/325967595655
+
+
+
+M5Stack Atom S3 Lite
+Pre-compiled M5Stack Atom S3 Lite can be found in the /build folder and flashed with:
+    ```
+    "C:\Users\User\AppData\Local\Arduino15\packages\esp32\tools\esptool_py\4.5.1/esptool.exe" --chip esp32s3 --port "COM10" --baud 921600  --before default_reset --after hard_reset write_flash -e -z --flash_mode dio --flash_freq 80m --flash_size 4MB 0x0 "C:\Users\User\AppData\Local\Temp\arduino\sketches\0DE0390D9C96CA421EFCBB845697D0C1/ECODAN_Bridge_ESP32_5.1.5.ino.bootloader.bin" 0x8000 "C:\Users\User\AppData\Local\Temp\arduino\sketches\0DE0390D9C96CA421EFCBB845697D0C1/ECODAN_Bridge_ESP32_5.1.5.ino.partitions.bin" 0xe000 "C:\Users\User\AppData\Local\Arduino15\packages\esp32\hardware\esp32\2.0.17/tools/partitions/boot_app0.bin" 0x10000 "C:\Users\User\AppData\Local\Temp\arduino\sketches\0DE0390D9C96CA421EFCBB845697D0C1/ECODAN_Bridge_ESP32_5.1.5.ino.bin"
+    ```
+
+
+
+
+
+
+# Mitsubishi CN105 Protocol Decode
+For Ecodan ASHP Units this is the protocol decode information
 https://gitter.im/Mitsubishi-CN105-Protocol-Decode/community
 
 # Physical
@@ -43,12 +62,12 @@ Active commands so far identified.
 | Command | Brief Description |
 | ------- | ----------- |
 | 0x32 | Update Settings |
-| 0x34 | Hot Water, Holiday and Prohibits |
-| 0x35 | Thermostat Setpoints |
+| 0x34 | Hot Water and Holiday |
+| 0x35 | Unknown |
 ### 0x32 - Set Options
 |   0   |   1   |   2   | 3 | 4 |  5  |  6  |  7  |   8   |   9   |  10  |  11  |  12  |  13  | 14 | 15 | 16 |
 |-------|-------|-------|---|---|-----|-----|-----|-------|-------|------|------|------|------|----|----|----|
-| 0x32  | Flags | Flags | P |Unk| DHW | HC1 | HC2 | DHWSP | DHWSP | Z1SP | Z1SP | Z2SP | Z2SP | MRC| MRC|CHK |  
+| 0x32  | Flags | Flags | P |Unk| DHW | HC1 | HC2 | DHWSP | DHWSP | Z1SP | Z1SP | Z2SP | Z2SP | Unk| Unk|CHK |  
 
 * Flags (2 Bytes) : Flags to Indicate which fields are active
   * 0x01 0x00 : Set System Power Power
@@ -62,8 +81,8 @@ Active commands so far identified.
   * 0x00 0x01 : Not Required (uint16)
   * 0x00 0x02 : Set Zone 2 Setpoints
   * 0x00 0x04 : Not Required (uint16)
-  * 0x00 0x08 : MRC Prohibit
-  * 0x00 0x10 : Not Required (uint16)
+  * 0x00 0x08 : Unknown (Byte 14)
+  * 0x00 0x10 : Unknown (Byte 15)
 * P : System Power
   * 0x00 : Standby
   * 0x01 : Power On
@@ -79,14 +98,8 @@ Active commands so far identified.
   * 5 : Dry Up
 * DHWSP : Hot Water Setpoint (Temperature * 100)
 * Z1SP : Zone 1 Setpoint (* 100)
-* Z2SP : Zone 2 Setpoint (* 100)
-* MRC Prohibit : (Read 0x26 Byte 14) - **MRC Prohibit command must NOT be written to Shizuoka designed models**
-  * 0 : Disable Prohibits
-  * 8 : Function Set Prohibit
-  * 32 : Setting Temperature Prohibit
-  * 64 : Running Mode Prohibit
-  * 128 : System On/Off Prohibit
-
+* Z2SP : Zone 2 Setpoint (* 100) + Flag 0x00
+* Unk : Unknown (Sets 0x26 Byte 14)
 ### 0x34 - Hot Water and Holiday Mode
 |   0   |  1  |  2  | 3 |   4  |  5   |   6  |  7  |   8   |   9   |  10  |  11  |  12  |  13  | 14 | 15 | 16 |
 |-------|-----|-----|---|------|------|------|-----|-------|-------|------|------|------|------|----|----|----|
@@ -101,20 +114,20 @@ Active commands so far identified.
   * 0x20 0x00 : Heating Z2 Inhibit (Only When in "Server Control Mode")
   * 0x40 0x00 : Cooling Z2 Inhibit (Only When in "Server Control Mode")
   * 0x80 0x00 : Server Control Mode
-  * 0x00 0x01 : Unused 1 (Byte 11)
-  * 0x00 0x02 : Unused 2 (Byte 12)
-  * 0x00 0x04 : Unused 3 (Byte 13)
-  * 0x00 0x08 : Unused 4 (Byte 14)
-  * 0x00 0x10 : Unused 5 (Byte 15)
+  * 0x00 0x01 : Unknown 1 (Byte 11)
+  * 0x00 0x02 : Unknown 2 (Byte 12)
+  * 0x00 0x04 : Unknown 3 (Byte 13)
+  * 0x00 0x08 : Unknown 4 (Byte 14)
+  * 0x00 0x10 : Unknown 5 (Byte 15)
 * DHW : On (1) / Off (0)
 * HOL : On (1) / Off (0)
 * SCM : Server Control Mode On (1) / Off (0)
 * IDHW : Inhibit DHW On (1) / Off (0)
-* Unk1 : Unused (Sets 0x28 Byte 11)
-* Unk2 : Unused (Sets 0x28 Byte 12 - suspected)
-* Unk3 : Unused (Sets 0x28 Byte 13 - suspected)
-* Unk4 : Unused (Sets 0x28 Byte 14 - suspected)
-* Unk5 : Unused (Sets 0x28 Byte 15 - suspected)
+* Unk1 : Unknown (Sets 0x28 Byte 11)
+* Unk2 : Unknown (Sets 0x28 Byte 12 - suspected)
+* Unk3 : Unknown (Sets 0x28 Byte 13 - suspected)
+* Unk4 : Unknown (Sets 0x28 Byte 14 - suspected)
+* Unk5 : Unknown (Sets 0x28 Byte 15 - suspected)
 ### 0x35 - Set Thermostat Setpoints 
 |   0   |  1  |  2  | 3  |   4  |  5   |   6  |   7  |   8   |   9   |  10  |  11  |  12  |  13  | 14 | 15 | 16 |
 |-------|-----|-----|----|------|------|------|------|-------|-------|------|------|------|------|----|----|----|
@@ -124,16 +137,16 @@ Active commands so far identified.
   * 0x01 0x00 : Cooling/Heating
   * 0x02 0x00 : Zone 1 Setpoint
   * 0x04 0x00 : Not Required (uint16)
-  * 0x08 0x00 : Zone 2 Setpoint
+  * 0x08 0x00 : Zone 2 Setpoint  * 
   * 0x10 0x00 : Not Required (uint16)
-  * 0x20 0x00 : Unused (Byte 8)
-  * 0x40 0x00 : Unused (Byte 9)
-  * 0x80 0x00 : Unused (Byte 10)
-  * 0x00 0x01 : Unused (Byte 11)
-  * 0x00 0x02 : Unused (Byte 12)
-  * 0x00 0x04 : Unused (Byte 13)
-  * 0x00 0x08 : Unused (Byte 14)
-  * 0x00 0x10 : Unused (Byte 15)
+  * 0x20 0x00 : Unknown (Byte 8)
+  * 0x40 0x00 : Unknown (Byte 9)
+  * 0x80 0x00 : Unknown (Byte 10)
+  * 0x00 0x01 : Unknown (Byte 11)
+  * 0x00 0x02 : Unknown (Byte 12)
+  * 0x00 0x04 : Unknown (Byte 13)
+  * 0x00 0x08 : Unknown (Byte 14)
+  * 0x00 0x10 : Unknown (Byte 15)
 * CH : Cooling (1) /Heating (0)
 * Z1SP : Zone 1 Setpoint (* 100)
 * Z2SP : Zone 2 Setpoint (* 100)
@@ -265,7 +278,7 @@ Responses so far identified.
 ### 0x0b - Zone 1 & 2 and Outside Temperature
 |   0  |  1  |  2  |  3  | 4 | 5 | 6 | 7 |  8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
 |------|-----|-----|-----|---|---|---|---|----|---|----|----|----|----|----|----|----|
-| 0x0b | Z1T | Z1T | Z2T |Z2T|   |   |   | RT |   | CT | O  |    |    |    |    |    |
+| 0x0b | Z1T |     | Z2T |   |   |   |   | RT |   | CT | O  |    |    |    |    |    |
 * Z1T : Zone1 Temperature * 100
 * Z2T : Zone2 Temperature * 100
 * RT : Refrigerant Temperature * 100 (Where TH2 is installed)
