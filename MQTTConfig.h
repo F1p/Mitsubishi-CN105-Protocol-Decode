@@ -295,6 +295,9 @@ void readSettingsFromConfig() {
     }
 
     DEBUG_PRINTLN("WiFi Connected!");
+#ifdef ESP32
+    WiFi.setSleep(false); // ESP32 WiFi Library seems to stop MQTT messages getting in, this prevents sleep at a cost of higher Temp & power
+#endif
     wifiManager.startWebPortal();
   }
 
