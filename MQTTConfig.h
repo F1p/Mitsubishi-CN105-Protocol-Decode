@@ -246,6 +246,7 @@ void readSettingsFromConfig() {
     DEBUG_PRINTLN("Starting WiFi Manager");
     // Reset Wifi settings for testing
     //wifiManager.resetSettings();
+    wifiManager.setTitle("Ecodan Bridge");      // Set web portal title
 
     // Set or Update the values
     custom_mqtt_client_id.setValue(mqttSettings.clientId, clientId_max_length);
@@ -295,9 +296,6 @@ void readSettingsFromConfig() {
     }
 
     DEBUG_PRINTLN("WiFi Connected!");
-#ifdef ESP32
-    WiFi.setSleep(false); // ESP32 WiFi Library seems to stop MQTT messages getting in, this prevents sleep at a cost of higher Temp & power
-#endif
     wifiManager.startWebPortal();
   }
 

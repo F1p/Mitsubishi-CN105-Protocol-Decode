@@ -216,6 +216,7 @@ void ECODAN::SetZoneTempSetpoint(float Setpoint, uint8_t Mode, uint8_t Zone) {
     DEBUG_PRINT(", ");
   }
   DEBUG_PRINTLN();
+  delay(100);
 }
 
 
@@ -237,6 +238,7 @@ void ECODAN::SetFlowSetpoint(float Setpoint, uint8_t Mode, uint8_t Zone) {
     DEBUG_PRINT(", ");
   }
   DEBUG_PRINTLN();
+  delay(100);
 }
 
 
@@ -262,6 +264,7 @@ void ECODAN::SetDHWMode(String *Mode) {
     DEBUG_PRINT(", ");
   }
   DEBUG_PRINTLN();
+  delay(100);
 }
 
 
@@ -283,6 +286,7 @@ void ECODAN::ForceDHW(uint8_t OnOff) {
     DEBUG_PRINT(", ");
   }
   DEBUG_PRINTLN();
+  delay(100);
 }
 
 
@@ -298,13 +302,13 @@ void ECODAN::SetHolidayMode(uint8_t OnOff) {
   DeviceStream->write(Buffer, CommandSize);
   DeviceStream->flush();
 
-
   for (i = 0; i < CommandSize; i++) {
     if (Buffer[i] < 0x10) DEBUG_PRINT("0");
     DEBUG_PRINT(String(Buffer[i], HEX));
     DEBUG_PRINT(", ");
   }
   DEBUG_PRINTLN();
+  delay(100);
 }
 
 
@@ -326,6 +330,7 @@ void ECODAN::SetProhibits(uint8_t Flags, uint8_t OnOff) {
     DEBUG_PRINT(", ");
   }
   DEBUG_PRINTLN();
+  delay(100);
 }
 
 
@@ -347,6 +352,7 @@ void ECODAN::SetSvrControlMode(uint8_t OnOff) {
     DEBUG_PRINT(", ");
   }
   DEBUG_PRINTLN();
+  delay(100);
 }
 
 
@@ -368,6 +374,7 @@ void ECODAN::SetHotWaterSetpoint(uint8_t Target) {
     DEBUG_PRINT(", ");
   }
   DEBUG_PRINTLN();
+  delay(100);
 }
 
 
@@ -395,13 +402,13 @@ void ECODAN::SetHeatingControlMode(String *Mode) {
   DeviceStream->write(Buffer, CommandSize);
   DeviceStream->flush();
 
-
   for (i = 0; i < CommandSize; i++) {
     if (Buffer[i] < 0x10) DEBUG_PRINT("0");
     DEBUG_PRINT(String(Buffer[i], HEX));
     DEBUG_PRINT(", ");
   }
   DEBUG_PRINTLN();
+  delay(100);
 }
 
 
@@ -427,6 +434,7 @@ void ECODAN::SetSystemPowerMode(String *Mode) {
     DEBUG_PRINT(", ");
   }
   DEBUG_PRINTLN();
+  delay(100);
 }
 
 
@@ -448,6 +456,7 @@ void ECODAN::GetFTCVersion() {
     DEBUG_PRINT(", ");
   }
   DEBUG_PRINTLN();
+  delay(100);
 }
 
 
