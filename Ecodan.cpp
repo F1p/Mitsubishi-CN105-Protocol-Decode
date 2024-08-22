@@ -30,8 +30,8 @@ uint8_t Init3[] = { 0xfc, 0x5a, 0x02, 0x7a, 0x02, 0xca, 0x01, 0x5d };
 uint8_t Init4[] = { 0xfc, 0x5b, 0x02, 0x7a, 0x01, 0xc9, 0x5f };
 uint8_t Init5[] = { 0xfc, 0x41, 0x02, 0x7a, 0x10, 0x34, 0x00, 0x01, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0xfd };
 
-#define NUMBER_COMMANDS 21
-uint8_t ActiveCommand[] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x07, 0x09, 0x0B, 0x0C, 0x0D,
+#define NUMBER_COMMANDS 22
+uint8_t ActiveCommand[] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x07, 0x09, 0x0B, 0x0C, 0x0D, 0x0E, 
                             0x10, 0x13, 0x14, 0x15, 0x16,
                             0x26, 0x28, 0x29,
                             0xA1, 0xA2,
@@ -140,6 +140,7 @@ void ECODAN::RequestStatus(uint8_t TargetMessage) {
   uint8_t CommandSize;
   uint8_t i;
 
+  if (!Connected) { Connect(); }
   StopStateMachine();
   DEBUG_PRINT("Send Message ");
   DEBUG_PRINTLN(TargetMessage);
@@ -159,11 +160,10 @@ void ECODAN::RequestStatus(uint8_t TargetMessage) {
 
 
 void ECODAN::Connect(void) {
-  DEBUG_PRINTLN("Init 3");
+  DEBUG_PRINTLN("Connecting to Heat Pump...");
   DeviceStream->write(Init3, 8);
   DeviceStream->flush();
   Process();
-  DEBUG_PRINTLN();
 }
 
 
@@ -216,7 +216,7 @@ void ECODAN::SetZoneTempSetpoint(float Setpoint, uint8_t Mode, uint8_t Zone) {
     DEBUG_PRINT(", ");
   }
   DEBUG_PRINTLN();
-  delay(100);
+  
 }
 
 
@@ -238,7 +238,7 @@ void ECODAN::SetFlowSetpoint(float Setpoint, uint8_t Mode, uint8_t Zone) {
     DEBUG_PRINT(", ");
   }
   DEBUG_PRINTLN();
-  delay(100);
+  
 }
 
 
@@ -264,7 +264,7 @@ void ECODAN::SetDHWMode(String *Mode) {
     DEBUG_PRINT(", ");
   }
   DEBUG_PRINTLN();
-  delay(100);
+  
 }
 
 
@@ -286,7 +286,7 @@ void ECODAN::ForceDHW(uint8_t OnOff) {
     DEBUG_PRINT(", ");
   }
   DEBUG_PRINTLN();
-  delay(100);
+  
 }
 
 
@@ -302,13 +302,14 @@ void ECODAN::SetHolidayMode(uint8_t OnOff) {
   DeviceStream->write(Buffer, CommandSize);
   DeviceStream->flush();
 
+
   for (i = 0; i < CommandSize; i++) {
     if (Buffer[i] < 0x10) DEBUG_PRINT("0");
     DEBUG_PRINT(String(Buffer[i], HEX));
     DEBUG_PRINT(", ");
   }
   DEBUG_PRINTLN();
-  delay(100);
+  
 }
 
 
@@ -330,7 +331,7 @@ void ECODAN::SetProhibits(uint8_t Flags, uint8_t OnOff) {
     DEBUG_PRINT(", ");
   }
   DEBUG_PRINTLN();
-  delay(100);
+  
 }
 
 
@@ -352,7 +353,7 @@ void ECODAN::SetSvrControlMode(uint8_t OnOff) {
     DEBUG_PRINT(", ");
   }
   DEBUG_PRINTLN();
-  delay(100);
+  
 }
 
 
@@ -374,7 +375,7 @@ void ECODAN::SetHotWaterSetpoint(uint8_t Target) {
     DEBUG_PRINT(", ");
   }
   DEBUG_PRINTLN();
-  delay(100);
+  
 }
 
 
@@ -402,13 +403,14 @@ void ECODAN::SetHeatingControlMode(String *Mode) {
   DeviceStream->write(Buffer, CommandSize);
   DeviceStream->flush();
 
+
   for (i = 0; i < CommandSize; i++) {
     if (Buffer[i] < 0x10) DEBUG_PRINT("0");
     DEBUG_PRINT(String(Buffer[i], HEX));
     DEBUG_PRINT(", ");
   }
   DEBUG_PRINTLN();
-  delay(100);
+  
 }
 
 
@@ -434,7 +436,7 @@ void ECODAN::SetSystemPowerMode(String *Mode) {
     DEBUG_PRINT(", ");
   }
   DEBUG_PRINTLN();
-  delay(100);
+  
 }
 
 
@@ -456,7 +458,7 @@ void ECODAN::GetFTCVersion() {
     DEBUG_PRINT(", ");
   }
   DEBUG_PRINTLN();
-  delay(100);
+  
 }
 
 

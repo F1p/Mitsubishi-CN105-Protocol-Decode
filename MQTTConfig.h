@@ -74,7 +74,7 @@ void readSettingsFromConfig() {
   if (LittleFS.begin()) {
 #endif
 #ifdef ESP32
-    if (LittleFS.begin("/storage")) {  // On ESP32 use storage mount point: if (LittleFS.begin("/storage")) {
+    if (LittleFS.begin("/storage")) {
 #endif
       DEBUG_PRINTLN("Mounted File System");
       if (LittleFS.exists("/config.json")) {
@@ -243,10 +243,17 @@ void readSettingsFromConfig() {
   }
 
   void initializeWifiManager() {
+#ifdef ESP32               // Define the M5Stack LED
+    leds[0] = CRGB::Blue;  // Turn the Blue LED On
+    FastLED.show();
+#endif
+#ifdef ESP8266                         // Define the Witty ESP8266 Ports
+    digitalWrite(Blue_RGB_LED, HIGH);  // Set the Blue LED full brightness
+#endif
     DEBUG_PRINTLN("Starting WiFi Manager");
     // Reset Wifi settings for testing
     //wifiManager.resetSettings();
-    wifiManager.setTitle("Ecodan Bridge");      // Set web portal title
+    wifiManager.setTitle("Ecodan Bridge");
 
     // Set or Update the values
     custom_mqtt_client_id.setValue(mqttSettings.clientId, clientId_max_length);
@@ -275,13 +282,12 @@ void readSettingsFromConfig() {
 #ifdef ESP32
     HostName += String(ESP.getChipModel(), HEX);
 #endif
-
     WiFi.hostname(HostName);
 
     wifiManager.setConfigPortalTimeout(120);                // Timeout before launching the config portal
     wifiManager.setBreakAfterConfig(true);                  // Saves settings, even if WiFi Fails
     wifiManager.setSaveConfigCallback(saveConfigCallback);  // Set config save notify callback
-    // wm.setAPClientCheck(true); // avoid timeout if client connected to softap
+    //wifiManager.setAPClientCheck(true);                     // avoid timeout if client connected to softap
 
 
     if (!wifiManager.autoConnect("Ecodan Bridge AP")) {
@@ -296,6 +302,9 @@ void readSettingsFromConfig() {
     }
 
     DEBUG_PRINTLN("WiFi Connected!");
+#ifdef ESP8266                        // Define the Witty ESP8266 Ports
+    digitalWrite(Blue_RGB_LED, LOW);  // Set the Blue LED off, ESP32 will do this in main loop
+#endif
     wifiManager.startWebPortal();
   }
 
@@ -354,7 +363,7 @@ void readSettingsFromConfig() {
       DEBUG_PRINTLN("MQTT Server Connected");
       MQTTonConnect();
 
-#ifdef ARDUINO_ESP32S3_DEV    // Define the M5Stack LED
+#ifdef ESP32                  // Define the M5Stack LED
       leds[0] = CRGB::Black;  // Turn the Green LED Off
       leds[0] = CRGB::Green;  // Turn the Red LED On
       FastLED.show();
@@ -412,7 +421,7 @@ void readSettingsFromConfig() {
 
   void handleMqttState() {
     if (!MQTTClient.connected()) {
-#ifdef ARDUINO_ESP32S3_DEV    // Define the M5Stack LED
+#ifdef ESP32                  // Define the M5Stack LED
       leds[0] = CRGB::Green;  // Turn the Green LED Off
       leds[0] = CRGB::Red;    // Turn the Red LED On
       FastLED.show();

@@ -23,6 +23,7 @@ Pre-compiled M5Stack Atom S3 Lite can be found in the /build folder and flashed 
 For Ecodan ASHP Units this is the protocol decode information
 https://gitter.im/Mitsubishi-CN105-Protocol-Decode/community
 
+
 # Physical
 Serial, 2400, 8, E, 1
 # Command Format
@@ -62,12 +63,12 @@ Active commands so far identified.
 | Command | Brief Description |
 | ------- | ----------- |
 | 0x32 | Update Settings |
-| 0x34 | Hot Water and Holiday |
-| 0x35 | Unknown |
+| 0x34 | Hot Water, Holiday and Prohibits |
+| 0x35 | Thermostat Setpoints |
 ### 0x32 - Set Options
 |   0   |   1   |   2   | 3 | 4 |  5  |  6  |  7  |   8   |   9   |  10  |  11  |  12  |  13  | 14 | 15 | 16 |
 |-------|-------|-------|---|---|-----|-----|-----|-------|-------|------|------|------|------|----|----|----|
-| 0x32  | Flags | Flags | P |Unk| DHW | HC1 | HC2 | DHWSP | DHWSP | Z1SP | Z1SP | Z2SP | Z2SP | Unk| Unk|CHK |  
+| 0x32  | Flags | Flags | P |Unk| DHW | HC1 | HC2 | DHWSP | DHWSP | Z1SP | Z1SP | Z2SP | Z2SP | MRC| MRC|CHK |  
 
 * Flags (2 Bytes) : Flags to Indicate which fields are active
   * 0x01 0x00 : Set System Power Power
@@ -81,8 +82,8 @@ Active commands so far identified.
   * 0x00 0x01 : Not Required (uint16)
   * 0x00 0x02 : Set Zone 2 Setpoints
   * 0x00 0x04 : Not Required (uint16)
-  * 0x00 0x08 : Unknown (Byte 14)
-  * 0x00 0x10 : Unknown (Byte 15)
+  * 0x00 0x08 : MRC Prohibit
+  * 0x00 0x10 : Not Required (uint16)
 * P : System Power
   * 0x00 : Standby
   * 0x01 : Power On
@@ -98,8 +99,14 @@ Active commands so far identified.
   * 5 : Dry Up
 * DHWSP : Hot Water Setpoint (Temperature * 100)
 * Z1SP : Zone 1 Setpoint (* 100)
-* Z2SP : Zone 2 Setpoint (* 100) + Flag 0x00
-* Unk : Unknown (Sets 0x26 Byte 14)
+* Z2SP : Zone 2 Setpoint (* 100)
+* MRC Prohibit : (Read 0x26 Byte 14) - **MRC Prohibit command must NOT be written to Shizuoka designed models**
+  * 0 : Disable Prohibits
+  * 8 : Function Set Prohibit
+  * 32 : Setting Temperature Prohibit
+  * 64 : Running Mode Prohibit
+  * 128 : System On/Off Prohibit
+
 ### 0x34 - Hot Water and Holiday Mode
 |   0   |  1  |  2  | 3 |   4  |  5   |   6  |  7  |   8   |   9   |  10  |  11  |  12  |  13  | 14 | 15 | 16 |
 |-------|-----|-----|---|------|------|------|-----|-------|-------|------|------|------|------|----|----|----|
@@ -114,20 +121,20 @@ Active commands so far identified.
   * 0x20 0x00 : Heating Z2 Inhibit (Only When in "Server Control Mode")
   * 0x40 0x00 : Cooling Z2 Inhibit (Only When in "Server Control Mode")
   * 0x80 0x00 : Server Control Mode
-  * 0x00 0x01 : Unknown 1 (Byte 11)
-  * 0x00 0x02 : Unknown 2 (Byte 12)
-  * 0x00 0x04 : Unknown 3 (Byte 13)
-  * 0x00 0x08 : Unknown 4 (Byte 14)
-  * 0x00 0x10 : Unknown 5 (Byte 15)
+  * 0x00 0x01 : Unused 1 (Byte 11)
+  * 0x00 0x02 : Unused 2 (Byte 12)
+  * 0x00 0x04 : Unused 3 (Byte 13)
+  * 0x00 0x08 : Unused 4 (Byte 14)
+  * 0x00 0x10 : Unused 5 (Byte 15)
 * DHW : On (1) / Off (0)
 * HOL : On (1) / Off (0)
 * SCM : Server Control Mode On (1) / Off (0)
 * IDHW : Inhibit DHW On (1) / Off (0)
-* Unk1 : Unknown (Sets 0x28 Byte 11)
-* Unk2 : Unknown (Sets 0x28 Byte 12 - suspected)
-* Unk3 : Unknown (Sets 0x28 Byte 13 - suspected)
-* Unk4 : Unknown (Sets 0x28 Byte 14 - suspected)
-* Unk5 : Unknown (Sets 0x28 Byte 15 - suspected)
+* Unk1 : Unused (Sets 0x28 Byte 11)
+* Unk2 : Unused (Sets 0x28 Byte 12 - suspected)
+* Unk3 : Unused (Sets 0x28 Byte 13 - suspected)
+* Unk4 : Unused (Sets 0x28 Byte 14 - suspected)
+* Unk5 : Unused (Sets 0x28 Byte 15 - suspected)
 ### 0x35 - Set Thermostat Setpoints 
 |   0   |  1  |  2  | 3  |   4  |  5   |   6  |   7  |   8   |   9   |  10  |  11  |  12  |  13  | 14 | 15 | 16 |
 |-------|-----|-----|----|------|------|------|------|-------|-------|------|------|------|------|----|----|----|
@@ -137,16 +144,16 @@ Active commands so far identified.
   * 0x01 0x00 : Cooling/Heating
   * 0x02 0x00 : Zone 1 Setpoint
   * 0x04 0x00 : Not Required (uint16)
-  * 0x08 0x00 : Zone 2 Setpoint  * 
+  * 0x08 0x00 : Zone 2 Setpoint
   * 0x10 0x00 : Not Required (uint16)
-  * 0x20 0x00 : Unknown (Byte 8)
-  * 0x40 0x00 : Unknown (Byte 9)
-  * 0x80 0x00 : Unknown (Byte 10)
-  * 0x00 0x01 : Unknown (Byte 11)
-  * 0x00 0x02 : Unknown (Byte 12)
-  * 0x00 0x04 : Unknown (Byte 13)
-  * 0x00 0x08 : Unknown (Byte 14)
-  * 0x00 0x10 : Unknown (Byte 15)
+  * 0x20 0x00 : Unused (Byte 8)
+  * 0x40 0x00 : Unused (Byte 9)
+  * 0x80 0x00 : Unused (Byte 10)
+  * 0x00 0x01 : Unused (Byte 11)
+  * 0x00 0x02 : Unused (Byte 12)
+  * 0x00 0x04 : Unused (Byte 13)
+  * 0x00 0x08 : Unused (Byte 14)
+  * 0x00 0x10 : Unused (Byte 15)
 * CH : Cooling (1) /Heating (0)
 * Z1SP : Zone 1 Setpoint (* 100)
 * Z2SP : Zone 2 Setpoint (* 100)
@@ -278,7 +285,7 @@ Responses so far identified.
 ### 0x0b - Zone 1 & 2 and Outside Temperature
 |   0  |  1  |  2  |  3  | 4 | 5 | 6 | 7 |  8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
 |------|-----|-----|-----|---|---|---|---|----|---|----|----|----|----|----|----|----|
-| 0x0b | Z1T |     | Z2T |   |   |   |   | RT |   | CT | O  |    |    |    |    |    |
+| 0x0b | Z1T | Z1T | Z2T |Z2T|   |   |   | RT |   | CT | O  |    |    |    |    |    |
 * Z1T : Zone1 Temperature * 100
 * Z2T : Zone2 Temperature * 100
 * RT : Refrigerant Temperature * 100 (Where TH2 is installed)
@@ -292,16 +299,21 @@ Responses so far identified.
 * RF : Heater Return Flow Temperature * 100
 * HW : Hot Water Temperature * 100 (THW5 or THW5B)
 * HW2 : Hot Water Temperature * 100 (THW5A if installed)
-### 0x0d - Boiler Temps
+### 0x0d - Thermistors 1
 |  0   | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
 |------|---|---|---|---|---|---|---|---|---|----|----|----|----|----|----|----|
-| 0x0d | F | F |   | R | R |   |   |   |   |    |    |    |    |    |    |    |
-* F : Boiler Flow Temperature * 100 (Where THWB1 installed)
-* R : Boiler Return Temperature * 100  (Where THWB2 is installed)
-### 0x0e - Unknown Temps
+| 0x0d | F1 | F1 |   | R1 | R1 |   | F2 | F2 |   |  R2 |  R2  |    |    |    |    |    |
+* F1 : Zone 1 Flow Temperature * 100 (Where THW6 installed)
+* R1 : Zone 1 Return Temperature * 100  (Where THW7 is installed)
+* F1 : Zone 2 Flow Temperature * 100 (Where THW8 installed)
+* R1 : Zone 2 Return Temperature * 100  (Where THW9 is installed)
+### 0x0e - Thermistors 2
 |  0   | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
 |------|---|---|---|---|---|---|---|---|---|----|----|----|----|----|----|----|
-| 0x0e |   |   |   |   |   |   |   |   |   |    |    |    |    |    |    |    |
+| 0x0e | F | F |   | R | R |   | X | X |   |    |    |    |    |    |    |    |
+* F : Boiler Flow Temperature * 100    Suspected (Where THWB1 installed)
+* R : Boiler Return Temperature * 100     Suspected (Where THWB2 is installed)
+* X : Mixing Tank Temperature * 100        Suspected (Where THW10 is installed)  
 ### 0x10 - Hardwired Thermostats
 |   0   |  1  |  2  |  3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
 |-------|-----|-----|----|---|---|---|---|---|---|----|----|----|----|----|----|----|

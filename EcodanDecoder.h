@@ -106,9 +106,9 @@ const char HeatingControlModeString[6][13] = { "Temp", "Flow", "Compensation", "
 #define HOLIDAY_MODE_ON 1
 const char HolidayModetString[2][4] = { "Off", "On" };
 
-#define HOT_WATER_TIMER_ON 0
-#define HOT_WATER_TIMER_OFF 1
-const char HotWaterTimerString[2][4] = { "On", "Off" };
+#define ITEM_OFF 0
+#define ITEM_ON 1
+const char OFF_ON_String[2][4] = { "Off", "On" };
 
 #define COMPRESSOR_NORMAL 0
 #define COMPRESSOR_STANDBY 1
@@ -198,11 +198,12 @@ typedef struct _EcodanStatus {
   float HotWaterTemperature, HotWaterTemperatureTHW5A;
 
   //From Message 0x0D
-  float ExternalBoilerFlowTemperature;
-  float ExternalBoilerReturnTemperature;
+  float Zone1FlowTemperature, Zone1ReturnTemperature;
+  float Zone2FlowTemperature, Zone2ReturnTemperature;
 
   //From Message 0x0E
-  // Several Unused Temperatures
+  float ExternalBoilerFlowTemperature, ExternalBoilerReturnTemperature;
+  float MixingTemperature;
 
   //From Message 0x10
   uint8_t Zone1ThermostatDemand, Zone2ThermostatDemand, OutdoorThermostatDemand;
@@ -262,9 +263,6 @@ typedef struct _EcodanStatus {
   // From Message 0x61
   bool Write_To_Ecodan_OK;
 
-  // Non-Ecodan Internal Process - Readback
-  bool PostWriteReadComplete;
-
 
 } EcodanStatus;
 
@@ -322,6 +320,7 @@ private:
   void Process0x0B(uint8_t *Payload, EcodanStatus *Status);
   void Process0x0C(uint8_t *Payload, EcodanStatus *Status);
   void Process0x0D(uint8_t *Payload, EcodanStatus *Status);
+  void Process0x0E(uint8_t *Payload, EcodanStatus *Status);
   void Process0x10(uint8_t *Payload, EcodanStatus *Status);
   void Process0x11(uint8_t *Payload, EcodanStatus *Status);
   void Process0x13(uint8_t *Payload, EcodanStatus *Status);
