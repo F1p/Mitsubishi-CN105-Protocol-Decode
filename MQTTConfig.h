@@ -63,6 +63,8 @@ String MQTTCommandSystemPower = MQTT_COMMAND_SYSTEM_POWER;
 String HostName;
 
 
+// Programs
+
 #if defined(ESP8266) || defined(ESP32)  // ESP32 or ESP8266 Compatiability
 void readSettingsFromConfig() {
   // Clean LittleFS for testing
@@ -202,6 +204,8 @@ void readSettingsFromConfig() {
   }
 
 
+
+
   void saveConfig() {
     // Read MQTT Portal Values for save to file system
     DEBUG_PRINTLN("Copying Portal Values...");
@@ -280,7 +284,7 @@ void readSettingsFromConfig() {
     HostName += String(ESP.getChipId(), HEX);
 #endif
 #ifdef ESP32
-    HostName += String(ESP.getChipModel(), HEX);
+    HostName += String(ESP.getEfuseMac(), HEX);
 #endif
     WiFi.hostname(HostName);
 
@@ -309,6 +313,162 @@ void readSettingsFromConfig() {
   }
 
 
+  void PublishDiscoveryTopics(void) {
+
+    // Compile Topics
+    String MQTT_DISCOVERY_TOPIC, Buffer_Topic;
+
+// -- Entities Configuration JSON -- //
+#ifdef ESP8266
+    String ChipModel = "ESP8266";
+    String ChipID = String(ESP.getChipId(), HEX);
+#endif
+#ifdef ESP32
+    String ChipModel = ESP.getChipModel();
+    String ChipID = String(ESP.getEfuseMac(), HEX);
+#endif
+
+    // JSON Formation
+    JsonDocument Config;
+    char Buffer_Payload[2048];
+
+    // Publish all the discovery topics
+    for (int i = 0; i < 57; i++) {
+      if (i == 0) {  // If the first topic
+        Config["device"]["identifiers"] = HostName;
+        Config["device"]["manufacturer"] = "F1p";
+        Config["device"]["model"] = ChipModel;
+        Config["device"]["serial_number"] = ChipID;
+        Config["device"]["name"] = "Ecodan ASHP";
+        Config["device"]["configuration_url"] = "http://" + WiFi.localIP().toString() + ":80";
+        Config["device"]["sw_version"] = FirmwareVersion;
+      } else {  // Otherwise post just identifier
+        Config["device"]["identifiers"] = HostName;
+      }
+
+
+      // Every one has a unique_id and name
+      Config["unique_id"] = String(MQTT_SENSOR_UNIQUE_ID[i]) + ChipID;
+      Config["name"] = String(MQTT_SENSOR_NAME[i]);
+
+
+      // Sensors
+      if (i >= 0 && i < 41) {
+        Config["state_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[MQTT_TOPIC_POS[i]]);  // Needs a positioner
+        if (MQTT_UNITS_POS[i] > 0) { Config["unit_of_measurement"] = String(MQTT_SENSOR_UNITS[MQTT_UNITS_POS[i]]); }  // Don't send nothing
+        Config["value_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[i]);
+
+        MQTT_DISCOVERY_TOPIC = String(MQTT_DISCOVERY_TOPICS[0]);
+      }
+
+      // Climate
+      if (i >= 41 && i < 44) {
+        Config["object_id"] = String(MQTT_OBJECT_ID[i - 41]);
+        Config["current_temperature_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[i - 37]);
+        Config["current_temperature_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[27]);
+        Config["temperature_command_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[i - 31]);
+        Config["temperature_unit"] = String(MQTT_SENSOR_UNITS[7]);
+        Config["max_temp"] = MQTT_CLIMATE_MAX[i - 41];
+        Config["min_temp"] = MQTT_CLIMATE_MIN[i - 41];
+        Config["temp_step"] = MQTT_CLIMATE_TEMP_STEP[i - 41];
+        Config["precision"] = MQTT_CLIMATE_PRECISION[i - 41];
+        Config["initial"] = MQTT_CLIMATE_INITAL[i - 41];
+        Config["temperature_state_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[42]);
+        Config["mode_state_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[2]);
+        Config["mode_state_template"] = String(MQTT_CLIMATE_STATE_TOPIC[i - 41]);
+        if (i == 41) {
+          Config["modes"][0] = "heat";
+          Config["modes"][1] = "off";
+        } else {
+          Config["modes"][0] = "heat";
+          Config["modes"][1] = "cool";
+          Config["modes"][2] = "off";
+          Config["mode_command_template"] = String(MQTT_CLIMATE_MODE[0]);
+          Config["mode_command_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[9]);
+        }
+
+        MQTT_DISCOVERY_TOPIC = String(MQTT_DISCOVERY_TOPICS[1]);
+      }
+
+      // Switches
+      if (i >= 44 && i < 53) {
+        Config["state_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[MQTT_SWITCH_STATE_POS[i - 44]]);
+        Config["value_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[i - 1]);
+        Config["command_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[i - 31]);
+        if (i == 45) {
+          Config["state_on"] = "On";
+          Config["state_off"] = "Standby";
+          Config["payload_on"] = "On";
+          Config["payload_off"] = "Standby";
+        } else {
+          Config["state_on"] = "1";
+          Config["state_off"] = "0";
+          Config["payload_on"] = "1";
+          Config["payload_off"] = "0";
+        }
+
+        MQTT_DISCOVERY_TOPIC = String(MQTT_DISCOVERY_TOPICS[2]);
+      }
+
+
+      // Numbers
+      if (i >= 53 && i < 55) {
+        Config["name"] = String(MQTT_SENSOR_NAME[i]);
+        Config["state_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[i - 48]);
+        Config["value_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[42]);
+        Config["command_topic"] = String(MQTT_TOPIC[i - 43]);
+        Config["unit_of_measurement"] = String(MQTT_SENSOR_UNITS[2]);
+        Config["max"] = MQTT_CLIMATE_MAX[0];
+        Config["min"] = MQTT_CLIMATE_MIN[1];
+        Config["step"] = MQTT_CLIMATE_TEMP_STEP[0];
+
+        MQTT_DISCOVERY_TOPIC = String(MQTT_DISCOVERY_TOPICS[3]);
+      }
+
+
+      // Selects
+      if (i >= 55 && i < 57) {
+        Config["name"] = String(MQTT_SENSOR_NAME[i]);
+        Config["command_topic"] = String(MQTT_TOPIC[i - 32]);
+        Config["state_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[i - 51]);
+        Config["value_template"] = String(MQTT_SELECT_VALUE_TOPIC[i - 55]);
+        if (i == 55) {
+          Config["options"][0] = "Normal";
+          Config["options"][1] = "Eco";
+        } else if (i == 56) {
+          Config["options"][0] = "Heating Temperature";
+          Config["options"][1] = "Heating Flow";
+          Config["options"][2] = "Heating Compensation";
+          Config["options"][3] = "Cooling Temperature";
+          Config["options"][4] = "Cooling Flow";
+          Config["options"][5] = "Dry Up";
+        }
+
+        MQTT_DISCOVERY_TOPIC = String(MQTT_DISCOVERY_TOPICS[4]);
+      }
+
+
+      // Add Availability Topics
+      if (i >= 41) {
+        Config["availability"]["topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[0]);
+        Config["availability"]["template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[41]);
+        Config["availability"]["payload_available"] = "online";
+        Config["availability"]["payload_not_available"] = "offline";
+      }
+
+      serializeJson(Config, Buffer_Payload);
+      Buffer_Topic = MQTT_DISCOVERY_TOPIC + ChipID + String(MQTT_DISCOVERY_OBJ_ID[i]) + String(MQTT_DISCOVERY_TOPICS[5]);
+      MQTTClient.publish(Buffer_Topic.c_str(), Buffer_Payload, true);
+
+      MQTT_DISCOVERY_TOPIC = "";  // Clear everything ready for next loop
+      Buffer_Topic = "";
+      Config.clear();
+    }
+
+    // Generate Publish Message
+    DEBUG_PRINTLN("Published Discovery Topics!");
+  }
+
   void initializeMqttClient() {
     DEBUG_PRINT("Attempting MQTT connection to: ");
     DEBUG_PRINT(mqttSettings.hostname);
@@ -316,6 +476,7 @@ void readSettingsFromConfig() {
     DEBUG_PRINTLN(mqttSettings.port);
     MQTTClient.setServer(mqttSettings.hostname, atoi(mqttSettings.port));
   }
+
 
 
   void MQTTonConnect(void) {
@@ -327,23 +488,22 @@ void readSettingsFromConfig() {
     MQTTClient.subscribe(MQTTCommandZone1NoModeSetpoint.c_str());
     MQTTClient.subscribe(MQTTCommandZone1ProhibitHeating.c_str());
     MQTTClient.subscribe(MQTTCommandZone1ProhibitCooling.c_str());
-
     MQTTClient.subscribe(MQTTCommandZone2FlowSetpoint.c_str());
     MQTTClient.subscribe(MQTTCommandZone2NoModeSetpoint.c_str());
     MQTTClient.subscribe(MQTTCommandZone2ProhibitHeating.c_str());
     MQTTClient.subscribe(MQTTCommandZone2ProhibitCooling.c_str());
-
     MQTTClient.subscribe(MQTTCommandSystemHolidayMode.c_str());
     MQTTClient.subscribe(MQTTCommandSystemHeatingMode.c_str());
-
     MQTTClient.subscribe(MQTTCommandHotwaterMode.c_str());
     MQTTClient.subscribe(MQTTCommandHotwaterSetpoint.c_str());
     MQTTClient.subscribe(MQTTCommandHotwaterBoost.c_str());
     MQTTClient.subscribe(MQTTCommandHotwaterNormalBoost.c_str());
     MQTTClient.subscribe(MQTTCommandHotwaterProhibit.c_str());
-
     MQTTClient.subscribe(MQTTCommandSystemPower.c_str());
     MQTTClient.subscribe(MQTTCommandSystemSvrMode.c_str());
+
+    delay(10);
+    PublishDiscoveryTopics();
   }
 
 
@@ -434,5 +594,7 @@ void readSettingsFromConfig() {
     }
     MQTTClient.loop();
   }
+
+
 
 #endif

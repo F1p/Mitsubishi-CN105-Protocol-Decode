@@ -384,12 +384,11 @@ mqtt:
       temperature_state_topic: "Ecodan/ASHP/Status/Zone1"
       temperature_state_template: "{{ value_json.Setpoint }}"
       mode_state_topic: "Ecodan/ASHP/Status/System"
-      # One Zone System:
-      #mode_state_template: "{{ 'heat' if value_json.SystemOperationMode=='Heating' else 'off' }}"
-      # Two Zone Systems:
-      mode_state_template: "{{ 'heat' if (value_json.SystemOperationMode=='Heating' and states('sensor.zone_1_working')=='1') else
-      'cool' if (value_json.SystemOperationMode=='Cooling' and states('sensor.zone_1_working')=='1') else
-      'off' }}"
+      mode_state_template: "{{ 'heat' if (value_json.SystemOperationMode=='Heating' and states('sensor.zone_2_temperature')=='0') else
+        'heat' if (value_json.SystemOperationMode=='Heating' and states('sensor.zone_1_working')=='1') else
+        'cool' if (value_json.SystemOperationMode=='Cooling' and states('sensor.zone_2_temperature')=='0') else
+        'cool' if (value_json.SystemOperationMode=='Cooling' and states('sensor.zone_1_working')=='1') else
+        'off' }}"
       modes: ["heat", "cool", "off"]
       mode_command_template: "{% set values = { 'heat':'Heating Temperature', 'cool':'Cooling Temperature'} %}
       {{ values[value] if value in values.keys() }}"
@@ -417,10 +416,11 @@ mqtt:
       temperature_state_topic: "Ecodan/ASHP/Status/Zone2"
       temperature_state_template: "{{ value_json.Setpoint }}"
       mode_state_topic: "Ecodan/ASHP/Status/System"
-      # Two Zone Systems:
-      mode_state_template: "{{ 'heat' if (value_json.SystemOperationMode=='Heating' and states('sensor.zone_2_working')=='1') else
-      'cool' if (value_json.SystemOperationMode=='Cooling' and states('sensor.zone_2_working')=='1') else
-      'off' }}"
+      mode_state_template: "{{ 'heat' if (value_json.SystemOperationMode=='Heating' and states('sensor.zone_2_temperature')=='0') else
+        'heat' if (value_json.SystemOperationMode=='Heating' and states('sensor.zone_2_working')=='1') else
+        'cool' if (value_json.SystemOperationMode=='Cooling' and states('sensor.zone_2_temperature')=='0') else
+        'cool' if (value_json.SystemOperationMode=='Cooling' and states('sensor.zone_2_working')=='1') else
+        'off' }}"
       modes: ["heat", "cool", "off"]
       mode_command_template: "{% set values = { 'heat':'Heating Temperature', 'cool':'Cooling Temperature'} %}
       {{ values[value] if value in values.keys() }}"

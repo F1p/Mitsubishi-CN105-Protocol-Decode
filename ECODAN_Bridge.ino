@@ -39,7 +39,7 @@
 #include "Ecodan.h"
 
 
-String FirmwareVersion = "v5.1.6";
+String FirmwareVersion = "v5.2.0";
 
 
 #ifdef ESP8266                      // Define the Witty ESP8266 Serial Pins
@@ -119,11 +119,12 @@ WiFiManagerParameter custom_mqtt_server("server", "MQTT Server", "TEMP", hostnam
 WiFiManagerParameter custom_mqtt_port("port", "MQTT Server Port", "TEMP", port_max_length);
 WiFiManagerParameter custom_mqtt_user("user", "MQTT Username", "TEMP", user_max_length);
 WiFiManagerParameter custom_mqtt_pass("pass", "MQTT Password", "TEMP", password_max_length);
-WiFiManagerParameter custom_mqtt_basetopic("basetopic", "MQTT Base Topic", "TEMP", basetopic_max_length);
+WiFiManagerParameter custom_mqtt_basetopic("basetopic", "MQTT Base Topic (Default: ASHP/Ecodan)", "TEMP", basetopic_max_length);
 
 
 #include "TimerCallBack.h"
 #include "Debug.h"
+#include "MQTTDiscovery.h"
 #include "MQTTConfig.h"
 
 void HeatPumpQueryStateEngine(void);
@@ -150,6 +151,9 @@ bool HeatPumpQueryOneShot = true;
 bool PostWriteUpdateRequired = false;
 float Zone1TemperatureSetpoint_UpdateValue, Zone2TemperatureSetpoint_UpdateValue;
 int Zone1FlowSetpoint_UpdateValue, Zone2FlowSetpoint_UpdateValue;
+
+
+
 
 
 void setup() {
@@ -185,15 +189,11 @@ void setup() {
   setupTelnet();
   startTelnet();
 
-  MQTTClient.setBufferSize(1024);  // Increase MQTT Buffer Size
+  MQTTClient.setBufferSize(2048);  // Increase MQTT Buffer Size
   RecalculateMQTTTopics();
   initializeMqttClient();
   MQTTClient.setCallback(MQTTonData);
   wifiManager.startWebPortal();
-
-#ifdef ESP32
- FirmwareVersion += " AtomS3 Lite";
-#endif
 
   HeatPump.Status.Write_To_Ecodan_OK = false;
 }
@@ -506,7 +506,7 @@ void HotWaterReport(void) {
   doc[F("Setpoint")] = HeatPump.Status.HotWaterSetpoint;
   doc["HotWaterBoostActive"] = HeatPump.Status.HotWaterBoostActive;
   doc["ProhibitDHW"] = HeatPump.Status.ProhibitDHW;
-  doc["DHWActive"] = HeatPump.Status.DHWActive;
+  doc["DHWActive"] = OFF_ON_String[HeatPump.Status.DHWActive];
   doc["HotWaterControlMode"] = HotWaterControlModeString[HeatPump.Status.HotWaterControlMode];
   doc["LegionellaSetpoint"] = HeatPump.Status.LegionellaSetpoint;
   doc["HotWaterMaxTDrop"] = HeatPump.Status.HotWaterMaximumTempDrop;
@@ -678,7 +678,6 @@ void StatusReport(void) {
   MQTTClient.publish(MQTT_LWT.c_str(), "online");
 }
 
-
 void PublishAllReports(void) {
   Zone1Report();
   Zone2Report();
@@ -692,6 +691,7 @@ void PublishAllReports(void) {
   FlashGreenLED();
   DEBUG_PRINTLN("MQTT Published!");
 }
+
 
 void FlashGreenLED(void) {
 #ifdef ESP32  // Define the M5Stack LED
