@@ -280,7 +280,7 @@ void loop() {
 #endif
 #ifdef ESP32  // Define the M5Stack LED
     leds[0] = CRGB::Green;
-    leds[0].fadeLightBy(175);
+    leds[0].fadeLightBy(200);        // Green LED on, 25% brightness
     FastLED.show();
 #endif
   }

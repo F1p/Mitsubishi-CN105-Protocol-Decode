@@ -373,6 +373,7 @@ void readSettingsFromConfig() {
         Config["temp_step"] = MQTT_CLIMATE_TEMP_STEP[i - 41];
         Config["precision"] = MQTT_CLIMATE_PRECISION[i - 41];
         Config["initial"] = MQTT_CLIMATE_INITAL[i - 41];
+        Config["temperature_state_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[i - 37]);
         Config["temperature_state_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[42]);
         Config["mode_state_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[2]);
         Config["mode_state_template"] = String(MQTT_CLIMATE_STATE_TOPIC[i - 41]);
@@ -416,7 +417,7 @@ void readSettingsFromConfig() {
         Config["name"] = String(MQTT_SENSOR_NAME[i]);
         Config["state_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[i - 48]);
         Config["value_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[42]);
-        Config["command_topic"] = String(MQTT_TOPIC[i - 43]);
+        Config["command_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[i - 43]);
         Config["unit_of_measurement"] = String(MQTT_SENSOR_UNITS[2]);
         Config["max"] = MQTT_CLIMATE_MAX[0];
         Config["min"] = MQTT_CLIMATE_MIN[1];
@@ -429,7 +430,7 @@ void readSettingsFromConfig() {
       // Selects
       if (i >= 55 && i < 57) {
         Config["name"] = String(MQTT_SENSOR_NAME[i]);
-        Config["command_topic"] = String(MQTT_TOPIC[i - 32]);
+        Config["command_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[i - 32]);
         Config["state_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[i - 51]);
         Config["value_template"] = String(MQTT_SELECT_VALUE_TOPIC[i - 55]);
         if (i == 55) {
