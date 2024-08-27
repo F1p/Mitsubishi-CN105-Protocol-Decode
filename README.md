@@ -9,9 +9,17 @@ Supported Hardware is ESP8266 ebay sold hardware: https://www.ebay.co.uk/itm/325
 
 
 M5Stack Atom S3 Lite
-Pre-compiled M5Stack Atom S3 Lite can be found in the /build folder and flashed with:
+
+1. Download the files from the [/build](https://github.com/F1p/Mitsubishi-Ecodan-Bridge-CN105/tree/master/build/esp32.esp32.m5stack-atoms3) folder.
+
+2. Download [esptool.exe](https://github.com/espressif/esptool/releases) from Espressif.
+
+3. Place all the files in the same folder, press and hold the side button of the M5Stack, locate the COM port your M5Stack is on
+
+4. Open CMD prompt in the folder with the files saved and run:
+
     ```
-    "C:\Users\User\AppData\Local\Arduino15\packages\esp32\tools\esptool_py\4.5.1/esptool.exe" --chip esp32s3 --port "COM10" --baud 921600  --before default_reset --after hard_reset write_flash -e -z --flash_mode dio --flash_freq 80m --flash_size 4MB 0x0 "C:\Users\User\AppData\Local\Temp\arduino\sketches\0DE0390D9C96CA421EFCBB845697D0C1/ECODAN_Bridge_ESP32_5.1.5.ino.bootloader.bin" 0x8000 "C:\Users\User\AppData\Local\Temp\arduino\sketches\0DE0390D9C96CA421EFCBB845697D0C1/ECODAN_Bridge_ESP32_5.1.5.ino.partitions.bin" 0xe000 "C:\Users\User\AppData\Local\Arduino15\packages\esp32\hardware\esp32\2.0.17/tools/partitions/boot_app0.bin" 0x10000 "C:\Users\User\AppData\Local\Temp\arduino\sketches\0DE0390D9C96CA421EFCBB845697D0C1/ECODAN_Bridge_ESP32_5.1.5.ino.bin"
+    esptool.exe --chip esp32s3 --port "COM12" --baud 921600  --before default_reset --after hard_reset write_flash -e -z --flash_mode dio --flash_freq 80m --flash_size 4MB 0x0 "ECODAN_Bridge_v5.2.0.bootloader.bin" 0x8000 "ECODAN_Bridge_v5.2.0.partitions.bin" 0xe000 "boot_app0.bin" 0x10000 "ECODAN_Bridge_v5.2.0.bin"
     ```
 
 
