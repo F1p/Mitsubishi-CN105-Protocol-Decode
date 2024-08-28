@@ -1,7 +1,7 @@
 //-- MQTT Home Assistant Auto Discovery --//
 
 // Build the sensor JSON structure
-const char MQTT_DISCOVERY_OBJ_ID[][3] PROGMEM = { "aa", "ab", "ac", "ad", "ae", "af", "ag", "ah", "ai", "aj", "ak", "al", "am", "an", "ao", "ap", "aq", "ar", "as", "at", "au", "av", "aw", "ax", "ay", "az", "ba", "bb", "bc", "bd", "be", "bf", "bg", "bh", "bi", "bj", "bk", "bl", "bm", "bn", "bo", "bp", "bq", "br", "bs", "bt", "bu", "bv", "bw", "bx", "by", "bz", "ca", "cb", "cc", "cd", "ce" };
+const char MQTT_DISCOVERY_OBJ_ID[][3] PROGMEM = { "aa", "ab", "ac", "ad", "ae", "af", "ag", "ah", "ai", "aj", "ak", "al", "am", "an", "ao", "ap", "aq", "ar", "as", "at", "au", "av", "aw", "ax", "ay", "az", "ba", "bb", "bc", "bd", "be", "bf", "bg", "bh", "bi", "bj", "bk", "bl", "bm", "bn", "bo", "bp", "bq", "br", "bs", "bt", "bu", "bv", "bw", "bx", "by", "bz", "ca", "cb", "cc", "cd", "ce","cf","cg","ch","ci","cj","ck","cl","cm","cn","co","cp","cq","cr","cs","ct" };
 
 const char MQTT_SENSOR_UNIQUE_ID[][40] PROGMEM = {
   "ashp_bridge_lwt_",
@@ -45,25 +45,40 @@ const char MQTT_SENSOR_UNIQUE_ID[][40] PROGMEM = {
   "ashp_z2_return_temp_",
   "ashp_twozone_z1_working_",
   "ashp_twozone_z2_working_",  //40
+  "ashp_consumed_heat_",
+  "ashp_delivered_heat_",
+  "ashp_consumed_cool_",
+  "ashp_delivered_cool_",
+  "ashp_consumed_dhw_",       //45
+  "ashp_delivered_dhw_",
+  "ashp_total_consumed_",
+  "ashp_total_delivered_",
+  "ashp_heat_cop_",
+  "ashp_cool_cop_",        //50
+  "ashp_dhw_cop_",
+  "ashp_total_cop_",
+  "ashp_refrige_flt_code_", 
+  "ashp_err_code_",
+  "ashp_flt_code_"        //55
 
-  "ashp_dhw_climate_",  //41
+  "ashp_dhw_climate_",  //56
   "ashp_Zone1_climate_",
-  "ashp_Zone2_climate_",  //43
+  "ashp_Zone2_climate_",  //58
 
-  "ashp_dhw_boost_",  //44
+  "ashp_dhw_boost_",  //59
   "ashp_systempower_",
   "ashp_holidaymode_",
   "ashp_svr_control_mode_",
   "ashp_svrctrol_dhw_",
   "ashp_svrctrol_z1h_",
-  "ashp_svrctrol_z1c_",  //50
+  "ashp_svrctrol_z1c_",   //65
   "ashp_svrctrol_z2h_",
   "ashp_svrctrol_z2c_",
 
-  "ashp_z1_flow_setpoint_",
-  "ashp_z2_flow_setpoint_",  //55
+  "ashp_z1_flow_setpoint_",   //68
+  "ashp_z2_flow_setpoint_",  //69
 
-  "ashp_dhw_mode",  //56
+  "ashp_dhw_mode",  //70
   "ashp_heat_cool_mode"
 };
 
@@ -109,25 +124,40 @@ const char MQTT_SENSOR_NAME[][40] PROGMEM = {
   "Zone 2 Return Temperature",
   "Zone 1 Working",
   "Zone 2 Working",  //40
+  "Consumed Heat Yesterday",
+  "Delivered Heat Yesterday",
+  "Consumed Cooling Yesterday",
+  "Delivered Cooling Yesterday", 
+  "Consumed Hot Water Yesterday",//45
+  "Delivered Hot Water Yesterday",
+  "Total Consumed Energy Yesterday",
+  "Total Delivered Energy Yesterday",
+  "Heating CoP Yesterday",
+  "Cooling CoP Yesterday",  //50    
+  "Hot Water CoP Yesterday",
+  "Total CoP Yesterday",
+  "Refrigerant Fault Code",
+  "Error Code",
+  "Fault Code",             //55
 
-  "Hot Water Thermostat",  //41
+  "Hot Water Thermostat",  //56
   "Zone 1 Thermostat",
-  "Zone 2 Thermostat",  //43
+  "Zone 2 Thermostat",  //58
 
-  "Hot Water Boost",
+  "Hot Water Boost",    //59
   "System Power",
   "Holiday Mode",
   "Server Control Mode",
   "Prohibit DHW",
   "Prohibit Zone 1 Heating",
-  "Prohibit Zone 1 Cooling",
+  "Prohibit Zone 1 Cooling",    //65
   "Prohibit Zone 2 Heating",
-  "Prohibit Zone 2 Cooling",  //52
+  "Prohibit Zone 2 Cooling",  //67
 
   "Zone 1 Flow Setpoint",
-  "Zone 2 Flow Setpoint",  //54
+  "Zone 2 Flow Setpoint",  //69
 
-  "System DHW Mode",  //55
+  "System DHW Mode",  //70
   "Heating/Cooling Operation Mode"
 };
 
@@ -214,7 +244,22 @@ int MQTT_TOPIC_POS[] PROGMEM = {
   6,
   6,
   5,
-  6  //40
+  6,  //40
+  7,
+  7,
+  7,
+  7,
+  7,  //45
+  7,
+  7,
+  7,
+  7,
+  7,   //50
+  7,
+  7,
+  8,
+  8,
+  8     //55
 };
 
 int MQTT_UNITS_POS[] PROGMEM = {
@@ -223,42 +268,57 @@ int MQTT_UNITS_POS[] PROGMEM = {
   1,
   0,
   0,
-  2,
-  2,
+  2,    //5
+  2,  
   2,
   2,
   0,
-  3,
+  3,    //10
   4,
   5,
   6,
   2,
+  2,    //15
   2,
   2,
   2,
   2,
-  2,
-  2,
+  2,    //20
   0,
   0,
   0,
   0,
-  0,
-  0,
-  2,
-  2,
-  0,
-  0,
+  0,    //25
   0,
   2,
   2,
   0,
+  0,    //30
+  0,
   2,
+  2,
+  0,
+  2,    //35
   2,
   2,
   2,
   0,
-  0
+  0,     //40
+  7,
+  7,
+  7,
+  7,
+  7,      //45
+  7,
+  7,
+  7,
+  8,
+  8,      //50
+  8,
+  8,
+  0,
+  0,
+  0       //55
 };
 
 const char MQTT_OBJECT_ID[][14] PROGMEM = {
@@ -320,6 +380,8 @@ const char MQTT_SENSOR_UNITS[][6] PROGMEM = {
   "Hz",
   "l/min",
   "hrs",
+  "kWh",
+  "CoP",
   "C"
 };
 
@@ -365,16 +427,31 @@ const char MQTT_SENSOR_VALUE_TEMPLATE[][50] PROGMEM = {
   "{{ value_json.ReturnTemp }}",
   "{{ value_json.TwoZone_Z1Working }}",
   "{{ value_json.TwoZone_Z2Working }}",  // 40
-  "{{ value_json }}",                    // 41
-  "{{ value_json.Setpoint }}",           // 42
+  "{{ value_json.CHEAT|round(2) }}",
+  "{{ value_json.DHEAT|round(2) }}",
+  "{{ value_json.CCOOL|round(2) }}",
+  "{{ value_json.DCOOL|round(2) }}",
+  "{{ value_json.CDHW|round(2) }}",       //45
+  "{{ value_json.DDHW|round(2) }}",
+  "{{ value_json.CTOTAL|round(2) }}",
+  "{{ value_json.DTOTAL|round(2) }}",
+  "{{ value_json.HEAT_CoP|round(2) }}",
+  "{{ value_json.COOL_CoP|round(2) }}",   //50
+  "{{ value_json.DHW_CoP|round(2) }}",
+  "{{ value_json.TOTAL_COP|round(2) }}",
+  "{{ value_json.RefrigeFltCode }}",
+  "{{ value_json.ErrCode }}",
+  "{{ value_json.FltCode }}"            //55
+  "{{ value_json }}",
+  "{{ value_json.Setpoint }}",
   "{{ value_json.HotWaterBoostActive }}",
   "{{ value_json.SystemPower }}",
-  "{{ value_json.HolidayMode }}",  // 45
+  "{{ value_json.HolidayMode }}",  // 60
   "{{ value_json.SvrControlMode }}",
   "{{ value_json.ProhibitDHW }}",
   "{{ value_json.ProhibitHeating }}",
-  "{{ value_json.ProhibitCooling }}",   // 51
-  "{{ value_json.ProhibitHeating }}",   // 50
+  "{{ value_json.ProhibitCooling }}",
+  "{{ value_json.ProhibitHeating }}",   // 65
   "{{ value_json.ProhibitCooling }}"
 };
 
@@ -385,4 +462,8 @@ const char MQTT_DISCOVERY_TOPICS[][23] PROGMEM = {
   "homeassistant/number/",
   "homeassistant/select/",
   "/config"
+};
+
+const char MQTT_ENERGY_CLASS[][21] PROGMEM = {
+  "device_class: energy"
 };
