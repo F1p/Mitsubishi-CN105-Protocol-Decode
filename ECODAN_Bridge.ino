@@ -14,7 +14,7 @@
 
 // -- Supported Hardware -- //
 /* As sold Witty ESP8266 based               / Core 3.1.2 / Flash 4MB (1MB FS / 1MB OTA)                        */
-/* ESP32 ESP32 (ESP32S3 Dev Module) / Core 2.0.17 / Flash 4M with SPIFFS (1.2MB APP / 1.5MB SPIFFS)    */
+/* ESP32 ESP32 (ESP32S3 Dev Module)          / Core 2.0.17 / Flash 4M with SPIFFS (1.2MB APP / 1.5MB SPIFFS)    */
 /* ESP32 Ethernet WT32-ETH01                 / Core 3.0.3 / Flash 4MB (1.2MB APP / 1.5MB SPIFFS)                */
 
 
@@ -138,8 +138,8 @@ void AdvancedTwoReport(void);
 void EnergyReport(void);
 void TriggerFTCVersion(void);
 
-TimerCallBack HeatPumpQuery1(350, HeatPumpQueryStateEngine);  // Set to 500ms (Safe), 320-350ms best time between messages
-TimerCallBack HeatPumpQuery2(10000, HeatPumpKeepAlive);       // Set to 10-30s for heat pump query frequency
+TimerCallBack HeatPumpQuery1(500, HeatPumpQueryStateEngine);  // Set to 500ms (Safe), 320-350ms best time between messages
+TimerCallBack HeatPumpQuery2(30000, HeatPumpKeepAlive);       // Set to 10-30s for heat pump query frequency
 TimerCallBack HeatPumpQuery3(10800000, TriggerFTCVersion);    // Set to 3hrs for FTC Version Query
 
 unsigned long looppreviousMillis = 0;  // variable for comparing millis counter
