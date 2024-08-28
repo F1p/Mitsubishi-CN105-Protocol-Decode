@@ -378,7 +378,7 @@ void readSettingsFromConfig() {
         Config["temperature_state_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[57]);
         Config["mode_state_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[2]);
         Config["mode_state_template"] = String(MQTT_CLIMATE_STATE_TOPIC[i - 56]);
-        if (i == 41) {
+        if (i == 56) {
           Config["modes"][0] = "heat";
           Config["modes"][1] = "off";
         } else {
@@ -395,9 +395,9 @@ void readSettingsFromConfig() {
       // Switches
       if (i >= 59 && i < 68) {
         Config["state_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[MQTT_SWITCH_STATE_POS[i - 59]]);
-        Config["value_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[i - 1]);
-        Config["command_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[i - 31]);
-        if (i == 45) {
+        Config["value_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[i]);
+        Config["command_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[i - 46]);
+        if (i == 60) {
           Config["state_on"] = "On";
           Config["state_off"] = "Standby";
           Config["payload_on"] = "On";
@@ -417,8 +417,8 @@ void readSettingsFromConfig() {
       if (i >= 68 && i < 70) {
         Config["name"] = String(MQTT_SENSOR_NAME[i]);
         Config["state_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[i - 63]);
-        Config["value_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[42]);
-        Config["command_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[i - 58]);
+        Config["value_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[58]);
+        Config["command_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[i - 46]);
         Config["unit_of_measurement"] = String(MQTT_SENSOR_UNITS[2]);
         Config["max"] = MQTT_CLIMATE_MAX[0];
         Config["min"] = MQTT_CLIMATE_MIN[1];
@@ -453,7 +453,7 @@ void readSettingsFromConfig() {
       // Add Availability Topics
       if (i >= 56) {
         Config["availability"]["topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[0]);
-        Config["availability"]["template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[41]);
+        Config["availability"]["template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[56]);
         Config["availability"]["payload_available"] = "online";
         Config["availability"]["payload_not_available"] = "offline";
       }

@@ -59,14 +59,14 @@ const char MQTT_SENSOR_UNIQUE_ID[][40] PROGMEM = {
   "ashp_total_cop_",
   "ashp_refrige_flt_code_", 
   "ashp_err_code_",
-  "ashp_flt_code_"        //55
+  "ashp_flt_code_",        //55
 
   "ashp_dhw_climate_",  //56
   "ashp_Zone1_climate_",
   "ashp_Zone2_climate_",  //58
 
   "ashp_dhw_boost_",  //59
-  "ashp_systempower_",
+  "ashp_systempower_",      //60
   "ashp_holidaymode_",
   "ashp_svr_control_mode_",
   "ashp_svrctrol_dhw_",
@@ -444,14 +444,15 @@ const char MQTT_SENSOR_VALUE_TEMPLATE[][50] PROGMEM = {
   "{{ value_json.FltCode }}",            //55
   "{{ value_json }}",
   "{{ value_json.Setpoint }}",
+  "{{ value_json.FSP }}",
   "{{ value_json.HotWaterBoostActive }}",
-  "{{ value_json.SystemPower }}",
-  "{{ value_json.HolidayMode }}",  // 60
+  "{{ value_json.SystemPower }}",         //60
+  "{{ value_json.HolidayMode }}",
   "{{ value_json.SvrControlMode }}",
   "{{ value_json.ProhibitDHW }}",
   "{{ value_json.ProhibitHeating }}",
-  "{{ value_json.ProhibitCooling }}",
-  "{{ value_json.ProhibitHeating }}",   // 65
+  "{{ value_json.ProhibitCooling }}",     //65
+  "{{ value_json.ProhibitHeating }}",
   "{{ value_json.ProhibitCooling }}"
 };
 
@@ -465,5 +466,5 @@ const char MQTT_DISCOVERY_TOPICS[][23] PROGMEM = {
 };
 
 const char MQTT_ENERGY_CLASS[][21] PROGMEM = {
-  "device_class: energy"
+  "energy"
 };
