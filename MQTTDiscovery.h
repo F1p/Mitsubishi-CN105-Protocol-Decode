@@ -441,7 +441,7 @@ const char MQTT_SENSOR_VALUE_TEMPLATE[][50] PROGMEM = {
   "{{ value_json.TOTAL_COP|round(2) }}",
   "{{ value_json.RefrigeFltCode }}",
   "{{ value_json.ErrCode }}",
-  "{{ value_json.FltCode }}"            //55
+  "{{ value_json.FltCode }}",            //55
   "{{ value_json }}",
   "{{ value_json.Setpoint }}",
   "{{ value_json.HotWaterBoostActive }}",
