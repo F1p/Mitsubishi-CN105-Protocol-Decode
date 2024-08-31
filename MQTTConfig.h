@@ -403,10 +403,10 @@ void readSettingsFromConfig() {
           Config["payload_on"] = "On";
           Config["payload_off"] = "Standby";
         } else {
-          Config["state_on"] = "1";
-          Config["state_off"] = "0";
-          Config["payload_on"] = "1";
-          Config["payload_off"] = "0";
+          Config["state_on"] = ITEM_ON;
+          Config["state_off"] = ITEM_OFF;
+          Config["payload_on"] = ITEM_ON;
+          Config["payload_off"] = ITEM_OFF;
         }
 
         MQTT_DISCOVERY_TOPIC = String(MQTT_DISCOVERY_TOPICS[2]);
@@ -435,8 +435,8 @@ void readSettingsFromConfig() {
         Config["state_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[i - 66]);
         Config["value_template"] = String(MQTT_SELECT_VALUE_TOPIC[i - 70]);
         if (i == 70) {
-          Config["options"][0] = "Normal";
-          Config["options"][1] = "Eco";
+          Config["options"][0] = HotWaterControlModeString[0];
+          Config["options"][1] = HotWaterControlModeString[1];
         } else if (i == 71) {
           Config["options"][0] = "Heating Temperature";
           Config["options"][1] = "Heating Flow";
@@ -452,10 +452,14 @@ void readSettingsFromConfig() {
 
       // Add Availability Topics
       if (i >= 56) {
-        Config["availability"]["topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[0]);
-        Config["availability"]["template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[56]);
-        Config["availability"]["payload_available"] = "online";
-        Config["availability"]["payload_not_available"] = "offline";
+        if (i >= 63 && i < 68) {                    // Server Control Mode Interlocks
+          Config["availability"]["topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[8]);
+          Config["availability"]["value_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[62]);
+          Config["availability"]["payload_available"] = ITEM_ON;
+          Config["availability"]["payload_not_available"] = ITEM_OFF;
+        } else {
+          Config["availability"]["topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[0]);
+        }
       }
 
       serializeJson(Config, Buffer_Payload);
