@@ -26,7 +26,7 @@ M5Stack Atom S3 Lite
 
 Wemos D1 Mini
 
-1. Download the files from the [/build](https://github.com/F1p/Mitsubishi-Ecodan-Bridge-CN105/tree/master/build/esp32.esp32.m5stack-atoms3) folder.
+1. Download the files from the [/build](https://github.com/F1p/Home-Assistant-Mitsubishi-Ecodan-CN105-to-MQTT/tree/master/build/esp8266.esp8266.d1_mini/v5.2.1) folder.
 
 2. Download [upload.py](https://github.com/esp8266/Arduino/blob/master/tools/upload.py) from Github
 
