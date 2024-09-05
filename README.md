@@ -30,7 +30,7 @@ Wemos D1 Mini
 
 2. Download [upload.py](https://github.com/esp8266/Arduino/blob/master/tools/upload.py) from Github
 
-3. Place all the files in the same folder, press and hold the side button of the M5Stack, locate the COM port your Wemos D1 Mini is on
+3. Place all the files in the same folder, locate the COM port your Wemos D1 Mini is on
 
 4.  Open CMD prompt in the folder with the files saved and run:
 
