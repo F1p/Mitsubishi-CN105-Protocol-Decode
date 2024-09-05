@@ -293,22 +293,24 @@ Responses so far identified.
 ### 0x07 - Heater Power
 |   0   | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
 |-------|---|---|---|---|---|---|---|---|---|----|----|----|----|----|----|----|
-| 0x07  |   |   |   |   |   |   |   |   | P |    |    |    |    |    |    |    |  
+| 0x07  |   |   |   |   |   | P |   |   |   |    |    |    |    |    |    |    |  
 * P : Heater Power (to nearest kW)
 ### 0x09 - Zone 1 & 2 Temperatures and Setpoints, Hot Water Setpoint
 | 0    |   1  |   2  | 3    | 4    | 5    | 6    | 7    | 8    |  9  |  10 |  11 | 12 | 13 | 14 | 15 | 16 |
 |------|------|------|------|------|------|------|------|------|-----|-----|-----|----|----|----|----|----|
-| 0x09 | Z1T  | Z1T  | Z2T  | Z2T  | Z1ST | Z1SP | Z2SP | Z2SP | LSP | LSP | HWD |  ? | ?  |    |    |    |
+| 0x09 | Z1T  | Z1T  | Z2T  | Z2T  | Z1ST | Z1SP | Z2SP | Z2SP | LSP | LSP | HWD | FMx | FMn |    |    |    |
 * Z1T  : Zone1 Target Temperature * 100
 * Z2T  : Zone2 Target Temperature * 100;
 * Z1SP : Zone 1 Flow SetFlow Setpoint * 100
 * Z2SP : Zone 2 Flow SetFlow Setpoint * 100
-* LSP  : Legionella Setpoint * 100;
-* HWD  : DHW Max Temp Drop
+* LSP  : Legionella Setpoint * 100
+* HWD  : DHW Max Temp Drop -40 / 2
+* FMx  : Flow Maximum Temperature -40 / 2
+* FMn  : Flow Minimum Temperature -40 / 2 
 ### 0x0b - Zone 1 & 2 and Outside Temperature
 |   0  |  1  |  2  |  3  | 4 | 5 | 6 | 7 |  8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
 |------|-----|-----|-----|---|---|---|---|----|---|----|----|----|----|----|----|----|
-| 0x0b | Z1T | Z1T | Z2T |Z2T|   |   |   | RT |   | CT | O  |    |    |    |    |    |
+| 0x0b | Z1T | Z1T | Z2T |Z2T| ? | ? |   | RT | RT | CT | O  |    |    |    |    |    |
 * Z1T : Zone1 Temperature * 100
 * Z2T : Zone2 Temperature * 100
 * RT : Refrigerant Temperature * 100 (Where TH2 is installed)
@@ -407,7 +409,7 @@ Responses so far identified.
 | 0x28  |   |   |FHW| HM | HT |PHZ1|PCZ1|PHZ2|PCZ2| SC |    |    |    |    |    |    |
 * FHW : Forced DHW Mode Active
 * HM : Holiday Mode
-* HT : Hot Water Timer or Prohibit DHW?
+* HT : Prohibit DHW
 * PHZ1 : Prohibit Heating Zone1
 * PCZ1 : Prohibit Cooling Zone1
 * PHZ2 : Prohibit Heating Zone2
@@ -446,6 +448,7 @@ Responses so far identified.
       1: FTC4
       2: FTC5
       3: FTC6
+      4: FTC7
       128: CAHV1A
       129: CAHV1B
       130: CRHV1A

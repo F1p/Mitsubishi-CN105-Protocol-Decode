@@ -83,10 +83,10 @@ const char MQTT_SENSOR_UNIQUE_ID[][40] PROGMEM = {
 };
 
 const char MQTT_SENSOR_NAME[][40] PROGMEM = {
-  "ASHP Status",
-  "ASHP Firmware",
-  "ASHP Bridge WiFi Signal",
-  "ASHP FTC Version",
+  "Bridge Status",
+  "Firmware Version",
+  "Bridge WiFi Signal",
+  "FTC Version",
   "System Operation Mode",
   "Heater Return",  //5
   "Heater Flow",
@@ -157,7 +157,7 @@ const char MQTT_SENSOR_NAME[][40] PROGMEM = {
   "Zone 1 Flow Setpoint",
   "Zone 2 Flow Setpoint",  //69
 
-  "System DHW Mode",  //70
+  "Hot Water Mode",  //70
   "Heating/Cooling Operation Mode"
 };
 
@@ -173,8 +173,8 @@ const char MQTT_TOPIC[][34] PROGMEM = {
   "/Status/AdvancedTwo",                //8
   "/Command/System/HeatingMode",        //9
   "/Command/HotWater/Setpoint",         //10
-  "/Command/Zone2/ThermostatSetpoint",  //11
-  "/Command/Zone1/ThermostatSetpoint",  //12
+  "/Command/Zone1/ThermostatSetpoint",  //11
+  "/Command/Zone2/ThermostatSetpoint",  //12
   "/Command/HotWater/Boost",            //13
   "/Command/System/Power",              //14
   "/Command/System/HolidayMode",        //15

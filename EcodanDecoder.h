@@ -124,7 +124,8 @@ const char FltCodeLetterTwo[22][2] = { "1", "2", "3", "4", "5", "6", "7", "8", "
 #define FTC4 1
 #define FTC5 2
 #define FTC6 3
-const char FTCString[4][6] = { "FTC2B", "FTC4", "FTC5", "FTC6" };
+#define FTC7 4
+const char FTCString[5][6] = { "FTC2B", "FTC4", "FTC5", "FTC6", "FTC7" };
 
 
 // System Flags

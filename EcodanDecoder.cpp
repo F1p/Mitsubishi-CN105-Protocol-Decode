@@ -351,8 +351,7 @@ void ECODANDECODER::Process0x0B(uint8_t *Buffer, EcodanStatus *Status) {
 
   //Unknown = ((float)ExtractUInt16(Buffer, 5) / 100);         // Suspected value held here
   //Unknown = ((float)ExtractUInt16(Buffer, 7) / 100);
-  RefrigeTemp = ((float)ExtractUInt16(Buffer, 8) / 100);       //
-  //Unknown = ((float)ExtractUInt16(Buffer, 9) / 100);
+  RefrigeTemp = ((float)ExtractUInt16(Buffer, 8) / 100);
   CondensingTemp = ((float)Buffer[10] / 2) - 40;
   fOutside = ((float)Buffer[11] / 2) - 40;
 
