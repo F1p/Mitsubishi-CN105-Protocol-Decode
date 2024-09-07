@@ -194,8 +194,7 @@ typedef struct _EcodanStatus {
   float RefrigeTemp, CondensingTemp;
 
   //From Message 0x0C
-  float HeaterOutputFlowTemperature;
-  float HeaterReturnFlowTemperature;
+  float HeaterOutputFlowTemperature, HeaterReturnFlowTemperature, HeaterDeltaT;
   float HotWaterTemperature, HotWaterTemperatureTHW5A;
 
   //From Message 0x0D
@@ -306,6 +305,9 @@ private:
 
 
   uint16_t ExtractUInt16(uint8_t *Buffer, uint8_t Index);
+  float ExtractUInt8_v1(uint8_t *Buffer, uint8_t Index);
+  float ExtractUInt8_v2(uint8_t *Buffer, uint8_t Index);
+  float ExtractUInt8_v3(uint8_t *Buffer, uint8_t Index);
   float ExtractEnergy(uint8_t *Buffer, uint8_t index);
 
 

@@ -324,9 +324,9 @@ void ECODANDECODER::Process0x09(uint8_t *Buffer, EcodanStatus *Status) {
   fZ2FlowSetpoint = ((float)ExtractUInt16(Buffer, 7) / 100);
   fLegionellaSetpoint = ((float)ExtractUInt16(Buffer, 9) / 100);
 
-  fHWTempDrop = ((float)(Buffer[11] - 40)) / 2;
-  fFlowTempMax = ((float)(Buffer[12] - 40)) / 2;
-  fFlowTempMin = ((float)(Buffer[13] - 40)) / 2;
+  fHWTempDrop = ExtractUInt8_v2(Buffer, 11);
+  fFlowTempMax = ExtractUInt8_v3(Buffer, 12);
+  fFlowTempMin = ExtractUInt8_v3(Buffer, 13);
 
   Status->Zone1TemperatureSetpoint = fZone1TempSetpoint;
   Status->Zone2TemperatureSetpoint = fZone2TempSetpoint;
@@ -350,10 +350,9 @@ void ECODANDECODER::Process0x0B(uint8_t *Buffer, EcodanStatus *Status) {
   }
 
   //Unknown = ((float)ExtractUInt16(Buffer, 5) / 100);         // Suspected value held here
-  //Unknown = ((float)ExtractUInt16(Buffer, 7) / 100);
   RefrigeTemp = ((float)ExtractUInt16(Buffer, 8) / 100);
-  CondensingTemp = ((float)Buffer[10] / 2) - 40;
-  fOutside = ((float)Buffer[11] / 2) - 40;
+  CondensingTemp = ExtractUInt8_v1(Buffer, 10);
+  fOutside = ExtractUInt8_v1(Buffer, 11);
 
   Status->Zone1Temperature = fZone1;
   Status->Zone2Temperature = fZone2;
@@ -366,16 +365,13 @@ void ECODANDECODER::Process0x0C(uint8_t *Buffer, EcodanStatus *Status) {
   float fWaterHeatingFeed, fWaterHeatingReturn, fHotWater, fHotWaterTHW5A;
 
   fWaterHeatingFeed = ((float)ExtractUInt16(Buffer, 1) / 100);
-  //Unknown = ((float)Buffer[3] / 2) - 40;
   fWaterHeatingReturn = ((float)ExtractUInt16(Buffer, 4) / 100);
-  //Unknown = ((float)Buffer[6] / 2) - 40;
   fHotWater = ((float)ExtractUInt16(Buffer, 7) / 100);
-  //Unknown = ((float)Buffer[9] / 2) - 40;
   fHotWaterTHW5A = ((float)ExtractUInt16(Buffer, 10) / 100);
-  //Unknown = ((float)Buffer[12] / 2) - 40;
 
   Status->HeaterOutputFlowTemperature = fWaterHeatingFeed;    // THW1
   Status->HeaterReturnFlowTemperature = fWaterHeatingReturn;  // THW2
+  Status->HeaterDeltaT = fWaterHeatingFeed-fWaterHeatingReturn; // Flow - Return Temp
   Status->HotWaterTemperature = fHotWater;                    // THW5
   Status->HotWaterTemperatureTHW5A = fHotWaterTHW5A;          // THW5A
 }
@@ -383,24 +379,24 @@ void ECODANDECODER::Process0x0C(uint8_t *Buffer, EcodanStatus *Status) {
 void ECODANDECODER::Process0x0D(uint8_t *Buffer, EcodanStatus *Status) {
   float Zone1FlowTemperature, Zone1ReturnTemperature, Zone2FlowTemperature, Zone2ReturnTemperature;
 
-  Zone1FlowTemperature = ((float)ExtractUInt16(Buffer, 1) / 100);           // Zone 1 Flow (THW6)
-  Zone1ReturnTemperature = ((float)ExtractUInt16(Buffer, 4) / 100);         // Zone 1 Return (THW7)
-  Zone2FlowTemperature = ((float)ExtractUInt16(Buffer, 7) / 100);           // Zone 2 Flow (THW8)
-  Zone2ReturnTemperature = ((float)ExtractUInt16(Buffer, 10) / 100);        // Zone 2 Return (THW9)
+  Zone1FlowTemperature = ((float)ExtractUInt16(Buffer, 1) / 100);     // Zone 1 Flow (THW6)
+  Zone1ReturnTemperature = ((float)ExtractUInt16(Buffer, 4) / 100);   // Zone 1 Return (THW7)
+  Zone2FlowTemperature = ((float)ExtractUInt16(Buffer, 7) / 100);     // Zone 2 Flow (THW8)
+  Zone2ReturnTemperature = ((float)ExtractUInt16(Buffer, 10) / 100);  // Zone 2 Return (THW9)
 
   Status->Zone1FlowTemperature = Zone1FlowTemperature;
-  Status->Zone1ReturnTemperature = Zone1ReturnTemperature;  
+  Status->Zone1ReturnTemperature = Zone1ReturnTemperature;
   Status->Zone2FlowTemperature = Zone2FlowTemperature;
-  Status->Zone2ReturnTemperature = Zone2ReturnTemperature; 
+  Status->Zone2ReturnTemperature = Zone2ReturnTemperature;
 }
 
 void ECODANDECODER::Process0x0E(uint8_t *Buffer, EcodanStatus *Status) {
   float ExternalBoilerFlowTemperature, ExternalBoilerReturnTemperature;
   float MixingTemperature;
 
-  ExternalBoilerFlowTemperature = ((float)ExtractUInt16(Buffer, 1) / 100);           // Suspected (THWB1)
-  ExternalBoilerReturnTemperature = ((float)ExtractUInt16(Buffer, 4) / 100);         // Suspected (THWB2)
-  MixingTemperature = ((float)ExtractUInt16(Buffer, 7) / 100);                       // Suspected (THW10)
+  ExternalBoilerFlowTemperature = ((float)ExtractUInt16(Buffer, 1) / 100);    // Suspected (THWB1)
+  ExternalBoilerReturnTemperature = ((float)ExtractUInt16(Buffer, 4) / 100);  // Suspected (THWB2)
+  MixingTemperature = ((float)ExtractUInt16(Buffer, 7) / 100);                // Suspected (THW10)
   //Unknown = ((float)ExtractUInt16(Buffer, 10) / 100);                              // Unknown
 
   Status->ExternalBoilerFlowTemperature = ExternalBoilerFlowTemperature;
@@ -626,6 +622,34 @@ uint16_t ECODANDECODER::ExtractUInt16(uint8_t *Buffer, uint8_t Index) {
   uint16_t Value;
 
   Value = (Buffer[Index] << 8) + Buffer[Index + 1];
+
+  return Value;
+}
+
+// Used for most single-byte floating point values
+float ECODANDECODER::ExtractUInt8_v1(uint8_t *Buffer, uint8_t Index) {
+  float Value;
+
+  Value = (Buffer[Index] / 2) - 40;
+
+  return Value;
+}
+
+// Used for DHW temperature drop threshold
+float ECODANDECODER::ExtractUInt8_v2(uint8_t *Buffer, uint8_t Index) {
+  float Value;
+
+  Value = (Buffer[Index] - 40) / 2;
+
+  return Value;
+}
+
+
+// Used for min/max flow temperature
+float ECODANDECODER::ExtractUInt8_v3(uint8_t *Buffer, uint8_t Index) {
+  float Value;
+
+  Value = (Buffer[Index] - 80);
 
   return Value;
 }

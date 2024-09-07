@@ -39,7 +39,7 @@
 #include "Ecodan.h"
 
 
-String FirmwareVersion = "v5.2.1";
+String FirmwareVersion = "5.2.2";
 
 
 #ifdef ESP8266                      // Define the Witty ESP8266 Serial Pins
@@ -522,10 +522,12 @@ void SystemReport(void) {
 
   doc[F("HeaterFlow")] = HeatPump.Status.HeaterOutputFlowTemperature;
   doc[F("HeaterReturn")] = HeatPump.Status.HeaterReturnFlowTemperature;
+  doc[F("FlowReturnDeltaT")] = HeatPump.Status.HeaterDeltaT;
   doc[F("HeaterSetpoint")] = HeatPump.Status.HeaterFlowSetpoint;
   doc[F("OutsideTemp")] = HeatPump.Status.OutsideTemperature;
   doc["Defrost"] = DefrostModeString[HeatPump.Status.Defrost];
   doc["HeaterPower"] = HeatPump.Status.OutputPower;
+  doc["EstOutputPower"] = (HeatPump.Status.PrimaryFlowRate/60) * HeatPump.Status.HeaterDeltaT * 4.18;
   doc["Compressor"] = HeatPump.Status.CompressorFrequency;
   doc["SystemPower"] = SystemPowerModeString[HeatPump.Status.SystemPowerMode];
   doc["SystemOperationMode"] = SystemOperationModeString[HeatPump.Status.SystemOperationMode];
