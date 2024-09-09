@@ -521,7 +521,7 @@ void SystemReport(void) {
   char Buffer[1024];
 
   float HeatOutputPower, CoolOutputPower;
-  double OutputPower = round2(((float)HeatPump.Status.PrimaryFlowRate / 60) * HeatPump.Status.HeaterDeltaT * 4.18);
+  double OutputPower = (((float)HeatPump.Status.PrimaryFlowRate / 60) * HeatPump.Status.HeaterDeltaT * 4.18);
 
   if (OutputPower < 0) {
     HeatOutputPower = 0;
@@ -538,8 +538,8 @@ void SystemReport(void) {
   doc[F("OutsideTemp")] = HeatPump.Status.OutsideTemperature;
   doc["Defrost"] = DefrostModeString[HeatPump.Status.Defrost];
   doc["HeaterPower"] = HeatPump.Status.OutputPower;
-  doc["EstHeatOutputPower"] = HeatOutputPower;
-  doc["EstCoolOutputPower"] = CoolOutputPower;
+  doc["EstHeatOutputPower"] = round2(HeatOutputPower);
+  doc["EstCoolOutputPower"] = round2(CoolOutputPower);
   doc["Compressor"] = HeatPump.Status.CompressorFrequency;
   doc["SystemPower"] = SystemPowerModeString[HeatPump.Status.SystemPowerMode];
   doc["SystemOperationMode"] = SystemOperationModeString[HeatPump.Status.SystemOperationMode];
