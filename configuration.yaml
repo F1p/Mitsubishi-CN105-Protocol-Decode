@@ -326,7 +326,7 @@ mqtt:
       unit_of_measurement: "CoP"
       state_topic: "Ecodan/ASHP/Status/Energy"
       icon: "mdi:meter-electric-outline"
-      value_template: "{{ value_json.TOTAL_COP|round(2) }}"
+      value_template: "{{ value_json.TOTAL_CoP|round(2) }}"
     - unique_id: "ashp_consumed_energy"
       name: "ASHP Consumed Energy"
       state_topic: "Ecodan/ASHP/Status/Energy"

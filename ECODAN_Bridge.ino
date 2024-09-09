@@ -20,7 +20,7 @@
 
 #if defined(ESP8266) || defined(ESP32)  // ESP32 or ESP8266 Compatiability
 
-#include <FS.h>                         // Define File System First
+#include <FS.h>  // Define File System First
 #include <LittleFS.h>
 #ifdef ESP8266
 #include <ESP8266WiFi.h>
@@ -42,7 +42,7 @@
 String FirmwareVersion = "5.2.2";
 
 
-#ifdef ESP8266                      // Define the Witty ESP8266 Serial Pins
+#ifdef ESP8266  // Define the Witty ESP8266 Serial Pins
 #define HEATPUMP_STREAM SwSerial
 #define SERIAL_CONFIG SWSERIAL_8E1
 #define RxPin 14
@@ -55,7 +55,7 @@ int Green_RGB_LED = 12;
 int Blue_RGB_LED = 13;
 #endif
 
-#ifdef ESP32              // Define the M5Stack Serial Pins
+#ifdef ESP32  // Define the M5Stack Serial Pins
 #include <FastLED.h>
 #define FASTLED_INTERNAL
 #define NUM_LEDS 1
@@ -71,7 +71,7 @@ int Reset_Button = 41;
 unsigned long SERIAL_BAUD = 2400;
 bool shouldSaveConfig = false;
 
-const int millis_between_write_read = 100;                 // ESP32 Core 3.0.3 this can be as low as 100ms, on Core 2.0.17 
+const int millis_between_write_read = 100;  // ESP32 Core 3.0.3 this can be as low as 100ms, on Core 2.0.17
 const int clientId_max_length = 25;
 const int hostname_max_length = 200;
 const int port_max_length = 10;
@@ -165,8 +165,8 @@ void setup() {
   pinMode(Reset_Button, INPUT);  // Pushbutton
 
 // -- Lights for ESP8266 and ESP32 -- //
-#ifdef ESP32                                                // Define the M5Stack LED
-  FastLED.addLeds<WS2812, DATA_PIN, GRB>(leds, NUM_LEDS);            // ESP32 M5 Stack Atom S3
+#ifdef ESP32                                               // Define the M5Stack LED
+  FastLED.addLeds<WS2812, DATA_PIN, GRB>(leds, NUM_LEDS);  // ESP32 M5 Stack Atom S3
 #endif
 #ifdef ESP8266                     // Define the Witty ESP8266 Ports
   pinMode(Activity_LED, OUTPUT);   // ESP8266 Onboard LED
@@ -213,11 +213,11 @@ void loop() {
   wifiManager.process();
 
   // -- Config Saver -- //
-  if (shouldSaveConfig) { saveConfig(); }                               // Handles WiFiManager Settings Changes
+  if (shouldSaveConfig) { saveConfig(); }  // Handles WiFiManager Settings Changes
 
   // -- Heat Pump Write Command Handler -- //
   if (HeatPump.Status.Write_To_Ecodan_OK && PostWriteUpdateRequired) {  // A write command has just been written (Not Keep Alive)
-    DEBUG_PRINTLN("Write OK!");                                         // Pause normal processsing until complete    
+    DEBUG_PRINTLN("Write OK!");                                         // Pause normal processsing until complete
     HeatPump.Status.Write_To_Ecodan_OK = false;                         // Set back to false
     PostWriteUpdateRequired = false;                                    // Set back to false
     if (MQTTReconnect()) { PublishAllReports(); }                       // Publish update to the MQTT Topics
@@ -229,7 +229,7 @@ void loop() {
     digitalWrite(Green_RGB_LED, LOW);  // Turn the Green LED Off
     digitalWrite(Red_RGB_LED, HIGH);   // Turn the Red LED On
 #endif
-#ifdef ESP32  // Define the M5Stack LED
+#ifdef ESP32                // Define the M5Stack LED
     leds[0] = CRGB::Black;  // Turn the Green LED Off
     leds[0] = CRGB::Red;    // Turn the Red LED On
     leds[0].fadeLightBy(0);
@@ -253,7 +253,7 @@ void loop() {
       digitalWrite(Red_RGB_LED, HIGH);
       ESP.reset();
 #endif
-#ifdef ESP32  // Define the M5Stack LED
+#ifdef ESP32                // Define the M5Stack LED
       leds[0] = CRGB::Red;  // Flash the Red LED
       FastLED.show();
       delay(500);
@@ -280,7 +280,7 @@ void loop() {
 #endif
 #ifdef ESP32  // Define the M5Stack LED
     leds[0] = CRGB::Green;
-    leds[0].fadeLightBy(200);        // Green LED on, 25% brightness
+    leds[0].fadeLightBy(200);  // Green LED on, 25% brightness
     FastLED.show();
 #endif
   }
@@ -301,8 +301,8 @@ void loop() {
     delay(500);
     ESP.reset();
 #endif
-#ifdef ESP32  // Define the M5Stack LED
-    leds[0] = CRGB::Red;    // Flash the Red LED
+#ifdef ESP32              // Define the M5Stack LED
+    leds[0] = CRGB::Red;  // Flash the Red LED
     FastLED.show();
     delay(500);
     leds[0] = CRGB::Black;
@@ -348,8 +348,8 @@ void HeatPumpQueryStateEngine(void) {
   }
 }
 
-void TriggerFTCVersion(void){
-  HeatPumpQueryOneShot = true;    // Trigger a read of the FTC version
+void TriggerFTCVersion(void) {
+  HeatPumpQueryOneShot = true;  // Trigger a read of the FTC version
 }
 
 void MQTTonDisconnect(void* response) {
@@ -402,7 +402,7 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
   if (Topic == MQTTCommandZone1ProhibitCooling) {
     MQTTWriteReceived("MQTT Zone 1 Prohibit Cooling", 16);
     HeatPump.SetProhibits(TX_MESSAGE_SETTING_COOL_Z1_INH_Flag, Payload.toInt());
-    HeatPump.Status.ProhibitCoolingZ1 = Payload.toInt();                          
+    HeatPump.Status.ProhibitCoolingZ1 = Payload.toInt();
   }
   if (Topic == MQTTCommandZone2ProhibitHeating) {
     MQTTWriteReceived("MQTT Zone 2 Prohibit Heating", 16);
@@ -517,8 +517,19 @@ void HotWaterReport(void) {
 }
 
 void SystemReport(void) {
-  StaticJsonDocument<512> doc;
-  char Buffer[512];
+  StaticJsonDocument<1024> doc;
+  char Buffer[1024];
+
+  float HeatOutputPower, CoolOutputPower;
+  double OutputPower = round2(((float)HeatPump.Status.PrimaryFlowRate / 60) * HeatPump.Status.HeaterDeltaT * 4.18);
+
+  if (OutputPower < 0) {
+    HeatOutputPower = 0;
+    CoolOutputPower = fabsf(OutputPower);
+  } else {
+    HeatOutputPower = OutputPower;
+    CoolOutputPower = 0;
+  }
 
   doc[F("HeaterFlow")] = HeatPump.Status.HeaterOutputFlowTemperature;
   doc[F("HeaterReturn")] = HeatPump.Status.HeaterReturnFlowTemperature;
@@ -527,7 +538,8 @@ void SystemReport(void) {
   doc[F("OutsideTemp")] = HeatPump.Status.OutsideTemperature;
   doc["Defrost"] = DefrostModeString[HeatPump.Status.Defrost];
   doc["HeaterPower"] = HeatPump.Status.OutputPower;
-  doc["EstOutputPower"] = (HeatPump.Status.PrimaryFlowRate/60) * HeatPump.Status.HeaterDeltaT * 4.18;
+  doc["EstHeatOutputPower"] = HeatOutputPower;
+  doc["EstCoolOutputPower"] = CoolOutputPower;
   doc["Compressor"] = HeatPump.Status.CompressorFrequency;
   doc["SystemPower"] = SystemPowerModeString[HeatPump.Status.SystemPowerMode];
   doc["SystemOperationMode"] = SystemOperationModeString[HeatPump.Status.SystemOperationMode];
@@ -619,7 +631,7 @@ void EnergyReport(void) {
   doc["HEAT_CoP"] = round2(heat_cop);
   doc["COOL_CoP"] = round2(cool_cop);
   doc["DHW_CoP"] = round2(dhw_cop);
-  doc["TOTAL_COP"] = round2(total_cop);
+  doc["TOTAL_CoP"] = round2(total_cop);
 
   serializeJson(doc, Buffer);
   MQTTClient.publish(MQTT_STATUS_ENERGY.c_str(), Buffer, false);
@@ -667,7 +679,7 @@ void StatusReport(void) {
   doc["SSID"] = WiFi.SSID();
   doc["RSSI"] = WiFi.RSSI();
   doc["IP"] = WiFi.localIP().toString();
-  doc["Firmware"] = FirmwareVersion;  
+  doc["Firmware"] = FirmwareVersion;
 #ifdef ESP32  // Define the M5Stack LED
   doc["CPUTemp"] = round2(temperatureRead());
 #endif
@@ -696,8 +708,8 @@ void PublishAllReports(void) {
 
 
 void FlashGreenLED(void) {
-#ifdef ESP32  // Define the M5Stack LED
-  leds[0] = CRGB::Green;    // Flash the Green LED
+#ifdef ESP32              // Define the M5Stack LED
+  leds[0] = CRGB::Green;  // Flash the Green LED
   leds[0].fadeLightBy(0);
   FastLED.show();
 #endif

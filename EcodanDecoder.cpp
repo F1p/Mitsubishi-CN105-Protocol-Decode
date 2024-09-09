@@ -740,7 +740,7 @@ void ECODANDECODER::EncodeDHWSetpoint(float HotWaterSetpoint) {
 
 void ECODANDECODER::EncodeControlMode(uint8_t ControlMode) {
   TxMessage.Payload[0] = TX_MESSAGE_BASIC;
-  TxMessage.Payload[1] = SET_HEATING_CONTROL_MODE;
+  TxMessage.Payload[1] = SET_HEATING_CONTROL_MODE_Z1 | SET_HEATING_CONTROL_MODE_Z2;
   TxMessage.Payload[6] = ControlMode;
   TxMessage.Payload[7] = ControlMode;
 }
