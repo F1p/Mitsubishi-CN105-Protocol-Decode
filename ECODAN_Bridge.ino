@@ -467,7 +467,7 @@ void Zone1Report(void) {
   doc[F("Temperature")] = HeatPump.Status.Zone1Temperature;
   doc[F("Setpoint")] = HeatPump.Status.Zone1TemperatureSetpoint;
   doc["HeatingControlMode"] = HeatingControlModeString[HeatPump.Status.HeatingControlModeZ1];
-  doc["FSP"] = HeatPump.Status.Zone1FlowTemperatureSetpoint;
+  doc["FSP"] = round2(HeatPump.Status.Zone1FlowTemperatureSetpoint);
   doc["TwoZone_Z1Working"] = HeatPump.Status.TwoZone_Z1Working;
   doc["ProhibitHeating"] = HeatPump.Status.ProhibitHeatingZ1;
   doc["ProhibitCooling"] = HeatPump.Status.ProhibitCoolingZ1;
@@ -486,7 +486,7 @@ void Zone2Report(void) {
   doc[F("Temperature")] = HeatPump.Status.Zone2Temperature;
   doc[F("Setpoint")] = HeatPump.Status.Zone2TemperatureSetpoint;
   doc["HeatingControlMode"] = HeatingControlModeString[HeatPump.Status.HeatingControlModeZ2];
-  doc["FSP"] = HeatPump.Status.Zone2FlowTemperatureSetpoint;
+  doc["FSP"] = round2(HeatPump.Status.Zone2FlowTemperatureSetpoint);
   doc["TwoZone_Z2Working"] = HeatPump.Status.TwoZone_Z2Working;
   doc["ProhibitHeating"] = HeatPump.Status.ProhibitHeatingZ2;
   doc["ProhibitCooling"] = HeatPump.Status.ProhibitCoolingZ2;

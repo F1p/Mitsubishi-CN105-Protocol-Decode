@@ -419,7 +419,7 @@ void readSettingsFromConfig() {
       if (i >= 71 && i < 73) {
         Config["name"] = String(MQTT_SENSOR_NAME[i]);
         Config["state_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[i - 66]);
-        Config["value_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[60]);
+        Config["value_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[61]);
         Config["command_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[i - 49]);
         Config["unit_of_measurement"] = String(MQTT_SENSOR_UNITS[2]);
         Config["max"] = MQTT_CLIMATE_MAX[0];
