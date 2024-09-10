@@ -466,11 +466,11 @@ void Zone1Report(void) {
 
   doc[F("Temperature")] = HeatPump.Status.Zone1Temperature;
   doc[F("Setpoint")] = HeatPump.Status.Zone1TemperatureSetpoint;
-  doc["HeatingControlMode"] = HeatingControlModeString[HeatPump.Status.HeatingControlModeZ1];
-  doc["FSP"] = round2(HeatPump.Status.Zone1FlowTemperatureSetpoint);
-  doc["TwoZone_Z1Working"] = HeatPump.Status.TwoZone_Z1Working;
-  doc["ProhibitHeating"] = HeatPump.Status.ProhibitHeatingZ1;
-  doc["ProhibitCooling"] = HeatPump.Status.ProhibitCoolingZ1;
+  doc[F("HeatingControlMode")] = HeatingControlModeString[HeatPump.Status.HeatingControlModeZ1];
+  doc[F("FSP")] = round2(HeatPump.Status.Zone1FlowTemperatureSetpoint);
+  doc[F("TwoZone_Z1Working")] = HeatPump.Status.TwoZone_Z1Working;
+  doc[F("ProhibitHeating")] = HeatPump.Status.ProhibitHeatingZ1;
+  doc[F("ProhibitCooling")] = HeatPump.Status.ProhibitCoolingZ1;
   doc[F("FlowTemp")] = HeatPump.Status.Zone1FlowTemperature;
   doc[F("ReturnTemp")] = HeatPump.Status.Zone1ReturnTemperature;
 
@@ -485,11 +485,11 @@ void Zone2Report(void) {
 
   doc[F("Temperature")] = HeatPump.Status.Zone2Temperature;
   doc[F("Setpoint")] = HeatPump.Status.Zone2TemperatureSetpoint;
-  doc["HeatingControlMode"] = HeatingControlModeString[HeatPump.Status.HeatingControlModeZ2];
-  doc["FSP"] = round2(HeatPump.Status.Zone2FlowTemperatureSetpoint);
-  doc["TwoZone_Z2Working"] = HeatPump.Status.TwoZone_Z2Working;
-  doc["ProhibitHeating"] = HeatPump.Status.ProhibitHeatingZ2;
-  doc["ProhibitCooling"] = HeatPump.Status.ProhibitCoolingZ2;
+  doc[F("HeatingControlMode")] = HeatingControlModeString[HeatPump.Status.HeatingControlModeZ2];
+  doc[F("FSP")] = round2(HeatPump.Status.Zone2FlowTemperatureSetpoint);
+  doc[F("TwoZone_Z2Working")] = HeatPump.Status.TwoZone_Z2Working;
+  doc[F("ProhibitHeating")] = HeatPump.Status.ProhibitHeatingZ2;
+  doc[F("ProhibitCooling")] = HeatPump.Status.ProhibitCoolingZ2;
   doc[F("FlowTemp")] = HeatPump.Status.Zone2FlowTemperature;
   doc[F("ReturnTemp")] = HeatPump.Status.Zone2ReturnTemperature;
 
@@ -504,13 +504,13 @@ void HotWaterReport(void) {
   doc[F("Temperature")] = HeatPump.Status.HotWaterTemperature;
   doc[F("TempTHW5A")] = HeatPump.Status.HotWaterTemperatureTHW5A;
   doc[F("Setpoint")] = HeatPump.Status.HotWaterSetpoint;
-  doc["HotWaterBoostActive"] = HeatPump.Status.HotWaterBoostActive;
-  doc["ProhibitDHW"] = HeatPump.Status.ProhibitDHW;
-  doc["DHWActive"] = OFF_ON_String[HeatPump.Status.DHWActive];
-  doc["HotWaterControlMode"] = HotWaterControlModeString[HeatPump.Status.HotWaterControlMode];
-  doc["LegionellaSetpoint"] = HeatPump.Status.LegionellaSetpoint;
-  doc["HotWaterMaxTDrop"] = HeatPump.Status.HotWaterMaximumTempDrop;
-  doc["HotWaterPhase"] = DHWPhaseString[HeatPump.Status.DHWHeatSourcePhase];
+  doc[F("HotWaterBoostActive")] = HeatPump.Status.HotWaterBoostActive;
+  doc[F("ProhibitDHW")] = HeatPump.Status.ProhibitDHW;
+  doc[F("DHWActive")] = HeatPump.Status.DHWActive;
+  doc[F("HotWaterControlMode")] = HotWaterControlModeString[HeatPump.Status.HotWaterControlMode];
+  doc[F("LegionellaSetpoint")] = HeatPump.Status.LegionellaSetpoint;
+  doc[F("HotWaterMaxTDrop")] = HeatPump.Status.HotWaterMaximumTempDrop;
+  doc[F("HotWaterPhase")] = DHWPhaseString[HeatPump.Status.DHWHeatSourcePhase];
 
   serializeJson(doc, Buffer);
   MQTTClient.publish(MQTT_STATUS_HOTWATER.c_str(), Buffer, false);
@@ -536,16 +536,16 @@ void SystemReport(void) {
   doc[F("FlowReturnDeltaT")] = HeatPump.Status.HeaterDeltaT;
   doc[F("HeaterSetpoint")] = HeatPump.Status.HeaterFlowSetpoint;
   doc[F("OutsideTemp")] = HeatPump.Status.OutsideTemperature;
-  doc["Defrost"] = DefrostModeString[HeatPump.Status.Defrost];
-  doc["HeaterPower"] = HeatPump.Status.OutputPower;
-  doc["EstHeatOutputPower"] = round2(HeatOutputPower);
-  doc["EstCoolOutputPower"] = round2(CoolOutputPower);
-  doc["Compressor"] = HeatPump.Status.CompressorFrequency;
-  doc["SystemPower"] = SystemPowerModeString[HeatPump.Status.SystemPowerMode];
-  doc["SystemOperationMode"] = SystemOperationModeString[HeatPump.Status.SystemOperationMode];
-  doc["HolidayMode"] = HeatPump.Status.HolidayModeActive;
-  doc["FlowRate"] = HeatPump.Status.PrimaryFlowRate;
-  doc["RunHours"] = HeatPump.Status.RunHours;
+  doc[F("Defrost")] = DefrostModeString[HeatPump.Status.Defrost];
+  doc[F("HeaterPower")] = HeatPump.Status.OutputPower;
+  doc[F("EstHeatOutputPower")] = round2(HeatOutputPower);
+  doc[F("EstCoolOutputPower")] = round2(CoolOutputPower);
+  doc[F("Compressor")] = HeatPump.Status.CompressorFrequency;
+  doc[F("SystemPower")] = SystemPowerModeString[HeatPump.Status.SystemPowerMode];
+  doc[F("SystemOperationMode")] = SystemOperationModeString[HeatPump.Status.SystemOperationMode];
+  doc[F("HolidayMode")] = HeatPump.Status.HolidayModeActive;
+  doc[F("FlowRate")] = HeatPump.Status.PrimaryFlowRate;
+  doc[F("RunHours")] = HeatPump.Status.RunHours;
 
   serializeJson(doc, Buffer);
   MQTTClient.publish(MQTT_STATUS_SYSTEM.c_str(), Buffer, false);
@@ -561,12 +561,14 @@ void AdvancedReport(void) {
   doc[F("BoilerReturn")] = HeatPump.Status.ExternalBoilerReturnTemperature;
   doc[F("MixingTemp")] = HeatPump.Status.MixingTemperature;
   doc[F("ExternalFlowTemp")] = HeatPump.Status.ExternalFlowTemp;
-  doc["Immersion"] = OFF_ON_String[HeatPump.Status.ImmersionActive];
-  doc["Booster"] = OFF_ON_String[HeatPump.Status.BoosterActive];
-  doc["ThreeWayValve"] = HeatPump.Status.ThreeWayValve;
-  doc["PrimaryWaterPump"] = OFF_ON_String[HeatPump.Status.PrimaryWaterPump];
+  doc[F("Immersion")] = OFF_ON_String[HeatPump.Status.ImmersionActive];
+  doc[F("Booster")] = OFF_ON_String[HeatPump.Status.BoosterActive];
+  doc[F("ThreeWayValve")] = HeatPump.Status.ThreeWayValve;
+  doc[F("PrimaryWaterPump")] = OFF_ON_String[HeatPump.Status.PrimaryWaterPump];
   doc[F("RefrigeTemp")] = HeatPump.Status.RefrigeTemp;
   doc[F("CondensingTemp")] = HeatPump.Status.CondensingTemp;
+  doc[F("HeatingActive")] = HeatingRunningBinary[HeatPump.Status.SystemOperationMode];
+  doc[F("CoolingActive")] = CoolingRunningBinary[HeatPump.Status.SystemOperationMode];
 
   serializeJson(doc, Buffer);
   MQTTClient.publish(MQTT_STATUS_ADVANCED.c_str(), Buffer, false);
@@ -620,18 +622,18 @@ void EnergyReport(void) {
 
   // Write into the JSON with 2dp rounding
 
-  doc["CHEAT"] = round2(HeatPump.Status.ConsumedHeatingEnergy);
-  doc["CCOOL"] = round2(HeatPump.Status.ConsumedCoolingEnergy);
-  doc["CDHW"] = round2(HeatPump.Status.ConsumedHotWaterEnergy);
-  doc["DHEAT"] = round2(HeatPump.Status.DeliveredHeatingEnergy);
-  doc["DCOOL"] = round2(HeatPump.Status.DeliveredCoolingEnergy);
-  doc["DDHW"] = round2(HeatPump.Status.DeliveredHotWaterEnergy);
-  doc["CTOTAL"] = round2(ctotal);
-  doc["DTOTAL"] = round2(dtotal);
-  doc["HEAT_CoP"] = round2(heat_cop);
-  doc["COOL_CoP"] = round2(cool_cop);
-  doc["DHW_CoP"] = round2(dhw_cop);
-  doc["TOTAL_CoP"] = round2(total_cop);
+  doc[F("CHEAT")] = round2(HeatPump.Status.ConsumedHeatingEnergy);
+  doc[F("CCOOL")] = round2(HeatPump.Status.ConsumedCoolingEnergy);
+  doc[F("CDHW")] = round2(HeatPump.Status.ConsumedHotWaterEnergy);
+  doc[F("DHEAT")] = round2(HeatPump.Status.DeliveredHeatingEnergy);
+  doc[F("DCOOL")] = round2(HeatPump.Status.DeliveredCoolingEnergy);
+  doc[F("DDHW")] = round2(HeatPump.Status.DeliveredHotWaterEnergy);
+  doc[F("CTOTAL")] = round2(ctotal);
+  doc[F("DTOTAL")] = round2(dtotal);
+  doc[F("HEAT_CoP")] = round2(heat_cop);
+  doc[F("COOL_CoP")] = round2(cool_cop);
+  doc[F("DHW_CoP")] = round2(dhw_cop);
+  doc[F("TOTAL_CoP")] = round2(total_cop);
 
   serializeJson(doc, Buffer);
   MQTTClient.publish(MQTT_STATUS_ENERGY.c_str(), Buffer, false);
@@ -644,29 +646,29 @@ void AdvancedTwoReport(void) {
 
   int ErrorCode = ((String(HeatPump.Status.ErrCode1, HEX)).toInt() * 100) + (String(HeatPump.Status.ErrCode2, HEX)).toInt();
 
-  doc["SvrControlMode"] = HeatPump.Status.SvrControlMode;
-  doc["WaterPump2"] = HeatPump.Status.WaterPump2;
-  doc["ThreeWayValve2"] = HeatPump.Status.ThreeWayValve2;
-  doc["RefrigeFltCode"] = RefrigeFltCodeString[HeatPump.Status.RefrigeFltCode];
+  doc[F("SvrControlMode")] = HeatPump.Status.SvrControlMode;
+  doc[F("WaterPump2")] = HeatPump.Status.WaterPump2;
+  doc[F("ThreeWayValve2")] = HeatPump.Status.ThreeWayValve2;
+  doc[F("RefrigeFltCode")] = RefrigeFltCodeString[HeatPump.Status.RefrigeFltCode];
 
   if (ErrorCode == 8000) {
-    doc["ErrCode"] = String("None");
+    doc[F("ErrCode")] = String("None");
   } else {
-    doc["ErrCode"] = ErrorCode;
+    doc[F("ErrCode")] = ErrorCode;
   }
 
   String FltCodeString = String(FltCodeLetterOne[HeatPump.Status.FltCode1]) + String(FltCodeLetterTwo[HeatPump.Status.FltCode2]);
   if (FltCodeString == "A1") {
-    doc["FltCode"] = String("None");
+    doc[F("FltCode")] = String("None");
   } else {
-    doc["FltCode"] = String(FltCodeString);
+    doc[F("FltCode")] = String(FltCodeString);
   }
 
-  doc["SingleZoneRun"] = HeatPump.Status.SingleZoneParam;
-  doc["Z1TstatDemand"] = HeatPump.Status.Zone1ThermostatDemand;
-  doc["Z2TstatDemand"] = HeatPump.Status.Zone2ThermostatDemand;
-  doc["OTstatDemand"] = HeatPump.Status.OutdoorThermostatDemand;
-  doc["OpMode"] = HPControlModeString[HeatPump.Status.HeatCool];
+  doc[F("SingleZoneRun")] = HeatPump.Status.SingleZoneParam;
+  doc[F("Z1TstatDemand")] = HeatPump.Status.Zone1ThermostatDemand;
+  doc[F("Z2TstatDemand")] = HeatPump.Status.Zone2ThermostatDemand;
+  doc[F("OTstatDemand")] = HeatPump.Status.OutdoorThermostatDemand;
+  doc[F("OpMode")] = HPControlModeString[HeatPump.Status.HeatCool];
 
   serializeJson(doc, Buffer);
   MQTTClient.publish(MQTT_STATUS_ADVANCED_TWO.c_str(), Buffer, false);
@@ -676,16 +678,16 @@ void StatusReport(void) {
   StaticJsonDocument<512> doc;
   char Buffer[512];
 
-  doc["SSID"] = WiFi.SSID();
-  doc["RSSI"] = WiFi.RSSI();
-  doc["IP"] = WiFi.localIP().toString();
-  doc["Firmware"] = FirmwareVersion;
+  doc[F("SSID")] = WiFi.SSID();
+  doc[F("RSSI")] = WiFi.RSSI();
+  doc[F("IP")] = WiFi.localIP().toString();
+  doc[F("Firmware")] = FirmwareVersion;
 #ifdef ESP32  // Define the M5Stack LED
-  doc["CPUTemp"] = round2(temperatureRead());
+  doc[F("CPUTemp")] = round2(temperatureRead());
 #endif
-  doc["CPULoopTime"] = CPULoopSpeed;
-  doc["FTCLoopTime"] = FTCLoopSpeed;
-  doc["FTCVersion"] = FTCString[HeatPump.Status.FTCVersion];
+  doc[F("CPULoopTime")] = CPULoopSpeed;
+  doc[F("FTCLoopTime")] = FTCLoopSpeed;
+  doc[F("FTCVersion")] = FTCString[HeatPump.Status.FTCVersion];
 
   serializeJson(doc, Buffer);
   MQTTClient.publish(MQTT_STATUS_WIFISTATUS.c_str(), Buffer, false);

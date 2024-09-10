@@ -325,8 +325,8 @@ void ECODANDECODER::Process0x09(uint8_t *Buffer, EcodanStatus *Status) {
   fLegionellaSetpoint = ((float)ExtractUInt16(Buffer, 9) / 100);
 
   fHWTempDrop = ExtractUInt8_v2(Buffer, 11);
-  fFlowTempMax = ExtractUInt8_v3(Buffer, 12);
-  fFlowTempMin = ExtractUInt8_v3(Buffer, 13);
+  fFlowTempMax = ExtractUInt8_v2(Buffer, 12);
+  fFlowTempMin = ExtractUInt8_v2(Buffer, 13);
 
   Status->Zone1TemperatureSetpoint = fZone1TempSetpoint;
   Status->Zone2TemperatureSetpoint = fZone2TempSetpoint;
@@ -629,28 +629,14 @@ uint16_t ECODANDECODER::ExtractUInt16(uint8_t *Buffer, uint8_t Index) {
 // Used for most single-byte floating point values
 float ECODANDECODER::ExtractUInt8_v1(uint8_t *Buffer, uint8_t Index) {
   float Value;
-
   Value = (Buffer[Index] / 2) - 40;
-
   return Value;
 }
 
-// Used for DHW temperature drop threshold
+
 float ECODANDECODER::ExtractUInt8_v2(uint8_t *Buffer, uint8_t Index) {
   float Value;
-
   Value = (Buffer[Index] - 40) / 2;
-
-  return Value;
-}
-
-
-// Used for min/max flow temperature
-float ECODANDECODER::ExtractUInt8_v3(uint8_t *Buffer, uint8_t Index) {
-  float Value;
-
-  Value = (Buffer[Index] - 80);
-
   return Value;
 }
 

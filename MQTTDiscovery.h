@@ -1,9 +1,9 @@
 //-- MQTT Home Assistant Auto Discovery --//
 
 // Build the sensor JSON structure
-const char MQTT_DISCOVERY_OBJ_ID[][3] PROGMEM = { "aa", "ab", "ac", "ad", "ae", "af", "ag", "ah", "ai", "aj", "ak", "al", "am", "an", "ao", "ap", "aq", "ar", "as", "at", "au", "av", "aw", "ax", "ay", "az", "ba", "bb", "bc", "bd", "be", "bf", "bg", "bh", "bi", "bj", "bk", "bl", "bm", "bn", "bo", "bp", "bq", "br", "bs", "bt", "bu", "bv", "bw", "bx", "by", "bz", "ca", "cb", "cc", "cd", "cu", "cv", "cw", "ce", "cf", "cg", "ch", "ci", "cj", "ck", "cl", "cm", "cn", "co", "cp", "cq", "cr", "cs", "ct" };
+const char MQTT_DISCOVERY_OBJ_ID[][3] PROGMEM = { "aa", "ab", "ac", "ad", "ae", "af", "ag", "ah", "ai", "aj", "ak", "al", "am", "an", "ao", "ap", "aq", "ar", "as", "at", "au", "av", "aw", "ax", "ay", "az", "ba", "bb", "bc", "bd", "be", "bf", "bg", "bh", "bi", "bj", "bk", "bl", "bm", "bn", "bo", "bp", "bq", "br", "bs", "bt", "bu", "bv", "bw", "bx", "by", "bz", "ca", "cb", "cc", "cd", "cu", "cv", "cw", "cx", "cz", "da", "db", "dc", "de", "ce", "cf", "cg", "ch", "ci", "cj", "ck", "cl", "cm", "cn", "co", "cp", "cq", "cr", "cs", "ct" };
 
-const char MQTT_SENSOR_UNIQUE_ID[][40] PROGMEM = {
+const char MQTT_SENSOR_UNIQUE_ID[][32] PROGMEM = {
   "ashp_bridge_lwt_",
   "ashp_bridge_firmware_",
   "ashp_bridge_rssi_",
@@ -63,30 +63,36 @@ const char MQTT_SENSOR_UNIQUE_ID[][40] PROGMEM = {
   "ashp_delta_t_",
   "ashp_est_heat_pwr_out_",
   "ashp_est_cool_pwr_out_",
+  "ashp_heat_active_",
+  "ashp_cool_active_",      //60
+  "ashp_z1h_prohibit_",
+  "ashp_z1c_prohibit_",
+  "ashp_z2h_prohibit_",
+  "ashp_z2c_prohibit_",
 
-  "ashp_dhw_climate_",  //57
+  "ashp_dhw_climate_",  //65
   "ashp_Zone1_climate_",
-  "ashp_Zone2_climate_",  //59
+  "ashp_Zone2_climate_",  //67
 
-  "ashp_dhw_boost_",    //60
+  "ashp_dhw_boost_",  //68
   "ashp_systempower_",
   "ashp_holidaymode_",
   "ashp_svr_control_mode_",
   "ashp_svrctrol_dhw_",
-  "ashp_svrctrol_z1h_",  //65
+  "ashp_svrctrol_z1h_",  //73
   "ashp_svrctrol_z1c_",
   "ashp_svrctrol_z2h_",
   "ashp_svrctrol_z2c_",
 
   "ashp_z1_flow_setpoint_",
-  "ashp_z2_flow_setpoint_",  //70
+  "ashp_z2_flow_setpoint_",  //78
 
-  "ashp_dhw_mode",  //71
+  "ashp_dhw_mode",  //79
   "ashp_heat_cool_mode"
 };
 
 
-const char MQTT_MDI_ICONS[][40] PROGMEM = {
+const char MQTT_MDI_ICONS[][30] PROGMEM = {
   "mdi:cloud-check-variant",
   "mdi:alpha-v-box",
   "mdi:signal-variant",
@@ -145,26 +151,32 @@ const char MQTT_MDI_ICONS[][40] PROGMEM = {
   "mdi:home-alert",  //55
   "mdi:delta",
   "mdi:export",
-  "mdi:export",  //58
+  "mdi:export",
+  "mdi:radiator",
+  "mdi:snowflake",      //60
+  "mdi:radiator-off",
+  "mdi:snowflake-off",
+  "mdi:radiator-off",
+  "mdi:snowflake-off",
 
-  "mdi:thermostat",  //59
+  "mdi:thermostat",  //65
   "mdi:thermostat",
-  "mdi:thermostat",  //61
+  "mdi:thermostat",  //67
 
-  "mdi:thermometer-plus",  //62
+  "mdi:thermometer-plus",  //68
   "mdi:power",
   "mdi:bag-suitcase",
-  "mdi:server-network-outline", //65
+  "mdi:server-network-outline",
   "mdi:cancel",
   "mdi:cancel",
   "mdi:cancel",
   "mdi:cancel",
-  "mdi:cancel",  // 70
+  "mdi:cancel",  // 76
 
-  "mdi:ray-vertex",  //71
-  "mdi:ray-vertex",  //72
+  "mdi:ray-vertex",  //77
+  "mdi:ray-vertex",  //78
 
-  "mdi:auto-mode",  //73
+  "mdi:auto-mode",  //79
   "mdi:sun-snowflake-variant"
 };
 
@@ -229,25 +241,31 @@ const char MQTT_SENSOR_NAME[][40] PROGMEM = {
   "Flow Return DeltaT",
   "Computed Heat Output Power",
   "Computed Cool Output Power",
+  "Heating Running",
+  "Cooling Running",          //60
+  "Zone 1 Heating Prohibit",
+  "Zone 1 Cooling Prohibit",
+  "Zone 2 Heating Prohibit",
+  "Zone 2 Cooling Prohibit",    //64
 
-  "DHW Thermostat",  //58
+  "DHW Thermostat",  //65
   "Zone 1 Thermostat",
-  "Zone 2 Thermostat",  //60
+  "Zone 2 Thermostat",  //67
 
-  "DHW Boost",  //61
+  "DHW Boost",  //68
   "System Power",
   "Holiday Mode",
   "Server Control Mode",
   "Prohibit DHW",
   "Prohibit Zone 1 Heating",
-  "Prohibit Zone 1 Cooling",
+  "Prohibit Zone 1 Cooling",  //75
   "Prohibit Zone 2 Heating",
-  "Prohibit Zone 2 Cooling",  //69
+  "Prohibit Zone 2 Cooling",
 
   "Zone 1 Flow Setpoint",
-  "Zone 2 Flow Setpoint",  //71
+  "Zone 2 Flow Setpoint",  //78
 
-  "DHW Mode",  //72
+  "DHW Mode",  //79
   "Heating/Cooling Operation Mode"
 };
 
@@ -352,7 +370,13 @@ int MQTT_TOPIC_POS[] PROGMEM = {
   8,  //55
   2,
   2,
-  2
+  2,
+  3,
+  3,  //60
+  5,
+  5,
+  6,
+  6   //64
 };
 
 int MQTT_UNITS_POS[] PROGMEM = {
@@ -414,7 +438,13 @@ int MQTT_UNITS_POS[] PROGMEM = {
   0,  //55
   2,
   3,
-  3
+  3,
+  0,
+  0,  //60
+  0,
+  0,
+  0,
+  0
 };
 
 const char MQTT_OBJECT_ID[][14] PROGMEM = {
@@ -541,18 +571,24 @@ const char MQTT_SENSOR_VALUE_TEMPLATE[][50] PROGMEM = {
   "{{ value_json.FlowReturnDeltaT }}",
   "{{ value_json.EstHeatOutputPower }}",
   "{{ value_json.EstCoolOutputPower }}",
-  "{{ value_json }}",
-  "{{ value_json.Setpoint }}",          //60
-  "{{ value_json.FSP }}",
-  "{{ value_json.HotWaterBoostActive }}",
-  "{{ value_json.SystemPower }}",
-  "{{ value_json.HolidayMode }}",
-  "{{ value_json.SvrControlMode }}",       //65
-  "{{ value_json.ProhibitDHW }}",
+  "{{ value_json.HeatingActive }}",
+  "{{ value_json.CoolingActive }}",   //60
   "{{ value_json.ProhibitHeating }}",
   "{{ value_json.ProhibitCooling }}",
   "{{ value_json.ProhibitHeating }}",
-  "{{ value_json.ProhibitCooling }}"    //70
+  "{{ value_json.ProhibitCooling }}",
+  "{{ value_json }}",                 //65
+  "{{ value_json.Setpoint }}",
+  "{{ value_json.FSP }}",
+  "{{ value_json.HotWaterBoostActive }}",
+  "{{ value_json.SystemPower }}",
+  "{{ value_json.HolidayMode }}",     //70
+  "{{ value_json.SvrControlMode }}",
+  "{{ value_json.ProhibitDHW }}",
+  "{{ value_json.ProhibitHeating }}",
+  "{{ value_json.ProhibitCooling }}",
+  "{{ value_json.ProhibitHeating }}", //75
+  "{{ value_json.ProhibitCooling }}"
 };
 
 const char MQTT_DISCOVERY_TOPICS[][23] PROGMEM = {
