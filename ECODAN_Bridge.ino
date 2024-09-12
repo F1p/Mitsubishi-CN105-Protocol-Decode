@@ -39,7 +39,7 @@
 #include "Ecodan.h"
 
 
-String FirmwareVersion = "5.2.2";
+String FirmwareVersion = "5.2.3";
 
 
 #ifdef ESP8266  // Define the Witty ESP8266 Serial Pins
@@ -665,9 +665,9 @@ void AdvancedTwoReport(void) {
   }
 
   doc[F("SingleZoneRun")] = HeatPump.Status.SingleZoneParam;
-  doc[F("Z1TstatDemand")] = HeatPump.Status.Zone1ThermostatDemand;
-  doc[F("Z2TstatDemand")] = HeatPump.Status.Zone2ThermostatDemand;
-  doc[F("OTstatDemand")] = HeatPump.Status.OutdoorThermostatDemand;
+  doc[F("Z1TstatDemand")] = OFF_ON_String[HeatPump.Status.Zone1ThermostatDemand];
+  doc[F("Z2TstatDemand")] = OFF_ON_String[HeatPump.Status.Zone2ThermostatDemand];
+  doc[F("OTstatDemand")] = OFF_ON_String[HeatPump.Status.OutdoorThermostatDemand];
   doc[F("OpMode")] = HPControlModeString[HeatPump.Status.HeatCool];
 
   serializeJson(doc, Buffer);

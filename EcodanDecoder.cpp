@@ -325,8 +325,8 @@ void ECODANDECODER::Process0x09(uint8_t *Buffer, EcodanStatus *Status) {
   fLegionellaSetpoint = ((float)ExtractUInt16(Buffer, 9) / 100);
 
   fHWTempDrop = ExtractUInt8_v2(Buffer, 11);
-  fFlowTempMax = ExtractUInt8_v2(Buffer, 12);
-  fFlowTempMin = ExtractUInt8_v2(Buffer, 13);
+  fFlowTempMax = ExtractUInt8_v3(Buffer, 12);
+  fFlowTempMin = ExtractUInt8_v3(Buffer, 13);
 
   Status->Zone1TemperatureSetpoint = fZone1TempSetpoint;
   Status->Zone2TemperatureSetpoint = fZone2TempSetpoint;
@@ -369,11 +369,11 @@ void ECODANDECODER::Process0x0C(uint8_t *Buffer, EcodanStatus *Status) {
   fHotWater = ((float)ExtractUInt16(Buffer, 7) / 100);
   fHotWaterTHW5A = ((float)ExtractUInt16(Buffer, 10) / 100);
 
-  Status->HeaterOutputFlowTemperature = fWaterHeatingFeed;    // THW1
-  Status->HeaterReturnFlowTemperature = fWaterHeatingReturn;  // THW2
-  Status->HeaterDeltaT = fWaterHeatingFeed-fWaterHeatingReturn; // Flow - Return Temp
-  Status->HotWaterTemperature = fHotWater;                    // THW5
-  Status->HotWaterTemperatureTHW5A = fHotWaterTHW5A;          // THW5A
+  Status->HeaterOutputFlowTemperature = fWaterHeatingFeed;         // THW1
+  Status->HeaterReturnFlowTemperature = fWaterHeatingReturn;       // THW2
+  Status->HeaterDeltaT = fWaterHeatingFeed - fWaterHeatingReturn;  // Flow - Return Temp
+  Status->HotWaterTemperature = fHotWater;                         // THW5
+  Status->HotWaterTemperatureTHW5A = fHotWaterTHW5A;               // THW5A
 }
 
 void ECODANDECODER::Process0x0D(uint8_t *Buffer, EcodanStatus *Status) {
@@ -637,6 +637,13 @@ float ECODANDECODER::ExtractUInt8_v1(uint8_t *Buffer, uint8_t Index) {
 float ECODANDECODER::ExtractUInt8_v2(uint8_t *Buffer, uint8_t Index) {
   float Value;
   Value = (Buffer[Index] - 40) / 2;
+  return Value;
+}
+
+
+float ECODANDECODER::ExtractUInt8_v3(uint8_t *Buffer, uint8_t Index) {
+  float Value;
+  Value = Buffer[Index] - 80;
   return Value;
 }
 
