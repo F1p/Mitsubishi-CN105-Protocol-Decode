@@ -355,7 +355,7 @@ Responses so far identified.
 ### 0x14 - Immerson/Booster and Primary Flow Rate
 |   0   | 1  | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
 |-------|----|---|---|---|---|---|---|---|---|----|----|----|----|----|----|----|
-| 0x14  |    | B |   |   | I |   |   |   |   |    |    | PF |    |    |    |    |  
+| 0x14  |    | B |   |   | I |   |   |   |   |    | PF |    |    |    |    |    |  
 * B : Booster Heater Active
 * I : Immersion Heater Active
 * PF : Primary Flow Rate (l/min)
@@ -363,19 +363,19 @@ Responses so far identified.
 |   0   | 1  |  2 |  3 |  4 | 5 |  6 |  7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
 |-------|----|----|----|----|---|----|----|---|---|----|----|----|----|----|----|----|
 | 0x15  | PP | U2 | U2 | P2 |   |TWV |TWV2|   |   |    | U5 |    |    |    |    |    |  
-* PP : Primary Water Pump
+* PP : Primary Water Pump (Pump 1/OUT1)
 * U2 : Unknown Int (3+4 Two Bytes?)
-* P2 : Water Pump 2 (Zone 1/2 depending on model)
+* P2 : Water Pump 2 (OUT2)
 * TWV : Three Way Valve Active
 * TWV2 : Three Way Valve 2 Active (Suspected, if installed)
-* U5 : Unknown - Running Mode Type (e.g. 1 = IH, 4 = Boiler etc?)
+* U5 : Unknown - Always shows 04?
 ### 0x16 - Pumps Running
 |   0   | 1  |  2 |  3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
 |-------|----|----|----|---|---|---|---|---|---|----|----|----|----|----|----|----|
-| 0x16  | U1 | U2 | U3 |   |   |   |   |   |   |    |    |    |    |    |    |    |  
-* U1 : Unknown, Comes on about 10min into DHW
-* U2 : Unknown, Heating Flag?
-* U3 : Unknown, Heating Flag?
+| 0x16  | O4 | O3 | O13|   |   |   |   |   |   |    |    |    |    |    |    |    |  
+* U1 : Pump 4 (CPN4)
+* O3 : Pump Output (Out3/Zone2)
+* O13 : Pump Output (Out13/Zone1)
 ### 0x26 - Operation Information
 |  0  | 1 | 2 |  3  | 4  | 5  | 6  |  7 |   8  |  9   |  10 |  11 | 12 | 13 | 14 | 15 | 16 |
 |-----|---|---|-----|----|----|----|----|------|------|-----|-----|----|----|----|----|----|
