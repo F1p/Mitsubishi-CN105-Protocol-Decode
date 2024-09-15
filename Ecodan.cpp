@@ -31,12 +31,14 @@ uint8_t Init4[] = { 0xfc, 0x5b, 0x02, 0x7a, 0x01, 0xc9, 0x5f };
 uint8_t Init5[] = { 0xfc, 0x41, 0x02, 0x7a, 0x10, 0x34, 0x00, 0x01, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0xfd };
 
 #define NUMBER_COMMANDS 22
-uint8_t ActiveCommand[] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x07, 0x09, 0x0B, 0x0C, 0x0D, 0x0E, 
+uint8_t ActiveCommand[] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x07, 0x09, 0x0B, 0x0C, 0x0D, 0x0E,
                             0x10, 0x13, 0x14, 0x15, 0x16,
                             0x26, 0x28, 0x29,
                             0xA1, 0xA2,
                             0x00 };
 
+
+unsigned long lastmsgdispatchedMillis = 0;  // variable for comparing millis counter
 
 ECODAN::ECODAN(void)
   : ECODANDECODER() {
@@ -91,11 +93,11 @@ void ECODAN::StopStateMachine(void) {
   if (CurrentMessage != 0) {
     DEBUG_PRINTLN("Stopping Heat Pump Read Operation");
     CurrentMessage = 0;
-    ECODANDECODER::CreateBlankTxMessage(GET_REQUEST, 0x10);
-    ECODANDECODER::SetPayloadByte(ActiveCommand[NUMBER_COMMANDS], 0);
-    CommandSize = ECODANDECODER::PrepareTxCommand(Buffer);
-    DeviceStream->write(Buffer, CommandSize);
-    DeviceStream->flush();
+    DeviceStream->flush();  // Clear the Serial Buffer
+    int TimeSinceLastDispatch = millis() - lastmsgdispatchedMillis;
+    if (TimeSinceLastDispatch > 0 && TimeSinceLastDispatch <= 500) {
+      delay(500 - TimeSinceLastDispatch);  // Ensure a minimum spacing between msgs
+    }
   }
 }
 
@@ -113,6 +115,7 @@ void ECODAN::StatusStateMachine(void) {
     ECODANDECODER::SetPayloadByte(ActiveCommand[CurrentMessage], 0);
     CommandSize = ECODANDECODER::PrepareTxCommand(Buffer);
     DeviceStream->write(Buffer, CommandSize);
+    lastmsgdispatchedMillis = millis();
     DeviceStream->flush();
 
     for (i = 0; i < CommandSize; i++) {
@@ -216,7 +219,6 @@ void ECODAN::SetZoneTempSetpoint(float Setpoint, uint8_t Mode, uint8_t Zone) {
     DEBUG_PRINT(", ");
   }
   DEBUG_PRINTLN();
-  
 }
 
 
@@ -238,7 +240,6 @@ void ECODAN::SetFlowSetpoint(float Setpoint, uint8_t Mode, uint8_t Zone) {
     DEBUG_PRINT(", ");
   }
   DEBUG_PRINTLN();
-  
 }
 
 
@@ -264,7 +265,6 @@ void ECODAN::SetDHWMode(String *Mode) {
     DEBUG_PRINT(", ");
   }
   DEBUG_PRINTLN();
-  
 }
 
 
@@ -286,7 +286,6 @@ void ECODAN::ForceDHW(uint8_t OnOff) {
     DEBUG_PRINT(", ");
   }
   DEBUG_PRINTLN();
-  
 }
 
 
@@ -309,7 +308,6 @@ void ECODAN::SetHolidayMode(uint8_t OnOff) {
     DEBUG_PRINT(", ");
   }
   DEBUG_PRINTLN();
-  
 }
 
 
@@ -331,7 +329,6 @@ void ECODAN::SetProhibits(uint8_t Flags, uint8_t OnOff) {
     DEBUG_PRINT(", ");
   }
   DEBUG_PRINTLN();
-  
 }
 
 
@@ -353,7 +350,6 @@ void ECODAN::SetSvrControlMode(uint8_t OnOff) {
     DEBUG_PRINT(", ");
   }
   DEBUG_PRINTLN();
-  
 }
 
 
@@ -375,30 +371,17 @@ void ECODAN::SetHotWaterSetpoint(uint8_t Target) {
     DEBUG_PRINT(", ");
   }
   DEBUG_PRINTLN();
-  
 }
 
 
-void ECODAN::SetHeatingControlMode(String *Mode) {
+void ECODAN::SetHeatingControlMode(uint8_t Mode) {
   uint8_t Buffer[COMMANDSIZE];
   uint8_t CommandSize = 0;
   uint8_t i;
 
   StopStateMachine();
   ECODANDECODER::CreateBlankTxMessage(SET_REQUEST, 0x10);
-  if (*Mode == String("Heating Temperature")) {
-    ECODANDECODER::EncodeControlMode(HEATING_CONTROL_MODE_ZONE_TEMP);
-  } else if (*Mode == String("Heating Flow")) {
-    ECODANDECODER::EncodeControlMode(HEATING_CONTROL_MODE_FLOW_TEMP);
-  } else if (*Mode == String("Heating Compensation")) {
-    ECODANDECODER::EncodeControlMode(HEATING_CONTROL_MODE_COMPENSATION);
-  } else if (*Mode == String("Cooling Temperature")) {
-    ECODANDECODER::EncodeControlMode(HEATING_CONTROL_MODE_COOL_ZONE_TEMP);
-  } else if (*Mode == String("Cooling Flow")) {
-    ECODANDECODER::EncodeControlMode(HEATING_CONTROL_MODE_COOL_FLOW_TEMP);
-  } else if (*Mode == String("Dry Up")) {
-    ECODANDECODER::EncodeControlMode(HEATING_CONTROL_MODE_DRY_UP);
-  }
+  ECODANDECODER::EncodeControlMode(Mode);
   CommandSize = ECODANDECODER::PrepareTxCommand(Buffer);
   DeviceStream->write(Buffer, CommandSize);
   DeviceStream->flush();
@@ -410,22 +393,17 @@ void ECODAN::SetHeatingControlMode(String *Mode) {
     DEBUG_PRINT(", ");
   }
   DEBUG_PRINTLN();
-  
 }
 
 
-void ECODAN::SetSystemPowerMode(String *Mode) {
+void ECODAN::SetSystemPowerMode(uint8_t OnOff) {
   uint8_t Buffer[COMMANDSIZE];
   uint8_t CommandSize = 0;
   uint8_t i;
 
   StopStateMachine();
   ECODANDECODER::CreateBlankTxMessage(SET_REQUEST, 0x10);
-  if (*Mode == String("On")) {
-    ECODANDECODER::EncodePower(SYSTEM_POWER_MODE_ON);
-  } else if (*Mode == String("Standby")) {
-    ECODANDECODER::EncodePower(SYSTEM_POWER_MODE_STANDBY);
-  }
+  ECODANDECODER::EncodePower(OnOff);
   CommandSize = ECODANDECODER::PrepareTxCommand(Buffer);
   DeviceStream->write(Buffer, CommandSize);
   DeviceStream->flush();
@@ -436,7 +414,6 @@ void ECODAN::SetSystemPowerMode(String *Mode) {
     DEBUG_PRINT(", ");
   }
   DEBUG_PRINTLN();
-  
 }
 
 
@@ -458,7 +435,6 @@ void ECODAN::GetFTCVersion() {
     DEBUG_PRINT(", ");
   }
   DEBUG_PRINTLN();
-  
 }
 
 

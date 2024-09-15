@@ -325,8 +325,8 @@ void ECODANDECODER::Process0x09(uint8_t *Buffer, EcodanStatus *Status) {
   fLegionellaSetpoint = ((float)ExtractUInt16(Buffer, 9) / 100);
 
   fHWTempDrop = ExtractUInt8_v2(Buffer, 11);
-  fFlowTempMax = ExtractUInt8_v3(Buffer, 12);
-  fFlowTempMin = ExtractUInt8_v3(Buffer, 13);
+  fFlowTempMax = ExtractUInt8_v2(Buffer, 12);
+  fFlowTempMin = ExtractUInt8_v2(Buffer, 13);
 
   Status->Zone1TemperatureSetpoint = fZone1TempSetpoint;
   Status->Zone2TemperatureSetpoint = fZone2TempSetpoint;
@@ -459,12 +459,9 @@ void ECODANDECODER::Process0x15(uint8_t *Buffer, EcodanStatus *Status) {
   uint8_t PrimaryWaterPump, WaterPump2, ThreeWayValve, ThreeWayValve2;
 
   PrimaryWaterPump = Buffer[1];  // 01 when running (Primary Water Pump)
-  //Unknown8 = Buffer[2];        // Aligns with Unknown4
-  //Unknown9 = Buffer[3];        // 23 or 22? Li/Min?
   WaterPump2 = Buffer[4];      // Water Pump 2 Active
   ThreeWayValve = Buffer[6];   // 3 Way Valve Position
   ThreeWayValve2 = Buffer[7];  // 3 Way Valve 2 Position
-  //Unknown12 = Buffer[11];      // 4 or very briefly 0 during one DHW run
 
   Status->PrimaryWaterPump = PrimaryWaterPump;
   Status->WaterPump2 = WaterPump2;
@@ -474,13 +471,15 @@ void ECODANDECODER::Process0x15(uint8_t *Buffer, EcodanStatus *Status) {
 
 
 void ECODANDECODER::Process0x16(uint8_t *Buffer, EcodanStatus *Status) {
-  //uint8_t Unknown13;
+  uint8_t WaterPump4, WaterPump3, WaterPump13;
 
-  //Unknown13 = Buffer[1];    // On in DHW after 10min or so, off in Heating
-  //Unknown = Buffer[2];      // On in Heating, off in DHW
-  //Unknown = Buffer[3];      // On in Heating, off in DHW
+  WaterPump4 = Buffer[1];       // DHW Pump connected to CPN4
+  WaterPump13 = Buffer[2];      // Zone Pump connected to OUT13
+  WaterPump3 = Buffer[3];      // Zone Pump connected to OUT3
 
-  //Status->Unknown13 = Unknown13;
+  Status->WaterPump4 = WaterPump4;
+  Status->WaterPump3 = WaterPump3;
+  Status->WaterPump13 = WaterPump13;
 }
 
 
@@ -601,9 +600,7 @@ void ECODANDECODER::Process0xC9(uint8_t *Buffer, EcodanStatus *Status) {
 
 void ECODANDECODER::WriteOK(uint8_t *Buffer, EcodanStatus *Status) {
   bool Write_To_Ecodan_OK;
-
   Write_To_Ecodan_OK = true;
-
   Status->Write_To_Ecodan_OK = Write_To_Ecodan_OK;
 }
 
@@ -637,13 +634,6 @@ float ECODANDECODER::ExtractUInt8_v1(uint8_t *Buffer, uint8_t Index) {
 float ECODANDECODER::ExtractUInt8_v2(uint8_t *Buffer, uint8_t Index) {
   float Value;
   Value = (Buffer[Index] - 40) / 2;
-  return Value;
-}
-
-
-float ECODANDECODER::ExtractUInt8_v3(uint8_t *Buffer, uint8_t Index) {
-  float Value;
-  Value = Buffer[Index] - 80;
   return Value;
 }
 

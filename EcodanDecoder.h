@@ -226,7 +226,7 @@ typedef struct _EcodanStatus {
   uint8_t PrimaryWaterPump, WaterPump2, ThreeWayValve, ThreeWayValve2;
 
   //From Message 0x16
-  // Unknowns
+  uint8_t WaterPump4, WaterPump3, WaterPump13;
 
   //From Message 0x26
   uint8_t SystemPowerMode;
@@ -311,7 +311,6 @@ private:
   uint16_t ExtractUInt16(uint8_t *Buffer, uint8_t Index);
   float ExtractUInt8_v1(uint8_t *Buffer, uint8_t Index);
   float ExtractUInt8_v2(uint8_t *Buffer, uint8_t Index);
-  float ExtractUInt8_v3(uint8_t *Buffer, uint8_t Index);
   float ExtractEnergy(uint8_t *Buffer, uint8_t index);
 
 

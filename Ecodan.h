@@ -43,8 +43,8 @@ public:
   void SetSvrControlMode(uint8_t OnOff);
   void GetFTCVersion(void);
   void SetHotWaterSetpoint(uint8_t Target);
-  void SetHeatingControlMode(String *Mode);
-  void SetSystemPowerMode(String *Mode);
+  void SetHeatingControlMode(uint8_t Mode);
+  void SetSystemPowerMode(uint8_t OnOff);
 
 protected:
 

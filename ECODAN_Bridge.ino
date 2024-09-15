@@ -39,7 +39,7 @@
 #include "Ecodan.h"
 
 
-String FirmwareVersion = "5.2.3";
+String FirmwareVersion = "5.2.4";
 
 
 #ifdef ESP8266  // Define the Witty ESP8266 Serial Pins
@@ -71,7 +71,6 @@ int Reset_Button = 41;
 unsigned long SERIAL_BAUD = 2400;
 bool shouldSaveConfig = false;
 
-const int millis_between_write_read = 100;  // ESP32 Core 3.0.3 this can be as low as 100ms, on Core 2.0.17
 const int clientId_max_length = 25;
 const int hostname_max_length = 200;
 const int port_max_length = 10;
@@ -138,6 +137,7 @@ void AdvancedTwoReport(void);
 void EnergyReport(void);
 void TriggerFTCVersion(void);
 
+
 TimerCallBack HeatPumpQuery1(500, HeatPumpQueryStateEngine);  // Set to 500ms (Safe), 320-350ms best time between messages
 TimerCallBack HeatPumpQuery2(30000, HeatPumpKeepAlive);       // Set to 10-30s for heat pump query frequency
 TimerCallBack HeatPumpQuery3(10800000, TriggerFTCVersion);    // Set to 3hrs for FTC Version Query
@@ -149,6 +149,9 @@ int FTCLoopSpeed, CPULoopSpeed;        // variable for holding loop time in ms
 bool WiFiOneShot = true;
 bool HeatPumpQueryOneShot = true;
 bool PostWriteUpdateRequired = false;
+bool SkipReadCycle = false;
+int SkipCounter = 0;
+int SkipsAfterWrite = 0;
 float Zone1TemperatureSetpoint_UpdateValue, Zone2TemperatureSetpoint_UpdateValue;
 int Zone1FlowSetpoint_UpdateValue, Zone2FlowSetpoint_UpdateValue;
 
@@ -220,6 +223,7 @@ void loop() {
     DEBUG_PRINTLN("Write OK!");                                         // Pause normal processsing until complete
     HeatPump.Status.Write_To_Ecodan_OK = false;                         // Set back to false
     PostWriteUpdateRequired = false;                                    // Set back to false
+    SkipReadCycle = true;                                               // Skip the next Read cycle to allow the FTC time to process
     if (MQTTReconnect()) { PublishAllReports(); }                       // Publish update to the MQTT Topics
   }
 
@@ -333,8 +337,17 @@ void loop() {
 
 void HeatPumpKeepAlive(void) {
   ftcpreviousMillis = millis();
-  HeatPump.KeepAlive();
-  HeatPump.TriggerStatusStateMachine();
+  if (!SkipReadCycle) {
+    HeatPump.KeepAlive();
+    HeatPump.TriggerStatusStateMachine();
+  } else {
+    if (SkipCounter == SkipsAfterWrite) {
+      SkipReadCycle = false;
+      SkipCounter = 0;
+    } else {
+      SkipCounter++;
+    }
+  }
 }
 
 void HeatPumpQueryStateEngine(void) {
@@ -446,7 +459,31 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
   }
   if (Topic == MQTTCommandSystemHeatingMode) {
     MQTTWriteReceived("MQTT Set Heating Mode", 4);
-    HeatPump.SetHeatingControlMode(&Payload);
+    if (Payload == String("Heating Temperature")) {
+      HeatPump.SetHeatingControlMode(HEATING_CONTROL_MODE_ZONE_TEMP);
+      HeatPump.Status.HeatingControlModeZ1 = HEATING_CONTROL_MODE_ZONE_TEMP;
+      HeatPump.Status.HeatingControlModeZ2 = HEATING_CONTROL_MODE_ZONE_TEMP;
+    } else if (Payload == String("Heating Flow")) {
+      HeatPump.SetHeatingControlMode(HEATING_CONTROL_MODE_FLOW_TEMP);
+      HeatPump.Status.HeatingControlModeZ1 = HEATING_CONTROL_MODE_FLOW_TEMP;
+      HeatPump.Status.HeatingControlModeZ2 = HEATING_CONTROL_MODE_FLOW_TEMP;
+    } else if (Payload == String("Heating Compensation")) {
+      HeatPump.SetHeatingControlMode(HEATING_CONTROL_MODE_COMPENSATION);
+      HeatPump.Status.HeatingControlModeZ1 = HEATING_CONTROL_MODE_COMPENSATION;
+      HeatPump.Status.HeatingControlModeZ2 = HEATING_CONTROL_MODE_COMPENSATION;
+    } else if (Payload == String("Cooling Temperature")) {
+      HeatPump.SetHeatingControlMode(HEATING_CONTROL_MODE_COOL_ZONE_TEMP);
+      HeatPump.Status.HeatingControlModeZ1 = HEATING_CONTROL_MODE_COOL_ZONE_TEMP;
+      HeatPump.Status.HeatingControlModeZ2 = HEATING_CONTROL_MODE_COOL_ZONE_TEMP;
+    } else if (Payload == String("Cooling Flow")) {
+      HeatPump.SetHeatingControlMode(HEATING_CONTROL_MODE_COOL_FLOW_TEMP);
+      HeatPump.Status.HeatingControlModeZ1 = HEATING_CONTROL_MODE_COOL_FLOW_TEMP;
+      HeatPump.Status.HeatingControlModeZ2 = HEATING_CONTROL_MODE_COOL_FLOW_TEMP;
+    } else if (Payload == String("Dry Up")) {
+      HeatPump.SetHeatingControlMode(HEATING_CONTROL_MODE_DRY_UP);
+      HeatPump.Status.HeatingControlModeZ1 = HEATING_CONTROL_MODE_DRY_UP;
+      HeatPump.Status.HeatingControlModeZ2 = HEATING_CONTROL_MODE_DRY_UP;
+    }
   }
   if (Topic == MQTTCommandSystemSvrMode) {
     MQTTWriteReceived("MQTT Server Control Mode", 16);
@@ -455,7 +492,13 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
   }
   if (Topic == MQTTCommandSystemPower) {
     MQTTWriteReceived("MQTT Set System Power Mode", 15);
-    HeatPump.SetSystemPowerMode(&Payload);
+    if (Payload == String("On")) {
+      HeatPump.SetSystemPowerMode(SYSTEM_POWER_MODE_ON);
+      HeatPump.Status.SystemPowerMode = SYSTEM_POWER_MODE_ON;
+    } else if (Payload == String("Standby")) {
+      HeatPump.SetSystemPowerMode(SYSTEM_POWER_MODE_STANDBY);
+      HeatPump.Status.SystemPowerMode = SYSTEM_POWER_MODE_STANDBY;
+    }
   }
 }
 
@@ -521,7 +564,7 @@ void SystemReport(void) {
   char Buffer[1024];
 
   float HeatOutputPower, CoolOutputPower;
-  double OutputPower = (((float)HeatPump.Status.PrimaryFlowRate / 60) * HeatPump.Status.HeaterDeltaT * 4.18);
+  double OutputPower = (((float)HeatPump.Status.PrimaryFlowRate / 60) * HeatPump.Status.HeaterDeltaT * 4.184);
 
   if (OutputPower < 0) {
     HeatOutputPower = 0;
@@ -641,13 +684,16 @@ void EnergyReport(void) {
 
 
 void AdvancedTwoReport(void) {
-  StaticJsonDocument<512> doc;
-  char Buffer[512];
+  StaticJsonDocument<1024> doc;
+  char Buffer[1024];
 
   int ErrorCode = ((String(HeatPump.Status.ErrCode1, HEX)).toInt() * 100) + (String(HeatPump.Status.ErrCode2, HEX)).toInt();
 
   doc[F("SvrControlMode")] = HeatPump.Status.SvrControlMode;
-  doc[F("WaterPump2")] = HeatPump.Status.WaterPump2;
+  doc[F("WaterPump2")] = OFF_ON_String[HeatPump.Status.WaterPump2];
+  doc[F("WaterPump4")] = OFF_ON_String[HeatPump.Status.WaterPump4];
+  doc[F("WaterPump3")] = OFF_ON_String[HeatPump.Status.WaterPump3];
+  doc[F("WaterPump13")] = OFF_ON_String[HeatPump.Status.WaterPump13];
   doc[F("ThreeWayValve2")] = HeatPump.Status.ThreeWayValve2;
   doc[F("RefrigeFltCode")] = RefrigeFltCodeString[HeatPump.Status.RefrigeFltCode];
 

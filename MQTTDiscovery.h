@@ -1,7 +1,7 @@
 //-- MQTT Home Assistant Auto Discovery --//
 
 // Build the sensor JSON structure
-const char MQTT_DISCOVERY_OBJ_ID[][3] PROGMEM = { "aa", "ab", "ac", "ad", "ae", "af", "ag", "ah", "ai", "aj", "ak", "al", "am", "an", "ao", "ap", "aq", "ar", "as", "at", "au", "av", "aw", "ax", "ay", "az", "ba", "bb", "bc", "bd", "be", "bf", "bg", "bh", "bi", "bj", "bk", "bl", "bm", "bn", "bo", "bp", "bq", "br", "bs", "bt", "bu", "bv", "bw", "bx", "by", "bz", "ca", "cb", "cc", "cd", "cu", "cv", "cw", "cx", "cz", "da", "db", "dc", "de", "df", "dg", "dh", "di", "dj", "ce", "cf", "cg", "ch", "ci", "cj", "ck", "cl", "cm", "cn", "co", "cp", "cq", "cr", "cs", "ct" };
+const char MQTT_DISCOVERY_OBJ_ID[][3] PROGMEM = { "aa", "ab", "ac", "ad", "ae", "af", "ag", "ah", "ai", "aj", "ak", "al", "am", "an", "ao", "ap", "aq", "ar", "as", "at", "au", "av", "aw", "ax", "ay", "az", "ba", "bb", "bc", "bd", "be", "bf", "bg", "bh", "bi", "bj", "bk", "bl", "bm", "bn", "bo", "bp", "bq", "br", "bs", "bt", "bu", "bv", "bw", "bx", "by", "bz", "ca", "cb", "cc", "cd", "cu", "cv", "cw", "cx", "cz", "da", "db", "dc", "de", "df", "dg", "dh", "di", "dj", "dk", "dl", "dm", "ce", "cf", "cg", "ch", "ci", "cj", "ck", "cl", "cm", "cn", "co", "cp", "cq", "cr", "cs", "ct" };
 
 const char MQTT_SENSOR_UNIQUE_ID[][32] PROGMEM = {
   "ashp_bridge_lwt_",
@@ -74,6 +74,9 @@ const char MQTT_SENSOR_UNIQUE_ID[][32] PROGMEM = {
   "ashp_z1_tstat_demand",
   "ashp_z2_tstat_demand",
   "ashp_ext_tstat_demand",
+  "ashp_water_pump_4_active",
+  "ashp_water_pump_3_active",
+  "ashp_water_pump_13_active",
 
   "ashp_dhw_climate_",  //65
   "ashp_Zone1_climate_",
@@ -168,6 +171,9 @@ const char MQTT_MDI_ICONS[][30] PROGMEM = {
   "mdi:thermostat",
   "mdi:thermostat",
   "mdi:thermostat",
+  "mdi:heat-pump-outline",
+  "mdi:heat-pump-outline",
+  "mdi:heat-pump-outline",
 
   "mdi:thermostat",  //65
   "mdi:thermostat",
@@ -262,6 +268,9 @@ const char MQTT_SENSOR_NAME[][40] PROGMEM = {
   "Zone 1 Ext Thermostat Demand",
   "Zone 2 Ext Thermostat Demand",
   "Outside Ext Thermostat Demand",
+  "Water Pump 4",
+  "Water Pump 3",
+  "Water Pump 13",
 
   "DHW Thermostat",  //70
   "Zone 1 Thermostat",
@@ -396,6 +405,9 @@ int MQTT_TOPIC_POS[] PROGMEM = {
   6,
   8,
   8,
+  8,
+  8,
+  8,
   8
 };
 
@@ -467,6 +479,9 @@ int MQTT_UNITS_POS[] PROGMEM = {
   0,
   2,  //65
   2,
+  0,
+  0,
+  0,
   0,
   0,
   0
@@ -611,9 +626,12 @@ const char MQTT_SENSOR_VALUE_TEMPLATE[][50] PROGMEM = {
   "{{ value_json.Z1TstatDemand }}",
   "{{ value_json.Z2TstatDemand }}",
   "{{ value_json.OTstatDemand }}",
-  "{{ value_json }}",                 //70
+  "{{ value_json.WaterPump4 }}",      //70
+  "{{ value_json.WaterPump3 }}",
+  "{{ value_json.WaterPump13 }}",
+  "{{ value_json }}",
   "{{ value_json.Setpoint }}",
-  "{{ value_json.FSP }}",
+  "{{ value_json.FSP }}",             //75
   "{{ value_json.HotWaterBoostActive }}",
   "{{ value_json.SystemPower }}",
   "{{ value_json.HolidayMode }}",     //75
