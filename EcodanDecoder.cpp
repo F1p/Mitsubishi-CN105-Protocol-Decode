@@ -107,7 +107,7 @@ uint8_t ECODANDECODER::Process(uint8_t c) {
           break;
       }
     } else if (RxMessage.PacketType == SET_RESPONSE) {
-      WriteOK(RxMessage.Payload, &Status);  // Write OK
+          WriteOK(RxMessage.Payload, &Status);
     }
   }
   return ReturnValue;

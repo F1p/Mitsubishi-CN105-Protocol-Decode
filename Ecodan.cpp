@@ -45,6 +45,7 @@ ECODAN::ECODAN(void)
   CurrentMessage = 0;
   UpdateFlag = 0;
   Connected = false;
+  msbetweenmsg = 0;
 }
 
 
@@ -63,7 +64,10 @@ void ECODAN::Process(void) {
     }
 
     if (ECODANDECODER::Process(c)) {
+      msbetweenmsg = millis() - lastmsgdispatchedMillis;
       DEBUG_PRINTLN();
+      DEBUG_PRINT(msbetweenmsg);
+      DEBUG_PRINTLN("ms");
       Connected = true;
     }
   }
@@ -87,9 +91,6 @@ void ECODAN::TriggerStatusStateMachine(void) {
 
 
 void ECODAN::StopStateMachine(void) {
-  uint8_t Buffer[COMMANDSIZE];
-  uint8_t CommandSize;
-
   if (CurrentMessage != 0) {
     DEBUG_PRINTLN("Stopping Heat Pump Read Operation");
     CurrentMessage = 0;
@@ -151,6 +152,7 @@ void ECODAN::RequestStatus(uint8_t TargetMessage) {
   ECODANDECODER::SetPayloadByte(ActiveCommand[TargetMessage], 0);
   CommandSize = ECODANDECODER::PrepareTxCommand(Buffer);
   DeviceStream->write(Buffer, CommandSize);
+  lastmsgdispatchedMillis = millis();
   DeviceStream->flush();
 
   for (i = 0; i < CommandSize; i++) {
@@ -179,17 +181,24 @@ uint8_t ECODAN::UpdateComplete(void) {
   }
 }
 
+uint8_t ECODAN::Lastmsbetweenmsg(void) {
+  return msbetweenmsg;
+}
+
 
 void ECODAN::KeepAlive(void) {
   uint8_t CommandSize;
   uint8_t i;
   uint8_t Buffer[COMMANDSIZE];
 
+  DEBUG_PRINTLN("Keep Alive Message...");
   ECODANDECODER::CreateBlankTxMessage(SET_REQUEST, 0x10);
   ECODANDECODER::SetPayloadByte(0x34, 0);
   ECODANDECODER::SetPayloadByte(0x02, 1);
   CommandSize = ECODANDECODER::PrepareTxCommand(Buffer);
   DeviceStream->write(Buffer, CommandSize);
+  lastmsgdispatchedMillis = millis();
+
   DeviceStream->flush();
 
   for (i = 0; i < CommandSize; i++) {
@@ -211,6 +220,7 @@ void ECODAN::SetZoneTempSetpoint(float Setpoint, uint8_t Mode, uint8_t Zone) {
   ECODANDECODER::EncodeRoomThermostat(Setpoint, Mode, Zone);  // Can OR the write with the mode but removed as different MQTT topic:      SET_ZONE_SETPOINT | SET_HEATING_CONTROL_MODE
   CommandSize = ECODANDECODER::PrepareTxCommand(Buffer);
   DeviceStream->write(Buffer, CommandSize);
+  lastmsgdispatchedMillis = millis();
   DeviceStream->flush();
 
   for (i = 0; i < CommandSize; i++) {
@@ -232,6 +242,7 @@ void ECODAN::SetFlowSetpoint(float Setpoint, uint8_t Mode, uint8_t Zone) {
   ECODANDECODER::EncodeFlowTemperature(Setpoint, Mode, Zone);  // Can OR the write with the mode but removed as different MQTT topic:      SET_ZONE_SETPOINT | SET_HEATING_CONTROL_MODE
   CommandSize = ECODANDECODER::PrepareTxCommand(Buffer);
   DeviceStream->write(Buffer, CommandSize);
+  lastmsgdispatchedMillis = millis();
   DeviceStream->flush();
 
   for (i = 0; i < CommandSize; i++) {
@@ -255,8 +266,10 @@ void ECODAN::SetDHWMode(String *Mode) {
   } else if (*Mode == String("Eco")) {
     ECODANDECODER::EncodeDHWMode(1);
   }
+
   CommandSize = ECODANDECODER::PrepareTxCommand(Buffer);
   DeviceStream->write(Buffer, CommandSize);
+  lastmsgdispatchedMillis = millis();
   DeviceStream->flush();
 
   for (i = 0; i < CommandSize; i++) {
@@ -278,6 +291,7 @@ void ECODAN::ForceDHW(uint8_t OnOff) {
   ECODANDECODER::EncodeDHW(OnOff);
   CommandSize = ECODANDECODER::PrepareTxCommand(Buffer);
   DeviceStream->write(Buffer, CommandSize);
+  lastmsgdispatchedMillis = millis();
   DeviceStream->flush();
 
   for (i = 0; i < CommandSize; i++) {
@@ -299,8 +313,8 @@ void ECODAN::SetHolidayMode(uint8_t OnOff) {
   ECODANDECODER::EncodeHolidayMode(OnOff);
   CommandSize = ECODANDECODER::PrepareTxCommand(Buffer);
   DeviceStream->write(Buffer, CommandSize);
+  lastmsgdispatchedMillis = millis();
   DeviceStream->flush();
-
 
   for (i = 0; i < CommandSize; i++) {
     if (Buffer[i] < 0x10) DEBUG_PRINT("0");
@@ -321,6 +335,7 @@ void ECODAN::SetProhibits(uint8_t Flags, uint8_t OnOff) {
   ECODANDECODER::EncodeProhibit(Flags, OnOff);
   CommandSize = ECODANDECODER::PrepareTxCommand(Buffer);
   DeviceStream->write(Buffer, CommandSize);
+  lastmsgdispatchedMillis = millis();
   DeviceStream->flush();
 
   for (i = 0; i < CommandSize; i++) {
@@ -342,6 +357,7 @@ void ECODAN::SetSvrControlMode(uint8_t OnOff) {
   ECODANDECODER::EncodeServerControlMode(OnOff);
   CommandSize = ECODANDECODER::PrepareTxCommand(Buffer);
   DeviceStream->write(Buffer, CommandSize);
+  lastmsgdispatchedMillis = millis();
   DeviceStream->flush();
 
   for (i = 0; i < CommandSize; i++) {
@@ -363,6 +379,7 @@ void ECODAN::SetHotWaterSetpoint(uint8_t Target) {
   ECODANDECODER::EncodeDHWSetpoint(Target);
   CommandSize = ECODANDECODER::PrepareTxCommand(Buffer);
   DeviceStream->write(Buffer, CommandSize);
+  lastmsgdispatchedMillis = millis();
   DeviceStream->flush();
 
   for (i = 0; i < CommandSize; i++) {
@@ -384,8 +401,8 @@ void ECODAN::SetHeatingControlMode(uint8_t Mode) {
   ECODANDECODER::EncodeControlMode(Mode);
   CommandSize = ECODANDECODER::PrepareTxCommand(Buffer);
   DeviceStream->write(Buffer, CommandSize);
+  lastmsgdispatchedMillis = millis();
   DeviceStream->flush();
-
 
   for (i = 0; i < CommandSize; i++) {
     if (Buffer[i] < 0x10) DEBUG_PRINT("0");
@@ -406,6 +423,8 @@ void ECODAN::SetSystemPowerMode(uint8_t OnOff) {
   ECODANDECODER::EncodePower(OnOff);
   CommandSize = ECODANDECODER::PrepareTxCommand(Buffer);
   DeviceStream->write(Buffer, CommandSize);
+
+  lastmsgdispatchedMillis = millis();
   DeviceStream->flush();
 
   for (i = 0; i < CommandSize; i++) {
@@ -427,6 +446,7 @@ void ECODAN::GetFTCVersion() {
   ECODANDECODER::EncodeFTCVersion();
   CommandSize = ECODANDECODER::PrepareTxCommand(Buffer);
   DeviceStream->write(Buffer, CommandSize);
+  lastmsgdispatchedMillis = millis();
   DeviceStream->flush();
 
   for (i = 0; i < CommandSize; i++) {

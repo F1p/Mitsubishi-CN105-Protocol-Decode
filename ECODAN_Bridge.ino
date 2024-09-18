@@ -139,19 +139,16 @@ void TriggerFTCVersion(void);
 
 
 TimerCallBack HeatPumpQuery1(500, HeatPumpQueryStateEngine);  // Set to 500ms (Safe), 320-350ms best time between messages
-TimerCallBack HeatPumpQuery2(30000, HeatPumpKeepAlive);       // Set to 10-30s for heat pump query frequency
-TimerCallBack HeatPumpQuery3(10800000, TriggerFTCVersion);    // Set to 3hrs for FTC Version Query
+TimerCallBack HeatPumpQuery2(30000, HeatPumpKeepAlive);        // Set to 10-30s for heat pump query frequency
+TimerCallBack HeatPumpQuery3(10800000, TriggerFTCVersion);     // Set to 3hrs for FTC Version Query
 
-unsigned long looppreviousMillis = 0;  // variable for comparing millis counter
-unsigned long ftcpreviousMillis = 0;   // variable for comparing millis counter
-unsigned long wifipreviousMillis = 0;  // variable for comparing millis counter
-int FTCLoopSpeed, CPULoopSpeed;        // variable for holding loop time in ms
+unsigned long looppreviousMillis = 0;     // variable for comparing millis counter
+unsigned long ftcpreviousMillis = 0;      // variable for comparing millis counter
+unsigned long wifipreviousMillis = 0;     // variable for comparing millis counter
+int FTCLoopSpeed, CPULoopSpeed;           // variable for holding loop time in ms
 bool WiFiOneShot = true;
 bool HeatPumpQueryOneShot = true;
 bool PostWriteUpdateRequired = false;
-bool SkipReadCycle = false;
-int SkipCounter = 0;
-int SkipsAfterWrite = 0;
 float Zone1TemperatureSetpoint_UpdateValue, Zone2TemperatureSetpoint_UpdateValue;
 int Zone1FlowSetpoint_UpdateValue, Zone2FlowSetpoint_UpdateValue;
 
@@ -220,10 +217,9 @@ void loop() {
 
   // -- Heat Pump Write Command Handler -- //
   if (HeatPump.Status.Write_To_Ecodan_OK && PostWriteUpdateRequired) {  // A write command has just been written (Not Keep Alive)
-    DEBUG_PRINTLN("Write OK!");                                         // Pause normal processsing until complete
+    DEBUG_PRINTLN("Write OK!");                                         // Pause normal processsing until complete    
     HeatPump.Status.Write_To_Ecodan_OK = false;                         // Set back to false
     PostWriteUpdateRequired = false;                                    // Set back to false
-    SkipReadCycle = true;                                               // Skip the next Read cycle to allow the FTC time to process
     if (MQTTReconnect()) { PublishAllReports(); }                       // Publish update to the MQTT Topics
   }
 
@@ -337,17 +333,8 @@ void loop() {
 
 void HeatPumpKeepAlive(void) {
   ftcpreviousMillis = millis();
-  if (!SkipReadCycle) {
     HeatPump.KeepAlive();
     HeatPump.TriggerStatusStateMachine();
-  } else {
-    if (SkipCounter == SkipsAfterWrite) {
-      SkipReadCycle = false;
-      SkipCounter = 0;
-    } else {
-      SkipCounter++;
-    }
-  }
 }
 
 void HeatPumpQueryStateEngine(void) {
@@ -733,6 +720,7 @@ void StatusReport(void) {
 #endif
   doc[F("CPULoopTime")] = CPULoopSpeed;
   doc[F("FTCLoopTime")] = FTCLoopSpeed;
+  doc[F("FTCReplyTime")] = HeatPump.Lastmsbetweenmsg();
   doc[F("FTCVersion")] = FTCString[HeatPump.Status.FTCVersion];
 
   serializeJson(doc, Buffer);
@@ -820,7 +808,7 @@ double round2(double value) {
 
 void MQTTWriteReceived(String message, int MsgNumber) {
   DEBUG_PRINTLN(message);
-  PostWriteUpdateRequired = true;  // Trigger a read after a write
+  PostWriteUpdateRequired = true;  // Wait For OK
 }
 
 #endif
