@@ -304,11 +304,12 @@ void ECODANDECODER::Process0x05(uint8_t *Buffer, EcodanStatus *Status) {
 
 
 void ECODANDECODER::Process0x07(uint8_t *Buffer, EcodanStatus *Status) {
-  uint8_t OutputPower;
+  uint8_t InputPower, OutputPower;
 
-  // Uknown = Buffer[4];
+  InputPower = Buffer[4];
   OutputPower = Buffer[6];
 
+  Status->InputPower = InputPower;
   Status->OutputPower = OutputPower;
 }
 

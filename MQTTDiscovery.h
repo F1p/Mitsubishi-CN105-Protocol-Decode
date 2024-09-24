@@ -1,7 +1,9 @@
 //-- MQTT Home Assistant Auto Discovery --//
 
+const int discovery_topics PROGMEM = 91;
+
 // Build the sensor JSON structure
-const char MQTT_DISCOVERY_OBJ_ID[][3] PROGMEM = { "aa", "ab", "ac", "ad", "ae", "af", "ag", "ah", "ai", "aj", "ak", "al", "am", "an", "ao", "ap", "aq", "ar", "as", "at", "au", "av", "aw", "ax", "ay", "az", "ba", "bb", "bc", "bd", "be", "bf", "bg", "bh", "bi", "bj", "bk", "bl", "bm", "bn", "bo", "bp", "bq", "br", "bs", "bt", "bu", "bv", "bw", "bx", "by", "bz", "ca", "cb", "cc", "cd", "cu", "cv", "cw", "cx", "cz", "da", "db", "dc", "de", "df", "dg", "dh", "di", "dj", "dk", "dl", "dm", "ce", "cf", "cg", "ch", "ci", "cj", "ck", "cl", "cm", "cn", "co", "cp", "cq", "cr", "cs", "ct" };
+const char MQTT_DISCOVERY_OBJ_ID[][3] PROGMEM = { "aa", "ab", "ac", "ad", "ae", "af", "ag", "ah", "ai", "aj", "ak", "al", "am", "an", "ao", "ap", "aq", "ar", "as", "at", "au", "av", "aw", "ax", "ay", "az", "ba", "bb", "bc", "bd", "be", "bf", "bg", "bh", "bi", "bj", "bk", "bl", "bm", "bn", "bo", "bp", "bq", "br", "bs", "bt", "bu", "bv", "bw", "bx", "by", "bz", "ca", "cb", "cc", "cd", "cu", "cv", "cw", "cx", "cz", "da", "db", "dc", "de", "df", "dg", "dh", "di", "dj", "dk", "dl", "dm", "dn", "do", "ce", "cf", "cg", "ch", "ci", "cj", "ck", "cl", "cm", "cn", "co", "cp", "cq", "cr", "cs", "ct" };
 
 const char MQTT_SENSOR_UNIQUE_ID[][32] PROGMEM = {
   "ashp_bridge_lwt_",
@@ -64,12 +66,12 @@ const char MQTT_SENSOR_UNIQUE_ID[][32] PROGMEM = {
   "ashp_est_heat_pwr_out_",
   "ashp_est_cool_pwr_out_",
   "ashp_heat_active_",
-  "ashp_cool_active_",      //60
+  "ashp_cool_active_",  //60
   "ashp_z1h_prohibit_",
   "ashp_z1c_prohibit_",
   "ashp_z2h_prohibit_",
   "ashp_z2c_prohibit_",
-  "ashp_z1_fsp",          //65
+  "ashp_z1_fsp",  //65
   "ashp_z2_fsp",
   "ashp_z1_tstat_demand",
   "ashp_z2_tstat_demand",
@@ -77,6 +79,8 @@ const char MQTT_SENSOR_UNIQUE_ID[][32] PROGMEM = {
   "ashp_water_pump_4_active",
   "ashp_water_pump_3_active",
   "ashp_water_pump_13_active",
+  "ashp_input_power_",
+  "ashp_est_pwr_in_",
 
   "ashp_dhw_climate_",  //65
   "ashp_Zone1_climate_",
@@ -161,7 +165,7 @@ const char MQTT_MDI_ICONS[][30] PROGMEM = {
   "mdi:export",
   "mdi:export",
   "mdi:radiator",
-  "mdi:snowflake",      //60
+  "mdi:snowflake",  //60
   "mdi:radiator-off",
   "mdi:snowflake-off",
   "mdi:radiator-off",
@@ -174,6 +178,8 @@ const char MQTT_MDI_ICONS[][30] PROGMEM = {
   "mdi:heat-pump-outline",
   "mdi:heat-pump-outline",
   "mdi:heat-pump-outline",
+  "mdi:transmission-tower-import",
+  "mdi:transmission-tower-import",
 
   "mdi:thermostat",  //65
   "mdi:thermostat",
@@ -203,9 +209,9 @@ const char MQTT_SENSOR_NAME[][40] PROGMEM = {
   "Bridge WiFi Signal",
   "FTC Version",
   "System Operation Mode",
-  "Heater Return",  //5
-  "Heater Flow",
-  "Heater Setpoint",
+  "Heater Return Temperature",  //5
+  "Heater Flow Temperature",
+  "Heater Setpoint Temperature",
   "Outside Temperature",
   "Defrost",
   "Heat Pump Output Power",  //10
@@ -258,12 +264,12 @@ const char MQTT_SENSOR_NAME[][40] PROGMEM = {
   "Computed Heat Output Power",
   "Computed Cool Output Power",
   "Heating Running",
-  "Cooling Running",          //60
+  "Cooling Running",  //60
   "Zone 1 Heating Prohibit",
   "Zone 1 Cooling Prohibit",
   "Zone 2 Heating Prohibit",
   "Zone 2 Cooling Prohibit",
-  "Zone 1 Flow Setpoint",       //65
+  "Zone 1 Flow Setpoint",  //65
   "Zone 2 Flow Setpoint",
   "Zone 1 Ext Thermostat Demand",
   "Zone 2 Ext Thermostat Demand",
@@ -271,6 +277,8 @@ const char MQTT_SENSOR_NAME[][40] PROGMEM = {
   "Water Pump 4",
   "Water Pump 3",
   "Water Pump 13",
+  "Heat Pump Input Power",
+  "Computed Input Power",
 
   "DHW Thermostat",  //70
   "Zone 1 Thermostat",
@@ -408,7 +416,9 @@ int MQTT_TOPIC_POS[] PROGMEM = {
   8,
   8,
   8,
-  8
+  8,
+  2,
+  2
 };
 
 int MQTT_UNITS_POS[] PROGMEM = {
@@ -484,7 +494,9 @@ int MQTT_UNITS_POS[] PROGMEM = {
   0,
   0,
   0,
-  0
+  0,
+  3,
+  3
 };
 
 const char MQTT_OBJECT_ID[][14] PROGMEM = {
@@ -616,30 +628,32 @@ const char MQTT_SENSOR_VALUE_TEMPLATE[][50] PROGMEM = {
   "{{ value_json.EstHeatOutputPower }}",
   "{{ value_json.EstCoolOutputPower }}",
   "{{ value_json.HeatingActive }}",
-  "{{ value_json.CoolingActive }}",   //60
+  "{{ value_json.CoolingActive }}",  //60
   "{{ value_json.ProhibitHeating }}",
   "{{ value_json.ProhibitCooling }}",
   "{{ value_json.ProhibitHeating }}",
   "{{ value_json.ProhibitCooling }}",
-  "{{ value_json.FSP }}",             //65
+  "{{ value_json.FSP }}",  //65
   "{{ value_json.FSP }}",
   "{{ value_json.Z1TstatDemand }}",
   "{{ value_json.Z2TstatDemand }}",
   "{{ value_json.OTstatDemand }}",
-  "{{ value_json.WaterPump4 }}",      //70
+  "{{ value_json.WaterPump4 }}",  //70
   "{{ value_json.WaterPump3 }}",
   "{{ value_json.WaterPump13 }}",
+  "{{ value_json.InputPower }}",
+  "{{ value_json.EstInputPower }}",
   "{{ value_json }}",
   "{{ value_json.Setpoint }}",
-  "{{ value_json.FSP }}",             //75
+  "{{ value_json.FSP }}",  //75
   "{{ value_json.HotWaterBoostActive }}",
   "{{ value_json.SystemPower }}",
-  "{{ value_json.HolidayMode }}",     //75
+  "{{ value_json.HolidayMode }}",  //75
   "{{ value_json.SvrControlMode }}",
   "{{ value_json.ProhibitDHW }}",
   "{{ value_json.ProhibitHeating }}",
   "{{ value_json.ProhibitCooling }}",
-  "{{ value_json.ProhibitHeating }}", //80
+  "{{ value_json.ProhibitHeating }}",  //80
   "{{ value_json.ProhibitCooling }}",
   "{{ value_json.HeatingControlMode }}"
 };

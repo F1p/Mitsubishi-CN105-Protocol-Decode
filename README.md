@@ -71,7 +71,7 @@ Serial, 2400, 8, E, 1
 |  0x7A | Connect Response | From Heat Pump |
 |  0x7B | Get Response     | From Heat Pump |
 |  0x5B | Extended Connect Request  | To Heat Pump   |
-|  0x7B | Extended Connect Responce | To Heat Pump   |
+|  0x7B | Extended Connect Response | To Heat Pump   |
 ### Length
 Payload Size (Bytes)
 ## Payload
@@ -197,7 +197,6 @@ Active commands so far identified, 0x00 to 0xff. Commands not listed appear to g
 | 0x05 | Hot Water Boot Flag |
 | 0x06 | Unknown - Empty Response |
 | 0x07 | Output Power |
-| 0x08 | Unknown |
 | 0x09 | Zone 1 & 2 Temperatures and Setpoints, Hot Water Setpoint |
 | 0x0b | Zone 1 & 2 and Outside |Temperature
 | 0x0c | Water Flow Temperatures |
@@ -220,11 +219,11 @@ Active commands so far identified, 0x00 to 0xff. Commands not listed appear to g
 | 0x20 | Unknown - Empty Response |
 | 0x26 | Various Operantion Mode Flags |
 | 0x27 | Unknown |
+| 0x28 | Unknown |
 | 0x28 | Various Operantion Mode Flags |
 | 0x29 | Zone 1 & 2 Temperatures |
 | 0xa1 | Unknown |
 | 0xa2 | Unknown |
-| 0xa3 | Unknown - Empty Response |
 ### Payload - All Commands
 | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
 |---|---|---|---|---|---|---|---|---|---|----|----|----|----|----|----|----|

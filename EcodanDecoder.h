@@ -181,7 +181,7 @@ typedef struct _EcodanStatus {
   uint8_t DHWHeatSourcePhase;
 
   // From Message 0x07
-  uint8_t OutputPower;
+  uint8_t InputPower, OutputPower;
 
   //From Message 0x09
   float Zone1TemperatureSetpoint;

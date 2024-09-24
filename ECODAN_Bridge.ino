@@ -39,7 +39,7 @@
 #include "Ecodan.h"
 
 
-String FirmwareVersion = "5.2.4";
+String FirmwareVersion = "5.2.5";
 
 
 #ifdef ESP8266  // Define the Witty ESP8266 Serial Pins
@@ -139,13 +139,13 @@ void TriggerFTCVersion(void);
 
 
 TimerCallBack HeatPumpQuery1(500, HeatPumpQueryStateEngine);  // Set to 500ms (Safe), 320-350ms best time between messages
-TimerCallBack HeatPumpQuery2(30000, HeatPumpKeepAlive);        // Set to 10-30s for heat pump query frequency
-TimerCallBack HeatPumpQuery3(10800000, TriggerFTCVersion);     // Set to 3hrs for FTC Version Query
+TimerCallBack HeatPumpQuery2(30000, HeatPumpKeepAlive);       // Set to 10-30s for heat pump query frequency
+TimerCallBack HeatPumpQuery3(10800000, TriggerFTCVersion);    // Set to 3hrs for FTC Version Query
 
-unsigned long looppreviousMillis = 0;     // variable for comparing millis counter
-unsigned long ftcpreviousMillis = 0;      // variable for comparing millis counter
-unsigned long wifipreviousMillis = 0;     // variable for comparing millis counter
-int FTCLoopSpeed, CPULoopSpeed;           // variable for holding loop time in ms
+unsigned long looppreviousMillis = 0;  // variable for comparing millis counter
+unsigned long ftcpreviousMillis = 0;   // variable for comparing millis counter
+unsigned long wifipreviousMillis = 0;  // variable for comparing millis counter
+int FTCLoopSpeed, CPULoopSpeed;        // variable for holding loop time in ms
 bool WiFiOneShot = true;
 bool HeatPumpQueryOneShot = true;
 bool PostWriteUpdateRequired = false;
@@ -217,7 +217,7 @@ void loop() {
 
   // -- Heat Pump Write Command Handler -- //
   if (HeatPump.Status.Write_To_Ecodan_OK && PostWriteUpdateRequired) {  // A write command has just been written (Not Keep Alive)
-    DEBUG_PRINTLN("Write OK!");                                         // Pause normal processsing until complete    
+    DEBUG_PRINTLN("Write OK!");                                         // Pause normal processsing until complete
     HeatPump.Status.Write_To_Ecodan_OK = false;                         // Set back to false
     PostWriteUpdateRequired = false;                                    // Set back to false
     if (MQTTReconnect()) { PublishAllReports(); }                       // Publish update to the MQTT Topics
@@ -333,8 +333,8 @@ void loop() {
 
 void HeatPumpKeepAlive(void) {
   ftcpreviousMillis = millis();
-    HeatPump.KeepAlive();
-    HeatPump.TriggerStatusStateMachine();
+  HeatPump.KeepAlive();
+  HeatPump.TriggerStatusStateMachine();
 }
 
 void HeatPumpQueryStateEngine(void) {
@@ -551,7 +551,8 @@ void SystemReport(void) {
   char Buffer[1024];
 
   float HeatOutputPower, CoolOutputPower;
-  double OutputPower = (((float)HeatPump.Status.PrimaryFlowRate / 60) * HeatPump.Status.HeaterDeltaT * 4.184);
+  double OutputPower = (((float)HeatPump.Status.PrimaryFlowRate / 60) * (float)HeatPump.Status.HeaterDeltaT * 4.184);
+  double EstInputPower = (((float)HeatPump.Status.CompressorFrequency * 2) * ((float)HeatPump.Status.HeaterOutputFlowTemperature * 0.8)) / 1000;
 
   if (OutputPower < 0) {
     HeatOutputPower = 0;
@@ -567,7 +568,9 @@ void SystemReport(void) {
   doc[F("HeaterSetpoint")] = HeatPump.Status.HeaterFlowSetpoint;
   doc[F("OutsideTemp")] = HeatPump.Status.OutsideTemperature;
   doc[F("Defrost")] = DefrostModeString[HeatPump.Status.Defrost];
+  doc[F("InputPower")] = HeatPump.Status.InputPower;
   doc[F("HeaterPower")] = HeatPump.Status.OutputPower;
+  doc[F("EstInputPower")] = round2(EstInputPower);
   doc[F("EstHeatOutputPower")] = round2(HeatOutputPower);
   doc[F("EstCoolOutputPower")] = round2(CoolOutputPower);
   doc[F("Compressor")] = HeatPump.Status.CompressorFrequency;
@@ -721,7 +724,12 @@ void StatusReport(void) {
   doc[F("CPULoopTime")] = CPULoopSpeed;
   doc[F("FTCLoopTime")] = FTCLoopSpeed;
   doc[F("FTCReplyTime")] = HeatPump.Lastmsbetweenmsg();
-  doc[F("FTCVersion")] = FTCString[HeatPump.Status.FTCVersion];
+
+  if (HeatPump.Status.FTCVersion > 3) {
+    doc[F("FTCVersion")] = HeatPump.Status.FTCVersion;
+  } else {
+    doc[F("FTCVersion")] = FTCString[HeatPump.Status.FTCVersion];
+  }
 
   serializeJson(doc, Buffer);
   MQTTClient.publish(MQTT_STATUS_WIFISTATUS.c_str(), Buffer, false);

@@ -1,0 +1,710 @@
+# Configuration for Firmware v5.1.6
+
+# Loads default set of integrations. Do not remove.
+default_config:
+
+# Load frontend themes from the themes folder
+frontend:
+  themes: !include_dir_merge_named themes
+
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
+
+mqtt:
+  sensor:
+    # WiFi Bridge Settings
+    - unique_id: "ashp_bridge_lwt"
+      name: "ASHP Status"
+      state_topic: "Ecodan/ASHP/LWT"
+      value_template: "{{ value if value is defined else 'Unknown' }}"
+    - unique_id: "ashp_bridge_firmware"
+      name: "ASHP Firmware"
+      state_topic: "Ecodan/ASHP/Status/WiFiStatus"
+      value_template: "{{ value_json.Firmware }}"
+    - unique_id: "ashp_bridge_rssi"
+      name: "ASHP Bridge WiFi Signal"
+      unit_of_measurement: "dBm"
+      state_topic: "Ecodan/ASHP/Status/WiFiStatus"
+      value_template: "{{ value_json.RSSI }}"
+
+      # ASHP System Information
+    - unique_id: "ashp_ftc"
+      name: "ASHP FTC Version"
+      state_topic: "Ecodan/ASHP/Status/WiFiStatus"
+      value_template: "{{ value_json.FTCVersion }}"
+
+    - unique_id: "ashp_op_mode"
+      name: "System Operation Mode"
+      state_topic: "Ecodan/ASHP/Status/System"
+      value_template: "{{ value_json.SystemOperationMode }}"
+
+    - unique_id: "ashp_heater_return"
+      name: "Heater Return"
+      state_topic: "Ecodan/ASHP/Status/System"
+      unit_of_measurement: "°C"
+      value_template: "{{ value_json.HeaterReturn }}"
+    - unique_id: "ashp_heater_flow"
+      name: "Heater Flow"
+      state_topic: "Ecodan/ASHP/Status/System"
+      unit_of_measurement: "°C"
+      value_template: "{{ value_json.HeaterFlow }}"
+    - unique_id: "ashp_heater_setpoint"
+      name: "Heater Setpoint"
+      state_topic: "Ecodan/ASHP/Status/System"
+      unit_of_measurement: "°C"
+      value_template: "{{ value_json.HeaterSetpoint }}"
+    - unique_id: "ashp_outside_air_temp"
+      name: "Outside Temperature"
+      state_topic: "Ecodan/ASHP/Status/System"
+      unit_of_measurement: "°C"
+      icon: "mdi:thermometer"
+      value_template: "{{ value_json.OutsideTemp }}"
+    - unique_id: "ashp_defrost_status"
+      name: "Defrost"
+      state_topic: "Ecodan/ASHP/Status/System"
+      value_template: "{{ value_json.Defrost }}"
+    - unique_id: "ashp_pump_power"
+      name: "Heat Pump Power"
+      state_topic: "Ecodan/ASHP/Status/System"
+      icon: "mdi:lightning-bolt"
+      unit_of_measurement: "kW"
+      device_class: energy
+      value_template: "{{ value_json.HeaterPower }}"
+    - unique_id: "ashp_compressor_freq"
+      name: "Compressor Frequency"
+      state_topic: "Ecodan/ASHP/Status/System"
+      unit_of_measurement: "Hz"
+      icon: "mdi:sine-wave"
+      value_template: "{{ value_json.Compressor }}"
+    - unique_id: "ashp_flow_rate"
+      name: "Flow Rate"
+      state_topic: "Ecodan/ASHP/Status/System"
+      unit_of_measurement: "l/min"
+      icon: "mdi:waves-arrow-right"
+      value_template: "{{ value_json.FlowRate }}"
+    - unique_id: "ashp_run_hours"
+      name: "Run Hours"
+      state_topic: "Ecodan/ASHP/Status/System"
+      unit_of_measurement: "hrs"
+      value_template: "{{ value_json.RunHours }}"
+
+      # Advanced Measurements
+    - unique_id: "ashp_max_flow_temp"
+      name: "Max Flow Temperature"
+      state_topic: "Ecodan/ASHP/Status/Advanced"
+      unit_of_measurement: "°C"
+      icon: "mdi:thermometer"
+      value_template: "{{ value_json.FlowTMax }}"
+    - unique_id: "ashp_min_flow_temp"
+      name: "Min Flow Temperature"
+      state_topic: "Ecodan/ASHP/Status/Advanced"
+      unit_of_measurement: "°C"
+      icon: "mdi:thermometer"
+      value_template: "{{ value_json.FlowTMin }}"
+    - unique_id: "ashp_boiler_flow_temp"
+      name: "Boiler Flow Temperature"
+      state_topic: "Ecodan/ASHP/Status/Advanced"
+      unit_of_measurement: "°C"
+      icon: "mdi:thermometer"
+      value_template: "{{ value_json.BoilerFlow }}"
+    - unique_id: "ashp_boiler_return_temp"
+      name: "Boiler Return Temperature"
+      state_topic: "Ecodan/ASHP/Status/Advanced"
+      unit_of_measurement: "°C"
+      icon: "mdi:thermometer"
+      value_template: "{{ value_json.BoilerReturn }}"
+    - unique_id: "ashp_mixing_tank_temp"
+      name: "Mixing Tank Temperature"
+      state_topic: "Ecodan/ASHP/Status/Advanced"
+      unit_of_measurement: "°C"
+      icon: "mdi:thermometer"
+      value_template: "{{ value_json.MixingTemp }}"
+    - unique_id: "ashp_ext_flow_temp"
+      name: "External Flow Temperature"
+      state_topic: "Ecodan/ASHP/Status/Advanced"
+      unit_of_measurement: "°C"
+      icon: "mdi:thermometer"
+      value_template: "{{ value_json.ExternalFlowTemp }}"
+    - unique_id: "ashp_refrige_temp"
+      name: "Refrigerant Temperature"
+      state_topic: "Ecodan/ASHP/Status/Advanced"
+      unit_of_measurement: "°C"
+      icon: "mdi:thermometer"
+      value_template: "{{ value_json.RefrigeTemp }}"
+    - unique_id: "ashp_immersion_active"
+      name: "Immersion Heater Active"
+      state_topic: "Ecodan/ASHP/Status/Advanced"
+      value_template: "{{ value_json.Immersion }}"
+    - unique_id: "ashp_booster_active"
+      name: "Booster Heater Active"
+      state_topic: "Ecodan/ASHP/Status/Advanced"
+      value_template: "{{ value_json.Booster }}"
+    - unique_id: "ashp_primary_water_pump_active"
+      name: "Primary Water Pump Active"
+      state_topic: "Ecodan/ASHP/Status/Advanced"
+      value_template: "{{ value_json.PrimaryWaterPump }}"
+    - unique_id: "ashp_water_pump_2_active"
+      name: "Water Pump 2 Active"
+      state_topic: "Ecodan/ASHP/Status/AdvancedTwo"
+      value_template: "{{ value_json.WaterPump2 }}"
+    - unique_id: "ashp_3WayValve_1_active"
+      name: "Three Way Valve 1 Active"
+      state_topic: "Ecodan/ASHP/Status/Advanced"
+      value_template: "{{ value_json.ThreeWayValve }}"
+    - unique_id: "ashp_3WayValve_2_active"
+      name: "Three Way Valve 2 Active"
+      state_topic: "Ecodan/ASHP/Status/AdvancedTwo"
+      value_template: "{{ value_json.ThreeWayValve2 }}"
+
+      # Hot Water
+    - unique_id: "ashp_dhw_temp"
+      name: "Hot Water Temperature"
+      state_topic: "Ecodan/ASHP/Status/HotWater"
+      unit_of_measurement: "°C"
+      icon: "mdi:water-thermometer"
+      value_template: "{{ value_json.Temperature }}"      
+    - unique_id: "ashp_dhw_temp_thw5a"
+      name: "Hot Water Temperature Upper"
+      state_topic: "Ecodan/ASHP/Status/HotWater"
+      unit_of_measurement: "°C"
+      icon: "mdi:water-thermometer"
+      value_template: "{{ value_json.TempTHW5A }}"
+    - unique_id: "ashp_dhw_prohibit"
+      name: "Prohibit DHW"
+      state_topic: "Ecodan/ASHP/Status/HotWater"
+      value_template: "{{ value_json.ProhibitDHW }}"
+    - unique_id: "ashp_dhw_active"
+      name: "DHW Running"
+      state_topic: "Ecodan/ASHP/Status/HotWater"
+      value_template: "{{ value_json.DHWActive }}"
+    - unique_id: "ashp_dhw_mode"
+      name: "DHW Control Mode"
+      state_topic: "Ecodan/ASHP/Status/HotWater"
+      value_template: "{{ value_json.HotWaterControlMode }}"
+    - unique_id: "ashp_legionella_setpoint"
+      name: "Legionella Setpoint"
+      unit_of_measurement: "°C"
+      state_topic: "Ecodan/ASHP/Status/HotWater"
+      value_template: "{{ value_json.LegionellaSetpoint }}"
+    - unique_id: "ashp_dhw_max_tempdrop"
+      name: "Hot Water Max Temperature Drop"
+      unit_of_measurement: "°C"
+      state_topic: "Ecodan/ASHP/Status/HotWater"
+      value_template: "{{ value_json.HotWaterMaxTDrop }}"
+    - unique_id: "ashp_dhw_phase"
+      name: "Hot Water Heating Phase"
+      state_topic: "Ecodan/ASHP/Status/HotWater"
+      value_template: "{{ value_json.HotWaterPhase }}"
+
+      # Zone 1 Heating
+    - unique_id: "ashp_z1_temp"
+      name: "Zone 1 Temperature"
+      state_topic: "Ecodan/ASHP/Status/Zone1"
+      unit_of_measurement: "°C"
+      icon: "mdi:home-thermometer"
+      value_template: "{{ value_json.Temperature }}"
+    - unique_id: "ashp_z1_setpoint"
+      name: "Zone 1 Setpoint"
+      state_topic: "Ecodan/ASHP/Status/Zone1"
+      unit_of_measurement: "°C"
+      value_template: "{{ value_json.Setpoint | float(1) }}"
+    - unique_id: "ashp_z1_flow_setpoint"
+      name: "Zone 1 Flow Setpoint"
+      state_topic: "Ecodan/ASHP/Status/Zone1"
+      unit_of_measurement: "°C"
+      value_template: "{{ value_json.FSP }}"
+    - unique_id: "ashp_z1_flow_temp"
+      name: "Zone 1 Flow Temperature"
+      state_topic: "Ecodan/ASHP/Status/Zone1"
+      unit_of_measurement: "°C"
+      value_template: "{{ value_json.FlowTemp }}"
+    - unique_id: "ashp_z1_return_temp"
+      name: "Zone 1 Return Temperature"
+      state_topic: "Ecodan/ASHP/Status/Zone1"
+      unit_of_measurement: "°C"
+      value_template: "{{ value_json.ReturnTemp }}"
+    - unique_id: "ashp_z1_prohibit"
+      name: "Zone 1 Heating Prohibit"
+      state_topic: "Ecodan/ASHP/Status/Zone1"
+      value_template: "{{ value_json.ProhibitHeating }}"
+
+    - unique_id: "ashp_z2_temp"
+      name: "Zone 2 Temperature"
+      state_topic: "Ecodan/ASHP/Status/Zone2"
+      unit_of_measurement: "°C"
+      icon: "mdi:home-thermometer"
+      value_template: "{{ value_json.Temperature }}"
+    - unique_id: "ashp_z2_setpoint"
+      name: "Zone 2 Setpoint"
+      state_topic: "Ecodan/ASHP/Status/Zone2"
+      unit_of_measurement: "°C"
+      value_template: "{{ value_json.Setpoint | float(1) }}"
+    - unique_id: "ashp_z2_flow_setpoint"
+      name: "Zone 2 Flow Setpoint"
+      state_topic: "Ecodan/ASHP/Status/Zone2"
+      unit_of_measurement: "°C"
+      value_template: "{{ value_json.FSP }}"
+    - unique_id: "ashp_z2_flow_temp"
+      name: "Zone 2 Flow Temperature"
+      state_topic: "Ecodan/ASHP/Status/Zone2"
+      unit_of_measurement: "°C"
+      value_template: "{{ value_json.FlowTemp }}"
+    - unique_id: "ashp_z2_return_temp"
+      name: "Zone 2 Return Temperature"
+      state_topic: "Ecodan/ASHP/Status/Zone2"
+      unit_of_measurement: "°C"
+      value_template: "{{ value_json.ReturnTemp }}"
+    - unique_id: "ashp_z2_prohibit"
+      name: "Zone 2 Heating Prohibit"
+      state_topic: "Ecodan/ASHP/Status/Zone2"
+      value_template: "{{ value_json.ProhibitHeating }}"
+
+      ##! For Two Zone Systems, the Idle/Working System Status !##
+    - unique_id: "ashp_twozone_z1_working"
+      name: "Zone 1 Working"
+      state_topic: "Ecodan/ASHP/Status/Zone1"
+      value_template: "{{ value_json.TwoZone_Z1Working }}"
+    - unique_id: "ashp_twozone_z2_working"
+      name: "Zone 2 Working"
+      state_topic: "Ecodan/ASHP/Status/Zone2"
+      value_template: "{{ value_json.TwoZone_Z2Working }}"
+
+      # Energy Information
+    - unique_id: "ashp_consumed_heat"
+      name: "Consumed Heat"
+      state_topic: "Ecodan/ASHP/Status/Energy"
+      device_class: energy
+      unit_of_measurement: "kWh"
+      value_template: "{{ value_json.CHEAT|round(2) }}"
+    - unique_id: "ashp_delivered_heat"
+      name: "Delivered Heat"
+      state_topic: "Ecodan/ASHP/Status/Energy"
+      device_class: energy
+      unit_of_measurement: "kWh"
+      value_template: "{{ value_json.DHEAT|round(2) }}"
+    - unique_id: "ashp_consumed_cool"
+      name: "Consumed Cooling"
+      state_topic: "Ecodan/ASHP/Status/Energy"
+      device_class: energy
+      unit_of_measurement: "kWh"
+      value_template: "{{ value_json.CCOOL|round(2) }}"
+    - unique_id: "ashp_delivered_cool"
+      name: "Delivered Cooling"
+      state_topic: "Ecodan/ASHP/Status/Energy"
+      device_class: energy
+      unit_of_measurement: "kWh"
+      value_template: "{{ value_json.DCOOL|round(2) }}"
+    - unique_id: "ashp_comsumed_dhw"
+      name: "Consumed DHW"
+      device_class: energy
+      state_topic: "Ecodan/ASHP/Status/Energy"
+      unit_of_measurement: "kWh"
+      value_template: "{{ value_json.CDHW|round(2) }}"
+    - unique_id: "ashp_delivered_dhw"
+      name: "Delivered DHW"
+      state_topic: "Ecodan/ASHP/Status/Energy"
+      device_class: energy
+      unit_of_measurement: "kWh"
+      value_template: "{{ value_json.DDHW|round(2) }}"
+    - unique_id: "ashp_dhw_cop"
+      name: "DHW CoP"
+      unit_of_measurement: "CoP"
+      state_topic: "Ecodan/ASHP/Status/Energy"
+      value_template: "{{ value_json.DHW_CoP|round(2) }}"
+    - unique_id: "ashp_heat_cop"
+      name: "Heat CoP"
+      unit_of_measurement: "CoP"
+      state_topic: "Ecodan/ASHP/Status/Energy"
+      value_template: "{{ value_json.HEAT_CoP|round(2) }}"
+    - unique_id: "ashp_total_cop"
+      name: "ASHP Total CoP"
+      unit_of_measurement: "CoP"
+      state_topic: "Ecodan/ASHP/Status/Energy"
+      icon: "mdi:meter-electric-outline"
+      value_template: "{{ value_json.TOTAL_COP|round(2) }}"
+    - unique_id: "ashp_consumed_energy"
+      name: "ASHP Consumed Energy"
+      state_topic: "Ecodan/ASHP/Status/Energy"
+      device_class: energy
+      unit_of_measurement: "kWh"
+      icon: "mdi:meter-electric-outline"
+      value_template: "{{ value_json.CTOTAL|round(2) }}"
+    - unique_id: "ashp_delivered_energy"
+      name: "ASHP Delivered Energy"
+      state_topic: "Ecodan/ASHP/Status/Energy"
+      device_class: energy
+      unit_of_measurement: "kWh"
+      icon: "mdi:meter-electric-outline"
+      value_template: "{{ value_json.DTOTAL|round(2) }}"
+
+    - unique_id: "ashp_refrigerant_flt_code"
+      name: "Refrigerant Fault Code"
+      state_topic: "Ecodan/ASHP/Status/AdvancedTwo"
+      value_template: "{{ value_json.RefrigeFltCode }}"
+    - unique_id: "ashp_err_code"
+      name: "ASHP Error Code"
+      state_topic: "Ecodan/ASHP/Status/AdvancedTwo"
+      value_template: "{{ value_json.ErrCode }}"
+    - unique_id: "ashp_flt_code"
+      name: "ASHP Fault Code"
+      state_topic: "Ecodan/ASHP/Status/AdvancedTwo"
+      value_template: "{{ value_json.FltCode }}"
+
+    - unique_id: "ashp_one_zone_heating"
+      name: "One Zone Working"
+      state_topic: "Ecodan/ASHP/Status/AdvancedTwo"
+      value_template: "{{ value_json.SingleZoneRun }}"
+    - unique_id: "ashp_ext_z1_tstat_demand"
+      name: "Zone 1 External Thermostat Demand"
+      state_topic: "Ecodan/ASHP/Status/AdvancedTwo"
+      value_template: "{{ value_json.Z1TstatDemand }}"
+    - unique_id: "ashp_ext_z2_tstat_demand"
+      name: "Zone 2 External Thermostat Demand"
+      state_topic: "Ecodan/ASHP/Status/AdvancedTwo"
+      value_template: "{{ value_json.Z2TstatDemand }}"
+    - unique_id: "ashp_ext_out_tstat_demand"
+      name: "Outside External Thermostat Demand"
+      state_topic: "Ecodan/ASHP/Status/AdvancedTwo"
+      value_template: "{{ value_json.OTstatDemand }}"
+
+  climate:
+    - unique_id: "ASHP_Zone1"
+      name: "Zone1"
+      object_id: "zone1_climate"
+      current_temperature_topic: "Ecodan/ASHP/Status/Zone1"
+      current_temperature_template: "{{ value_json.Temperature }}"
+      temperature_command_topic: "Ecodan/ASHP/Command/Zone1/ThermostatSetpoint"
+      temperature_unit: C
+      max_temp: 30
+      min_temp: 10
+      temp_step: 0.5
+      precision: 0.5
+      initial: 10
+      temperature_state_topic: "Ecodan/ASHP/Status/Zone1"
+      temperature_state_template: "{{ value_json.Setpoint }}"
+      mode_state_topic: "Ecodan/ASHP/Status/System"
+      # One Zone System:
+      #mode_state_template: "{{ 'heat' if value_json.SystemOperationMode=='Heating' else 'off' }}"
+      # Two Zone Systems:
+      mode_state_template: "{{ 'heat' if (value_json.SystemOperationMode=='Heating' and states('sensor.zone_1_working')=='1') else
+      'cool' if (value_json.SystemOperationMode=='Cooling' and states('sensor.zone_1_working')=='1') else
+      'off' }}"
+      modes: ["heat", "cool", "off"]
+      mode_command_template: "{% set values = { 'heat':'Heating Temperature', 'cool':'Cooling Temperature'} %}
+      {{ values[value] if value in values.keys() }}"
+      mode_command_topic: "Ecodan/ASHP/Command/System/HeatingMode"
+
+      availability:
+        - topic: "Ecodan/ASHP/LWT"
+          template: "{{ value_json }}"
+          payload_available: "online"
+          payload_not_available: "offline"
+
+      ## For Two Zone Users ##
+    - unique_id: "ASHP_Zone2"
+      name: "Zone2"
+      object_id: "zone2_climate"
+      current_temperature_topic: "Ecodan/ASHP/Status/Zone2"
+      current_temperature_template: "{{ value_json.Temperature }}"
+      temperature_command_topic: "Ecodan/ASHP/Command/Zone2/ThermostatSetpoint"
+      temperature_unit: C
+      max_temp: 30
+      min_temp: 10
+      temp_step: 0.5
+      precision: 0.5
+      initial: 10
+      temperature_state_topic: "Ecodan/ASHP/Status/Zone2"
+      temperature_state_template: "{{ value_json.Setpoint }}"
+      mode_state_topic: "Ecodan/ASHP/Status/System"
+      # Two Zone Systems:
+      mode_state_template: "{{ 'heat' if (value_json.SystemOperationMode=='Heating' and states('sensor.zone_2_working')=='1') else
+      'cool' if (value_json.SystemOperationMode=='Cooling' and states('sensor.zone_2_working')=='1') else
+      'off' }}"
+      modes: ["heat", "cool", "off"]
+      mode_command_template: "{% set values = { 'heat':'Heating Temperature', 'cool':'Cooling Temperature'} %}
+      {{ values[value] if value in values.keys() }}"
+      mode_command_topic: "Ecodan/ASHP/Command/System/HeatingMode"
+
+      availability:
+        - topic: "Ecodan/ASHP/LWT"
+          template: "{{ value_json }}"
+          payload_available: "online"
+          payload_not_available: "offline"
+
+      ## Hot Water ##
+    - unique_id: "ASHP_DHW_Setpoint"
+      name: "Hot Water"
+      object_id: "dhw_climate"
+      current_temperature_topic: "Ecodan/ASHP/Status/HotWater"
+      current_temperature_template: "{{ value_json.Temperature }}"
+      temperature_command_topic: "Ecodan/ASHP/Command/HotWater/Setpoint"
+      temperature_unit: C
+      max_temp: 65
+      min_temp: 30
+      temp_step: 1.0
+      precision: 0.5
+      initial: 50
+      temperature_state_topic: "Ecodan/ASHP/Status/HotWater"
+      temperature_state_template: "{{ value_json.Setpoint }}"
+      mode_state_topic: "Ecodan/ASHP/Status/System"
+      mode_state_template: "{{ 'heat' if (value_json.SystemOperationMode=='Hot Water' or value_json.SystemOperationMode=='Legionella') else 'off' }}"
+      modes: ["heat","off"]
+
+
+  number:
+    - unique_id: "ashp_dhw_setpoint"
+      name: "Hot Water Setpoint"
+      state_topic: "Ecodan/ASHP/Status/HotWater"
+      value_template: "{{ value_json.Setpoint }}"
+      command_topic: Ecodan/ASHP/Command/HotWater/Setpoint
+      unit_of_measurement: "°C"
+      max: 60
+      min: 40
+      step: 1
+      availability:
+        - topic: "Ecodan/ASHP/LWT"
+          template: "{{ value_json }}"
+          payload_available: "online"
+          payload_not_available: "offline"
+
+    - unique_id: "ashp_z1_flow_setpoint"
+      name: "Zone1 Flow Setpoint"
+      state_topic: "Ecodan/ASHP/Status/Zone1"
+      value_template: "{{ value_json.FSP }}"
+      command_topic: Ecodan/ASHP/Command/Zone1/FlowSetpoint
+      unit_of_measurement: "°C"
+      max: 60
+      min: 10
+      step: 1
+      availability:
+        - topic: "Ecodan/ASHP/LWT"
+          template: "{{ value_json }}"
+          payload_available: "online"
+          payload_not_available: "offline"
+
+    ## For Two Zone Users ##
+    - unique_id: "ashp_z2_flow_setpoint"
+      name: "Zone2 Flow Setpoint"
+      state_topic: "Ecodan/ASHP/Status/Zone2"
+      value_template: "{{ value_json.FSP }}"
+      command_topic: Ecodan/ASHP/Command/Zone2/FlowSetpoint
+      unit_of_measurement: "°C"
+      max: 60
+      min: 10
+      step: 1
+      availability:
+        - topic: "Ecodan/ASHP/LWT"
+          template: "{{ value_json }}"
+          payload_available: "online"
+          payload_not_available: "offline"
+
+  select:
+    - unique_id: "ashp_heat_cool_mode"
+      name: "Heating/Cooling Operation Mode"
+      command_topic: "Ecodan/ASHP/Command/System/HeatingMode"
+      state_topic: "Ecodan/ASHP/Status/Zone1"
+      value_template:
+        "{{ 'Heating Temperature' if value_json.HeatingControlMode=='Temp' else
+        'Heating Flow' if value_json.HeatingControlMode=='Flow' else
+        'Heating Compensation' if value_json.HeatingControlMode=='Compensation' else
+        'Cooling Temperature' if value_json.HeatingControlMode=='Cool' else
+        'Cooling Flow' if value_json.HeatingControlMode=='Cool Flow' else
+        'Dry Up' if value_json.HeatingControlMode=='Dry Up' }} "
+      options:
+        - "Heating Temperature"
+        - "Heating Flow"
+        - "Heating Compensation"
+        - "Cooling Temperature"
+        - "Cooling Flow"
+        - "Dry Up"
+
+
+    - unique_id: "ashp_dhw_mode"
+      name: "System DHW Mode"
+      command_topic: "Ecodan/ASHP/Command/HotWater/Mode"
+      state_topic: "Ecodan/ASHP/Status/HotWater"
+      value_template:
+        "{{ 'Normal' if value_json.HotWaterControlMode=='Normal' else
+        'Eco' if value_json.HotWaterControlMode=='Eco' }} "
+      options:
+        - "Normal"
+        - "Eco"
+
+  switch:
+    - name: "Hot Water Boost"
+      unique_id: "ashp_dhw"
+      state_topic: "Ecodan/ASHP/Status/HotWater"
+      value_template: "{{ value_json.HotWaterBoostActive }}"
+      icon: "mdi:plus"
+      state_on: 1
+      state_off: 0
+      command_topic: "Ecodan/ASHP/Command/HotWater/Boost"
+      payload_on: 1
+      payload_off: 0
+      availability:
+        - topic: "Ecodan/ASHP/LWT"
+          template: "{{ value_json }}"
+          payload_available: "online"
+          payload_not_available: "offline"
+
+    - unique_id: "ashp_systempower"
+      name: "System Power"
+      state_topic: "Ecodan/ASHP/Status/System"
+      value_template: "{{ value_json.SystemPower }}"
+      icon: "mdi:power"
+      state_on: "On"
+      state_off: "Standby"
+      command_topic: "Ecodan/ASHP/Command/System/Power"
+      payload_on: "On"
+      payload_off: "Standby"
+      availability:
+        - topic: "Ecodan/ASHP/LWT"
+          template: "{{ value_json }}"
+          payload_available: "online"
+          payload_not_available: "offline"
+
+    - unique_id: "ashp_holidaymode"
+      name: "Holiday Mode"
+      state_topic: "Ecodan/ASHP/Status/System"
+      value_template: "{{ value_json.HolidayMode }}"
+      icon: "mdi:plus"
+      state_on: 1
+      state_off: 0
+      command_topic: "Ecodan/ASHP/Command/System/HolidayMode"
+      payload_on: 1
+      payload_off: 0
+      availability:
+        - topic: "Ecodan/ASHP/LWT"
+          template: "{{ value_json }}"
+          payload_available: "online"
+          payload_not_available: "offline"
+
+    ## Server Control Mode and Inhibits
+    - unique_id: "ashp_svr_control_mode"
+      name: "Server Control Mode"
+      state_topic: "Ecodan/ASHP/Status/AdvancedTwo"
+      value_template: "{{ value_json.SvrControlMode }}"
+      icon: "mdi:server-network-outline"
+      state_on: 1
+      state_off: 0
+      command_topic: "Ecodan/ASHP/Command/System/SvrControlMode"
+      payload_on: 1
+      payload_off: 0
+      availability:
+        - topic: "Ecodan/ASHP/LWT"
+          template: "{{ value_json }}"
+          payload_available: "online"
+          payload_not_available: "offline"
+
+    - unique_id: "ashp_svrctrol_dhw"
+      name: "Prohibit DHW"
+      state_topic: "Ecodan/ASHP/Status/HotWater"
+      value_template: "{{ value_json.ProhibitDHW }}"
+      icon: "mdi:cancel"
+      state_on: 1
+      state_off: 0
+      command_topic: "Ecodan/ASHP/Command/HotWater/Prohibit"
+      payload_on: 1
+      payload_off: 0
+      availability:
+        - topic: "Ecodan/ASHP/Status/AdvancedTwo"
+          value_template: "{{ value_json.SvrControlMode }}"
+          payload_available: 1
+          payload_not_available: 0
+    - unique_id: "ashp_svrctrol_z1h"
+      name: "Prohibit Zone 1 Heating"
+      state_topic: "Ecodan/ASHP/Status/Zone1"
+      value_template: "{{ value_json.ProhibitHeating }}"
+      icon: "mdi:cancel"
+      state_on: 1
+      state_off: 0
+      command_topic: "Ecodan/ASHP/Command/Zone1/ProhibitHeating"
+      payload_on: 1
+      payload_off: 0
+      availability:
+        - topic: "Ecodan/ASHP/Status/AdvancedTwo"
+          value_template: "{{ value_json.SvrControlMode }}"
+          payload_available: 1
+          payload_not_available: 0
+    - unique_id: "ashp_svrctrol_z1c"
+      name: "Prohibit Zone 1 Cooling"
+      state_topic: "Ecodan/ASHP/Status/Zone1"
+      value_template: "{{ value_json.ProhibitCooling }}"
+      icon: "mdi:cancel"
+      state_on: 1
+      state_off: 0
+      command_topic: "Ecodan/ASHP/Command/Zone1/ProhibitCooling"
+      payload_on: 1
+      payload_off: 0
+      availability:
+        - topic: "Ecodan/ASHP/Status/AdvancedTwo"
+          value_template: "{{ value_json.SvrControlMode }}"
+          payload_available: 1
+          payload_not_available: 0
+    - unique_id: "ashp_svrctrol_z2h"
+      name: "Prohibit Zone 2 Heating"
+      state_topic: "Ecodan/ASHP/Status/Zone2"
+      value_template: "{{ value_json.ProhibitHeating }}"
+      icon: "mdi:cancel"
+      state_on: 1
+      state_off: 0
+      command_topic: "Ecodan/ASHP/Command/Zone2/ProhibitHeating"
+      payload_on: 1
+      payload_off: 0
+      availability:
+        - topic: "Ecodan/ASHP/Status/AdvancedTwo"
+          value_template: "{{ value_json.SvrControlMode }}"
+          payload_available: 1
+          payload_not_available: 0
+    - unique_id: "ashp_svrctrol_z2c"
+      name: "Prohibit Zone 2 Cooling"
+      state_topic: "Ecodan/ASHP/Status/Zone2"
+      value_template: "{{ value_json.ProhibitCooling }}"
+      icon: "mdi:cancel"
+      state_on: 1
+      state_off: 0
+      command_topic: "Ecodan/ASHP/Command/Zone2/ProhibitCooling"
+      payload_on: 1
+      payload_off: 0
+      availability:
+        - topic: "Ecodan/ASHP/Status/AdvancedTwo"
+          value_template: "{{ value_json.SvrControlMode }}"
+          payload_available: 1
+          payload_not_available: 0
+
+template:
+  sensor:
+    - unique_id: "ashp_flow_return_delta_t"
+      name: "Flow Return DeltaT"
+      unit_of_measurement: "°C"
+      icon: "mdi:thermometer"
+      state: "{{(states('sensor.heater_flow')|float - states('sensor.heater_return')|float)|round(1)}}"
+
+    - unique_id: "ashp_efficiency"
+      name: "ASHP Efficiency"
+      icon: "mdi:generator-stationary"
+      state: "{% if 0 < states('sensor.ashp_total_cop')|float < 2 %}Poor
+        {% elif 2 < states('sensor.ashp_total_cop')|float < 3 %}Average
+        {% elif 3 < states('sensor.ashp_total_cop')|float < 3.5 %}Good
+        {% elif 3.5 < states('sensor.ashp_total_cop')|float < 4 %}Very Good
+        {% elif states('sensor.ashp_total_cop')|float > 4 %}Excellent
+        {% else %}Not Available
+        {% endif %}"
+
+    - unique_id: "ashp_computed_power_output"
+      name: "Computed Power Output"
+      unit_of_measurement: "kW"
+      state: >-
+        {% set ta = states('sensor.heater_flow') | default(0) | float %}
+        {% set tr = states('sensor.heater_return') | default(0) | float %}
+        {% set flow = states('sensor.flow_rate') | default(0) | float %}
+        {% set freq = states('sensor.compressor_frequency') | default(0) | float %}
+        {{ 0 if freq == 0 else (flow/60.0 * (ta - tr) * 4.18) | float | round(2) }}
+        
+    - unique_id: "ashp_computed_power_output_kWh"
+      name: "Computed Power Output"
+      unit_of_measurement: "kWh"
+      state_class: total
+      device_class: energy
+      state: "{{(states('sensor.computed_power_output')|float * 30 / 3600)}}"
