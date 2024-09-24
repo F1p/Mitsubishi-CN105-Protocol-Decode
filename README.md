@@ -94,7 +94,7 @@ Active commands so far identified.
 | 0x32  | Flags | Flags | P |Unk| DHW | HC1 | HC2 | DHWSP | DHWSP | Z1SP | Z1SP | Z2SP | Z2SP | MRC| MRC|CHK |  
 
 * Flags (2 Bytes) : Flags to Indicate which fields are active
-  * 0x01 0x00 : Set System Power Power
+  * 0x01 0x00 : Set System Power
   * 0x02 0x00 : Unknown (Byte 4) - Operation Mode?
   * 0x04 0x00 : Set Hot Water Mode
   * 0x08 0x00 : Set Heating Control Mode Zone 1
