@@ -197,6 +197,7 @@ Active commands so far identified, 0x00 to 0xff. Commands not listed appear to g
 | 0x05 | Hot Water Boot Flag |
 | 0x06 | Unknown - Empty Response |
 | 0x07 | Output Power |
+| 0x08 | Unknown - Empty Response |
 | 0x09 | Zone 1 & 2 Temperatures and Setpoints, Hot Water Setpoint |
 | 0x0b | Zone 1 & 2 and Outside |Temperature
 | 0x0c | Water Flow Temperatures |
@@ -264,23 +265,25 @@ Responses so far identified.
 ### 0x02 - Defrost
 |   0   | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
 |-------|---|---|---|---|---|---|---|---|---|----|----|----|----|----|----|----|
-| 0x02  |   |   | D |   |   |   |   |   |   |    |    |    |    |    |    |    |  
+| 0x02  |   | R | D | HR? |   |   |   |   |   |    |    |    |    |    |    |    |  
+* R: Own Refrigerant Address
 * D: Defrost
+* HR: Residual Heat Removal?
 ### 0x03 - Refrigerant and Zone Running Information
 |   0   |  1 | 2  |  3 |  4 |  5 | 6 | 7 |  8  | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
 |-------|----|----|----|----|----|---|---|-----|---|----|----|----|----|----|----|----|
-| 0x03  | RF | F1 | F2 | F3 | F4 |   |   |  M  | S |    |    |    |    |    |    |    |  
+| 0x03  | RF | F1 | F2 | F3 | F4 |   |   |  M  | MF |    |    |    |    |    |    |    |  
 * RF: Refrigerant Flt Code
 * F1: Fault Code * 100 + Flt Code (F2) (Numbers)
 * F3: Fault Code (Letter) 1
 * F4: Fault Code (Letter) 2
 * M: Multi Zone Running Parameter (3 = Z2 Working, 2 = Z1 Working, 1 = Both Zones working, 0 = Idle)
-* S: Unknown
 ### 0x04 - Various Flags
 |   0   | 1  | 2 | 3 | 4 | 5 | 6 |  7  | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
 |-------|----|---|---|---|---|---|---|---|---|----|----|----|----|----|----|----|
 | 0x04  | CF |   |   |   |   |   |   |   |   |    |    |    |    |    |    |    |  
 * CF : Compressor Frequency
+* Slave Frequency in other bytes
 ### 0x05 - Various Flags
 |   0  | 1 | 2 | 3 | 4 |  5 |  6  |  7  | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
 |------|---|---|---|---|----|-----|-----|---|---|----|----|----|----|----|----|----|
@@ -345,6 +348,15 @@ Responses so far identified.
 * Z1T: Hardwired/External (IN1) Thermostat 1 Demand (On/Off)
 * Z2T: Hardwired/External (IN6) Thermostat 2 Demand (On/Off)
 * OT: Hardwired/External (IN5) Outdoor Thermostat Demand (On/Off)
+### 0x11 - Dip Switches?
+|   0   |  1  |  2  |  3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
+|-------|-----|-----|----|---|---|---|---|---|---|----|----|----|----|----|----|----|
+| 0x10  | 1   |     | 3  |   | 4 |   | 5 |   | 6 |    |    |    |    |    |    |    |
+* Switch 1
+* Switch 3
+* Switch 4
+* Switch 5
+* Switch 6
 ### 0x13 - Run Hours
 |   0   | 1  | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
 |-------|----|---|---|---|---|---|---|---|---|----|----|----|----|----|----|----|
