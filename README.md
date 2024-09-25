@@ -201,8 +201,8 @@ Active commands so far identified, 0x00 to 0xff. Commands not listed appear to g
 | 0x0b | Zone 1 & 2 and Outside |Temperature
 | 0x0c | Water Flow Temperatures |
 | 0x0d | Boiler Flow Temperatures |
-| 0x0e | Unknown |
-| 0x10 | Unknown |
+| 0x0e | Thermistors 2 |
+| 0x10 | External sources |
 | 0x11 | Unknown |
 | 0x13 | Run Hours |
 | 0x14 | Primary Flow Rate |
@@ -219,11 +219,10 @@ Active commands so far identified, 0x00 to 0xff. Commands not listed appear to g
 | 0x20 | Unknown - Empty Response |
 | 0x26 | Various Operantion Mode Flags |
 | 0x27 | Unknown |
-| 0x28 | Unknown |
 | 0x28 | Various Operantion Mode Flags |
 | 0x29 | Zone 1 & 2 Temperatures |
-| 0xa1 | Unknown |
-| 0xa2 | Unknown |
+| 0xa1 | Consumed Energy |
+| 0xa2 | Delivered Energy |
 ### Payload - All Commands
 | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
 |---|---|---|---|---|---|---|---|---|---|----|----|----|----|----|----|----|
@@ -276,7 +275,7 @@ Responses so far identified.
 * F3: Fault Code (Letter) 1
 * F4: Fault Code (Letter) 2
 * M: Multi Zone Running Parameter (3 = Z2 Working, 2 = Z1 Working, 1 = Both Zones working, 0 = Idle)
-* S: Single Zone Running Parameter (TBC)?
+* S: Unknown
 ### 0x04 - Various Flags
 |   0   | 1  | 2 | 3 | 4 | 5 | 6 |  7  | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
 |-------|----|---|---|---|---|---|---|---|---|----|----|----|----|----|----|----|
@@ -292,7 +291,8 @@ Responses so far identified.
 ### 0x07 - Heater Power
 |   0   | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
 |-------|---|---|---|---|---|---|---|---|---|----|----|----|----|----|----|----|
-| 0x07  |   |   |   |   |   | P |   |   |   |    |    |    |    |    |    |    |  
+| 0x07  |   |   |   | I |   | P |   |   |   |    |    |    |    |    |    |    |  
+* I : Input Power (kW) - 0 = 0-1kW, 1 = 1-2kW, 2 = 2-3kW etc.
 * P : Heater Power (to nearest kW)
 ### 0x09 - Zone 1 & 2 Temperatures and Setpoints, Hot Water Setpoint
 | 0    |   1  |   2  | 3    | 4    | 5    | 6    | 7    | 8    |  9  |  10 |  11 | 12 | 13 | 14 | 15 | 16 |
@@ -439,15 +439,15 @@ Responses so far identified.
 |   0   | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
 |-------|---|---|---|---|---|---|---|---|---|----|----|----|----|----|----|----|
 | 0xC9  |U1 |   |U2 |   |U3 | V |   |   |   |    |    |    |    |    |    |    |  
-* U1: Unknown
-* U2: Unknown
-* U3: Unknown
+* U1: Version of Protocol (Upper/Lower) BCD
+* U2: Version of Model (Upper/Lower) BCD
+* U3: Capacity of Supply
 * V: FTC Version:
       0: FTC2B
       1: FTC4
       2: FTC5
       3: FTC6
-      4: FTC7
+      5: FTC7
       128: CAHV1A
       129: CAHV1B
       130: CRHV1A
