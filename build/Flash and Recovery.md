@@ -17,9 +17,11 @@ Supported Hardware is ESP8266 ebay sold hardware: https://www.ebay.co.uk/itm/325
 
 5. Plug the pins into the programming board, #both USB ports at the same side
 
+6. Hold the flash button down, while holding then press "reset". You can then release both buttons.
+
 6. Connect the USB cable to the bottom board (programming carrier board), locate the COM port your device is
 
-7.  Open CMD prompt in the folder with the files saved and run:
+7. Open CMD prompt in the folder with the files saved and run:
 
     ```
     python upload.py --chip esp8266 --port "COM4" --baud "115200" "" erase_flash --before default_reset --after hard_reset write_flash 0x0 "ECODAN_Bridge_v5.2.5.bin"
