@@ -272,15 +272,15 @@ void loop() {
 #ifdef ESP32
       ESP.restart();
 #endif
-    }  // Wait for 5 mins to try reconnects then force restart
-  } else {
+    }                                // Wait for 5 mins to try reconnects then force restart
+  } else {                           // WiFi is connected
 #ifdef ESP8266                       // Define the Witty ESP8266 Ports
     analogWrite(Green_RGB_LED, 30);  // Green LED on, 25% brightness
     digitalWrite(Red_RGB_LED, LOW);  // Turn the Red LED Off
 #endif
 #ifdef ESP32  // Define the M5Stack LED
     leds[0] = CRGB::Green;
-    leds[0].fadeLightBy(200);  // Green LED on, 25% brightness
+    leds[0].fadeLightBy(200);  // Green LED on, reduced brightness
     FastLED.show();
 #endif
   }
@@ -371,12 +371,14 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
   if (Topic == MQTTCommandZone1NoModeSetpoint) {
     MQTTWriteReceived("MQTT Set Zone1 Temperature Setpoint", 6);
     HeatPump.SetZoneTempSetpoint(Payload.toFloat(), HeatPump.Status.HeatingControlModeZ1, ZONE1);
+    HeatPump.Status.Zone1Temperature = Payload.toFloat();
   }
   // Flow Setpoint Commands
   // Heating & Cooling Zone 1 Commands
   if (Topic == MQTTCommandZone1FlowSetpoint) {
     MQTTWriteReceived("MQTT Set Zone1 Flow Setpoint", 6);
-    HeatPump.SetFlowSetpoint(Payload.toInt(), HeatPump.Status.HeatingControlModeZ1, ZONE1);
+    HeatPump.SetFlowSetpoint(Payload.toFloat(), HeatPump.Status.HeatingControlModeZ1, ZONE1);
+    HeatPump.Status.Zone1FlowTemperatureSetpoint = Payload.toFloat();
   }
 
   // Thermostat Setpoint
@@ -384,12 +386,14 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
   if (Topic == MQTTCommandZone2NoModeSetpoint) {
     MQTTWriteReceived("MQTT Set Zone2 Temperature Setpoint", 6);
     HeatPump.SetZoneTempSetpoint(Payload.toFloat(), HeatPump.Status.HeatingControlModeZ2, ZONE2);
+    HeatPump.Status.Zone2Temperature = Payload.toFloat();
   }
   // Flow Setpoint Commands
   // Heating & Cooling Zone 2 Commands
   if (Topic == MQTTCommandZone2FlowSetpoint) {
     MQTTWriteReceived("MQTT Set Zone2 Flow Setpoint", 6);
-    HeatPump.SetFlowSetpoint(Payload.toInt(), HeatPump.Status.HeatingControlModeZ2, ZONE2);
+    HeatPump.SetFlowSetpoint(Payload.toFloat(), HeatPump.Status.HeatingControlModeZ2, ZONE2);
+    HeatPump.Status.Zone2FlowTemperatureSetpoint = Payload.toFloat();
   }
 
 
@@ -552,7 +556,7 @@ void SystemReport(void) {
 
   float HeatOutputPower, CoolOutputPower;
   double OutputPower = (((float)HeatPump.Status.PrimaryFlowRate / 60) * (float)HeatPump.Status.HeaterDeltaT * 4.184);
-  double EstInputPower = (((float)HeatPump.Status.CompressorFrequency * 2) * ((float)HeatPump.Status.HeaterOutputFlowTemperature * 0.8)) / 1000;
+  double EstInputPower = ((((float)HeatPump.Status.CompressorFrequency * 2) * ((float)HeatPump.Status.HeaterOutputFlowTemperature * 0.8)) / 1000) / 2;
 
   if (OutputPower < 0) {
     HeatOutputPower = 0;
@@ -713,6 +717,7 @@ void AdvancedTwoReport(void) {
 void StatusReport(void) {
   StaticJsonDocument<512> doc;
   char Buffer[512];
+  char TmBuffer[32];
 
   doc[F("SSID")] = WiFi.SSID();
   doc[F("RSSI")] = WiFi.RSSI();
@@ -724,12 +729,11 @@ void StatusReport(void) {
   doc[F("CPULoopTime")] = CPULoopSpeed;
   doc[F("FTCLoopTime")] = FTCLoopSpeed;
   doc[F("FTCReplyTime")] = HeatPump.Lastmsbetweenmsg();
+  doc[F("FTCVersion")] = FTCString[HeatPump.Status.FTCVersion];
+  doc[F("FTCSoftwareVersion")] = HeatPump.Status.FTCSoftware;
 
-  if (HeatPump.Status.FTCVersion > 3) {
-    doc[F("FTCVersion")] = HeatPump.Status.FTCVersion;
-  } else {
-    doc[F("FTCVersion")] = FTCString[HeatPump.Status.FTCVersion];
-  }
+  strftime(TmBuffer, sizeof(TmBuffer), "%FT%TZ", &HeatPump.Status.DateTimeStamp);
+  doc[F("FTCTime")] = TmBuffer;
 
   serializeJson(doc, Buffer);
   MQTTClient.publish(MQTT_STATUS_WIFISTATUS.c_str(), Buffer, false);
