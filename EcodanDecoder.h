@@ -128,7 +128,7 @@ const char FltCodeLetterTwo[21][2] = { "1", "2", "3", "4", "5", "6", "7", "8", "
 #define FTC5 2
 #define FTC6 3
 #define FTC7 4
-const char FTCString[5][6] = { "FTC2B", "FTC4", "FTC5", "FTC6", "FTC7" };
+const char FTCString[6][6] = { "FTC2B", "FTC4", "FTC5", "FTC6", "", "FTC7" };
 
 
 // System Flags
@@ -164,6 +164,7 @@ typedef struct _MessgeStruct {
 typedef struct _EcodanStatus {
   //From Message 0x01
   struct tm DateTimeStamp;
+  char FTCSoftware[6];
 
   //From Message 0x02
   uint8_t Defrost;
