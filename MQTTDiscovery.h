@@ -1,9 +1,9 @@
 //-- MQTT Home Assistant Auto Discovery --//
 
-const int discovery_topics PROGMEM = 93;
+const int discovery_topics PROGMEM = 91;
 
 // Build the sensor JSON structure
-const char MQTT_DISCOVERY_OBJ_ID[][3] PROGMEM = { "aa", "ab", "ac", "ad", "ae", "af", "ag", "ah", "ai", "aj", "ak", "al", "am", "an", "ao", "ap", "aq", "ar", "as", "at", "au", "av", "aw", "ax", "ay", "az", "ba", "bb", "bc", "bd", "be", "bf", "bg", "bh", "bi", "bj", "bk", "bl", "bm", "bn", "bo", "bp", "bq", "br", "bs", "bt", "bu", "bv", "bw", "bx", "by", "bz", "ca", "cb", "cc", "cd", "cu", "cv", "cw", "cx", "cz", "da", "db", "dc", "de", "df", "dg", "dh", "di", "dj", "dk", "dl", "dm", "dn", "do", "dp", "dq", "ce", "cf", "cg", "ch", "ci", "cj", "ck", "cl", "cm", "cn", "co", "cp", "cq", "cr", "cs", "ct" };
+const char MQTT_DISCOVERY_OBJ_ID[][3] PROGMEM = { "aa", "ab", "ac", "ad", "ae", "af", "ag", "ah", "ai", "aj", "ak", "al", "am", "an", "ao", "ap", "aq", "ar", "as", "at", "au", "av", "aw", "ax", "ay", "az", "ba", "bb", "bc", "bd", "be", "bf", "bg", "bh", "bi", "bj", "bk", "bl", "bm", "bn", "bo", "bp", "bq", "br", "bs", "bt", "bu", "bv", "bw", "bx", "by", "bz", "ca", "cb", "cc", "cd", "cu", "cv", "cw", "cx", "cz", "da", "db", "dc", "de", "df", "dg", "dh", "di", "dj", "dk", "dl", "dm", "dn", "do", "ce", "cf", "cg", "ch", "ci", "cj", "ck", "cl", "cm", "cn", "co", "cp", "cq", "cr", "cs", "ct" };
 
 const char MQTT_SENSOR_UNIQUE_ID[][32] PROGMEM = {
   "ashp_bridge_lwt_",
@@ -81,8 +81,6 @@ const char MQTT_SENSOR_UNIQUE_ID[][32] PROGMEM = {
   "ashp_water_pump_13_active",
   "ashp_input_power_",
   "ashp_est_pwr_in_",
-  "ashp_ftc_sw_v_",
-  "ashp_ftc_time_",
 
   "ashp_dhw_climate_",  //65
   "ashp_Zone1_climate_",
@@ -182,8 +180,6 @@ const char MQTT_MDI_ICONS[][30] PROGMEM = {
   "mdi:heat-pump-outline",
   "mdi:transmission-tower-import",
   "mdi:transmission-tower-import",
-  "mdi:alpha-v-circle-outline",
-  "mdi:calendar-clock",
 
   "mdi:thermostat",  //65
   "mdi:thermostat",
@@ -283,8 +279,6 @@ const char MQTT_SENSOR_NAME[][40] PROGMEM = {
   "Water Pump 13",
   "Heat Pump Input Power",
   "Computed Input Power",
-  "FTC Software Version",
-  "FTC Time and Date",
 
   "DHW Thermostat",  //70
   "Zone 1 Thermostat",
@@ -424,9 +418,7 @@ int MQTT_TOPIC_POS[] PROGMEM = {
   8,
   8,
   2,
-  2,
-  1,
-  1
+  2
 };
 
 int MQTT_UNITS_POS[] PROGMEM = {
@@ -504,9 +496,7 @@ int MQTT_UNITS_POS[] PROGMEM = {
   0,
   0,
   3,
-  3,
-  0,
-  0
+  3
 };
 
 const char MQTT_OBJECT_ID[][14] PROGMEM = {
@@ -653,8 +643,6 @@ const char MQTT_SENSOR_VALUE_TEMPLATE[][50] PROGMEM = {
   "{{ value_json.WaterPump13 }}",
   "{{ value_json.InputPower }}",
   "{{ value_json.EstInputPower }}",
-  "{{ value_json.FTCSoftwareVersion }}",
-  "{{ value_json.FTCTime }}",
   "{{ value_json }}",
   "{{ value_json.Setpoint }}",
   "{{ value_json.FSP }}",  //75
@@ -679,7 +667,6 @@ const char MQTT_DISCOVERY_TOPICS[][23] PROGMEM = {
   "/config"
 };
 
-const char MQTT_DEVICE_CLASS[][21] PROGMEM = {
-  "energy",
-  "timestamp"
+const char MQTT_ENERGY_CLASS[][21] PROGMEM = {
+  "energy"
 };

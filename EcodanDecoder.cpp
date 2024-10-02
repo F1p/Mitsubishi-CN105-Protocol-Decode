@@ -15,7 +15,6 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include "EcodanDecoder.h"
-#include <cstdio>
 
 
 ECODANDECODER::ECODANDECODER(void) {
@@ -108,7 +107,7 @@ uint8_t ECODANDECODER::Process(uint8_t c) {
           break;
       }
     } else if (RxMessage.PacketType == SET_RESPONSE) {
-      WriteOK(RxMessage.Payload, &Status);
+          WriteOK(RxMessage.Payload, &Status);
     }
   }
   return ReturnValue;
@@ -218,15 +217,13 @@ void ECODANDECODER::Process0x01(uint8_t *Buffer, EcodanStatus *Status) {
   Min = Buffer[5];
   Sec = Buffer[6];
 
-  Status->DateTimeStamp.tm_year = 100 + Year;
-  Status->DateTimeStamp.tm_mon = Month - 1;
+  Status->DateTimeStamp.tm_year = Year;
+  Status->DateTimeStamp.tm_mon = Month;
   Status->DateTimeStamp.tm_mday = Day;
 
   Status->DateTimeStamp.tm_hour = Hour;
   Status->DateTimeStamp.tm_min = Min;
   Status->DateTimeStamp.tm_sec = Sec;
-
-  snprintf(Status->FTCSoftware, 6, "%02X.%02X", Buffer[7], Buffer[8]);
 }
 
 void ECODANDECODER::Process0x02(uint8_t *Buffer, EcodanStatus *Status) {
@@ -463,9 +460,9 @@ void ECODANDECODER::Process0x15(uint8_t *Buffer, EcodanStatus *Status) {
   uint8_t PrimaryWaterPump, WaterPump2, ThreeWayValve, ThreeWayValve2;
 
   PrimaryWaterPump = Buffer[1];  // 01 when running (Primary Water Pump)
-  WaterPump2 = Buffer[4];        // Water Pump 2 Active
-  ThreeWayValve = Buffer[6];     // 3 Way Valve Position
-  ThreeWayValve2 = Buffer[7];    // 3 Way Valve 2 Position
+  WaterPump2 = Buffer[4];      // Water Pump 2 Active
+  ThreeWayValve = Buffer[6];   // 3 Way Valve Position
+  ThreeWayValve2 = Buffer[7];  // 3 Way Valve 2 Position
 
   Status->PrimaryWaterPump = PrimaryWaterPump;
   Status->WaterPump2 = WaterPump2;
@@ -477,9 +474,9 @@ void ECODANDECODER::Process0x15(uint8_t *Buffer, EcodanStatus *Status) {
 void ECODANDECODER::Process0x16(uint8_t *Buffer, EcodanStatus *Status) {
   uint8_t WaterPump4, WaterPump3, WaterPump13;
 
-  WaterPump4 = Buffer[1];   // DHW Pump connected to CPN4
-  WaterPump13 = Buffer[2];  // Zone Pump connected to OUT13
-  WaterPump3 = Buffer[3];   // Zone Pump connected to OUT3
+  WaterPump4 = Buffer[1];       // DHW Pump connected to CPN4
+  WaterPump13 = Buffer[2];      // Zone Pump connected to OUT13
+  WaterPump3 = Buffer[3];      // Zone Pump connected to OUT3
 
   Status->WaterPump4 = WaterPump4;
   Status->WaterPump3 = WaterPump3;
@@ -562,8 +559,8 @@ void ECODANDECODER::Process0xA1(uint8_t *Buffer, EcodanStatus *Status) {
   ConsumedCooling = ExtractEnergy(Buffer, 7);
   ConsumedHotWater = ExtractEnergy(Buffer, 10);
 
-  Status->ConsumedDateTimeStamp.tm_year = 100 + Year;
-  Status->ConsumedDateTimeStamp.tm_mon = Month - 1;
+  Status->ConsumedDateTimeStamp.tm_year = Year;
+  Status->ConsumedDateTimeStamp.tm_mon = Month;
   Status->ConsumedDateTimeStamp.tm_mday = Day;
 
   Status->ConsumedHeatingEnergy = ConsumedHeating;
@@ -583,8 +580,8 @@ void ECODANDECODER::Process0xA2(uint8_t *Buffer, EcodanStatus *Status) {
   DeliveredCooling = ExtractEnergy(Buffer, 7);
   DeliveredHotWater = ExtractEnergy(Buffer, 10);
 
-  Status->DeliveredDateTimeStamp.tm_year = 100 + Year;
-  Status->DeliveredDateTimeStamp.tm_mon = Month - 1;
+  Status->DeliveredDateTimeStamp.tm_year = Year;
+  Status->DeliveredDateTimeStamp.tm_mon = Month;
   Status->DeliveredDateTimeStamp.tm_mday = Day;
 
   Status->DeliveredHeatingEnergy = DeliveredHeating;
