@@ -203,6 +203,7 @@ Active commands so far identified, 0x00 to 0xff. Commands not listed appear to g
 | 0x0c | Water Flow Temperatures |
 | 0x0d | Boiler Flow Temperatures |
 | 0x0e | Thermistors 2 |
+| 0x0f | Thermistors 3 (FTC6+ Only) |
 | 0x10 | External sources |
 | 0x11 | Unknown |
 | 0x13 | Run Hours |
@@ -340,7 +341,7 @@ Responses so far identified.
 | 0x0e | F | F |   | R | R |   |   |   |   |    |    |    |    |    |    |    |
 * F : Boiler Flow Temperature * 100    (Where THWB1 installed)
 * R : Boiler Return Temperature * 100     (Where THWB2 is installed)
-### 0x0f - Thermistors 2
+### 0x0f - Thermistors 3 (FTC6+ Only)
 |  0   | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
 |------|---|---|---|---|---|---|---|---|---|----|----|----|----|----|----|----|
 | 0x0f | M | M |   | C | C |   |   |   |   |    |    |    |    |    |    |    |

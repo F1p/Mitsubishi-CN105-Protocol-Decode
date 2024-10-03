@@ -67,6 +67,9 @@ uint8_t ECODANDECODER::Process(uint8_t c) {
         case 0x0e:
           Process0x0E(RxMessage.Payload, &Status);
           break;
+        case 0x0f:
+          Process0x0F(RxMessage.Payload, &Status);
+          break;
         case 0x10:
           Process0x10(RxMessage.Payload, &Status);
           break;
@@ -344,7 +347,7 @@ void ECODANDECODER::Process0x09(uint8_t *Buffer, EcodanStatus *Status) {
 
 void ECODANDECODER::Process0x0B(uint8_t *Buffer, EcodanStatus *Status) {
   float fZone1, fZone2, fOutside;
-  float RefrigeTemp, CondensingTemp;
+  float RefrigeTemp;
 
   fZone1 = ((float)ExtractUInt16(Buffer, 1) / 100);
   if (Buffer[3] != 0xf0) {  // Extract if zone connected (not default value)
@@ -353,15 +356,14 @@ void ECODANDECODER::Process0x0B(uint8_t *Buffer, EcodanStatus *Status) {
     fZone2 = 0;
   }
 
-  //Unknown = ((float)ExtractUInt16(Buffer, 5) / 100);         // Suspected value held here
+  //Unknown = ((float)ExtractUInt16(Buffer, 5) / 100);
   RefrigeTemp = ((float)ExtractUInt16(Buffer, 8) / 100);
-  CondensingTemp = ExtractUInt8_v1(Buffer, 10);
+  //Unknown = ExtractUInt8_v1(Buffer, 10);
   fOutside = ExtractUInt8_v1(Buffer, 11);
 
   Status->Zone1Temperature = fZone1;
   Status->Zone2Temperature = fZone2;
   Status->OutsideTemperature = fOutside;    // TH7
-  Status->CondensingTemp = CondensingTemp;  //
   Status->RefrigeTemp = RefrigeTemp;        //
 }
 
@@ -396,17 +398,26 @@ void ECODANDECODER::Process0x0D(uint8_t *Buffer, EcodanStatus *Status) {
 
 void ECODANDECODER::Process0x0E(uint8_t *Buffer, EcodanStatus *Status) {
   float ExternalBoilerFlowTemperature, ExternalBoilerReturnTemperature;
-  float MixingTemperature;
 
   ExternalBoilerFlowTemperature = ((float)ExtractUInt16(Buffer, 1) / 100);    // Suspected (THWB1)
   ExternalBoilerReturnTemperature = ((float)ExtractUInt16(Buffer, 4) / 100);  // Suspected (THWB2)
-  MixingTemperature = ((float)ExtractUInt16(Buffer, 7) / 100);                // Suspected (THW10)
-  //Unknown = ((float)ExtractUInt16(Buffer, 10) / 100);                              // Unknown
+  //Unknown = ((float)ExtractUInt16(Buffer, 10) / 100);                       // Unknown
 
   Status->ExternalBoilerFlowTemperature = ExternalBoilerFlowTemperature;
   Status->ExternalBoilerReturnTemperature = ExternalBoilerReturnTemperature;
-  Status->MixingTemperature = MixingTemperature;
 }
+
+
+void ECODANDECODER::Process0x0F(uint8_t *Buffer, EcodanStatus *Status) {      // FTC6 Only Parameters
+  float MixingTemperature, CondensingTemp;
+
+  MixingTemperature = ((float)ExtractUInt16(Buffer, 1) / 100);                // Mixing Tank Temperature (THW10)
+  CondensingTemp = ((float)ExtractUInt16(Buffer, 4) / 100);                   // Condensing Temperature
+
+  Status->MixingTemperature = MixingTemperature;
+  Status->CondensingTemp = CondensingTemp;
+}
+
 
 void ECODANDECODER::Process0x10(uint8_t *Buffer, EcodanStatus *Status) {
   uint8_t Zone1ThermostatDemand, Zone2ThermostatDemand, OutdoorThermostatDemand;

@@ -196,7 +196,7 @@ typedef struct _EcodanStatus {
 
   //From Message 0x0B
   float Zone1Temperature, Zone2Temperature, OutsideTemperature;
-  float RefrigeTemp, CondensingTemp;
+  float RefrigeTemp;
 
   //From Message 0x0C
   float HeaterOutputFlowTemperature, HeaterReturnFlowTemperature, HeaterDeltaT;
@@ -208,7 +208,9 @@ typedef struct _EcodanStatus {
 
   //From Message 0x0E
   float ExternalBoilerFlowTemperature, ExternalBoilerReturnTemperature;
-  float MixingTemperature;
+
+  //From Message 0x0F  
+  float MixingTemperature, CondensingTemp;
 
   //From Message 0x10
   uint8_t Zone1ThermostatDemand, Zone2ThermostatDemand, OutdoorThermostatDemand;
@@ -328,6 +330,7 @@ private:
   void Process0x0C(uint8_t *Payload, EcodanStatus *Status);
   void Process0x0D(uint8_t *Payload, EcodanStatus *Status);
   void Process0x0E(uint8_t *Payload, EcodanStatus *Status);
+  void Process0x0F(uint8_t *Payload, EcodanStatus *Status);
   void Process0x10(uint8_t *Payload, EcodanStatus *Status);
   void Process0x11(uint8_t *Payload, EcodanStatus *Status);
   void Process0x13(uint8_t *Payload, EcodanStatus *Status);
