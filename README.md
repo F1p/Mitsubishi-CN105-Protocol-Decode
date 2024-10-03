@@ -343,8 +343,9 @@ Responses so far identified.
 ### 0x0f - Thermistors 2
 |  0   | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
 |------|---|---|---|---|---|---|---|---|---|----|----|----|----|----|----|----|
-| 0x0f | M | M |   |   |   |   |   |   |   |    |    |    |    |    |    |    |
-* M : Mixing Tank Temperature * 100        (Where THW10 is installed)  
+| 0x0f | M | M |   | C | C |   |   |   |   |    |    |    |    |    |    |    |
+* M : Mixing Tank Temperature * 100        (Where THW10 is installed)
+* C : Condensing Temperature * 100
 ### 0x10 - Hardwired Thermostats
 |   0   |  1  |  2  |  3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
 |-------|-----|-----|----|---|---|---|---|---|---|----|----|----|----|----|----|----|
