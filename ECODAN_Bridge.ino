@@ -232,7 +232,7 @@ void loop() {
 #ifdef ESP32                // Define the M5Stack LED
     leds[0] = CRGB::Black;  // Turn the Green LED Off
     leds[0] = CRGB::Red;    // Turn the Red LED On
-    leds[0].fadeLightBy(0);
+    FastLED.setBrightness(0);
     FastLED.show();
 #endif
 
@@ -280,7 +280,7 @@ void loop() {
 #endif
 #ifdef ESP32  // Define the M5Stack LED
     leds[0] = CRGB::Green;
-    leds[0].fadeLightBy(200);  // Green LED on, reduced brightness
+    FastLED.setBrightness(200);  // Green LED on, reduced brightness
     FastLED.show();
 #endif
   }
@@ -758,7 +758,7 @@ void PublishAllReports(void) {
 void FlashGreenLED(void) {
 #ifdef ESP32              // Define the M5Stack LED
   leds[0] = CRGB::Green;  // Flash the Green LED
-  leds[0].fadeLightBy(0);
+  FastLED.setBrightness(0);
   FastLED.show();
 #endif
 #ifdef ESP8266                        // Define the Witty ESP8266 Ports
