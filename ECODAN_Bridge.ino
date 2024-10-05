@@ -555,8 +555,10 @@ void SystemReport(void) {
   char Buffer[1024];
 
   float HeatOutputPower, CoolOutputPower;
-  double OutputPower = (((float)HeatPump.Status.PrimaryFlowRate / 60) * (float)HeatPump.Status.HeaterDeltaT * 4.184);
-  double EstInputPower = ((((float)HeatPump.Status.CompressorFrequency * 2) * ((float)HeatPump.Status.HeaterOutputFlowTemperature * 0.8)) / 1000) / 2;
+
+
+  double OutputPower = (((float)HeatPump.Status.PrimaryFlowRate / 60) * (float)HeatPump.Status.HeaterDeltaT * 3.65);    // Approx Heat Capacity of Water & Glycol
+  double EstInputPower = ((((((float)HeatPump.Status.CompressorFrequency * 2) * ((float)HeatPump.Status.HeaterOutputFlowTemperature * 0.8)) / 1000) / 2) - HeatPump.Status.InputPower) * ((HeatPump.Status.InputPower + 1) - HeatPump.Status.InputPower) / ((HeatPump.Status.InputPower + 1) - HeatPump.Status.InputPower) + HeatPump.Status.InputPower;
 
   if (OutputPower < 0) {
     HeatOutputPower = 0;
@@ -692,14 +694,14 @@ void AdvancedTwoReport(void) {
   doc[F("RefrigeFltCode")] = RefrigeFltCodeString[HeatPump.Status.RefrigeFltCode];
 
   if (ErrorCode == 8000) {
-    doc[F("ErrCode")] = String("None");
+    doc[F("ErrCode")] = String("Normal");
   } else {
     doc[F("ErrCode")] = ErrorCode;
   }
 
   String FltCodeString = String(FltCodeLetterOne[HeatPump.Status.FltCode1]) + String(FltCodeLetterTwo[HeatPump.Status.FltCode2]);
   if (FltCodeString == "A1") {
-    doc[F("FltCode")] = String("None");
+    doc[F("FltCode")] = String("Normal");
   } else {
     doc[F("FltCode")] = String(FltCodeString);
   }
