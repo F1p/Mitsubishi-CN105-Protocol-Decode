@@ -149,8 +149,6 @@ int FTCLoopSpeed, CPULoopSpeed;        // variable for holding loop time in ms
 bool WiFiOneShot = true;
 bool HeatPumpQueryOneShot = true;
 bool PostWriteUpdateRequired = false;
-float Zone1TemperatureSetpoint_UpdateValue, Zone2TemperatureSetpoint_UpdateValue;
-int Zone1FlowSetpoint_UpdateValue, Zone2FlowSetpoint_UpdateValue;
 
 
 
@@ -371,7 +369,7 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
   if (Topic == MQTTCommandZone1NoModeSetpoint) {
     MQTTWriteReceived("MQTT Set Zone1 Temperature Setpoint", 6);
     HeatPump.SetZoneTempSetpoint(Payload.toFloat(), HeatPump.Status.HeatingControlModeZ1, ZONE1);
-    HeatPump.Status.Zone1Temperature = Payload.toFloat();
+    HeatPump.Status.Zone1TemperatureSetpoint = Payload.toFloat();
   }
   // Flow Setpoint Commands
   // Heating & Cooling Zone 1 Commands
@@ -386,7 +384,7 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
   if (Topic == MQTTCommandZone2NoModeSetpoint) {
     MQTTWriteReceived("MQTT Set Zone2 Temperature Setpoint", 6);
     HeatPump.SetZoneTempSetpoint(Payload.toFloat(), HeatPump.Status.HeatingControlModeZ2, ZONE2);
-    HeatPump.Status.Zone2Temperature = Payload.toFloat();
+    HeatPump.Status.Zone2TemperatureSetpoint = Payload.toFloat();
   }
   // Flow Setpoint Commands
   // Heating & Cooling Zone 2 Commands
@@ -447,6 +445,7 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
   if (Topic == MQTTCommandHotwaterSetpoint) {
     MQTTWriteReceived("MQTT Set HW Setpoint", 6);
     HeatPump.SetHotWaterSetpoint(Payload.toInt());
+    HeatPump.Status.HotWaterSetpoint = Payload.toInt();
   }
   if (Topic == MQTTCommandSystemHeatingMode) {
     MQTTWriteReceived("MQTT Set Heating Mode", 4);
