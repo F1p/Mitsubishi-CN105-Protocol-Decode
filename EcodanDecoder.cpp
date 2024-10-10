@@ -363,8 +363,8 @@ void ECODANDECODER::Process0x0B(uint8_t *Buffer, EcodanStatus *Status) {
 
   Status->Zone1Temperature = fZone1;
   Status->Zone2Temperature = fZone2;
-  Status->OutsideTemperature = fOutside;    // TH7
-  Status->RefrigeTemp = RefrigeTemp;        //
+  Status->OutsideTemperature = fOutside;  // TH7
+  Status->RefrigeTemp = RefrigeTemp;      //
 }
 
 void ECODANDECODER::Process0x0C(uint8_t *Buffer, EcodanStatus *Status) {
@@ -408,11 +408,11 @@ void ECODANDECODER::Process0x0E(uint8_t *Buffer, EcodanStatus *Status) {
 }
 
 
-void ECODANDECODER::Process0x0F(uint8_t *Buffer, EcodanStatus *Status) {      // FTC6 Only Parameters
+void ECODANDECODER::Process0x0F(uint8_t *Buffer, EcodanStatus *Status) {  // FTC6 Only Parameters
   float MixingTemperature, CondensingTemp;
 
-  MixingTemperature = ((float)ExtractUInt16(Buffer, 1) / 100);                // Mixing Tank Temperature (THW10)
-  CondensingTemp = ((float)ExtractUInt16(Buffer, 4) / 100);                   // Condensing Temperature
+  MixingTemperature = ((float)ExtractUInt16(Buffer, 1) / 100);  // Mixing Tank Temperature (THW10)
+  CondensingTemp = ((float)ExtractUInt16(Buffer, 4) / 100);     // Condensing Temperature
 
   Status->MixingTemperature = MixingTemperature;
   Status->CondensingTemp = CondensingTemp;
@@ -502,6 +502,8 @@ void ECODANDECODER::Process0x26(uint8_t *Buffer, EcodanStatus *Status) {
   float fHWSetpoint, fExternalSetpoint, fExternalFlowTemp;
   uint8_t SystemPowerMode, SystemOperationMode, HotWaterPowerMode;
   uint8_t HeatingControlModeZone1, HeatingControlModeZone2, HotWaterControlMode;
+
+  Status->LastSystemOperationMode = Status->SystemOperationMode;
 
   SystemPowerMode = Buffer[3];
   SystemOperationMode = Buffer[4];
@@ -816,7 +818,7 @@ void ECODANDECODER::EncodeDHWMode(uint8_t Mode) {
   TxMessage.Payload[5] = Mode;
 }
 
-void ECODANDECODER::EncodeDHW(uint8_t OnOff) {
+void ECODANDECODER::EncodeForcedDHW(uint8_t OnOff) {
   // DHW Boost Active
   TxMessage.Payload[0] = TX_MESSAGE_CONTROLLER;
   TxMessage.Payload[1] = TX_MESSAGE_SETTING_DHW_Flag;
@@ -843,16 +845,30 @@ void ECODANDECODER::EncodeServerControlMode(uint8_t OnOff) {
   TxMessage.Payload[10] = OnOff;  // Enable the Mode
 }
 
+void ECODANDECODER::EncodeNormalDHW(uint8_t OnOff, uint8_t Z1H, uint8_t Z1C, uint8_t Z2H, uint8_t Z2C) {
+  uint8_t Flags = TX_MESSAGE_SETTING_Normal_DHW_Flag;
+
+  TxMessage.Payload[0] = TX_MESSAGE_CONTROLLER;
+  
+  if(Z1H){ Flags = Flags & TX_MESSAGE_SETTING_HEAT_Z1_INH_Flag; }
+  if(Z1C){ Flags = Flags & TX_MESSAGE_SETTING_COOL_Z1_INH_Flag; }
+  if(Z2H){ Flags = Flags & TX_MESSAGE_SETTING_HEAT_Z2_INH_Flag; }
+  if(Z2C){ Flags = Flags & TX_MESSAGE_SETTING_COOL_Z2_INH_Flag; }
+
+  TxMessage.Payload[1] = Flags;       // Write the flags where Zones are to be enabled
+  TxMessage.Payload[5] = 1 - OnOff;   // Disable or Enable the Inhibit (Inverse of SCM)
+  TxMessage.Payload[6] = Z1H;         // Write the current status of Z1 Heating
+  TxMessage.Payload[7] = Z1C;         // Write the current status of Z1 Cooling
+  TxMessage.Payload[8] = Z2H;         // Write the current status of Z2 Heating
+  TxMessage.Payload[9] = Z2C;         // Write the current status of Z2 Cooling
+  TxMessage.Payload[10] = OnOff;      // Enter or Exit SCM Mode 
+}
 
 void ECODANDECODER::EncodeProhibit(uint8_t Flags, uint8_t OnOff) {
   // Heating & DHW Inhibit "Server Control" Mode
   TxMessage.Payload[0] = TX_MESSAGE_CONTROLLER;
   TxMessage.Payload[1] = Flags;
 
-  if ((Flags & TX_MESSAGE_SETTING_Normal_DHW_Flag) == TX_MESSAGE_SETTING_Normal_DHW_Flag) {
-    TxMessage.Payload[5] = 1 - OnOff;  // Disable or Enable the Inhibit
-    TxMessage.Payload[10] = OnOff;     // Enable the Mode (1) = Disable the Inhibit (0)
-  }
   if ((Flags & TX_MESSAGE_SETTING_DHW_INH_Flag) == TX_MESSAGE_SETTING_DHW_INH_Flag) {
     TxMessage.Payload[5] = OnOff;
   }

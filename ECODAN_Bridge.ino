@@ -147,9 +147,9 @@ unsigned long ftcpreviousMillis = 0;   // variable for comparing millis counter
 unsigned long wifipreviousMillis = 0;  // variable for comparing millis counter
 int FTCLoopSpeed, CPULoopSpeed;        // variable for holding loop time in ms
 bool WiFiOneShot = true;
-bool HeatPumpQueryOneShot = true;
+bool HeatPumpQueryOneShot = false;
 bool PostWriteUpdateRequired = false;
-
+byte NormalHWBoostOperating = 0;
 
 
 
@@ -194,6 +194,8 @@ void setup() {
   wifiManager.startWebPortal();
 
   HeatPump.Status.Write_To_Ecodan_OK = false;
+  HeatPump.Status.FlowTempMax = 60;  // Start with placeholders
+  HeatPump.Status.FlowTempMin = 10;
 }
 
 
@@ -319,10 +321,18 @@ void loop() {
 #endif
   }
 
-  // -- Start Sequence -- //
+  // -- Get FTC Version and re-publish Discovery Topics -- //
   if (HeatPumpQueryOneShot) {
-    HeatPump.GetFTCVersion();
     HeatPumpQueryOneShot = false;
+    PublishDiscoveryTopics();
+    HeatPump.GetFTCVersion();
+  }
+
+
+  // -- Normal DHW Boost Handler (Enter SCM > Remove DHW Prohibit > Exit SCM) -- //
+  if (HeatPump.Status.LastSystemOperationMode == 1 && HeatPump.Status.SystemOperationMode != 1 && NormalHWBoostOperating == 1) {
+    // Exit Server Control Mode when the System Operation Mode
+    HeatPump.NormalDHWBoost(0, HeatPump.Status.ProhibitHeatingZ1, HeatPump.Status.ProhibitCoolingZ1, HeatPump.Status.ProhibitHeatingZ2, HeatPump.Status.ProhibitCoolingZ2);
   }
 
   // -- CPU Loop Time End -- //
@@ -343,6 +353,7 @@ void HeatPumpQueryStateEngine(void) {
     DEBUG_PRINTLN("Update Complete");
     FTCLoopSpeed = millis() - ftcpreviousMillis;  // Loop Speed End
     if (MQTTReconnect()) { PublishAllReports(); }
+    if (!HeatPumpQueryOneShot) { HeatPumpQueryOneShot = true; }
   }
 }
 
@@ -435,7 +446,10 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
   }
   if (Topic == MQTTCommandHotwaterNormalBoost) {
     MQTTWriteReceived("MQTT Normal DHW Boost Run", 16);
-    HeatPump.SetProhibits(TX_MESSAGE_SETTING_Normal_DHW_Flag, Payload.toInt());
+    HeatPump.NormalDHWBoost(Payload.toInt(), HeatPump.Status.ProhibitHeatingZ1, HeatPump.Status.ProhibitCoolingZ1, HeatPump.Status.ProhibitHeatingZ2, HeatPump.Status.ProhibitCoolingZ2);
+    HeatPump.Status.SvrControlMode = 1;
+    HeatPump.Status.ProhibitDHW = 0;
+    NormalHWBoostOperating = 1;
   }
   if (Topic == MQTTCommandSystemHolidayMode) {
     MQTTWriteReceived("MQTT Set Holiday Mode", 16);
@@ -531,13 +545,14 @@ void Zone2Report(void) {
 }
 
 void HotWaterReport(void) {
-  StaticJsonDocument<512> doc;
-  char Buffer[512];
+  StaticJsonDocument<1024> doc;
+  char Buffer[1024];
 
   doc[F("Temperature")] = HeatPump.Status.HotWaterTemperature;
   doc[F("TempTHW5A")] = HeatPump.Status.HotWaterTemperatureTHW5A;
   doc[F("Setpoint")] = HeatPump.Status.HotWaterSetpoint;
   doc[F("HotWaterBoostActive")] = HeatPump.Status.HotWaterBoostActive;
+  doc[F("HotWaterEcoBoostActive")] = NormalHWBoostOperating;
   doc[F("ProhibitDHW")] = HeatPump.Status.ProhibitDHW;
   doc[F("DHWActive")] = HeatPump.Status.DHWActive;
   doc[F("HotWaterControlMode")] = HotWaterControlModeString[HeatPump.Status.HotWaterControlMode];
@@ -556,7 +571,7 @@ void SystemReport(void) {
   float HeatOutputPower, CoolOutputPower;
 
 
-  double OutputPower = (((float)HeatPump.Status.PrimaryFlowRate / 60) * (float)HeatPump.Status.HeaterDeltaT * 3.65);    // Approx Heat Capacity of Water & Glycol
+  double OutputPower = (((float)HeatPump.Status.PrimaryFlowRate / 60) * (float)HeatPump.Status.HeaterDeltaT * 3.65);  // Approx Heat Capacity of Water & Glycol
   double EstInputPower = ((((((float)HeatPump.Status.CompressorFrequency * 2) * ((float)HeatPump.Status.HeaterOutputFlowTemperature * 0.8)) / 1000) / 2) - HeatPump.Status.InputPower) * ((HeatPump.Status.InputPower + 1) - HeatPump.Status.InputPower) / ((HeatPump.Status.InputPower + 1) - HeatPump.Status.InputPower) + HeatPump.Status.InputPower;
 
   if (OutputPower < 0) {
@@ -659,7 +674,6 @@ void EnergyReport(void) {
 
 
   // Write into the JSON with 2dp rounding
-
   doc[F("CHEAT")] = round2(HeatPump.Status.ConsumedHeatingEnergy);
   doc[F("CCOOL")] = round2(HeatPump.Status.ConsumedCoolingEnergy);
   doc[F("CDHW")] = round2(HeatPump.Status.ConsumedHotWaterEnergy);

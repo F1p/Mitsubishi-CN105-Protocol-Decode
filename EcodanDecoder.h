@@ -232,14 +232,9 @@ typedef struct _EcodanStatus {
   uint8_t WaterPump4, WaterPump3, WaterPump13;
 
   //From Message 0x26
-  uint8_t SystemPowerMode;
-  uint8_t SystemOperationMode;
-  uint8_t HotWaterControlMode;
-  uint8_t HeatingControlModeZ1;
-  uint8_t HeatingControlModeZ2;
-  float HotWaterSetpoint;
-  float HeaterFlowSetpoint;
-  float ExternalFlowTemp;
+  uint8_t SystemPowerMode, SystemOperationMode, LastSystemOperationMode, HotWaterControlMode;
+  uint8_t HeatingControlModeZ1, HeatingControlModeZ2;
+  float HotWaterSetpoint, HeaterFlowSetpoint, ExternalFlowTemp;
 
   //From Message 0x28
   uint8_t HotWaterBoostActive, HolidayModeActive, ProhibitDHW;
@@ -288,7 +283,8 @@ public:
   void EncodeDHWSetpoint(float HotWaterSetpoint);
   void EncodeRoomThermostat(float Setpoint, uint8_t ControlMode, uint8_t Zone);
   void EncodeFlowTemperature(float Setpoint, uint8_t ControlMode, uint8_t Zone);
-  void EncodeDHW(uint8_t OnOff);
+  void EncodeNormalDHW(uint8_t OnOff, uint8_t Z1H, uint8_t Z1C, uint8_t Z2H, uint8_t Z2C);
+  void EncodeForcedDHW(uint8_t OnOff);
   void EncodeHolidayMode(uint8_t OnOff);
   void EncodeFTCVersion(void);
   void EncodeServerControlMode(uint8_t OnOff);

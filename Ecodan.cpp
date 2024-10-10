@@ -286,7 +286,7 @@ void ECODAN::ForceDHW(uint8_t OnOff) {
 
   StopStateMachine();
   ECODANDECODER::CreateBlankTxMessage(SET_REQUEST, 0x10);
-  ECODANDECODER::EncodeDHW(OnOff);
+  ECODANDECODER::EncodeForcedDHW(OnOff);
   CommandSize = ECODANDECODER::PrepareTxCommand(Buffer);
   DeviceStream->write(Buffer, CommandSize);
   lastmsgdispatchedMillis = millis();
@@ -309,6 +309,28 @@ void ECODAN::SetHolidayMode(uint8_t OnOff) {
   StopStateMachine();
   ECODANDECODER::CreateBlankTxMessage(SET_REQUEST, 0x10);
   ECODANDECODER::EncodeHolidayMode(OnOff);
+  CommandSize = ECODANDECODER::PrepareTxCommand(Buffer);
+  DeviceStream->write(Buffer, CommandSize);
+  lastmsgdispatchedMillis = millis();
+  DeviceStream->flush();
+
+  for (i = 0; i < CommandSize; i++) {
+    if (Buffer[i] < 0x10) DEBUG_PRINT("0");
+    DEBUG_PRINT(String(Buffer[i], HEX));
+    DEBUG_PRINT(", ");
+  }
+  DEBUG_PRINTLN();
+}
+
+
+void ECODAN::NormalDHWBoost(uint8_t OnOff, uint8_t Z1H, uint8_t Z1C, uint8_t Z2H, uint8_t Z2C) {
+  uint8_t Buffer[COMMANDSIZE];
+  uint8_t CommandSize = 0;
+  uint8_t i;
+
+  StopStateMachine();
+  ECODANDECODER::CreateBlankTxMessage(SET_REQUEST, 0x10);
+  ECODANDECODER::EncodeNormalDHW(OnOff, Z1H, Z1C, Z2H, Z1C);
   CommandSize = ECODANDECODER::PrepareTxCommand(Buffer);
   DeviceStream->write(Buffer, CommandSize);
   lastmsgdispatchedMillis = millis();

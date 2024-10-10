@@ -1,9 +1,9 @@
 //-- MQTT Home Assistant Auto Discovery --//
 
-const int discovery_topics PROGMEM = 92;
+const int discovery_topics PROGMEM = 94;
 
 // Build the sensor JSON structure
-const char MQTT_DISCOVERY_OBJ_ID[][3] PROGMEM = { "aa", "ab", "ac", "ad", "ae", "af", "ag", "ah", "ai", "aj", "ak", "al", "am", "an", "ao", "ap", "aq", "ar", "as", "at", "au", "av", "aw", "ax", "ay", "az", "ba", "bb", "bc", "bd", "be", "bf", "bg", "bh", "bi", "bj", "bk", "bl", "bm", "bn", "bo", "bp", "bq", "br", "bs", "bt", "bu", "bv", "bw", "bx", "by", "bz", "ca", "cb", "cc", "cd", "cu", "cv", "cw", "cx", "cz", "da", "db", "dc", "de", "df", "dg", "dh", "di", "dj", "dk", "dl", "dm", "dn", "do", "dp", "ce", "cf", "cg", "ch", "ci", "cj", "ck", "cl", "cm", "cn", "co", "cp", "cq", "cr", "cs", "ct" };
+const char MQTT_DISCOVERY_OBJ_ID[][3] PROGMEM = { "aa", "ab", "ac", "ad", "ae", "af", "ag", "ah", "ai", "aj", "ak", "al", "am", "an", "ao", "ap", "aq", "ar", "as", "at", "au", "av", "aw", "ax", "ay", "az", "ba", "bb", "bc", "bd", "be", "bf", "bg", "bh", "bi", "bj", "bk", "bl", "bm", "bn", "bo", "bp", "bq", "br", "bs", "bt", "bu", "bv", "bw", "bx", "by", "bz", "ca", "cb", "cc", "cd", "cu", "cv", "cw", "cx", "cz", "da", "db", "dc", "de", "df", "dg", "dh", "di", "dj", "dk", "dl", "dm", "dn", "do", "dp", "dq", "ce", "cf", "cg", "ch", "ci", "cj", "ck", "cl", "cm", "cn", "co", "cp", "dr", "cq", "cr", "cs", "ct" };
 
 const char MQTT_SENSOR_UNIQUE_ID[][32] PROGMEM = {
   "ashp_bridge_lwt_",
@@ -82,6 +82,7 @@ const char MQTT_SENSOR_UNIQUE_ID[][32] PROGMEM = {
   "ashp_input_power_",
   "ashp_est_pwr_in_",
   "ashp_ftc_sw_v_",
+  "ashp_dhw_eco_boost_",
 
   "ashp_dhw_climate_",  //65
   "ashp_Zone1_climate_",
@@ -96,6 +97,7 @@ const char MQTT_SENSOR_UNIQUE_ID[][32] PROGMEM = {
   "ashp_svrctrol_z1c_",
   "ashp_svrctrol_z2h_",
   "ashp_svrctrol_z2c_",
+  "ashp_svrctrol_norm_dhw_",
 
   "ashp_z1_flow_setpoint_",
   "ashp_z2_flow_setpoint_",  //78
@@ -182,6 +184,7 @@ const char MQTT_MDI_ICONS[][30] PROGMEM = {
   "mdi:transmission-tower-import",
   "mdi:transmission-tower-import",
   "mdi:alpha-v-circle-outline",
+  "mdi:hand-water",
 
   "mdi:thermostat",  //65
   "mdi:thermostat",
@@ -195,7 +198,8 @@ const char MQTT_MDI_ICONS[][30] PROGMEM = {
   "mdi:cancel",
   "mdi:cancel",
   "mdi:cancel",
-  "mdi:cancel",  // 76
+  "mdi:cancel",            // 76
+  "mdi:thermometer-plus",  //68
 
   "mdi:ray-vertex",  //77
   "mdi:ray-vertex",  //78
@@ -282,12 +286,13 @@ const char MQTT_SENSOR_NAME[][40] PROGMEM = {
   "Heat Pump Input Power",
   "Computed Input Power",
   "FTC Software Version",
+  "Eco DHW Boost",
 
   "DHW Thermostat",  //70
   "Zone 1 Thermostat",
   "Zone 2 Thermostat",  //72
 
-  "DHW Boost",  //73
+  "Fast DHW Boost",  //73
   "System Power",
   "Holiday Mode",
   "Server Control Mode",
@@ -296,6 +301,7 @@ const char MQTT_SENSOR_NAME[][40] PROGMEM = {
   "Prohibit Zone 1 Cooling",
   "Prohibit Zone 2 Heating",  //80
   "Prohibit Zone 2 Cooling",
+  "Eco DHW Boost",
 
   "Zone 1 Flow Setpoint",
   "Zone 2 Flow Setpoint",  //83
@@ -327,10 +333,11 @@ const char MQTT_TOPIC[][34] PROGMEM = {
   "/Command/Zone1/ProhibitCooling",     //19
   "/Command/Zone2/ProhibitHeating",     //20
   "/Command/Zone2/ProhibitCooling",     //21
-  "/Command/Zone1/FlowSetpoint",        //22
-  "/Command/Zone2/FlowSetpoint",        //23
-  "/Command/HotWater/Mode",             //24
-  "/Command/System/HeatingMode"         //25
+  "/Command/HotWater/NormalBoost",      //22
+  "/Command/Zone1/FlowSetpoint",        //23
+  "/Command/Zone2/FlowSetpoint",        //24
+  "/Command/HotWater/Mode",             //25
+  "/Command/System/HeatingMode"         //26
 };
 
 
@@ -343,7 +350,8 @@ int MQTT_SWITCH_STATE_POS[] PROGMEM = {
   5,
   5,
   6,
-  6
+  6,
+  4
 };
 
 int MQTT_TOPIC_POS[] PROGMEM = {
@@ -501,6 +509,7 @@ int MQTT_UNITS_POS[] PROGMEM = {
   0,
   3,
   3,
+  0,
   0
 };
 
@@ -649,6 +658,7 @@ const char MQTT_SENSOR_VALUE_TEMPLATE[][50] PROGMEM = {
   "{{ value_json.InputPower }}",
   "{{ value_json.EstInputPower }}",
   "{{ value_json.FTCSoftwareVersion }}",
+  "{{ value_json.HotWaterEcoBoostActive }}",
   "{{ value_json }}",
   "{{ value_json.Setpoint }}",
   "{{ value_json.FSP }}",  //75
@@ -661,6 +671,7 @@ const char MQTT_SENSOR_VALUE_TEMPLATE[][50] PROGMEM = {
   "{{ value_json.ProhibitCooling }}",
   "{{ value_json.ProhibitHeating }}",  //80
   "{{ value_json.ProhibitCooling }}",
+  "{{ value_json.HotWaterEcoBoostActive }}",
   "{{ value_json.HeatingControlMode }}"
 };
 

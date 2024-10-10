@@ -37,6 +37,7 @@ public:
 
   void SetZoneTempSetpoint(float Setpoint, uint8_t Mode, uint8_t Zone);
   void SetFlowSetpoint(float Setpoint, uint8_t Mode, uint8_t Zone);
+  void NormalDHWBoost(uint8_t OnOff, uint8_t Z1H, uint8_t Z1C, uint8_t Z2H, uint8_t Z2C);
   void SetProhibits(uint8_t Flags, uint8_t OnOff);
   void ForceDHW(uint8_t OnOff);
   void SetDHWMode(String *Mode);
