@@ -573,12 +573,16 @@ void SystemReport(void) {
 
   double OutputPower = (((float)HeatPump.Status.PrimaryFlowRate / 60) * (float)HeatPump.Status.HeaterDeltaT * 3.65);  // Approx Heat Capacity of Water & Glycol
   double EstInputPower = ((((((float)HeatPump.Status.CompressorFrequency * 2) * ((float)HeatPump.Status.HeaterOutputFlowTemperature * 0.8)) / 1000) / 2) - HeatPump.Status.InputPower) * ((HeatPump.Status.InputPower + 1) - HeatPump.Status.InputPower) / ((HeatPump.Status.InputPower + 1) - HeatPump.Status.InputPower) + HeatPump.Status.InputPower;
+  if (EstInputPower == 0 && (HeatPump.Status.ImmersionActive == 1 || HeatPump.Status.BoosterActive == 1)) { EstInputPower = HeatPump.Status.InputPower; }  // Account for Immersion or Booster Instead of HP
 
   if (OutputPower < 0) {
     HeatOutputPower = 0;
     CoolOutputPower = fabsf(OutputPower);
   } else {
-    HeatOutputPower = OutputPower;
+    if (OutputPower == 0 && (HeatPump.Status.ImmersionActive == 1 || HeatPump.Status.BoosterActive == 1)) { HeatOutputPower = HeatPump.Status.OutputPower; }  // Account for Immersion or Booster Instead of HP
+    else {
+      HeatOutputPower = OutputPower;
+    }
     CoolOutputPower = 0;
   }
 

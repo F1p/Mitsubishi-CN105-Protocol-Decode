@@ -301,7 +301,7 @@ const char MQTT_SENSOR_NAME[][40] PROGMEM = {
   "Prohibit Zone 1 Cooling",
   "Prohibit Zone 2 Heating",  //80
   "Prohibit Zone 2 Cooling",
-  "Eco DHW Boost",
+  "DHW Boost",
 
   "Zone 1 Flow Setpoint",
   "Zone 2 Flow Setpoint",  //83
@@ -555,8 +555,8 @@ const char MQTT_CLIMATE_MODE[][127] PROGMEM = {
 
 const char MQTT_CLIMATE_STATE_TOPIC[][494] PROGMEM = {
   "{{ 'heat' if (value_json.SystemOperationMode=='Hot Water' or value_json.SystemOperationMode=='Legionella') else 'off' }}",
-  "{{ 'heat' if (value_json.SystemOperationMode=='Heating' and state_attr('climate.zone2_climate','current_temperature')==0) else 'heat' if (value_json.SystemOperationMode == 'Heating' and states('sensor.ecodan_ashp_zone_1_working')=='1') else 'cool' if (value_json.SystemOperationMode == 'Cooling' and state_attr('climate.zone2_climate','current_temperature')==0) else 'cool' if (value_json.SystemOperationMode == 'Cooling' and states('sensor.ecodan_ashp_zone_1_working')=='1') else 'off' }}",
-  "{{ 'heat' if (value_json.SystemOperationMode == 'Heating' and states('sensor.ecodan_ashp_zone_2_working')=='1') else 'cool' if (value_json.SystemOperationMode == 'Cooling' and states('sensor.ecodan_ashp_zone_2_working')=='1') else 'off' }}"
+  "{{ 'heat' if (value_json.SystemOperationMode=='Heating' and state_attr('climate.zone2_climate','current_temperature')=='0') else 'heat' if (value_json.SystemOperationMode=='Heating' and states('sensor.ecodan_ashp_zone_1_working')=='1') else 'cool' if (value_json.SystemOperationMode=='Cooling' and state_attr('climate.zone2_climate','current_temperature')=='0') else 'cool' if (value_json.SystemOperationMode=='Cooling' and states('sensor.ecodan_ashp_zone_1_working')=='1') else 'off' }}",
+  "{{ 'heat' if (value_json.SystemOperationMode=='Heating' and states('sensor.ecodan_ashp_zone_2_working')=='1') else 'cool' if (value_json.SystemOperationMode=='Cooling' and states('sensor.ecodan_ashp_zone_2_working')=='1') else 'off' }}"
 };
 
 const char MQTT_SELECT_VALUE_TOPIC[][405] PROGMEM = {
