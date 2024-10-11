@@ -458,7 +458,7 @@ void readSettingsFromConfig() {
       if (i >= 78) {
         if (i >= 84 && i < 89) {  // Server Control Mode Interlocks
           Config["availability"]["topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[8]);
-          Config["availability"]["value_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[84]);
+          Config["availability"]["value_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[83]);
           Config["availability"]["payload_available"] = ITEM_ON;
           Config["availability"]["payload_not_available"] = ITEM_OFF;
         } else if (i >= 90 && i < 92) {  // Flow Op Mode Interlocks
