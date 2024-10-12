@@ -39,7 +39,7 @@
 #include "Ecodan.h"
 
 
-String FirmwareVersion = "5.2.6";
+String FirmwareVersion = "5.2.6-h2";
 
 
 #ifdef ESP8266  // Define the Witty ESP8266 Serial Pins
@@ -447,9 +447,9 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
   if (Topic == MQTTCommandHotwaterNormalBoost) {
     MQTTWriteReceived("MQTT Normal DHW Boost Run", 16);
     HeatPump.NormalDHWBoost(Payload.toInt(), HeatPump.Status.ProhibitHeatingZ1, HeatPump.Status.ProhibitCoolingZ1, HeatPump.Status.ProhibitHeatingZ2, HeatPump.Status.ProhibitCoolingZ2);
-    HeatPump.Status.SvrControlMode = 1;
-    HeatPump.Status.ProhibitDHW = 0;
-    NormalHWBoostOperating = 1;
+    HeatPump.Status.SvrControlMode = Payload.toInt();
+    HeatPump.Status.ProhibitDHW = 1 - Payload.toInt();
+    NormalHWBoostOperating = Payload.toInt();
   }
   if (Topic == MQTTCommandSystemHolidayMode) {
     MQTTWriteReceived("MQTT Set Holiday Mode", 16);
@@ -571,7 +571,7 @@ void SystemReport(void) {
   float HeatOutputPower, CoolOutputPower;
 
 
-  double OutputPower = (((float)HeatPump.Status.PrimaryFlowRate / 60) * (float)HeatPump.Status.HeaterDeltaT * 3.65);  // Approx Heat Capacity of Water & Glycol
+  double OutputPower = (((float)HeatPump.Status.PrimaryFlowRate / 60) * (float)HeatPump.Status.HeaterDeltaT * 3.9);  // Approx Heat Capacity of Water & Glycol
   double EstInputPower = ((((((float)HeatPump.Status.CompressorFrequency * 2) * ((float)HeatPump.Status.HeaterOutputFlowTemperature * 0.8)) / 1000) / 2) - HeatPump.Status.InputPower) * ((HeatPump.Status.InputPower + 1) - HeatPump.Status.InputPower) / ((HeatPump.Status.InputPower + 1) - HeatPump.Status.InputPower) + HeatPump.Status.InputPower;
   if (EstInputPower == 0 && (HeatPump.Status.ImmersionActive == 1 || HeatPump.Status.BoosterActive == 1)) { EstInputPower = HeatPump.Status.InputPower; }  // Account for Immersion or Booster Instead of HP
 

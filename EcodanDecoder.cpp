@@ -849,19 +849,19 @@ void ECODANDECODER::EncodeNormalDHW(uint8_t OnOff, uint8_t Z1H, uint8_t Z1C, uin
   uint8_t Flags = TX_MESSAGE_SETTING_Normal_DHW_Flag;
 
   TxMessage.Payload[0] = TX_MESSAGE_CONTROLLER;
-  
-  if(Z1H){ Flags = Flags & TX_MESSAGE_SETTING_HEAT_Z1_INH_Flag; }
-  if(Z1C){ Flags = Flags & TX_MESSAGE_SETTING_COOL_Z1_INH_Flag; }
-  if(Z2H){ Flags = Flags & TX_MESSAGE_SETTING_HEAT_Z2_INH_Flag; }
-  if(Z2C){ Flags = Flags & TX_MESSAGE_SETTING_COOL_Z2_INH_Flag; }
 
-  TxMessage.Payload[1] = Flags;       // Write the flags where Zones are to be enabled
-  TxMessage.Payload[5] = 1 - OnOff;   // Disable or Enable the Inhibit (Inverse of SCM)
-  TxMessage.Payload[6] = Z1H;         // Write the current status of Z1 Heating
-  TxMessage.Payload[7] = Z1C;         // Write the current status of Z1 Cooling
-  TxMessage.Payload[8] = Z2H;         // Write the current status of Z2 Heating
-  TxMessage.Payload[9] = Z2C;         // Write the current status of Z2 Cooling
-  TxMessage.Payload[10] = OnOff;      // Enter or Exit SCM Mode 
+  if (Z1H) { Flags = Flags | TX_MESSAGE_SETTING_HEAT_Z1_INH_Flag; }
+  if (Z1C) { Flags = Flags | TX_MESSAGE_SETTING_COOL_Z1_INH_Flag; }
+  if (Z2H) { Flags = Flags | TX_MESSAGE_SETTING_HEAT_Z2_INH_Flag; }
+  if (Z2C) { Flags = Flags | TX_MESSAGE_SETTING_COOL_Z2_INH_Flag; }
+
+  TxMessage.Payload[1] = Flags;      // Write the flags where Zones are to be enabled
+  TxMessage.Payload[5] = 1 - OnOff;  // Disable or Enable the Inhibit (Inverse of SCM)
+  TxMessage.Payload[6] = Z1H;        // Write the current status of Z1 Heating
+  TxMessage.Payload[7] = Z1C;        // Write the current status of Z1 Cooling
+  TxMessage.Payload[8] = Z2H;        // Write the current status of Z2 Heating
+  TxMessage.Payload[9] = Z2C;        // Write the current status of Z2 Cooling
+  TxMessage.Payload[10] = OnOff;     // Enter or Exit SCM Mode
 }
 
 void ECODANDECODER::EncodeProhibit(uint8_t Flags, uint8_t OnOff) {
