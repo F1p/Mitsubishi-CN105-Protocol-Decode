@@ -39,7 +39,7 @@
 #include "Ecodan.h"
 
 
-String FirmwareVersion = "5.2.6-h2";
+String FirmwareVersion = "5.2.6-h3";
 
 
 #ifdef ESP8266  // Define the Witty ESP8266 Serial Pins
@@ -148,6 +148,7 @@ unsigned long wifipreviousMillis = 0;  // variable for comparing millis counter
 int FTCLoopSpeed, CPULoopSpeed;        // variable for holding loop time in ms
 bool WiFiOneShot = true;
 bool HeatPumpQueryOneShot = false;
+bool HeatPumpFirstRead = true;
 bool PostWriteUpdateRequired = false;
 byte NormalHWBoostOperating = 0;
 
@@ -333,6 +334,7 @@ void loop() {
   if (HeatPump.Status.LastSystemOperationMode == 1 && HeatPump.Status.SystemOperationMode != 1 && NormalHWBoostOperating == 1) {
     // Exit Server Control Mode when the System Operation Mode
     HeatPump.NormalDHWBoost(0, HeatPump.Status.ProhibitHeatingZ1, HeatPump.Status.ProhibitCoolingZ1, HeatPump.Status.ProhibitHeatingZ2, HeatPump.Status.ProhibitCoolingZ2);
+    NormalHWBoostOperating = 0;
   }
 
   // -- CPU Loop Time End -- //
@@ -351,9 +353,12 @@ void HeatPumpQueryStateEngine(void) {
   // Call Once Full Update is complete
   if (HeatPump.UpdateComplete()) {
     DEBUG_PRINTLN("Update Complete");
-    FTCLoopSpeed = millis() - ftcpreviousMillis;  // Loop Speed End
+    FTCLoopSpeed = millis() - ftcpreviousMillis;        // Loop Speed End
     if (MQTTReconnect()) { PublishAllReports(); }
-    if (!HeatPumpQueryOneShot) { HeatPumpQueryOneShot = true; }
+    if (HeatPumpFirstRead) {                            // Trigger after the first read operation completes
+      HeatPumpQueryOneShot = true;
+      HeatPumpFirstRead = false;
+    }
   }
 }
 
