@@ -39,7 +39,7 @@
 #include "Ecodan.h"
 
 
-String FirmwareVersion = "5.2.6-h3";
+String FirmwareVersion = "5.2.6-h4";
 
 
 #ifdef ESP8266  // Define the Witty ESP8266 Serial Pins
@@ -334,7 +334,7 @@ void loop() {
   if (HeatPump.Status.LastSystemOperationMode == 1 && HeatPump.Status.SystemOperationMode != 1 && NormalHWBoostOperating == 1) {
     // Exit Server Control Mode when the System Operation Mode
     HeatPump.NormalDHWBoost(0, HeatPump.Status.ProhibitHeatingZ1, HeatPump.Status.ProhibitCoolingZ1, HeatPump.Status.ProhibitHeatingZ2, HeatPump.Status.ProhibitCoolingZ2);
-    NormalHWBoostOperating = 0;
+    NormalHWBoostOperating = 0;      // Don't enter again
   }
 
   // -- CPU Loop Time End -- //

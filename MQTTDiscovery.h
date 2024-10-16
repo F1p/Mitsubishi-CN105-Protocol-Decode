@@ -286,7 +286,7 @@ const char MQTT_SENSOR_NAME[][40] PROGMEM = {
   "Heat Pump Input Power",
   "Computed Input Power",
   "FTC Software Version",
-  "Eco DHW Boost",
+  "DHW Boost",
 
   "DHW Thermostat",  //70
   "Zone 1 Thermostat",
@@ -555,7 +555,7 @@ const char MQTT_CLIMATE_MODE[][127] PROGMEM = {
 
 const char MQTT_CLIMATE_STATE_TOPIC[][494] PROGMEM = {
   "{{ 'heat' if (value_json.SystemOperationMode=='Hot Water' or value_json.SystemOperationMode=='Legionella') else 'off' }}",
-  "{{ 'heat' if (value_json.SystemOperationMode=='Heating' and state_attr('climate.zone2_climate','current_temperature')=='0') else 'heat' if (value_json.SystemOperationMode=='Heating' and states('sensor.ecodan_ashp_zone_1_working')=='1') else 'cool' if (value_json.SystemOperationMode=='Cooling' and state_attr('climate.zone2_climate','current_temperature')=='0') else 'cool' if (value_json.SystemOperationMode=='Cooling' and states('sensor.ecodan_ashp_zone_1_working')=='1') else 'off' }}",
+  "{{ 'heat' if (value_json.SystemOperationMode=='Heating' and state_attr('climate.zone2_climate','current_temperature')==0) else 'heat' if (value_json.SystemOperationMode=='Heating' and states('sensor.ecodan_ashp_zone_1_working')=='1') else 'cool' if (value_json.SystemOperationMode=='Cooling' and state_attr('climate.zone2_climate','current_temperature')==0) else 'cool' if (value_json.SystemOperationMode=='Cooling' and states('sensor.ecodan_ashp_zone_1_working')=='1') else 'off' }}",
   "{{ 'heat' if (value_json.SystemOperationMode=='Heating' and states('sensor.ecodan_ashp_zone_2_working')=='1') else 'cool' if (value_json.SystemOperationMode=='Cooling' and states('sensor.ecodan_ashp_zone_2_working')=='1') else 'off' }}"
 };
 
