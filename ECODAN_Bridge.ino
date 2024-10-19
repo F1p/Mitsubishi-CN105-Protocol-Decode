@@ -39,7 +39,7 @@
 #include "Ecodan.h"
 
 
-String FirmwareVersion = "5.2.6-h4";
+String FirmwareVersion = "5.2.6-h5 Fast Update";
 
 
 #ifdef ESP8266  // Define the Witty ESP8266 Serial Pins

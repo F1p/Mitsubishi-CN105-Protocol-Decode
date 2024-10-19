@@ -436,7 +436,7 @@ void readSettingsFromConfig() {
       if (i >= 92 && i < 94) {
         Config["name"] = String(MQTT_SENSOR_NAME[i]);
         Config["command_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[i - 67]);
-        Config["state_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[i - 87]);
+        Config["state_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[i - 88]);
         Config["value_template"] = String(MQTT_SELECT_VALUE_TOPIC[i - 92]);
         if (i == 92) {
           Config["options"][0] = HotWaterControlModeString[0];
@@ -455,7 +455,7 @@ void readSettingsFromConfig() {
 
 
       // Add Availability Topics
-      if (i >= 78) {
+      if (i >= 77) {
         if (i >= 84 && i < 89) {  // Server Control Mode Interlocks
           Config["availability"]["topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[8]);
           Config["availability"]["value_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[83]);
