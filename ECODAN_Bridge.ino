@@ -14,23 +14,26 @@
 
 // -- Supported Hardware -- //
 /* As sold Witty ESP8266 based               / Core 3.1.2 / Flash 4MB (1MB FS / 1MB OTA)                        */
-/* ESP32 ESP32 (ESP32S3 Dev Module)          / Core 2.0.17 / Flash 4M with SPIFFS (1.2MB APP / 1.5MB SPIFFS)    */
-/* ESP32 Ethernet WT32-ETH01                 / Core 3.0.3 / Flash 4MB (1.2MB APP / 1.5MB SPIFFS)                */
+/* ESP32 ESP32 (ESP32S3 Dev Module)          / Core 3.0.5 / Flash 4M with SPIFFS (1.2MB APP / 1.5MB SPIFFS)    */
+/* ESP32 Ethernet WT32-ETH01                 / Core 3.0.5 / Flash 4MB (1.2MB APP / 1.5MB SPIFFS)                */
 
 
 #if defined(ESP8266) || defined(ESP32)  // ESP32 or ESP8266 Compatiability
 
 #include <FS.h>  // Define File System First
 #include <LittleFS.h>
+
 #ifdef ESP8266
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
 #include <SoftwareSerial.h>
 #endif
+
 #ifdef ESP32
 #include <WiFi.h>
 #include <WebServer.h>
 #endif
+
 #include <DNSServer.h>
 #include <WiFiManager.h>
 #include <PubSubClient.h>
@@ -38,8 +41,13 @@
 #include <ESPTelnet.h>
 #include "Ecodan.h"
 
+#ifdef ARDUINO_WT32_ETH01
+#include <ETH.h>
+#include <Arduino.h>
+#endif
 
-String FirmwareVersion = "5.2.6-h5 Fast Update";
+
+String FirmwareVersion = "5.2.7";
 
 
 #ifdef ESP8266  // Define the Witty ESP8266 Serial Pins
@@ -56,17 +64,36 @@ int Blue_RGB_LED = 13;
 #endif
 
 #ifdef ESP32  // Define the M5Stack Serial Pins
+#define HEATPUMP_STREAM Serial2
+#define SERIAL_CONFIG SERIAL_8E1
+
+#ifdef ARDUINO_M5STACK_ATOMS3
 #include <FastLED.h>
+#define FASTLED_FORCE_NAMESPACE
 #define FASTLED_INTERNAL
 #define NUM_LEDS 1
 #define DATA_PIN 35
 CRGB leds[NUM_LEDS];
 int Reset_Button = 41;
-#define HEATPUMP_STREAM Serial2
-#define SERIAL_CONFIG SERIAL_8E1
 #define RxPin 2
 #define TxPin 1
 #endif
+
+#ifdef ARDUINO_WT32_ETH01
+#define RxPin 4
+#define TxPin 2
+#ifndef ETH_PHY_TYPE
+#define ETH_PHY_TYPE ETH_PHY_LAN8720
+#define ETH_PHY_ADDR 0
+#define ETH_PHY_MDC 23
+#define ETH_PHY_MDIO 18
+#define ETH_PHY_POWER -1
+#define ETH_CLK_MODE ETH_CLOCK_GPIO0_IN
+#endif
+#endif
+#endif
+
+
 
 unsigned long SERIAL_BAUD = 2400;
 bool shouldSaveConfig = false;
@@ -152,7 +179,9 @@ bool HeatPumpFirstRead = true;
 bool PostWriteUpdateRequired = false;
 byte NormalHWBoostOperating = 0;
 
-
+#ifdef ARDUINO_WT32_ETH01
+static bool eth_connected = false;
+#endif
 
 
 void setup() {
@@ -161,10 +190,18 @@ void setup() {
   HEATPUMP_STREAM.begin(SERIAL_BAUD, SERIAL_CONFIG, RxPin, TxPin);  // Rx, Tx
   HeatPump.SetStream(&HEATPUMP_STREAM);
 
-  pinMode(Reset_Button, INPUT);  // Pushbutton
+#ifdef ARDUINO_WT32_ETH01
+  Network.onEvent(onEvent);
+  ETH.begin();
+#endif
+
+#ifndef ARDUINO_WT32_ETH01
+  pinMode(Reset_Button, INPUT);  // Pushbutton on other modules
+#endif
+
 
 // -- Lights for ESP8266 and ESP32 -- //
-#ifdef ESP32                                               // Define the M5Stack LED
+#ifdef ARDUINO_M5STACK_ATOMS3                              // Define the M5Stack LED
   FastLED.addLeds<WS2812, DATA_PIN, GRB>(leds, NUM_LEDS);  // ESP32 M5 Stack Atom S3
 #endif
 #ifdef ESP8266                     // Define the Witty ESP8266 Ports
@@ -230,9 +267,9 @@ void loop() {
     digitalWrite(Green_RGB_LED, LOW);  // Turn the Green LED Off
     digitalWrite(Red_RGB_LED, HIGH);   // Turn the Red LED On
 #endif
-#ifdef ESP32                // Define the M5Stack LED
-    leds[0] = CRGB::Black;  // Turn the Green LED Off
-    leds[0] = CRGB::Red;    // Turn the Red LED On
+#ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack LED
+    leds[0] = CRGB::Black;     // Turn the Green LED Off
+    leds[0] = CRGB::Red;       // Turn the Red LED On
     FastLED.setBrightness(0);
     FastLED.show();
 #endif
@@ -254,8 +291,8 @@ void loop() {
       digitalWrite(Red_RGB_LED, HIGH);
       ESP.reset();
 #endif
-#ifdef ESP32                // Define the M5Stack LED
-      leds[0] = CRGB::Red;  // Flash the Red LED
+#ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack LED
+      leds[0] = CRGB::Red;     // Flash the Red LED
       FastLED.show();
       delay(500);
       leds[0] = CRGB::Black;
@@ -270,7 +307,7 @@ void loop() {
       leds[0] = CRGB::Red;
       FastLED.show();
 #endif
-#ifdef ESP32
+#ifdef ARDUINO_M5STACK_ATOMS3
       ESP.restart();
 #endif
     }                                // Wait for 5 mins to try reconnects then force restart
@@ -279,7 +316,7 @@ void loop() {
     analogWrite(Green_RGB_LED, 30);  // Green LED on, 25% brightness
     digitalWrite(Red_RGB_LED, LOW);  // Turn the Red LED Off
 #endif
-#ifdef ESP32  // Define the M5Stack LED
+#ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack LED
     leds[0] = CRGB::Green;
     FastLED.setBrightness(200);  // Green LED on, reduced brightness
     FastLED.show();
@@ -287,6 +324,7 @@ void loop() {
   }
 
   // -- Push Button Action Handler -- //
+#ifndef ARDUINO_WT32_ETH01
   if (digitalRead(Reset_Button) == LOW) {  // Inverted (Button Pushed is LOW)
     HeatPump.SetSvrControlMode(0);         // Exit Server Control Mode
 #ifdef ESP8266                             // Define the Witty ESP8266 Ports
@@ -302,8 +340,8 @@ void loop() {
     delay(500);
     ESP.reset();
 #endif
-#ifdef ESP32              // Define the M5Stack LED
-    leds[0] = CRGB::Red;  // Flash the Red LED
+#ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack LED
+    leds[0] = CRGB::Red;       // Flash the Red LED
     FastLED.show();
     delay(500);
     leds[0] = CRGB::Black;
@@ -318,9 +356,10 @@ void loop() {
     leds[0] = CRGB::Red;
     FastLED.show();
     delay(500);
-    ESP.restart();
+    ESP.restart();  // No button on ETH
 #endif
   }
+#endif
 
   // -- Get FTC Version and re-publish Discovery Topics -- //
   if (HeatPumpQueryOneShot) {
@@ -334,7 +373,7 @@ void loop() {
   if (HeatPump.Status.LastSystemOperationMode == 1 && HeatPump.Status.SystemOperationMode != 1 && NormalHWBoostOperating == 1) {
     // Exit Server Control Mode when the System Operation Mode
     HeatPump.NormalDHWBoost(0, HeatPump.Status.ProhibitHeatingZ1, HeatPump.Status.ProhibitCoolingZ1, HeatPump.Status.ProhibitHeatingZ2, HeatPump.Status.ProhibitCoolingZ2);
-    NormalHWBoostOperating = 0;      // Don't enter again
+    NormalHWBoostOperating = 0;  // Don't enter again
   }
 
   // -- CPU Loop Time End -- //
@@ -353,9 +392,9 @@ void HeatPumpQueryStateEngine(void) {
   // Call Once Full Update is complete
   if (HeatPump.UpdateComplete()) {
     DEBUG_PRINTLN("Update Complete");
-    FTCLoopSpeed = millis() - ftcpreviousMillis;        // Loop Speed End
+    FTCLoopSpeed = millis() - ftcpreviousMillis;  // Loop Speed End
     if (MQTTReconnect()) { PublishAllReports(); }
-    if (HeatPumpFirstRead) {                            // Trigger after the first read operation completes
+    if (HeatPumpFirstRead) {  // Trigger after the first read operation completes
       HeatPumpQueryOneShot = true;
       HeatPumpFirstRead = false;
     }
@@ -780,8 +819,8 @@ void PublishAllReports(void) {
 
 
 void FlashGreenLED(void) {
-#ifdef ESP32              // Define the M5Stack LED
-  leds[0] = CRGB::Green;  // Flash the Green LED
+#ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack LED
+  leds[0] = CRGB::Green;       // Flash the Green LED
   FastLED.setBrightness(0);
   FastLED.show();
 #endif
@@ -846,5 +885,40 @@ void MQTTWriteReceived(String message, int MsgNumber) {
   DEBUG_PRINTLN(message);
   PostWriteUpdateRequired = true;  // Wait For OK
 }
+
+#ifdef ARDUINO_WT32_ETH01
+// WARNING: onEvent is called from a separate FreeRTOS task (thread)!
+void onEvent(arduino_event_id_t event) {
+  switch (event) {
+    case ARDUINO_EVENT_ETH_START:
+      DEBUG_PRINTLN("ETH Started");
+      // The hostname must be set after the interface is started, but needs
+      // to be set before DHCP, so set it from the event handler thread.
+      ETH.setHostname("Ecodan-Bridge");
+      break;
+    case ARDUINO_EVENT_ETH_CONNECTED:
+      DEBUG_PRINTLN("ETH Connected");
+      break;
+    case ARDUINO_EVENT_ETH_GOT_IP:
+      DEBUG_PRINTLN("ETH Got IP");
+      DEBUG_PRINTLN(ETH);
+      eth_connected = true;
+      break;
+    case ARDUINO_EVENT_ETH_LOST_IP:
+      DEBUG_PRINTLN("ETH Lost IP");
+      eth_connected = false;
+      break;
+    case ARDUINO_EVENT_ETH_DISCONNECTED:
+      DEBUG_PRINTLN("ETH Disconnected");
+      eth_connected = false;
+      break;
+    case ARDUINO_EVENT_ETH_STOP:
+      DEBUG_PRINTLN("ETH Stopped");
+      eth_connected = false;
+      break;
+    default: break;
+  }
+}
+#endif
 
 #endif

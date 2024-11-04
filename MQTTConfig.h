@@ -247,7 +247,7 @@ void readSettingsFromConfig() {
   }
 
   void initializeWifiManager() {
-#ifdef ESP32               // Define the M5Stack LED
+#ifdef ARDUINO_M5STACK_ATOMS3               // Define the M5Stack LED
     leds[0] = CRGB::Blue;  // Turn the Blue LED On
     FastLED.show();
 #endif
@@ -257,6 +257,7 @@ void readSettingsFromConfig() {
     DEBUG_PRINTLN("Starting WiFi Manager");
     // Reset Wifi settings for testing
     //wifiManager.resetSettings();
+
     wifiManager.setTitle("Ecodan Bridge");
 
     // Set or Update the values
@@ -294,6 +295,7 @@ void readSettingsFromConfig() {
     wifiManager.setAPClientCheck(true);                     // avoid timeout if client connected to softap
 
 
+#ifndef ARDUINO_WT32_ETH01
     if (!wifiManager.autoConnect("Ecodan Bridge AP")) {
       DEBUG_PRINTLN("Failed to connect and hit timeout");
       delay(3000);
@@ -306,6 +308,8 @@ void readSettingsFromConfig() {
     }
 
     DEBUG_PRINTLN("WiFi Connected!");
+#endif
+
 #ifdef ESP8266                        // Define the Witty ESP8266 Ports
     digitalWrite(Blue_RGB_LED, LOW);  // Set the Blue LED off, ESP32 will do this in main loop
 #endif
@@ -536,7 +540,7 @@ void readSettingsFromConfig() {
       DEBUG_PRINTLN("MQTT Server Connected");
       MQTTonConnect();
 
-#ifdef ESP32                  // Define the M5Stack LED
+#ifdef ARDUINO_M5STACK_ATOMS3                  // Define the M5Stack LED
       leds[0] = CRGB::Black;  // Turn the Green LED Off
       leds[0] = CRGB::Green;  // Turn the Red LED On
       FastLED.show();
@@ -594,7 +598,7 @@ void readSettingsFromConfig() {
 
   void handleMqttState() {
     if (!MQTTClient.connected()) {
-#ifdef ESP32                  // Define the M5Stack LED
+#ifdef ARDUINO_M5STACK_ATOMS3         // Define the M5Stack LED
       leds[0] = CRGB::Green;  // Turn the Green LED Off
       leds[0] = CRGB::Red;    // Turn the Red LED On
       FastLED.show();
