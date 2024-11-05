@@ -333,8 +333,8 @@ Responses so far identified.
 | 0x0d | F1 | F1 |   | R1 | R1 |   | F2 | F2 |   |  R2 |  R2  |    |    |    |    |    |
 * F1 : Zone 1 Flow Temperature * 100 (Where THW6 installed)
 * R1 : Zone 1 Return Temperature * 100  (Where THW7 is installed)
-* F1 : Zone 2 Flow Temperature * 100 (Where THW8 installed)
-* R1 : Zone 2 Return Temperature * 100  (Where THW9 is installed)
+* F2 : Zone 2 Flow Temperature * 100 (Where THW8 installed)
+* R2 : Zone 2 Return Temperature * 100  (Where THW9 is installed)
 ### 0x0e - Thermistors 2
 |  0   | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
 |------|---|---|---|---|---|---|---|---|---|----|----|----|----|----|----|----|
