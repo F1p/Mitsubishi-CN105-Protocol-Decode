@@ -47,7 +47,7 @@
 #endif
 
 
-String FirmwareVersion = "5.2.7";
+String FirmwareVersion = "5.3.0 Beta";
 
 
 #ifdef ESP8266  // Define the Witty ESP8266 Serial Pins
@@ -145,7 +145,7 @@ WiFiManagerParameter custom_mqtt_server("server", "MQTT Server", "TEMP", hostnam
 WiFiManagerParameter custom_mqtt_port("port", "MQTT Server Port", "TEMP", port_max_length);
 WiFiManagerParameter custom_mqtt_user("user", "MQTT Username", "TEMP", user_max_length);
 WiFiManagerParameter custom_mqtt_pass("pass", "MQTT Password", "TEMP", password_max_length);
-WiFiManagerParameter custom_mqtt_basetopic("basetopic", "MQTT Base Topic (Default: ASHP/Ecodan)", "TEMP", basetopic_max_length);
+WiFiManagerParameter custom_mqtt_basetopic("basetopic", "MQTT Base Topic (Default: Ecodan/ASHP)", "TEMP", basetopic_max_length);
 
 
 #include "TimerCallBack.h"
@@ -326,7 +326,7 @@ void loop() {
   // -- Push Button Action Handler -- //
 #ifndef ARDUINO_WT32_ETH01
   if (digitalRead(Reset_Button) == LOW) {  // Inverted (Button Pushed is LOW)
-    HeatPump.SetSvrControlMode(0);         // Exit Server Control Mode
+    HeatPump.SetSvrControlMode(0, HeatPump.Status.ProhibitDHW, HeatPump.Status.ProhibitHeatingZ1, HeatPump.Status.ProhibitCoolingZ1, HeatPump.Status.ProhibitHeatingZ2, HeatPump.Status.ProhibitCoolingZ2); // Exit SCM leaving state
 #ifdef ESP8266                             // Define the Witty ESP8266 Ports
     digitalWrite(Red_RGB_LED, HIGH);       // Flash the Red LED
     delay(500);
@@ -535,7 +535,7 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
   }
   if (Topic == MQTTCommandSystemSvrMode) {
     MQTTWriteReceived("MQTT Server Control Mode", 16);
-    HeatPump.SetSvrControlMode(Payload.toInt());
+    HeatPump.SetSvrControlMode(Payload.toInt(), HeatPump.Status.ProhibitDHW, HeatPump.Status.ProhibitHeatingZ1, HeatPump.Status.ProhibitCoolingZ1, HeatPump.Status.ProhibitHeatingZ2, HeatPump.Status.ProhibitCoolingZ2);
     HeatPump.Status.SvrControlMode = Payload.toInt();
   }
   if (Topic == MQTTCommandSystemPower) {

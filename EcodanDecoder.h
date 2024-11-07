@@ -287,7 +287,7 @@ public:
   void EncodeForcedDHW(uint8_t OnOff);
   void EncodeHolidayMode(uint8_t OnOff);
   void EncodeFTCVersion(void);
-  void EncodeServerControlMode(uint8_t OnOff);
+  void EncodeServerControlMode(uint8_t OnOff, uint8_t DHW, uint8_t Z1H, uint8_t Z1C, uint8_t Z2H, uint8_t Z2C);
   void EncodeProhibit(uint8_t Flags, uint8_t OnOff);
 
   EcodanStatus Status;
