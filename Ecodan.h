@@ -42,7 +42,7 @@ public:
   void ForceDHW(uint8_t OnOff);
   void SetDHWMode(String *Mode);
   void SetHolidayMode(uint8_t OnOff);
-  void SetSvrControlMode(uint8_t OnOff, uint8_t DHW, uint8_t Z1H, uint8_t Z1C, uint8_t Z2H, uint8_t Z2C);
+  void SetSvrControlMode(uint8_t OnOff);
   void GetFTCVersion(void);
   void SetHotWaterSetpoint(uint8_t Target);
   void SetHeatingControlMode(uint8_t Mode);
