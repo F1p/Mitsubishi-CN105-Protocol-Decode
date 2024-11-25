@@ -47,7 +47,7 @@
 #endif
 
 
-String FirmwareVersion = "5.3.0 Beta";
+String FirmwareVersion = "5.3.1";
 
 
 #ifdef ESP8266  // Define the Witty ESP8266 Serial Pins
@@ -98,6 +98,7 @@ int Reset_Button = 41;
 unsigned long SERIAL_BAUD = 2400;
 bool shouldSaveConfig = false;
 
+const int deviceId_max_length = 15;
 const int clientId_max_length = 25;
 const int hostname_max_length = 200;
 const int port_max_length = 10;
@@ -112,19 +113,21 @@ const int basetopic_max_length = 30;
 // Here you can pre-set the settings for the MQTT connection. The settings can later be changed via Wifi Manager.
 struct MqttSettings {
   // These are the placeholder objects for the User
-  char clientId[clientId_max_length] = "EcodanBridge";
   char hostname[hostname_max_length] = "IPorDNS";
-  char port[port_max_length] = "1883";
   char user[user_max_length] = "Username";
   char password[password_max_length] = "Password";
+  char port[port_max_length] = "1883";
   char baseTopic[basetopic_max_length] = "Ecodan/ASHP";
+  char clientId[clientId_max_length] = "EcodanBridge";
+  char deviceId[deviceId_max_length] = "000000000000";
   // These are the Index Values for the JSON
-  char wm_mqtt_client_id_identifier[20] = "mqtt_client_id";
   char wm_mqtt_hostname_identifier[40] = "mqtt_hostname";
-  char wm_mqtt_port_identifier[10] = "mqtt_port";
   char wm_mqtt_user_identifier[20] = "mqtt_user";
   char wm_mqtt_password_identifier[30] = "mqtt_password";
+  char wm_mqtt_port_identifier[10] = "mqtt_port";
   char wm_mqtt_basetopic_identifier[20] = "mqtt_basetopic";
+  char wm_mqtt_client_id_identifier[20] = "mqtt_client_id";
+  char wm_device_id_identifier[15] = "device_id";
 };
 
 MqttSettings mqttSettings;
@@ -140,12 +143,13 @@ WiFiManager wifiManager;
 
 
 // Delcare Global Scope for Non-Blocking, always active Portal with "TEMP" placeholder, real values populated later from filesystem
-WiFiManagerParameter custom_mqtt_client_id("client_id", "MQTT Client ID", "TEMP", clientId_max_length);
-WiFiManagerParameter custom_mqtt_server("server", "MQTT Server", "TEMP", hostname_max_length);
-WiFiManagerParameter custom_mqtt_port("port", "MQTT Server Port", "TEMP", port_max_length);
-WiFiManagerParameter custom_mqtt_user("user", "MQTT Username", "TEMP", user_max_length);
-WiFiManagerParameter custom_mqtt_pass("pass", "MQTT Password", "TEMP", password_max_length);
-WiFiManagerParameter custom_mqtt_basetopic("basetopic", "MQTT Base Topic (Default: Ecodan/ASHP)", "TEMP", basetopic_max_length);
+WiFiManagerParameter custom_mqtt_server("server", "MQTT Server <b>(Required)</b>", "TEMP", hostname_max_length);
+WiFiManagerParameter custom_mqtt_user("user", "MQTT Username <b>(Required)</b>", "TEMP", user_max_length);
+WiFiManagerParameter custom_mqtt_pass("pass", "MQTT Password <b>(Required)</b>", "TEMP", password_max_length);
+WiFiManagerParameter custom_mqtt_port("port", "MQTT Server Port (Default: 1883)", "TEMP", port_max_length);
+WiFiManagerParameter custom_mqtt_client_id("client_id", "MQTT Client ID<br><font size='0.8em'>Unique ID when connecting to MQTT</font>", "TEMP", clientId_max_length);
+WiFiManagerParameter custom_mqtt_basetopic("basetopic", "MQTT Base Topic (Default: Ecodan/ASHP)<br><font size='0.8em'>Modify if you have multiple heat pumps connecting to the same MQTT server</font>", "TEMP", basetopic_max_length);
+WiFiManagerParameter custom_device_id("device_id", "Device ID<br><font size='0.8em'>Modify if upgrading or changing hardware, copy your previous device ID over</font>", "TEMP", deviceId_max_length);
 
 
 #include "TimerCallBack.h"
@@ -268,9 +272,8 @@ void loop() {
     digitalWrite(Red_RGB_LED, HIGH);   // Turn the Red LED On
 #endif
 #ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack LED
-    leds[0] = CRGB::Black;     // Turn the Green LED Off
     leds[0] = CRGB::Red;       // Turn the Red LED On
-    FastLED.setBrightness(0);
+    FastLED.setBrightness(255);
     FastLED.show();
 #endif
 
@@ -293,18 +296,19 @@ void loop() {
 #endif
 #ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack LED
       leds[0] = CRGB::Red;     // Flash the Red LED
+      FastLED.setBrightness(255);
       FastLED.show();
       delay(500);
-      leds[0] = CRGB::Black;
+      FastLED.setBrightness(0);
       FastLED.show();
       delay(500);
-      leds[0] = CRGB::Red;
+      FastLED.setBrightness(255);
       FastLED.show();
       delay(500);
-      leds[0] = CRGB::Black;
+      FastLED.setBrightness(0);
       FastLED.show();
       delay(500);
-      leds[0] = CRGB::Red;
+      FastLED.setBrightness(255);
       FastLED.show();
 #endif
 #ifdef ARDUINO_M5STACK_ATOMS3
@@ -316,19 +320,19 @@ void loop() {
     analogWrite(Green_RGB_LED, 30);  // Green LED on, 25% brightness
     digitalWrite(Red_RGB_LED, LOW);  // Turn the Red LED Off
 #endif
-#ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack LED
-    leds[0] = CRGB::Green;
-    FastLED.setBrightness(200);  // Green LED on, reduced brightness
+#ifdef ARDUINO_M5STACK_ATOMS3    // Define the M5Stack LED
+    leds[0] = CRGB::Green;       // Turn the Green LED On
+    FastLED.setBrightness(100);  // Green LED on, reduced brightness
     FastLED.show();
 #endif
   }
 
   // -- Push Button Action Handler -- //
 #ifndef ARDUINO_WT32_ETH01
-  if (digitalRead(Reset_Button) == LOW) {  // Inverted (Button Pushed is LOW)
-    HeatPump.SetSvrControlMode(0, HeatPump.Status.ProhibitDHW, HeatPump.Status.ProhibitHeatingZ1, HeatPump.Status.ProhibitCoolingZ1, HeatPump.Status.ProhibitHeatingZ2, HeatPump.Status.ProhibitCoolingZ2); // Exit SCM leaving state
-#ifdef ESP8266                             // Define the Witty ESP8266 Ports
-    digitalWrite(Red_RGB_LED, HIGH);       // Flash the Red LED
+  if (digitalRead(Reset_Button) == LOW) {                                                                                                                                                                    // Inverted (Button Pushed is LOW)
+    HeatPump.SetSvrControlMode(0, HeatPump.Status.ProhibitDHW, HeatPump.Status.ProhibitHeatingZ1, HeatPump.Status.ProhibitCoolingZ1, HeatPump.Status.ProhibitHeatingZ2, HeatPump.Status.ProhibitCoolingZ2);  // Exit SCM leaving state
+#ifdef ESP8266                                                                                                                                                                                               // Define the Witty ESP8266 Ports
+    digitalWrite(Red_RGB_LED, HIGH);                                                                                                                                                                         // Flash the Red LED
     delay(500);
     digitalWrite(Red_RGB_LED, LOW);
     delay(500);
@@ -343,17 +347,19 @@ void loop() {
 #ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack LED
     leds[0] = CRGB::Red;       // Flash the Red LED
     FastLED.show();
-    delay(500);
-    leds[0] = CRGB::Black;
+    FastLED.setBrightness(255);
     FastLED.show();
     delay(500);
-    leds[0] = CRGB::Red;
+    FastLED.setBrightness(0);
     FastLED.show();
     delay(500);
-    leds[0] = CRGB::Black;
+    FastLED.setBrightness(255);
     FastLED.show();
     delay(500);
-    leds[0] = CRGB::Red;
+    FastLED.setBrightness(0);
+    FastLED.show();
+    delay(500);
+    FastLED.setBrightness(255);
     FastLED.show();
     delay(500);
     ESP.restart();  // No button on ETH
@@ -534,7 +540,7 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
     }
   }
   if (Topic == MQTTCommandSystemSvrMode) {
-    MQTTWriteReceived("MQTT Server Control Mode", 16);
+    MQTTWriteReceived("MQTT Server Control Mode", 17);
     HeatPump.SetSvrControlMode(Payload.toInt(), HeatPump.Status.ProhibitDHW, HeatPump.Status.ProhibitHeatingZ1, HeatPump.Status.ProhibitCoolingZ1, HeatPump.Status.ProhibitHeatingZ2, HeatPump.Status.ProhibitCoolingZ2);
     HeatPump.Status.SvrControlMode = Payload.toInt();
   }
@@ -820,7 +826,6 @@ void PublishAllReports(void) {
 
 void FlashGreenLED(void) {
 #ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack LED
-  leds[0] = CRGB::Green;       // Flash the Green LED
   FastLED.setBrightness(0);
   FastLED.show();
 #endif
@@ -902,18 +907,22 @@ void onEvent(arduino_event_id_t event) {
     case ARDUINO_EVENT_ETH_GOT_IP:
       DEBUG_PRINTLN("ETH Got IP");
       DEBUG_PRINTLN(ETH);
+      wifiManager.stopWebPortal();  // Closes the WiFi Soft AP
       eth_connected = true;
       break;
     case ARDUINO_EVENT_ETH_LOST_IP:
       DEBUG_PRINTLN("ETH Lost IP");
+      wifiManager.autoConnect("Ecodan Bridge AP");  // Start WiFi Manager
       eth_connected = false;
       break;
     case ARDUINO_EVENT_ETH_DISCONNECTED:
       DEBUG_PRINTLN("ETH Disconnected");
+      wifiManager.autoConnect("Ecodan Bridge AP");  // Start WiFi Manager
       eth_connected = false;
       break;
     case ARDUINO_EVENT_ETH_STOP:
       DEBUG_PRINTLN("ETH Stopped");
+      wifiManager.autoConnect("Ecodan Bridge AP");  // Start WiFi Manager
       eth_connected = false;
       break;
     default: break;

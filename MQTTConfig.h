@@ -60,8 +60,10 @@ String MQTTCommandSystemHeatingMode = MQTT_COMMAND_SYSTEM_HEATINGMODE;
 String MQTTCommandSystemSvrMode = MQTT_COMMAND_SYSTEM_SVRMODE;
 String MQTTCommandSystemPower = MQTT_COMMAND_SYSTEM_POWER;
 
-String HostName;
-
+char MQTT_ClientID[20] = "";
+char DeviceID[15] = "";
+const char ClientPrefix[14] = "EcodanBridge-";
+char WiFiHostname[26] = "";
 
 // Programs
 
@@ -96,6 +98,20 @@ void readSettingsFromConfig() {
             DEBUG_PRINTLN();
 
             // Build in safety check, otherwise ESP will crash out and you can't get back in
+            if (doc.containsKey(mqttSettings.wm_device_id_identifier)) {
+              if ((sizeof(doc[mqttSettings.wm_device_id_identifier]) > 0) && ((sizeof(doc[mqttSettings.wm_device_id_identifier]) + 1) <= deviceId_max_length)) {
+                strcpy(mqttSettings.deviceId, doc[mqttSettings.wm_device_id_identifier]);
+              }
+            } else {  // For upgrading from <5.3.1, create the entry
+#ifdef ESP8266
+              snprintf(DeviceID, 15, (String(ESP.getChipId(), HEX)).c_str());
+#endif
+#ifdef ESP32
+              snprintf(DeviceID, 15, (String(ESP.getEfuseMac(), HEX)).c_str());
+#endif
+              strcpy(mqttSettings.deviceId, DeviceID);
+              shouldSaveConfig = true;    // Save config after exit to update the file
+            }
             if (doc.containsKey(mqttSettings.wm_mqtt_client_id_identifier)) {
               if ((sizeof(doc[mqttSettings.wm_mqtt_client_id_identifier]) > 0) && ((sizeof(doc[mqttSettings.wm_mqtt_client_id_identifier]) + 1) <= clientId_max_length)) {
                 strcpy(mqttSettings.clientId, doc[mqttSettings.wm_mqtt_client_id_identifier]);
@@ -132,6 +148,17 @@ void readSettingsFromConfig() {
         configFile.close();
       } else {
         DEBUG_PRINTLN("No config file exists, use placeholder values");
+
+        // Populate the Dynamic Variables (Device ID)
+#ifdef ESP8266
+        snprintf(DeviceID, 15, (String(ESP.getChipId(), HEX)).c_str());
+#endif
+#ifdef ESP32
+        snprintf(DeviceID, 15, (String(ESP.getEfuseMac(), HEX)).c_str());
+#endif
+        snprintf(MQTT_ClientID, 20, "%s%s", ClientPrefix, DeviceID);
+        strcpy(mqttSettings.clientId, MQTT_ClientID);
+        strcpy(mqttSettings.deviceId, DeviceID);
       }
     } else {
       DEBUG_PRINTLN("Failed to mount File System");
@@ -209,6 +236,7 @@ void readSettingsFromConfig() {
   void saveConfig() {
     // Read MQTT Portal Values for save to file system
     DEBUG_PRINTLN("Copying Portal Values...");
+    strcpy(mqttSettings.deviceId, custom_device_id.getValue());
     strcpy(mqttSettings.clientId, custom_mqtt_client_id.getValue());
     strcpy(mqttSettings.hostname, custom_mqtt_server.getValue());
     strcpy(mqttSettings.port, custom_mqtt_port.getValue());
@@ -222,6 +250,7 @@ void readSettingsFromConfig() {
       DEBUG_PRINTLN("[FAILED] Unable to open config file for writing");
     } else {
       JsonDocument doc;
+      doc[mqttSettings.wm_device_id_identifier] = mqttSettings.deviceId;
       doc[mqttSettings.wm_mqtt_client_id_identifier] = mqttSettings.clientId;
       doc[mqttSettings.wm_mqtt_hostname_identifier] = mqttSettings.hostname;
       doc[mqttSettings.wm_mqtt_port_identifier] = mqttSettings.port;
@@ -247,8 +276,9 @@ void readSettingsFromConfig() {
   }
 
   void initializeWifiManager() {
-#ifdef ARDUINO_M5STACK_ATOMS3               // Define the M5Stack LED
-    leds[0] = CRGB::Blue;  // Turn the Blue LED On
+#ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack LED
+    leds[0] = CRGB::Blue;      // Turn the Blue LED On
+    FastLED.setBrightness(255);
     FastLED.show();
 #endif
 #ifdef ESP8266                         // Define the Witty ESP8266 Ports
@@ -261,6 +291,7 @@ void readSettingsFromConfig() {
     wifiManager.setTitle("Ecodan Bridge");
 
     // Set or Update the values
+    custom_device_id.setValue(mqttSettings.deviceId, deviceId_max_length);
     custom_mqtt_client_id.setValue(mqttSettings.clientId, clientId_max_length);
     custom_mqtt_server.setValue(mqttSettings.hostname, hostname_max_length);
     custom_mqtt_port.setValue(mqttSettings.port, port_max_length);
@@ -269,30 +300,33 @@ void readSettingsFromConfig() {
     custom_mqtt_basetopic.setValue(mqttSettings.baseTopic, basetopic_max_length);
 
     // Add the custom MQTT parameters here
-    wifiManager.addParameter(&custom_mqtt_client_id);
     wifiManager.addParameter(&custom_mqtt_server);
-    wifiManager.addParameter(&custom_mqtt_port);
     wifiManager.addParameter(&custom_mqtt_user);
     wifiManager.addParameter(&custom_mqtt_pass);
+    wifiManager.addParameter(&custom_mqtt_port);
     wifiManager.addParameter(&custom_mqtt_basetopic);
+    wifiManager.addParameter(&custom_mqtt_client_id);
+    wifiManager.addParameter(&custom_device_id);
 
     //set minimum quality of signal so it ignores AP's under that quality
     //defaults to 8%
     //wifiManager.setMinimumSignalQuality();
 
-    HostName = "EcodanBridge-";
-#ifdef ESP8266
-    HostName += String(ESP.getChipId(), HEX);
-#endif
-#ifdef ESP32
-    HostName += String(ESP.getEfuseMac(), HEX);
-#endif
-    WiFi.hostname(HostName);
+    snprintf(WiFiHostname, 26, "%s%s", ClientPrefix, mqttSettings.deviceId);
+    WiFi.hostname(WiFiHostname);
 
     wifiManager.setConfigPortalTimeout(120);                // Timeout before launching the config portal
     wifiManager.setBreakAfterConfig(true);                  // Saves settings, even if WiFi Fails
     wifiManager.setSaveConfigCallback(saveConfigCallback);  // Set config save notify callback
     wifiManager.setAPClientCheck(true);                     // avoid timeout if client connected to softap
+
+
+#ifdef ARDUINO_WT32_ETH01
+    wifiManager.setConfigPortalBlocking(false);         // Doesn't block Rest of Code from operating
+    if (wifiManager.autoConnect("Ecodan Bridge AP")) {  // Try connecting to WiFi
+      DEBUG_PRINTLN("WiFi Connected!");
+    }
+#endif
 
 
 #ifndef ARDUINO_WT32_ETH01
@@ -306,7 +340,6 @@ void readSettingsFromConfig() {
       ESP.restart();
 #endif
     }
-
     DEBUG_PRINTLN("WiFi Connected!");
 #endif
 
@@ -325,12 +358,12 @@ void readSettingsFromConfig() {
 // -- Entities Configuration JSON -- //
 #ifdef ESP8266
     String ChipModel = "ESP8266";
-    String ChipID = String(ESP.getChipId(), HEX);
 #endif
 #ifdef ESP32
     String ChipModel = ESP.getChipModel();
-    String ChipID = String(ESP.getEfuseMac(), HEX);
 #endif
+
+    String ChipID = mqttSettings.deviceId;
 
     // JSON Formation
     JsonDocument Config;
@@ -340,7 +373,7 @@ void readSettingsFromConfig() {
     for (int i = 0; i < discovery_topics; i++) {
 
       if (i == 0) {  // If the first topic
-        Config["device"]["identifiers"] = HostName;
+        Config["device"]["identifiers"] = WiFiHostname;
         Config["device"]["manufacturer"] = "F1p";
         Config["device"]["model"] = ChipModel;
         Config["device"]["serial_number"] = ChipID;
@@ -348,7 +381,7 @@ void readSettingsFromConfig() {
         Config["device"]["configuration_url"] = "http://" + WiFi.localIP().toString() + ":80";
         Config["device"]["sw_version"] = FirmwareVersion;
       } else {  // Otherwise post just identifier
-        Config["device"]["identifiers"] = HostName;
+        Config["device"]["identifiers"] = WiFiHostname;
       }
 
       // Every one has a unique_id and name
@@ -540,12 +573,12 @@ void readSettingsFromConfig() {
       DEBUG_PRINTLN("MQTT Server Connected");
       MQTTonConnect();
 
-#ifdef ARDUINO_M5STACK_ATOMS3                  // Define the M5Stack LED
-      leds[0] = CRGB::Black;  // Turn the Green LED Off
-      leds[0] = CRGB::Green;  // Turn the Red LED On
+#ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack LED
+      leds[0] = CRGB::Green;   // Turn the Red LED On
+      FastLED.setBrightness(255);
       FastLED.show();
       delay(10);
-      leds[0] = CRGB::Black;  // Turn the Green LED Off
+      FastLED.setBrightness(0);
       FastLED.show();
 #endif
 #ifdef ESP8266                            // Define the Witty ESP8266 Ports
@@ -598,9 +631,8 @@ void readSettingsFromConfig() {
 
   void handleMqttState() {
     if (!MQTTClient.connected()) {
-#ifdef ARDUINO_M5STACK_ATOMS3         // Define the M5Stack LED
-      leds[0] = CRGB::Green;  // Turn the Green LED Off
-      leds[0] = CRGB::Red;    // Turn the Red LED On
+#ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack LED
+      leds[0] = CRGB::Orange;  // Turn the LED Orange
       FastLED.show();
 #endif
 #ifdef ESP8266                          // Define the Witty ESP8266 Ports
