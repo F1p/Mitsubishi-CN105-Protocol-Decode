@@ -236,8 +236,6 @@ void setup() {
   wifiManager.startWebPortal();
 
   HeatPump.Status.Write_To_Ecodan_OK = false;
-  HeatPump.Status.FlowTempMax = 60;  // Start with placeholders
-  HeatPump.Status.FlowTempMin = 10;
 }
 
 
@@ -388,7 +386,7 @@ void loop() {
 
 void HeatPumpKeepAlive(void) {
   ftcpreviousMillis = millis();
-  HeatPump.KeepAlive();
+  // Queue Trigger Placeholder
   HeatPump.TriggerStatusStateMachine();
 }
 
@@ -659,14 +657,15 @@ void SystemReport(void) {
 }
 
 void AdvancedReport(void) {
-  StaticJsonDocument<512> doc;
-  char Buffer[512];
+  StaticJsonDocument<1024> doc;
+  char Buffer[1024];
 
   doc[F("FlowTMax")] = HeatPump.Status.FlowTempMax;
   doc[F("FlowTMin")] = HeatPump.Status.FlowTempMin;
   doc[F("BoilerFlow")] = HeatPump.Status.ExternalBoilerFlowTemperature;
   doc[F("BoilerReturn")] = HeatPump.Status.ExternalBoilerReturnTemperature;
   doc[F("MixingTemp")] = HeatPump.Status.MixingTemperature;
+  doc[F("MixingStep")] = HeatPump.Status.MixingStep;
   doc[F("ExternalFlowTemp")] = HeatPump.Status.ExternalFlowTemp;
   doc[F("Immersion")] = OFF_ON_String[HeatPump.Status.ImmersionActive];
   doc[F("Booster")] = OFF_ON_String[HeatPump.Status.BoosterActive];

@@ -471,17 +471,19 @@ void ECODANDECODER::Process0x14(uint8_t *Buffer, EcodanStatus *Status) {
 
 
 void ECODANDECODER::Process0x15(uint8_t *Buffer, EcodanStatus *Status) {
-  uint8_t PrimaryWaterPump, WaterPump2, ThreeWayValve, ThreeWayValve2;
+  uint8_t PrimaryWaterPump, WaterPump2, ThreeWayValve, ThreeWayValve2, MixingStep;
 
   PrimaryWaterPump = Buffer[1];  // 01 when running (Primary Water Pump)
   WaterPump2 = Buffer[4];        // Water Pump 2 Active
   ThreeWayValve = Buffer[6];     // 3 Way Valve Position
   ThreeWayValve2 = Buffer[7];    // 3 Way Valve 2 Position
+  MixingStep = Buffer[10];       // Mixing Valve Step
 
   Status->PrimaryWaterPump = PrimaryWaterPump;
   Status->WaterPump2 = WaterPump2;
   Status->ThreeWayValve = ThreeWayValve;
   Status->ThreeWayValve2 = ThreeWayValve2;
+  Status->MixingStep = MixingStep;
 }
 
 

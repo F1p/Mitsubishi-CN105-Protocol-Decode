@@ -461,8 +461,8 @@ void readSettingsFromConfig() {
         Config["value_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[79]);
         Config["command_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[i - 67]);
         Config["unit_of_measurement"] = String(MQTT_SENSOR_UNITS[2]);
-        Config["max"] = HeatPump.Status.FlowTempMax;
-        Config["min"] = HeatPump.Status.FlowTempMin;
+        Config["max"] = 60;
+        Config["min"] = 10;
         Config["step"] = MQTT_CLIMATE_TEMP_STEP[1];
 
         MQTT_DISCOVERY_TOPIC = String(MQTT_DISCOVERY_TOPICS[3]);

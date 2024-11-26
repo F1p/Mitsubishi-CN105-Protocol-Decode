@@ -31,7 +31,6 @@ public:
   void TriggerStatusStateMachine(void);
   void StopStateMachine(void);
   void StatusStateMachine(void);
-  void KeepAlive(void);
   uint8_t UpdateComplete(void);
   uint8_t Lastmsbetweenmsg(void);
 

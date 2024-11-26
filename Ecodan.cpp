@@ -185,30 +185,6 @@ uint8_t ECODAN::Lastmsbetweenmsg(void) {
 }
 
 
-void ECODAN::KeepAlive(void) {
-  uint8_t CommandSize;
-  uint8_t i;
-  uint8_t Buffer[COMMANDSIZE];
-
-  DEBUG_PRINTLN("Keep Alive Message...");
-  ECODANDECODER::CreateBlankTxMessage(SET_REQUEST, 0x10);
-  ECODANDECODER::SetPayloadByte(0x34, 0);
-  ECODANDECODER::SetPayloadByte(0x02, 1);
-  CommandSize = ECODANDECODER::PrepareTxCommand(Buffer);
-  DeviceStream->write(Buffer, CommandSize);
-  lastmsgdispatchedMillis = millis();
-
-  DeviceStream->flush();
-
-  for (i = 0; i < CommandSize; i++) {
-    if (Buffer[i] < 0x10) DEBUG_PRINT("0");
-    DEBUG_PRINT(String(Buffer[i], HEX));
-    DEBUG_PRINT(", ");
-  }
-  DEBUG_PRINTLN();
-}
-
-
 void ECODAN::SetZoneTempSetpoint(float Setpoint, uint8_t Mode, uint8_t Zone) {
   uint8_t Buffer[COMMANDSIZE];
   uint8_t CommandSize = 0;
