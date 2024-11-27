@@ -13,7 +13,7 @@ Supported Hardware is ESP8266 ebay sold hardware: https://www.ebay.co.uk/itm/325
 
 3. Place all the files in the same folder
 
-4. Unclip the lid, slide out the circuit board
+4. Disconnect from CN105, Unclip the lid, slide out the circuit board
 
 5. Plug the pins into the programming board, #both USB ports at the same side
 
