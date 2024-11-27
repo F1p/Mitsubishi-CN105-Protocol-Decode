@@ -4,7 +4,7 @@ Supported Hardware is ESP8266 ebay sold hardware: https://www.ebay.co.uk/itm/325
 
 
 
-# ESP8266 Ebay Hardware Recovery
+# ESP8266 Ebay Hardware Recovery (Gen1)
 
 
 1. Download the files from the [/build](https://github.com/F1p/Mitsubishi-CN105-Protocol-Decode/tree/master/build/esp8266.esp8266.generic/v5.2.5) folder.
@@ -30,7 +30,7 @@ Supported Hardware is ESP8266 ebay sold hardware: https://www.ebay.co.uk/itm/325
 
 
 
-# M5Stack Atom S3 Lite
+# M5Stack Atom S3 Lite (Gen2)
 
 1. Download the files from the [/build](https://github.com/F1p/Mitsubishi-Ecodan-Bridge-CN105/tree/master/build/esp32.esp32.m5stack-atoms3) folder.
 
