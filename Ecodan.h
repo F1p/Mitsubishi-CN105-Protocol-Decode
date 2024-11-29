@@ -22,6 +22,8 @@
 #include <Arduino.h>
 #include "EcodanDecoder.h"
 
+
+
 class ECODAN : public ECODANDECODER {
 public:
   ECODAN(void);
@@ -47,6 +49,7 @@ public:
   void SetHotWaterSetpoint(uint8_t Target);
   void SetHeatingControlMode(uint8_t Mode);
   void SetSystemPowerMode(uint8_t OnOff);
+  void WriteMELCloudCMD(uint8_t cmd);
 
 protected:
 

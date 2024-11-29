@@ -88,6 +88,9 @@ private:
   void Process0xA1(uint8_t *Payload, MelCloudStatus *Status);
   void Process0xA2(uint8_t *Payload, MelCloudStatus *Status);
   void Process0xC9(uint8_t *Payload, MelCloudStatus *Status);
+  void Process0x32(uint8_t *Payload, MelCloudStatus *Status);
+  void Process0x33(uint8_t *Payload, MelCloudStatus *Status);
+  void Process0x34(uint8_t *Payload, MelCloudStatus *Status);
   void Process0xFF(uint8_t *Payload, MelCloudStatus *Status);
 
   void WriteOK(uint8_t *Payload, MelCloudStatus *Status);

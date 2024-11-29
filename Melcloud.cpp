@@ -22,14 +22,15 @@ extern ESPTelnet TelnetServer;
 
 uint8_t MELCloudInit3[] = { 0xfc, 0x7a, 0x02, 0x7a, 0x01, 0x00, 0x09 };
 uint8_t MELCloudInit6[] = { 0x02, 0xff, 0xff, 0x80, 0x00, 0x00, 0x0A, 0x01, 0x00, 0x40, 0x00, 0x00, 0x06, 0x02, 0x7A, 0x00, 0x00, 0xB5 };
-uint8_t MELCloudInit7[] = { 0x02, 0xff, 0xff, 0x81, 0x00, 0x00, 0x00, 0x81 };
+
+
 
 #define MELCLOUD_NUMBER_COMMANDS 24
 uint8_t MELCloudActiveCommand[] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x07, 0x09, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
-                            0x10, 0x13, 0x14, 0x15, 0x16,
-                            0x26, 0x28, 0x29,
-                            0xA1, 0xA2,
-                            0x00 };
+                                    0x10, 0x13, 0x14, 0x15, 0x16,
+                                    0x26, 0x28, 0x29,
+                                    0xA1, 0xA2,
+                                    0x00 };
 
 unsigned long mellastmsgdispatchedMillis = 0;  // variable for comparing millis counter
 
@@ -46,7 +47,6 @@ void MELCLOUD::Process(void) {
   uint8_t c;
 
   while (DeviceStream->available()) {
-    DEBUG_PRINTLN("[MELCloud] ");
     c = DeviceStream->read();
 
     if (c == 0)
@@ -60,8 +60,6 @@ void MELCLOUD::Process(void) {
     if (MELCLOUDDECODER::Process(c)) {
       msbetweenmsg = millis() - mellastmsgdispatchedMillis;
       DEBUG_PRINTLN();
-      //DEBUG_PRINT(msbetweenmsg);
-      //DEBUG_PRINTLN("ms");
       Connected = true;
     }
   }
@@ -78,141 +76,172 @@ void MELCLOUD::RequestStatus(uint8_t TargetMessage) {
   uint8_t CommandSize;
   uint8_t i;
 
-  if (TargetMessage == 0xC9) {
+  DEBUG_PRINT("[Bridge > MEL] ");
 
-  } else {
+  MELCLOUDDECODER::CreateBlankTxMessage(GET_RESPONSE, 0x10);
+  MELCLOUDDECODER::SetPayloadByte(TargetMessage, 0);
 
-    MELCLOUDDECODER::CreateBlankTxMessage(GET_RESPONSE, 0x10);
-    MELCLOUDDECODER::SetPayloadByte(TargetMessage, 0);
-
-
-    /*
-    MELCLOUDDECODER::SetPayloadByte(0x01, 1);
-    MELCLOUDDECODER::SetPayloadByte(0x02, 2);
-    MELCLOUDDECODER::SetPayloadByte(0x03, 3);
-    MELCLOUDDECODER::SetPayloadByte(0x04, 4);
-    MELCLOUDDECODER::SetPayloadByte(0x05, 5);
-    MELCLOUDDECODER::SetPayloadByte(0x06, 6);
-    MELCLOUDDECODER::SetPayloadByte(0x07, 7);
-    MELCLOUDDECODER::SetPayloadByte(0x08, 8);
-    MELCLOUDDECODER::SetPayloadByte(0x09, 9);
-    MELCLOUDDECODER::SetPayloadByte(0x10, 10);
-    MELCLOUDDECODER::SetPayloadByte(0x11, 11);
-    MELCLOUDDECODER::SetPayloadByte(0x12, 12);
-    MELCLOUDDECODER::SetPayloadByte(0x13, 13);
-    MELCLOUDDECODER::SetPayloadByte(0x14, 14);
-    MELCLOUDDECODER::::SetPayloadByte(0x15, 15);*/
-
-    if (TargetMessage == 0x02) {
-      //MELCLOUDDECODER::::SetPayloadByte(0x01, 1);
-      //MELCLOUDDECODER::::SetPayloadByte(0x02, 2);
-    } else if (TargetMessage == 0x03) {
-      //MELCLOUDDECODER::::SetPayloadByte(0x01, 1);
-      //MELCLOUDDECODER::::SetPayloadByte(0x03, 2);
-    } else if (TargetMessage == 0x04) {
-      //MELCLOUDDECODER::::SetPayloadByte(0x01, 1);
-      //MELCLOUDDECODER::::SetPayloadByte(0x04, 2);
-    } else if (TargetMessage == 0x05) {
-      //MELCLOUDDECODER::::SetPayloadByte(0x01, 1);
-      //MELCLOUDDECODER::::SetPayloadByte(0x05, 2);
-    } else if (TargetMessage == 0x06) {
-      //MELCLOUDDECODER::::SetPayloadByte(0x01, 1);
-      //MELCLOUDDECODER::::SetPayloadByte(0x06, 2);
-    } else if (TargetMessage == 0x07) {
-      //MELCLOUDDECODER::::SetPayloadByte(0x01, 1);
-      //MELCLOUDDECODER::::SetPayloadByte(0x07, 2);
-    } else if (TargetMessage == 0x08) {
-      //MELCLOUDDECODER::::SetPayloadByte(0x01, 1);
-      //MELCLOUDDECODER::::SetPayloadByte(0x08, 2);
-    } else if (TargetMessage == 0x09) {
-      //MELCLOUDDECODER::::SetPayloadByte(0x01, 1);
-      //MELCLOUDDECODER::::SetPayloadByte(0x09, 2);
-    } else if (TargetMessage == 0x0B) {
-      //MELCLOUDDECODER::::SetPayloadByte(0x01, 1);
-      //MELCLOUDDECODER::::SetPayloadByte(0x10, 2);
-    } else if (TargetMessage == 0x0C) {
-      //MELCLOUDDECODER::::SetPayloadByte(0x02, 1);
-      //MELCLOUDDECODER::::SetPayloadByte(0x01, 2);
-    } else if (TargetMessage == 0x0D) {
-      //MELCLOUDDECODER::::SetPayloadByte(0x02, 1);
-      //MELCLOUDDECODER::::SetPayloadByte(0x02, 2);
-    } else if (TargetMessage == 0x0E) {
-      //MELCLOUDDECODER::SetPayloadByte(0x02, 1);
-      //MELCLOUDDECODER::SetPayloadByte(0x03, 2);
-    } else if (TargetMessage == 0x0F) {
-      //MELCLOUDDECODER::SetPayloadByte(0x01, 4);
-      //MELCLOUDDECODER::SetPayloadByte(0x02, 5);
-    } else if (TargetMessage == 0x10) {
-      //MELCLOUDDECODER::::SetPayloadByte(0x02, 1);
-      //MELCLOUDDECODER::::SetPayloadByte(0x05, 2);
-    } else if (TargetMessage == 0x11) {
-      //MELCLOUDDECODER::::SetPayloadByte(0x02, 1);
-      //MELCLOUDDECODER::::SetPayloadByte(0x06, 2);
-    } else if (TargetMessage == 0x12) {
-      //MELCLOUDDECODER::::SetPayloadByte(0x02, 1);
-      //MELCLOUDDECODER::::SetPayloadByte(0x07, 2);
-    } else if (TargetMessage == 0x13) {
-      //MELCLOUDDECODER::::SetPayloadByte(0x02, 1);
-      //MELCLOUDDECODER::::SetPayloadByte(0x08, 2);
-    } else if (TargetMessage == 0x14) {
-      //MELCLOUDDECODER::::SetPayloadByte(0x02, 1);
-      //MELCLOUDDECODER::::SetPayloadByte(0x09, 2);
-    } else if (TargetMessage == 0x15) {
-      //MELCLOUDDECODER::::SetPayloadByte(0x02, 1);
-      //MELCLOUDDECODER::::SetPayloadByte(0x10, 2);
-    } else if (TargetMessage == 0x16) {
-      //MELCLOUDDECODER::::SetPayloadByte(0x03, 1);
-      //MELCLOUDDECODER::::SetPayloadByte(0x01, 2);
-    } else if (TargetMessage == 0x17) {
-      //MELCLOUDDECODER::::SetPayloadByte(0x03, 1);
-      //MELCLOUDDECODER::::SetPayloadByte(0x02, 2);
-    } else if (TargetMessage == 0x18) {
-      //MELCLOUDDECODER::::SetPayloadByte(0x03, 1);
-      //MELCLOUDDECODER::::SetPayloadByte(0x03, 2);
-    } else if (TargetMessage == 0x19) {
-      //MELCLOUDDECODER::::SetPayloadByte(0x03, 1);
-      //MELCLOUDDECODER::::SetPayloadByte(0x04, 2);
-    } else if (TargetMessage == 0x1a) {
-      //MELCLOUDDECODER::::SetPayloadByte(0x03, 1);
-      //MELCLOUDDECODER::::SetPayloadByte(0x05, 2);
-    } else if (TargetMessage == 0x1b) {
-      //MELCLOUDDECODER::::SetPayloadByte(0x03, 1);
-      //MELCLOUDDECODER::::SetPayloadByte(0x06, 2);
-    } else if (TargetMessage == 0x1c) {
-      //MELCLOUDDECODER::::SetPayloadByte(0x03, 1);
-      //MELCLOUDDECODER::::SetPayloadByte(0x07, 2);
-    } else if (TargetMessage == 0x1d) {
-      //MELCLOUDDECODER::::SetPayloadByte(0x03, 1);
-      //MELCLOUDDECODER::::SetPayloadByte(0x08, 2);
-    } else if (TargetMessage == 0x1e) {
-      //MELCLOUDDECODER::::SetPayloadByte(0x03, 1);
-      //MELCLOUDDECODER::::SetPayloadByte(0x09, 2);
-    } else if (TargetMessage == 0x1f) {
-      //MELCLOUDDECODER::::SetPayloadByte(0x03, 1);
-      //MELCLOUDDECODER::::SetPayloadByte(0x10, 2);
-    } else if (TargetMessage == 0x20) {
-      //MELCLOUDDECODER::::SetPayloadByte(0x04, 1);
-      //MELCLOUDDECODER::::SetPayloadByte(0x01, 2);
-    } else if (TargetMessage == 0x26) {
-      //MELCLOUDDECODER::::SetPayloadByte(0x04, 1);
-      //MELCLOUDDECODER::::SetPayloadByte(0x02, 2);
-    } else if (TargetMessage == 0x27) {
-      //MELCLOUDDECODER::::SetPayloadByte(0x04, 1);
-      //MELCLOUDDECODER::::SetPayloadByte(0x03, 2);
-    } else if (TargetMessage == 0x28) {
-      //MELCLOUDDECODER::::SetPayloadByte(0x04, 1);
-      //MELCLOUDDECODER::::SetPayloadByte(0x04, 2);
-    } else if (TargetMessage == 0x29) {
-      //MELCLOUDDECODER::::SetPayloadByte(0x04, 1);
-      //MELCLOUDDECODER::::SetPayloadByte(0x05, 2);
-    } else if (TargetMessage == 0xA1) {
-      //MELCLOUDDECODER::::SetPayloadByte(0x04, 1);
-      //MELCLOUDDECODER::::SetPayloadByte(0x06, 2);
-    } else if (TargetMessage == 0xA2) {
-      //MELCLOUDDECODER::::SetPayloadByte(0x04, 1);
-      //MELCLOUDDECODER::::SetPayloadByte(0x07, 2);
+  if (TargetMessage == 0x01) {
+    for (int i = 1; i < 16; i++) {
+      MELCLOUDDECODER::SetPayloadByte(Array0x01[i], i);
+    }
+  } else if (TargetMessage == 0x02) {
+    for (int i = 1; i < 16; i++) {
+      MELCLOUDDECODER::SetPayloadByte(Array0x02[i], i);
+    }
+  } else if (TargetMessage == 0x03) {
+    for (int i = 1; i < 16; i++) {
+      MELCLOUDDECODER::SetPayloadByte(Array0x03[i], i);
+    }
+  } else if (TargetMessage == 0x04) {
+    for (int i = 1; i < 16; i++) {
+      MELCLOUDDECODER::SetPayloadByte(Array0x04[i], i);
+    }
+  } else if (TargetMessage == 0x05) {
+    for (int i = 1; i < 16; i++) {
+      MELCLOUDDECODER::SetPayloadByte(Array0x05[i], i);
+    }
+  } else if (TargetMessage == 0x06) {
+    for (int i = 1; i < 16; i++) {
+      MELCLOUDDECODER::SetPayloadByte(Array0x06[i], i);
+    }
+  } else if (TargetMessage == 0x07) {
+    for (int i = 1; i < 16; i++) {
+      MELCLOUDDECODER::SetPayloadByte(Array0x07[i], i);
+    }
+  } else if (TargetMessage == 0x08) {
+    for (int i = 1; i < 16; i++) {
+      MELCLOUDDECODER::SetPayloadByte(Array0x08[i], i);
+    }
+  } else if (TargetMessage == 0x09) {
+    for (int i = 1; i < 16; i++) {
+      MELCLOUDDECODER::SetPayloadByte(Array0x09[i], i);
+    }
+  } else if (TargetMessage == 0x0B) {
+    for (int i = 1; i < 16; i++) {
+      MELCLOUDDECODER::SetPayloadByte(Array0x0b[i], i);
+    }
+  } else if (TargetMessage == 0x0C) {
+    for (int i = 1; i < 16; i++) {
+      MELCLOUDDECODER::SetPayloadByte(Array0x0c[i], i);
+    }
+  } else if (TargetMessage == 0x0D) {
+    for (int i = 1; i < 16; i++) {
+      MELCLOUDDECODER::SetPayloadByte(Array0x0d[i], i);
+    }
+  } else if (TargetMessage == 0x0E) {
+    for (int i = 1; i < 16; i++) {
+      MELCLOUDDECODER::SetPayloadByte(Array0x0e[i], i);
+    }
+  } else if (TargetMessage == 0x0F) {
+    for (int i = 1; i < 16; i++) {
+      MELCLOUDDECODER::SetPayloadByte(Array0x0f[i], i);
+    }
+  } else if (TargetMessage == 0x10) {
+    for (int i = 1; i < 16; i++) {
+      MELCLOUDDECODER::SetPayloadByte(Array0x10[i], i);
+    }
+  } else if (TargetMessage == 0x11) {
+    for (int i = 1; i < 16; i++) {
+      MELCLOUDDECODER::SetPayloadByte(Array0x11[i], i);
+    }
+  } else if (TargetMessage == 0x12) {
+    for (int i = 1; i < 16; i++) {
+      MELCLOUDDECODER::SetPayloadByte(Array0x12[i], i);
+    }
+  } else if (TargetMessage == 0x13) {
+    for (int i = 1; i < 16; i++) {
+      MELCLOUDDECODER::SetPayloadByte(Array0x13[i], i);
+    }
+  } else if (TargetMessage == 0x14) {
+    for (int i = 1; i < 16; i++) {
+      MELCLOUDDECODER::SetPayloadByte(Array0x14[i], i);
+    }
+  } else if (TargetMessage == 0x15) {
+    for (int i = 1; i < 16; i++) {
+      MELCLOUDDECODER::SetPayloadByte(Array0x15[i], i);
+    }
+  } else if (TargetMessage == 0x16) {
+    for (int i = 1; i < 16; i++) {
+      MELCLOUDDECODER::SetPayloadByte(Array0x16[i], i);
+    }
+  } else if (TargetMessage == 0x17) {
+    for (int i = 1; i < 16; i++) {
+      MELCLOUDDECODER::SetPayloadByte(Array0x17[i], i);
+    }
+  } else if (TargetMessage == 0x18) {
+    for (int i = 1; i < 16; i++) {
+      MELCLOUDDECODER::SetPayloadByte(Array0x18[i], i);
+    }
+  } else if (TargetMessage == 0x19) {
+    for (int i = 1; i < 16; i++) {
+      MELCLOUDDECODER::SetPayloadByte(Array0x19[i], i);
+    }
+  } else if (TargetMessage == 0x1a) {
+    for (int i = 1; i < 16; i++) {
+      MELCLOUDDECODER::SetPayloadByte(Array0x1a[i], i);
+    }
+  } else if (TargetMessage == 0x1b) {
+    for (int i = 1; i < 16; i++) {
+      MELCLOUDDECODER::SetPayloadByte(Array0x1b[i], i);
+    }
+  } else if (TargetMessage == 0x1c) {
+    for (int i = 1; i < 16; i++) {
+      MELCLOUDDECODER::SetPayloadByte(Array0x1c[i], i);
+    }
+  } else if (TargetMessage == 0x1d) {
+    for (int i = 1; i < 16; i++) {
+      MELCLOUDDECODER::SetPayloadByte(Array0x1d[i], i);
+    }
+  } else if (TargetMessage == 0x1e) {
+    for (int i = 1; i < 16; i++) {
+      MELCLOUDDECODER::SetPayloadByte(Array0x1e[i], i);
+    }
+  } else if (TargetMessage == 0x1f) {
+    for (int i = 1; i < 16; i++) {
+      MELCLOUDDECODER::SetPayloadByte(Array0x1f[i], i);
+    }
+  } else if (TargetMessage == 0x20) {
+    for (int i = 1; i < 16; i++) {
+      MELCLOUDDECODER::SetPayloadByte(Array0x20[i], i);
+    }
+  } else if (TargetMessage == 0x26) {
+    for (int i = 1; i < 16; i++) {
+      MELCLOUDDECODER::SetPayloadByte(Array0x26[i], i);
+    }
+  } else if (TargetMessage == 0x27) {
+    for (int i = 1; i < 16; i++) {
+      MELCLOUDDECODER::SetPayloadByte(Array0x27[i], i);
+    }
+  } else if (TargetMessage == 0x28) {
+    for (int i = 1; i < 16; i++) {
+      MELCLOUDDECODER::SetPayloadByte(Array0x28[i], i);
+    }
+  } else if (TargetMessage == 0x29) {
+    for (int i = 1; i < 16; i++) {
+      MELCLOUDDECODER::SetPayloadByte(Array0x29[i], i);
+    }
+  } else if (TargetMessage == 0xA1) {
+    for (int i = 1; i < 16; i++) {
+      MELCLOUDDECODER::SetPayloadByte(Array0xa1[i], i);
+    }
+  } else if (TargetMessage == 0xA2) {
+    for (int i = 1; i < 16; i++) {
+      MELCLOUDDECODER::SetPayloadByte(Array0xa2[i], i);
+    }
+  } else if (TargetMessage == 0x32) {
+    MELCLOUDDECODER::SetPayloadByte(0x00, 0);   // Ok Message reply to writes
+  } else if (TargetMessage == 0x33) {
+    MELCLOUDDECODER::SetPayloadByte(0x00, 0);   // Ok Message reply to writes
+  } else if (TargetMessage == 0x34) {
+    MELCLOUDDECODER::SetPayloadByte(0x00, 0);   // Ok Message reply to writes
+  }
+  else if (TargetMessage == 0xC9) {
+    for (int i = 1; i < 16; i++) {
+      MELCLOUDDECODER::SetPayloadByte(Array0xc9[i], i);
     }
   }
+
 
   CommandSize = MELCLOUDDECODER::PrepareTxCommand(Buffer);
   DeviceStream->write(Buffer, CommandSize);

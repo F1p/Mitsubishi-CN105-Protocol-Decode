@@ -253,17 +253,17 @@ void onEvent(arduino_event_id_t event) {
       break;
     case ARDUINO_EVENT_ETH_LOST_IP:
       DEBUG_PRINTLN("ETH Lost IP");
-      wifiManager.autoConnect("Ecodan Bridge AP");          // Start WiFi Manager
+      wifiManager.autoConnect("Ecodan Bridge AP");  // Start WiFi Manager
       eth_connected = false;
       break;
     case ARDUINO_EVENT_ETH_DISCONNECTED:
       DEBUG_PRINTLN("ETH Disconnected");
-      wifiManager.autoConnect("Ecodan Bridge AP");          // Start WiFi Manager
+      wifiManager.autoConnect("Ecodan Bridge AP");  // Start WiFi Manager
       eth_connected = false;
       break;
     case ARDUINO_EVENT_ETH_STOP:
       DEBUG_PRINTLN("ETH Stopped");
-      wifiManager.autoConnect("Ecodan Bridge AP");          // Start WiFi Manager
+      wifiManager.autoConnect("Ecodan Bridge AP");  // Start WiFi Manager
       eth_connected = false;
       break;
     default: break;
@@ -272,7 +272,6 @@ void onEvent(arduino_event_id_t event) {
 
 void HeatPumpKeepAlive(void) {
   ftcpreviousMillis = millis();
-  HeatPump.KeepAlive();
   HeatPump.TriggerStatusStateMachine();
 }
 
@@ -295,6 +294,10 @@ void MELCloudQueryStateEngine(void) {
   if (MELCloud.Status.ReplyNow) {
     MELCloud.RequestStatus(MELCloud.Status.ActiveMessage);
     MELCloud.Status.ReplyNow = false;
+
+    if(MELCloud.Status.ActiveMessage == 0x32 | MELCloud.Status.ActiveMessage == 0x33 | MELCloud.Status.ActiveMessage == 0x34){  // The writes
+      HeatPump.WriteMELCloudCMD(MELCloud.Status.ActiveMessage);
+    }
   }
 
   if (MELCloud.Status.ConnectRequest) {
@@ -302,7 +305,7 @@ void MELCloudQueryStateEngine(void) {
     MELCloud.Status.ConnectRequest = false;
   }
 
-  if(MELCloud.Status.BaudRequest){
+  if (MELCloud.Status.BaudRequest) {
     MELCloud.BaudNegotiate();  // Reply to the connect request
     MELCloud.Status.BaudRequest = false;
   }

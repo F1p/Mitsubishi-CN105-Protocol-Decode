@@ -21,6 +21,8 @@
 #include <stdint.h>
 #include <Arduino.h>
 #include "MELCloudDecoder.h"
+#include "proxy.h"
+
 
 class MELCLOUD : public MELCLOUDDECODER {
 public:

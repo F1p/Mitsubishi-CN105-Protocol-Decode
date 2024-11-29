@@ -21,7 +21,7 @@
 #include <stdint.h>
 #include <time.h>
 #include <string.h>
-
+#include "proxy.h"
 
 #define PACKET_SYNC 0xFC
 #define SET_REQUEST 0x41
@@ -290,6 +290,7 @@ public:
   void EncodeFTCVersion(void);
   void EncodeServerControlMode(uint8_t OnOff);
   void EncodeProhibit(uint8_t Flags, uint8_t OnOff);
+  void EncodeMELCloud(uint8_t cmd);
 
   EcodanStatus Status;
 protected:

@@ -27,6 +27,7 @@ uint8_t Init3[] = { 0xfc, 0x5a, 0x02, 0x7a, 0x02, 0xca, 0x01, 0x5d };           
 uint8_t Init4[] = { 0xfc, 0x5b, 0x02, 0x7a, 0x01, 0xc9, 0x5f };
 uint8_t Init5[] = { 0xfc, 0x41, 0x02, 0x7a, 0x10, 0x34, 0x00, 0x01, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0xfd };
 
+
 #define NUMBER_COMMANDS 24
 uint8_t ActiveCommand[] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x07, 0x09, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
                             0x10, 0x13, 0x14, 0x15, 0x16,
@@ -50,7 +51,6 @@ void ECODAN::Process(void) {
   uint8_t c;
 
   while (DeviceStream->available()) {
-    DEBUG_PRINTLN("[FTC] ");
     c = DeviceStream->read();
 
     if (c == 0)
@@ -108,8 +108,8 @@ void ECODAN::StatusStateMachine(void) {
   uint8_t i;
 
   if (CurrentMessage != 0) {
-    DEBUG_PRINT("Send Message ");
-    DEBUG_PRINTLN(CurrentMessage);
+    DEBUG_PRINT("[Bridge > FTC] ");
+    //DEBUG_PRINTLN(CurrentMessage);
     ECODANDECODER::CreateBlankTxMessage(GET_REQUEST, 0x10);
     ECODANDECODER::SetPayloadByte(ActiveCommand[CurrentMessage], 0);
     CommandSize = ECODANDECODER::PrepareTxCommand(Buffer);
@@ -132,7 +132,6 @@ void ECODAN::StatusStateMachine(void) {
       UpdateFlag = 1;
     }
   } else {
-    PrintTumble();
   }
 }
 
@@ -456,6 +455,28 @@ void ECODAN::SetSystemPowerMode(uint8_t OnOff) {
 }
 
 
+void ECODAN::WriteMELCloudCMD(uint8_t cmd) {
+  uint8_t Buffer[COMMANDSIZE];
+  uint8_t CommandSize = 0;
+  uint8_t i;
+
+  StopStateMachine();
+  ECODANDECODER::CreateBlankTxMessage(SET_REQUEST, 0x10);
+  ECODANDECODER::EncodeMELCloud(cmd);
+  CommandSize = ECODANDECODER::PrepareTxCommand(Buffer);
+  DeviceStream->write(Buffer, CommandSize);
+  lastmsgdispatchedMillis = millis();
+  DeviceStream->flush();
+
+  for (i = 0; i < CommandSize; i++) {
+    if (Buffer[i] < 0x10) DEBUG_PRINT("0");
+    DEBUG_PRINT(String(Buffer[i], HEX));
+    DEBUG_PRINT(", ");
+  }
+  DEBUG_PRINTLN();
+}
+
+
 void ECODAN::GetFTCVersion() {
   uint8_t Buffer[COMMANDSIZE];
   uint8_t CommandSize = 0;
@@ -476,6 +497,8 @@ void ECODAN::GetFTCVersion() {
   }
   DEBUG_PRINTLN();
 }
+
+
 
 
 void ECODAN::PrintTumble(void) {
