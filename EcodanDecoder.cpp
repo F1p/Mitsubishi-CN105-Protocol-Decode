@@ -740,11 +740,15 @@ void ECODANDECODER::EncodeDHWSetpoint(float HotWaterSetpoint) {
 }
 
 
-void ECODANDECODER::EncodeControlMode(uint8_t ControlMode) {
+void ECODANDECODER::EncodeControlMode(uint8_t ControlMode, uint8_t Zone) {
   TxMessage.Payload[0] = TX_MESSAGE_BASIC;
-  TxMessage.Payload[1] = SET_HEATING_CONTROL_MODE_Z1 | SET_HEATING_CONTROL_MODE_Z2;
-  TxMessage.Payload[6] = ControlMode;
-  TxMessage.Payload[7] = ControlMode;
+  TxMessage.Payload[1] = Zone;
+  if (SET_HEATING_CONTROL_MODE_Z1 == Zone) {
+    TxMessage.Payload[6] = ControlMode;
+  }
+  if (SET_HEATING_CONTROL_MODE_Z2 == Zone) {
+    TxMessage.Payload[7] = ControlMode;
+  }
 }
 
 
@@ -852,13 +856,13 @@ void ECODANDECODER::EncodeServerControlMode(uint8_t OnOff, uint8_t DHW, uint8_t 
   if (Z2H) { Flags = Flags | TX_MESSAGE_SETTING_HEAT_Z2_INH_Flag; }
   if (Z2C) { Flags = Flags | TX_MESSAGE_SETTING_COOL_Z2_INH_Flag; }
 
-  TxMessage.Payload[1] = Flags;      // Write the flags where Zones are to be enabled
-  TxMessage.Payload[5] = DHW;        // Write the current status of DHW
-  TxMessage.Payload[6] = Z1H;        // Write the current status of Z1 Heating
-  TxMessage.Payload[7] = Z1C;        // Write the current status of Z1 Cooling
-  TxMessage.Payload[8] = Z2H;        // Write the current status of Z2 Heating
-  TxMessage.Payload[9] = Z2C;        // Write the current status of Z2 Cooling
-  TxMessage.Payload[10] = OnOff;     // Enter or Exit SCM Mode
+  TxMessage.Payload[1] = Flags;   // Write the flags where Zones are to be enabled
+  TxMessage.Payload[5] = DHW;     // Write the current status of DHW
+  TxMessage.Payload[6] = Z1H;     // Write the current status of Z1 Heating
+  TxMessage.Payload[7] = Z1C;     // Write the current status of Z1 Cooling
+  TxMessage.Payload[8] = Z2H;     // Write the current status of Z2 Heating
+  TxMessage.Payload[9] = Z2C;     // Write the current status of Z2 Cooling
+  TxMessage.Payload[10] = OnOff;  // Enter or Exit SCM Mode
 }
 
 

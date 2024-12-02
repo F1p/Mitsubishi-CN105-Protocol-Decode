@@ -22,11 +22,13 @@ String MQTT_COMMAND_ZONE1_FLOW_SETPOINT = MQTT_COMMAND_ZONE1 + "/FlowSetpoint";
 String MQTT_COMMAND_ZONE1_NOMODE_SETPOINT = MQTT_COMMAND_ZONE1 + "/ThermostatSetpoint";
 String MQTT_COMMAND_ZONE1_HEAT_PROHIBIT = MQTT_COMMAND_ZONE1 + "/ProhibitHeating";
 String MQTT_COMMAND_ZONE1_COOL_PROHIBIT = MQTT_COMMAND_ZONE1 + "/ProhibitCooling";
+String MQTT_COMMAND_ZONE1_HEATINGMODE = MQTT_COMMAND_ZONE1 + "/HeatingMode";
 
 String MQTT_COMMAND_ZONE2_FLOW_SETPOINT = MQTT_COMMAND_ZONE2 + "/FlowSetpoint";
 String MQTT_COMMAND_ZONE2_NOMODE_SETPOINT = MQTT_COMMAND_ZONE2 + "/ThermostatSetpoint";
 String MQTT_COMMAND_ZONE2_HEAT_PROHIBIT = MQTT_COMMAND_ZONE2 + "/ProhibitHeating";
 String MQTT_COMMAND_ZONE2_COOL_PROHIBIT = MQTT_COMMAND_ZONE2 + "/ProhibitCooling";
+String MQTT_COMMAND_ZONE2_HEATINGMODE = MQTT_COMMAND_ZONE2 + "/HeatingMode";
 
 String MQTT_COMMAND_HOTWATER_MODE = MQTT_COMMAND_HOTWATER + "/Mode";
 String MQTT_COMMAND_HOTWATER_SETPOINT = MQTT_COMMAND_HOTWATER + "/Setpoint";
@@ -35,7 +37,6 @@ String MQTT_COMMAND_HOTWATER_NORM_BOOST = MQTT_COMMAND_HOTWATER + "/NormalBoost"
 String MQTT_COMMAND_HOTWATER_PROHIBIT = MQTT_COMMAND_HOTWATER + "/Prohibit";
 
 String MQTT_COMMAND_SYSTEM_HOLIDAYMODE = MQTT_COMMAND_SYSTEM + "/HolidayMode";
-String MQTT_COMMAND_SYSTEM_HEATINGMODE = MQTT_COMMAND_SYSTEM + "/HeatingMode";
 String MQTT_COMMAND_SYSTEM_SVRMODE = MQTT_COMMAND_SYSTEM + "/SvrControlMode";
 String MQTT_COMMAND_SYSTEM_POWER = MQTT_COMMAND_SYSTEM + "/Power";
 
@@ -43,11 +44,13 @@ String MQTTCommandZone1FlowSetpoint = MQTT_COMMAND_ZONE1_FLOW_SETPOINT;
 String MQTTCommandZone1NoModeSetpoint = MQTT_COMMAND_ZONE1_NOMODE_SETPOINT;
 String MQTTCommandZone1ProhibitHeating = MQTT_COMMAND_ZONE1_HEAT_PROHIBIT;
 String MQTTCommandZone1ProhibitCooling = MQTT_COMMAND_ZONE1_COOL_PROHIBIT;
+String MQTTCommandZone1HeatingMode = MQTT_COMMAND_ZONE1_HEATINGMODE;
 
 String MQTTCommandZone2FlowSetpoint = MQTT_COMMAND_ZONE2_FLOW_SETPOINT;
 String MQTTCommandZone2NoModeSetpoint = MQTT_COMMAND_ZONE2_NOMODE_SETPOINT;
 String MQTTCommandZone2ProhibitHeating = MQTT_COMMAND_ZONE2_HEAT_PROHIBIT;
 String MQTTCommandZone2ProhibitCooling = MQTT_COMMAND_ZONE2_COOL_PROHIBIT;
+String MQTTCommandZone2HeatingMode = MQTT_COMMAND_ZONE2_HEATINGMODE;
 
 String MQTTCommandHotwaterMode = MQTT_COMMAND_HOTWATER_MODE;
 String MQTTCommandHotwaterSetpoint = MQTT_COMMAND_HOTWATER_SETPOINT;
@@ -56,7 +59,6 @@ String MQTTCommandHotwaterNormalBoost = MQTT_COMMAND_HOTWATER_NORM_BOOST;
 String MQTTCommandHotwaterProhibit = MQTT_COMMAND_HOTWATER_PROHIBIT;
 
 String MQTTCommandSystemHolidayMode = MQTT_COMMAND_SYSTEM_HOLIDAYMODE;
-String MQTTCommandSystemHeatingMode = MQTT_COMMAND_SYSTEM_HEATINGMODE;
 String MQTTCommandSystemSvrMode = MQTT_COMMAND_SYSTEM_SVRMODE;
 String MQTTCommandSystemPower = MQTT_COMMAND_SYSTEM_POWER;
 
@@ -110,7 +112,7 @@ void readSettingsFromConfig() {
               snprintf(DeviceID, 15, (String(ESP.getEfuseMac(), HEX)).c_str());
 #endif
               strcpy(mqttSettings.deviceId, DeviceID);
-              shouldSaveConfig = true;    // Save config after exit to update the file
+              shouldSaveConfig = true;  // Save config after exit to update the file
             }
             if (doc.containsKey(mqttSettings.wm_mqtt_client_id_identifier)) {
               if ((sizeof(doc[mqttSettings.wm_mqtt_client_id_identifier]) > 0) && ((sizeof(doc[mqttSettings.wm_mqtt_client_id_identifier]) + 1) <= clientId_max_length)) {
@@ -191,11 +193,13 @@ void readSettingsFromConfig() {
     MQTT_COMMAND_ZONE1_NOMODE_SETPOINT = MQTT_COMMAND_ZONE1 + "/ThermostatSetpoint";
     MQTT_COMMAND_ZONE1_HEAT_PROHIBIT = MQTT_COMMAND_ZONE1 + "/ProhibitHeating";
     MQTT_COMMAND_ZONE1_COOL_PROHIBIT = MQTT_COMMAND_ZONE1 + "/ProhibitCooling";
+    MQTT_COMMAND_ZONE1_HEATINGMODE = MQTT_COMMAND_ZONE1 + "/HeatingMode";
 
     MQTT_COMMAND_ZONE2_FLOW_SETPOINT = MQTT_COMMAND_ZONE2 + "/FlowSetpoint";
     MQTT_COMMAND_ZONE2_NOMODE_SETPOINT = MQTT_COMMAND_ZONE2 + "/ThermostatSetpoint";
     MQTT_COMMAND_ZONE2_HEAT_PROHIBIT = MQTT_COMMAND_ZONE2 + "/ProhibitHeating";
     MQTT_COMMAND_ZONE2_COOL_PROHIBIT = MQTT_COMMAND_ZONE2 + "/ProhibitCooling";
+    MQTT_COMMAND_ZONE2_HEATINGMODE = MQTT_COMMAND_ZONE2 + "/HeatingMode";
 
     MQTT_COMMAND_HOTWATER_MODE = MQTT_COMMAND_HOTWATER + "/Mode";
     MQTT_COMMAND_HOTWATER_SETPOINT = MQTT_COMMAND_HOTWATER + "/Setpoint";
@@ -204,7 +208,6 @@ void readSettingsFromConfig() {
     MQTT_COMMAND_HOTWATER_PROHIBIT = MQTT_COMMAND_HOTWATER + "/Prohibit";
 
     MQTT_COMMAND_SYSTEM_HOLIDAYMODE = MQTT_COMMAND_SYSTEM + "/HolidayMode";
-    MQTT_COMMAND_SYSTEM_HEATINGMODE = MQTT_COMMAND_SYSTEM + "/HeatingMode";
     MQTT_COMMAND_SYSTEM_SVRMODE = MQTT_COMMAND_SYSTEM + "/SvrControlMode";
     MQTT_COMMAND_SYSTEM_POWER = MQTT_COMMAND_SYSTEM + "/Power";
 
@@ -212,11 +215,13 @@ void readSettingsFromConfig() {
     MQTTCommandZone1NoModeSetpoint = MQTT_COMMAND_ZONE1_NOMODE_SETPOINT;
     MQTTCommandZone1ProhibitHeating = MQTT_COMMAND_ZONE1_HEAT_PROHIBIT;
     MQTTCommandZone1ProhibitCooling = MQTT_COMMAND_ZONE1_COOL_PROHIBIT;
+    MQTTCommandZone1HeatingMode = MQTT_COMMAND_ZONE1_HEATINGMODE;
 
     MQTTCommandZone2FlowSetpoint = MQTT_COMMAND_ZONE2_FLOW_SETPOINT;
     MQTTCommandZone2NoModeSetpoint = MQTT_COMMAND_ZONE2_NOMODE_SETPOINT;
     MQTTCommandZone2ProhibitHeating = MQTT_COMMAND_ZONE2_HEAT_PROHIBIT;
     MQTTCommandZone2ProhibitCooling = MQTT_COMMAND_ZONE2_COOL_PROHIBIT;
+    MQTTCommandZone2HeatingMode = MQTT_COMMAND_ZONE2_HEATINGMODE;
 
     MQTTCommandHotwaterMode = MQTT_COMMAND_HOTWATER_MODE;
     MQTTCommandHotwaterSetpoint = MQTT_COMMAND_HOTWATER_SETPOINT;
@@ -225,7 +230,6 @@ void readSettingsFromConfig() {
     MQTTCommandHotwaterProhibit = MQTT_COMMAND_HOTWATER_PROHIBIT;
 
     MQTTCommandSystemHolidayMode = MQTT_COMMAND_SYSTEM_HOLIDAYMODE;
-    MQTTCommandSystemHeatingMode = MQTT_COMMAND_SYSTEM_HEATINGMODE;
     MQTTCommandSystemSvrMode = MQTT_COMMAND_SYSTEM_SVRMODE;
     MQTTCommandSystemPower = MQTT_COMMAND_SYSTEM_POWER;
   }
@@ -315,7 +319,6 @@ void readSettingsFromConfig() {
     snprintf(WiFiHostname, 26, "%s%s", ClientPrefix, mqttSettings.deviceId);
     WiFi.hostname(WiFiHostname);
 
-    wifiManager.setConfigPortalTimeout(120);                // Timeout before launching the config portal
     wifiManager.setBreakAfterConfig(true);                  // Saves settings, even if WiFi Fails
     wifiManager.setSaveConfigCallback(saveConfigCallback);  // Set config save notify callback
     wifiManager.setAPClientCheck(true);                     // avoid timeout if client connected to softap
@@ -330,6 +333,7 @@ void readSettingsFromConfig() {
 
 
 #ifndef ARDUINO_WT32_ETH01
+    wifiManager.setConfigPortalTimeout(120);  // Timeout before launching the config portal
     if (!wifiManager.autoConnect("Ecodan Bridge AP")) {
       DEBUG_PRINTLN("Failed to connect and hit timeout");
       delay(3000);
@@ -390,7 +394,7 @@ void readSettingsFromConfig() {
 
 
       // Sensors
-      if (i >= 0 && i < 77) {
+      if (i >= 0 && i < 79) {
         Config["state_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[MQTT_TOPIC_POS[i]]);                               // Needs a positioner
         if (MQTT_UNITS_POS[i] > 0) { Config["unit_of_measurement"] = String(MQTT_SENSOR_UNITS[MQTT_UNITS_POS[i]]); }  // Don't send nothing
         Config["value_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[i]);
@@ -403,22 +407,30 @@ void readSettingsFromConfig() {
       }
 
       // Climate
-      if (i >= 77 && i < 80) {
-        Config["object_id"] = String(MQTT_OBJECT_ID[i - 77]);
-        Config["current_temperature_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[i - 73]);
-        Config["current_temperature_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[27]);
-        Config["temperature_command_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[i - 67]);
+      if (i >= 79 && i < 84) {
+        Config["object_id"] = String(MQTT_OBJECT_ID[i - 79]);
+        if (i >= 79 && i < 82) {
+          Config["current_temperature_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[i - 75]);
+          Config["current_temperature_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[27]);
+          Config["temperature_command_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[i - 69]);
+          Config["temperature_state_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[i - 75]);
+          Config["temperature_state_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[80]);
+        } else if (i >= 82 && i < 84) {
+          Config["current_temperature_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[2]);
+          Config["current_temperature_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[6]);
+          Config["temperature_command_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[i - 59]);
+          Config["temperature_state_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[i - 77]);
+          Config["temperature_state_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[81]);
+        }
         Config["temperature_unit"] = String(MQTT_SENSOR_UNITS[9]);
-        Config["max_temp"] = MQTT_CLIMATE_MAX[i - 77];
-        Config["min_temp"] = MQTT_CLIMATE_MIN[i - 77];
-        Config["temp_step"] = MQTT_CLIMATE_TEMP_STEP[i - 77];
-        Config["precision"] = MQTT_CLIMATE_PRECISION[i - 77];
-        Config["initial"] = MQTT_CLIMATE_INITAL[i - 77];
-        Config["temperature_state_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[i - 73]);
-        Config["temperature_state_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[78]);
+        Config["max_temp"] = MQTT_CLIMATE_MAX[i - 79];
+        Config["min_temp"] = MQTT_CLIMATE_MIN[i - 79];
+        Config["temp_step"] = MQTT_CLIMATE_TEMP_STEP[i - 79];
+        Config["precision"] = MQTT_CLIMATE_PRECISION[i - 79];
+        Config["initial"] = MQTT_CLIMATE_INITAL[i - 79];
         Config["mode_state_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[2]);
-        Config["mode_state_template"] = String(MQTT_CLIMATE_STATE_TOPIC[i - 77]);
-        if (i == 77) {
+        Config["mode_state_template"] = String(MQTT_CLIMATE_STATE_TOPIC[i - 79]);
+        if (i == 79) {
           Config["modes"][0] = "heat";
           Config["modes"][1] = "off";
         } else {
@@ -433,11 +445,11 @@ void readSettingsFromConfig() {
       }
 
       // Switches
-      if (i >= 80 && i < 90) {
-        Config["state_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[MQTT_SWITCH_STATE_POS[i - 80]]);
-        Config["value_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[i]);
-        Config["command_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[i - 67]);
-        if (i == 81) {
+      if (i >= 84 && i < 94) {
+        Config["state_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[MQTT_SWITCH_STATE_POS[i - 84]]);
+        Config["value_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[i - 2]);
+        Config["command_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[i - 71]);
+        if (i == 85) {
           Config["state_on"] = "On";
           Config["state_off"] = "Standby";
           Config["payload_on"] = "On";
@@ -454,28 +466,13 @@ void readSettingsFromConfig() {
       }
 
 
-      // Numbers
-      if (i >= 90 && i < 92) {
-        Config["name"] = String(MQTT_SENSOR_NAME[i]);
-        Config["state_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[i - 85]);
-        Config["value_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[79]);
-        Config["command_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[i - 67]);
-        Config["unit_of_measurement"] = String(MQTT_SENSOR_UNITS[2]);
-        Config["max"] = 60;
-        Config["min"] = 10;
-        Config["step"] = MQTT_CLIMATE_TEMP_STEP[1];
-
-        MQTT_DISCOVERY_TOPIC = String(MQTT_DISCOVERY_TOPICS[3]);
-      }
-
-
       // Selects
-      if (i >= 92 && i < 94) {
+      if (i >= 94 && i < 97) {
         Config["name"] = String(MQTT_SENSOR_NAME[i]);
-        Config["command_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[i - 67]);
-        Config["state_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[i - 88]);
-        Config["value_template"] = String(MQTT_SELECT_VALUE_TOPIC[i - 92]);
-        if (i == 92) {
+        Config["command_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[i - 69]);
+        Config["state_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[i - 90]);
+        Config["value_template"] = String(MQTT_SELECT_VALUE_TOPIC[i - 94]);
+        if (i == 94) {
           Config["options"][0] = HotWaterControlModeString[0];
           Config["options"][1] = HotWaterControlModeString[1];
         } else {
@@ -492,14 +489,14 @@ void readSettingsFromConfig() {
 
 
       // Add Availability Topics
-      if (i >= 77) {
-        if (i >= 84 && i < 89) {  // Server Control Mode Interlocks
+      if (i >= 80) {
+        if (i >= 87 && i < 93) {  // Server Control Mode Interlocks
           Config["availability"]["topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[8]);
-          Config["availability"]["value_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[83]);
+          Config["availability"]["value_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[85]);
           Config["availability"]["payload_available"] = ITEM_ON;
           Config["availability"]["payload_not_available"] = ITEM_OFF;
-        } else if (i >= 90 && i < 92) {  // Flow Op Mode Interlocks
-          Config["availability"]["topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[i - 85]);
+        } else if (i >= 82 && i < 84) {  // Flow Op Mode Interlocks on Climate & Number
+          Config["availability"]["topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[i - 77]);
           Config["availability"]["value_template"] = String(MQTT_NUMBER_AVAIL_TEMPLATE[0]);
         } else {  // Everything else LWT
           Config["availability"]["topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[0]);
@@ -538,12 +535,13 @@ void readSettingsFromConfig() {
     MQTTClient.subscribe(MQTTCommandZone1NoModeSetpoint.c_str());
     MQTTClient.subscribe(MQTTCommandZone1ProhibitHeating.c_str());
     MQTTClient.subscribe(MQTTCommandZone1ProhibitCooling.c_str());
+    MQTTClient.subscribe(MQTTCommandZone1HeatingMode.c_str());
     MQTTClient.subscribe(MQTTCommandZone2FlowSetpoint.c_str());
     MQTTClient.subscribe(MQTTCommandZone2NoModeSetpoint.c_str());
     MQTTClient.subscribe(MQTTCommandZone2ProhibitHeating.c_str());
     MQTTClient.subscribe(MQTTCommandZone2ProhibitCooling.c_str());
+    MQTTClient.subscribe(MQTTCommandZone2HeatingMode.c_str());
     MQTTClient.subscribe(MQTTCommandSystemHolidayMode.c_str());
-    MQTTClient.subscribe(MQTTCommandSystemHeatingMode.c_str());
     MQTTClient.subscribe(MQTTCommandHotwaterMode.c_str());
     MQTTClient.subscribe(MQTTCommandHotwaterSetpoint.c_str());
     MQTTClient.subscribe(MQTTCommandHotwaterBoost.c_str());

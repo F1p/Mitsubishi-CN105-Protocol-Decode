@@ -1,9 +1,9 @@
 //-- MQTT Home Assistant Auto Discovery --//
 
-const int discovery_topics PROGMEM = 94;
+const int discovery_topics PROGMEM = 97;
 
 // Build the sensor JSON structure
-const char MQTT_DISCOVERY_OBJ_ID[][3] PROGMEM = { "aa", "ab", "ac", "ad", "ae", "af", "ag", "ah", "ai", "aj", "ak", "al", "am", "an", "ao", "ap", "aq", "ar", "as", "at", "au", "av", "aw", "ax", "ay", "az", "ba", "bb", "bc", "bd", "be", "bf", "bg", "bh", "bi", "bj", "bk", "bl", "bm", "bn", "bo", "bp", "bq", "br", "bs", "bt", "bu", "bv", "bw", "bx", "by", "bz", "ca", "cb", "cc", "cd", "cu", "cv", "cw", "cx", "cz", "da", "db", "dc", "de", "df", "dg", "dh", "di", "dj", "dk", "dl", "dm", "dn", "do", "dp", "dq", "ce", "cf", "cg", "ch", "ci", "cj", "ck", "cl", "cm", "cn", "co", "cp", "dr", "cq", "cr", "cs", "ct" };
+const char MQTT_DISCOVERY_OBJ_ID[][3] PROGMEM = { "aa", "ab", "ac", "ad", "ae", "af", "ag", "ah", "ai", "aj", "ak", "al", "am", "an", "ao", "ap", "aq", "ar", "as", "at", "au", "av", "aw", "ax", "ay", "az", "ba", "bb", "bc", "bd", "be", "bf", "bg", "bh", "bi", "bj", "bk", "bl", "bm", "bn", "bo", "bp", "bq", "br", "bs", "bt", "bu", "bv", "bw", "bx", "by", "bz", "ca", "cb", "cc", "cd", "cu", "cv", "cw", "cx", "cz", "da", "db", "dc", "de", "df", "dg", "dh", "di", "dj", "dk", "dl", "dm", "dn", "do", "dp", "dq", "ds", "dt", "ce", "cf", "cg", "dt", "du", "ch", "ci", "cj", "ck", "cl", "cm", "cn", "co", "cp", "dr", "cs", "ct", "dv" };
 
 const char MQTT_SENSOR_UNIQUE_ID[][32] PROGMEM = {
   "ashp_bridge_lwt_",
@@ -83,10 +83,14 @@ const char MQTT_SENSOR_UNIQUE_ID[][32] PROGMEM = {
   "ashp_est_pwr_in_",
   "ashp_ftc_sw_v_",
   "ashp_dhw_eco_boost_",
+  "ashp_mix_valve_pos_",
+  "ashp_bridge_cpu_",
 
   "ashp_dhw_climate_",  //65
   "ashp_Zone1_climate_",
   "ashp_Zone2_climate_",  //67
+  "ashp_Zone1_flow_climate_",
+  "ashp_Zone2_flow_climate_",  //67
 
   "ashp_dhw_boost_",  //68
   "ashp_systempower_",
@@ -99,11 +103,9 @@ const char MQTT_SENSOR_UNIQUE_ID[][32] PROGMEM = {
   "ashp_svrctrol_z2c_",
   "ashp_svrctrol_norm_dhw_",
 
-  "ashp_z1_flow_setpoint_",
-  "ashp_z2_flow_setpoint_",  //78
-
   "ashp_dhw_mode",  //79
-  "ashp_heat_cool_mode"
+  "ashp_heat_cool_mode",
+  "ashp_heat_cool_mode_z2",
 };
 
 
@@ -185,8 +187,12 @@ const char MQTT_MDI_ICONS[][30] PROGMEM = {
   "mdi:transmission-tower-import",
   "mdi:alpha-v-circle-outline",
   "mdi:hand-water",
+  "mdi:valve",
+  "mdi:chip",
 
   "mdi:thermostat",  //65
+  "mdi:thermostat",
+  "mdi:thermostat",  //67
   "mdi:thermostat",
   "mdi:thermostat",  //67
 
@@ -205,7 +211,8 @@ const char MQTT_MDI_ICONS[][30] PROGMEM = {
   "mdi:ray-vertex",  //78
 
   "mdi:auto-mode",  //79
-  "mdi:sun-snowflake-variant"
+  "mdi:sun-snowflake-variant",
+  "mdi:sun-snowflake-variant",
 };
 
 
@@ -287,10 +294,14 @@ const char MQTT_SENSOR_NAME[][40] PROGMEM = {
   "Computed Input Power",
   "FTC Software Version",
   "DHW Boost",
+  "Mixing Valve Step",
+  "Bridge CPU Temperature",
 
   "DHW Thermostat",  //70
   "Zone 1 Thermostat",
   "Zone 2 Thermostat",  //72
+  "Zone 1 Flow Thermostat",
+  "Zone 2 Flow Thermostat",
 
   "Fast DHW Boost",  //73
   "System Power",
@@ -303,11 +314,9 @@ const char MQTT_SENSOR_NAME[][40] PROGMEM = {
   "Prohibit Zone 2 Cooling",
   "DHW Boost",
 
-  "Zone 1 Flow Setpoint",
-  "Zone 2 Flow Setpoint",  //83
-
   "DHW Mode",  //84
-  "Heating/Cooling Operation Mode"
+  "Heating/Cooling Operation Mode Zone 1",
+  "Heating/Cooling Operation Mode Zone 2"
 };
 
 const char MQTT_TOPIC[][34] PROGMEM = {
@@ -337,7 +346,8 @@ const char MQTT_TOPIC[][34] PROGMEM = {
   "/Command/Zone1/FlowSetpoint",        //23
   "/Command/Zone2/FlowSetpoint",        //24
   "/Command/HotWater/Mode",             //25
-  "/Command/System/HeatingMode"         //26
+  "/Command/Zone1/HeatingMode",         //26
+  "/Command/Zone2/HeatingMode"          //27
 };
 
 
@@ -430,6 +440,9 @@ int MQTT_TOPIC_POS[] PROGMEM = {
   8,
   2,
   2,
+  1,
+  3,
+  3,
   1
 };
 
@@ -510,23 +523,31 @@ int MQTT_UNITS_POS[] PROGMEM = {
   3,
   3,
   0,
-  0
+  0,
+  0,
+  2
 };
 
-const char MQTT_OBJECT_ID[][14] PROGMEM = {
+const char MQTT_OBJECT_ID[][19] PROGMEM = {
   "dhw_climate",
   "zone1_climate",
-  "zone2_climate"
+  "zone2_climate",
+  "zone1_flow_climate",
+  "zone2_flow_climate"
 };
 
 int MQTT_CLIMATE_MAX[] PROGMEM = {
   60,
   30,
-  30
+  30,
+  60,
+  60
 };
 
 int MQTT_CLIMATE_MIN[] PROGMEM = {
   0,
+  10,
+  10,
   10,
   10
 };
@@ -534,10 +555,14 @@ int MQTT_CLIMATE_MIN[] PROGMEM = {
 float MQTT_CLIMATE_TEMP_STEP[] PROGMEM = {
   1.0,
   0.5,
+  0.5,
+  0.5,
   0.5
 };
 
 float MQTT_CLIMATE_PRECISION[] PROGMEM = {
+  0.5,
+  0.5,
   0.5,
   0.5,
   0.5
@@ -546,7 +571,9 @@ float MQTT_CLIMATE_PRECISION[] PROGMEM = {
 int MQTT_CLIMATE_INITAL[] PROGMEM = {
   50,
   10,
-  10
+  10,
+  30,
+  30
 };
 
 const char MQTT_CLIMATE_MODE[][127] PROGMEM = {
@@ -556,11 +583,15 @@ const char MQTT_CLIMATE_MODE[][127] PROGMEM = {
 const char MQTT_CLIMATE_STATE_TOPIC[][494] PROGMEM = {
   "{{ 'heat' if (value_json.SystemOperationMode=='Hot Water' or value_json.SystemOperationMode=='Legionella') else 'off' }}",
   "{{ 'heat' if (value_json.SystemOperationMode=='Heating' and state_attr('climate.zone2_climate','current_temperature')==0) else 'heat' if (value_json.SystemOperationMode=='Heating' and states('sensor.ecodan_ashp_zone_1_working')=='1') else 'cool' if (value_json.SystemOperationMode=='Cooling' and state_attr('climate.zone2_climate','current_temperature')==0) else 'cool' if (value_json.SystemOperationMode=='Cooling' and states('sensor.ecodan_ashp_zone_1_working')=='1') else 'off' }}",
+  "{{ 'heat' if (value_json.SystemOperationMode=='Heating' and states('sensor.ecodan_ashp_zone_2_working')=='1') else 'cool' if (value_json.SystemOperationMode=='Cooling' and states('sensor.ecodan_ashp_zone_2_working')=='1') else 'off' }}",
+  "{{ 'heat' if (value_json.SystemOperationMode=='Heating' and state_attr('climate.zone2_climate','current_temperature')==0) else 'heat' if (value_json.SystemOperationMode=='Heating' and states('sensor.ecodan_ashp_zone_1_working')=='1') else 'cool' if (value_json.SystemOperationMode=='Cooling' and state_attr('climate.zone2_climate','current_temperature')==0) else 'cool' if (value_json.SystemOperationMode=='Cooling' and states('sensor.ecodan_ashp_zone_1_working')=='1') else 'off' }}",
   "{{ 'heat' if (value_json.SystemOperationMode=='Heating' and states('sensor.ecodan_ashp_zone_2_working')=='1') else 'cool' if (value_json.SystemOperationMode=='Cooling' and states('sensor.ecodan_ashp_zone_2_working')=='1') else 'off' }}"
+
 };
 
 const char MQTT_SELECT_VALUE_TOPIC[][405] PROGMEM = {
   "{{ 'Normal' if value_json.HotWaterControlMode=='Normal' else 'Eco' if value_json.HotWaterControlMode=='Eco' }}",
+  "{{ 'Heating Temperature' if value_json.HeatingControlMode=='Temp' else 'Heating Flow' if value_json.HeatingControlMode=='Flow' else 'Heating Compensation' if value_json.HeatingControlMode == 'Compensation' else 'Cooling Temperature' if value_json.HeatingControlMode == 'Cool' else 'Cooling Flow' if value_json.HeatingControlMode == 'Cool Flow' else 'Dry Up' if value_json.HeatingControlMode == 'Dry Up'}}",
   "{{ 'Heating Temperature' if value_json.HeatingControlMode=='Temp' else 'Heating Flow' if value_json.HeatingControlMode=='Flow' else 'Heating Compensation' if value_json.HeatingControlMode == 'Compensation' else 'Cooling Temperature' if value_json.HeatingControlMode == 'Cool' else 'Cooling Flow' if value_json.HeatingControlMode == 'Cool Flow' else 'Dry Up' if value_json.HeatingControlMode == 'Dry Up'}}"
 };
 
@@ -659,6 +690,8 @@ const char MQTT_SENSOR_VALUE_TEMPLATE[][50] PROGMEM = {
   "{{ value_json.EstInputPower }}",
   "{{ value_json.FTCSoftwareVersion }}",
   "{{ value_json.HotWaterEcoBoostActive }}",
+  "{{ value_json.MixingStep }}",      //77
+  "{{ value_json.CPUTemp }}",
   "{{ value_json }}",
   "{{ value_json.Setpoint }}",
   "{{ value_json.FSP }}",  //75
@@ -679,7 +712,7 @@ const char MQTT_DISCOVERY_TOPICS[][23] PROGMEM = {
   "homeassistant/sensor/",
   "homeassistant/climate/",
   "homeassistant/switch/",
-  "homeassistant/number/",
+  "homeassistant/climate/",
   "homeassistant/select/",
   "/config"
 };

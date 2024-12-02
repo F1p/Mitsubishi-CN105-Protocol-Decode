@@ -47,7 +47,7 @@
 #endif
 
 
-String FirmwareVersion = "5.3.1";
+String FirmwareVersion = "5.3.2";
 
 
 #ifdef ESP8266  // Define the Witty ESP8266 Serial Pins
@@ -308,8 +308,6 @@ void loop() {
       delay(500);
       FastLED.setBrightness(255);
       FastLED.show();
-#endif
-#ifdef ARDUINO_M5STACK_ATOMS3
       ESP.restart();
 #endif
     }                                // Wait for 5 mins to try reconnects then force restart
@@ -509,31 +507,47 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
     HeatPump.SetHotWaterSetpoint(Payload.toInt());
     HeatPump.Status.HotWaterSetpoint = Payload.toInt();
   }
-  if (Topic == MQTTCommandSystemHeatingMode) {
-    MQTTWriteReceived("MQTT Set Heating Mode", 4);
+  if (Topic == MQTTCommandZone1HeatingMode) {
+    MQTTWriteReceived("MQTT Set Heating Mode Zone 1", 4);
     if (Payload == String("Heating Temperature")) {
-      HeatPump.SetHeatingControlMode(HEATING_CONTROL_MODE_ZONE_TEMP);
+      HeatPump.SetHeatingControlMode(HEATING_CONTROL_MODE_ZONE_TEMP, SET_HEATING_CONTROL_MODE_Z1);
       HeatPump.Status.HeatingControlModeZ1 = HEATING_CONTROL_MODE_ZONE_TEMP;
+    } else if (Payload == String("Heating Flow")) {
+      HeatPump.SetHeatingControlMode(HEATING_CONTROL_MODE_FLOW_TEMP, SET_HEATING_CONTROL_MODE_Z1);
+      HeatPump.Status.HeatingControlModeZ1 = HEATING_CONTROL_MODE_FLOW_TEMP;
+    } else if (Payload == String("Heating Compensation")) {
+      HeatPump.SetHeatingControlMode(HEATING_CONTROL_MODE_COMPENSATION, SET_HEATING_CONTROL_MODE_Z1);
+      HeatPump.Status.HeatingControlModeZ1 = HEATING_CONTROL_MODE_COMPENSATION;
+    } else if (Payload == String("Cooling Temperature")) {
+      HeatPump.SetHeatingControlMode(HEATING_CONTROL_MODE_COOL_ZONE_TEMP, SET_HEATING_CONTROL_MODE_Z1);
+      HeatPump.Status.HeatingControlModeZ1 = HEATING_CONTROL_MODE_COOL_ZONE_TEMP;
+    } else if (Payload == String("Cooling Flow")) {
+      HeatPump.SetHeatingControlMode(HEATING_CONTROL_MODE_COOL_FLOW_TEMP, SET_HEATING_CONTROL_MODE_Z1);
+      HeatPump.Status.HeatingControlModeZ1 = HEATING_CONTROL_MODE_COOL_FLOW_TEMP;
+    } else if (Payload == String("Dry Up")) {
+      HeatPump.SetHeatingControlMode(HEATING_CONTROL_MODE_DRY_UP, SET_HEATING_CONTROL_MODE_Z1);
+      HeatPump.Status.HeatingControlModeZ1 = HEATING_CONTROL_MODE_DRY_UP;
+    }
+  }
+  if (Topic == MQTTCommandZone2HeatingMode) {
+    MQTTWriteReceived("MQTT Set Heating Mode Zone 2", 4);
+    if (Payload == String("Heating Temperature")) {
+      HeatPump.SetHeatingControlMode(HEATING_CONTROL_MODE_ZONE_TEMP, SET_HEATING_CONTROL_MODE_Z2);
       HeatPump.Status.HeatingControlModeZ2 = HEATING_CONTROL_MODE_ZONE_TEMP;
     } else if (Payload == String("Heating Flow")) {
-      HeatPump.SetHeatingControlMode(HEATING_CONTROL_MODE_FLOW_TEMP);
-      HeatPump.Status.HeatingControlModeZ1 = HEATING_CONTROL_MODE_FLOW_TEMP;
+      HeatPump.SetHeatingControlMode(HEATING_CONTROL_MODE_FLOW_TEMP, SET_HEATING_CONTROL_MODE_Z2);
       HeatPump.Status.HeatingControlModeZ2 = HEATING_CONTROL_MODE_FLOW_TEMP;
     } else if (Payload == String("Heating Compensation")) {
-      HeatPump.SetHeatingControlMode(HEATING_CONTROL_MODE_COMPENSATION);
-      HeatPump.Status.HeatingControlModeZ1 = HEATING_CONTROL_MODE_COMPENSATION;
+      HeatPump.SetHeatingControlMode(HEATING_CONTROL_MODE_COMPENSATION, SET_HEATING_CONTROL_MODE_Z2);
       HeatPump.Status.HeatingControlModeZ2 = HEATING_CONTROL_MODE_COMPENSATION;
     } else if (Payload == String("Cooling Temperature")) {
-      HeatPump.SetHeatingControlMode(HEATING_CONTROL_MODE_COOL_ZONE_TEMP);
-      HeatPump.Status.HeatingControlModeZ1 = HEATING_CONTROL_MODE_COOL_ZONE_TEMP;
+      HeatPump.SetHeatingControlMode(HEATING_CONTROL_MODE_COOL_ZONE_TEMP, SET_HEATING_CONTROL_MODE_Z2);
       HeatPump.Status.HeatingControlModeZ2 = HEATING_CONTROL_MODE_COOL_ZONE_TEMP;
     } else if (Payload == String("Cooling Flow")) {
-      HeatPump.SetHeatingControlMode(HEATING_CONTROL_MODE_COOL_FLOW_TEMP);
-      HeatPump.Status.HeatingControlModeZ1 = HEATING_CONTROL_MODE_COOL_FLOW_TEMP;
+      HeatPump.SetHeatingControlMode(HEATING_CONTROL_MODE_COOL_FLOW_TEMP, SET_HEATING_CONTROL_MODE_Z2);
       HeatPump.Status.HeatingControlModeZ2 = HEATING_CONTROL_MODE_COOL_FLOW_TEMP;
     } else if (Payload == String("Dry Up")) {
-      HeatPump.SetHeatingControlMode(HEATING_CONTROL_MODE_DRY_UP);
-      HeatPump.Status.HeatingControlModeZ1 = HEATING_CONTROL_MODE_DRY_UP;
+      HeatPump.SetHeatingControlMode(HEATING_CONTROL_MODE_DRY_UP, SET_HEATING_CONTROL_MODE_Z2);
       HeatPump.Status.HeatingControlModeZ2 = HEATING_CONTROL_MODE_DRY_UP;
     }
   }
@@ -794,6 +808,9 @@ void StatusReport(void) {
 #ifdef ESP32  // Define the M5Stack LED
   doc[F("CPUTemp")] = round2(temperatureRead());
 #endif
+#ifdef ESP8266  // Define the M5Stack LED
+  doc[F("CPUTemp")] = "None";
+#endif
   doc[F("CPULoopTime")] = CPULoopSpeed;
   doc[F("FTCLoopTime")] = FTCLoopSpeed;
   doc[F("FTCReplyTime")] = HeatPump.Lastmsbetweenmsg();
@@ -929,4 +946,4 @@ void onEvent(arduino_event_id_t event) {
 }
 #endif
 
-#endif
+#endif                                                                                  

@@ -277,7 +277,7 @@ public:
   void SetPayloadByte(uint8_t Data, uint8_t Location);
   uint8_t PrepareTxCommand(uint8_t *Buffer);
   void EncodePower(uint8_t Power);
-  void EncodeControlMode(uint8_t ControlMode);
+  void EncodeControlMode(uint8_t ControlMode, uint8_t Zone);
   void EncodeDHWMode(uint8_t HotWaterMode);
   void EncodeDHWSetpoint(float HotWaterSetpoint);
   void EncodeRoomThermostat(float Setpoint, uint8_t ControlMode, uint8_t Zone);

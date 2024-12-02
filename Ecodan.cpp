@@ -388,14 +388,14 @@ void ECODAN::SetHotWaterSetpoint(uint8_t Target) {
 }
 
 
-void ECODAN::SetHeatingControlMode(uint8_t Mode) {
+void ECODAN::SetHeatingControlMode(uint8_t Mode, uint8_t Zone) {
   uint8_t Buffer[COMMANDSIZE];
   uint8_t CommandSize = 0;
   uint8_t i;
 
   StopStateMachine();
   ECODANDECODER::CreateBlankTxMessage(SET_REQUEST, 0x10);
-  ECODANDECODER::EncodeControlMode(Mode);
+  ECODANDECODER::EncodeControlMode(Mode,Zone);
   CommandSize = ECODANDECODER::PrepareTxCommand(Buffer);
   DeviceStream->write(Buffer, CommandSize);
   lastmsgdispatchedMillis = millis();
