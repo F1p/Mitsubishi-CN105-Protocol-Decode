@@ -72,6 +72,36 @@ uint8_t MELCLOUDDECODER::Process(uint8_t c) {
         case 0x16:
           Process0x16(RxMessage.Payload, &Status);
           break;
+        case 0x17:
+          Process0x17(RxMessage.Payload, &Status);
+          break;
+        case 0x18:
+          Process0x18(RxMessage.Payload, &Status);
+          break;
+        case 0x19:
+          Process0x19(RxMessage.Payload, &Status);
+          break;
+        case 0x1a:
+          Process0x1a(RxMessage.Payload, &Status);
+          break;
+        case 0x1b:
+          Process0x1b(RxMessage.Payload, &Status);
+          break;
+        case 0x1c:
+          Process0x1c(RxMessage.Payload, &Status);
+          break;
+        case 0x1d:
+          Process0x1d(RxMessage.Payload, &Status);
+          break;
+        case 0x1e:
+          Process0x1e(RxMessage.Payload, &Status);
+          break;
+        case 0x1f:
+          Process0x1f(RxMessage.Payload, &Status);
+          break;
+        case 0x20:
+          Process0x20(RxMessage.Payload, &Status);
+          break;
         case 0x26:
           Process0x26(RxMessage.Payload, &Status);
           break;

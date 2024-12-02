@@ -275,11 +275,10 @@ void initializeWifiManager() {
   wifiManager.setConfigPortalBlocking(false);             // Doesn't block Rest of Code from operating
   wifiManager.setSaveConfigCallback(saveConfigCallback);  // Set config save notify callback
   wifiManager.setAPClientCheck(true);                     // avoid timeout if a client is connected to the softap
-
   if (wifiManager.autoConnect("Ecodan Bridge AP")) {      // Try connecting to WiFi
     DEBUG_PRINTLN("WiFi Connected!");
   }
-  wifiManager.startWebPortal();
+  wifiManager.startWebPortal();                           // Open the Web Portal
 }
 
 

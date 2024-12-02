@@ -372,6 +372,13 @@ void ECODANDECODER::Process0x05(uint8_t *Buffer, EcodanStatus *Status) {
 }
 
 
+void ECODANDECODER::Process0x06(uint8_t *Buffer, EcodanStatus *Status) {
+  for (int i = 1; i < 16; i++) {
+    Array0x06[i] = Buffer[i];
+  }
+}
+
+
 void ECODANDECODER::Process0x07(uint8_t *Buffer, EcodanStatus *Status) {
   uint8_t InputPower, OutputPower;
 
@@ -647,6 +654,13 @@ void ECODANDECODER::Process0x26(uint8_t *Buffer, EcodanStatus *Status) {
   Status->ExternalFlowTemp = fExternalFlowTemp;
 }
 
+
+
+void ECODANDECODER::Process0x27(uint8_t *Buffer, EcodanStatus *Status) {
+  for (int i = 1; i < 16; i++) {
+    Array0x27[i] = Buffer[i];
+  }
+}
 
 void ECODANDECODER::Process0x28(uint8_t *Buffer, EcodanStatus *Status) {
   uint8_t HotWaterBoostActive, HolidayModeActive, ProhibitDHW;

@@ -142,17 +142,16 @@ static bool eth_connected = false;
 
 
 void setup() {
+  DEBUGPORT.begin(DEBUGBAUD);  // Start Debug
+
   WiFi.mode(WIFI_STA);  // explicitly set mode, esp defaults to STA+AP
   Network.onEvent(onEvent);
   ETH.begin();
-  DEBUGPORT.begin(DEBUGBAUD);  // Start Debug
 
   HEATPUMP_STREAM.begin(SERIAL_BAUD, SERIAL_CONFIG, FTCRxPin, FTCTxPin);  // Rx, Tx
   HeatPump.SetStream(&HEATPUMP_STREAM);
   MEL_STREAM.begin(SERIAL_BAUD, SERIAL_CONFIG, MELRxPin, MELTxPin);  // Rx, Tx
   MELCloud.SetStream(&MEL_STREAM);
-
-
 
   readSettingsFromConfig();
   initializeWifiManager();
@@ -166,7 +165,6 @@ void setup() {
   RecalculateMQTTTopics();
   initializeMqttClient();
   MQTTClient.setCallback(MQTTonData);
-  wifiManager.startWebPortal();
 
   HeatPump.Status.Write_To_Ecodan_OK = false;
   HeatPump.Status.FlowTempMax = 60;  // Start with placeholders
@@ -283,10 +281,7 @@ void HeatPumpQueryStateEngine(void) {
     DEBUG_PRINTLN("FTC Update Complete");
     FTCLoopSpeed = millis() - ftcpreviousMillis;  // Loop Speed End
     if (MQTTReconnect()) { PublishAllReports(); }
-    if (HeatPumpFirstRead) {  // Trigger after the first read operation completes
-      HeatPumpQueryOneShot = true;
-      HeatPumpFirstRead = false;
-    }
+    HeatPumpQueryOneShot = true;
   }
 }
 
@@ -777,8 +772,6 @@ void onTelnetConnectionAttempt(String ip) {
   DEBUG_PRINT(ip);
   DEBUG_PRINTLN(" tried to connected");
 }
-
-
 
 double round2(double value) {
   return (int)(value * 100 + 0.5) / 100.0;

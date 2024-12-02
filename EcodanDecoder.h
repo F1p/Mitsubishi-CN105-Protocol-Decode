@@ -322,6 +322,7 @@ private:
   void Process0x03(uint8_t *Payload, EcodanStatus *Status);
   void Process0x04(uint8_t *Payload, EcodanStatus *Status);
   void Process0x05(uint8_t *Payload, EcodanStatus *Status);
+  void Process0x06(uint8_t *Payload, EcodanStatus *Status);
   void Process0x07(uint8_t *Payload, EcodanStatus *Status);
   void Process0x09(uint8_t *Payload, EcodanStatus *Status);
   void Process0x0B(uint8_t *Payload, EcodanStatus *Status);
@@ -336,6 +337,7 @@ private:
   void Process0x15(uint8_t *Payload, EcodanStatus *Status);
   void Process0x16(uint8_t *Payload, EcodanStatus *Status);
   void Process0x26(uint8_t *Payload, EcodanStatus *Status);
+  void Process0x27(uint8_t *Payload, EcodanStatus *Status);
   void Process0x28(uint8_t *Payload, EcodanStatus *Status);
   void Process0x29(uint8_t *Payload, EcodanStatus *Status);
   void Process0xA1(uint8_t *Payload, EcodanStatus *Status);

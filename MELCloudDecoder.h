@@ -52,6 +52,7 @@ private:
   uint8_t CheckSum(uint8_t *Buffer, uint8_t len);
 
   void Process0x5A(uint8_t *Payload, MelCloudStatus *Status);
+  void Process0xFF(uint8_t *Payload, MelCloudStatus *Status);
   void Process0x01(uint8_t *Payload, MelCloudStatus *Status);
   void Process0x02(uint8_t *Payload, MelCloudStatus *Status);
   void Process0x03(uint8_t *Payload, MelCloudStatus *Status);
@@ -91,7 +92,6 @@ private:
   void Process0x32(uint8_t *Payload, MelCloudStatus *Status);
   void Process0x33(uint8_t *Payload, MelCloudStatus *Status);
   void Process0x34(uint8_t *Payload, MelCloudStatus *Status);
-  void Process0xFF(uint8_t *Payload, MelCloudStatus *Status);
 
   void WriteOK(uint8_t *Payload, MelCloudStatus *Status);
 };

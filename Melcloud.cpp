@@ -23,20 +23,10 @@ extern ESPTelnet TelnetServer;
 uint8_t MELCloudInit3[] = { 0xfc, 0x7a, 0x02, 0x7a, 0x01, 0x00, 0x09 };
 uint8_t MELCloudInit6[] = { 0x02, 0xff, 0xff, 0x80, 0x00, 0x00, 0x0A, 0x01, 0x00, 0x40, 0x00, 0x00, 0x06, 0x02, 0x7A, 0x00, 0x00, 0xB5 };
 
-
-
-#define MELCLOUD_NUMBER_COMMANDS 24
-uint8_t MELCloudActiveCommand[] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x07, 0x09, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
-                                    0x10, 0x13, 0x14, 0x15, 0x16,
-                                    0x26, 0x28, 0x29,
-                                    0xA1, 0xA2,
-                                    0x00 };
-
 unsigned long mellastmsgdispatchedMillis = 0;  // variable for comparing millis counter
 
 MELCLOUD::MELCLOUD(void)
   : MELCLOUDDECODER() {
-  CurrentMessage = 0;
   UpdateFlag = 0;
   Connected = false;
   msbetweenmsg = 0;
@@ -58,6 +48,7 @@ void MELCLOUD::Process(void) {
     }
 
     if (MELCLOUDDECODER::Process(c)) {
+      DEBUG_PRINT(" [MEL > Bridge]");
       msbetweenmsg = millis() - mellastmsgdispatchedMillis;
       DEBUG_PRINTLN();
       Connected = true;
@@ -253,7 +244,6 @@ void MELCLOUD::RequestStatus(uint8_t TargetMessage) {
     DEBUG_PRINT(String(Buffer[i], HEX));
     DEBUG_PRINT(", ");
   }
-  DEBUG_PRINTLN();
   DEBUG_PRINTLN();
 }
 
