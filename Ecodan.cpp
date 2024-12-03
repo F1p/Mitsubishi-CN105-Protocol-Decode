@@ -300,28 +300,6 @@ void ECODAN::SetHolidayMode(uint8_t OnOff) {
 }
 
 
-void ECODAN::NormalDHWBoost(uint8_t OnOff, uint8_t Z1H, uint8_t Z1C, uint8_t Z2H, uint8_t Z2C) {
-  uint8_t Buffer[COMMANDSIZE];
-  uint8_t CommandSize = 0;
-  uint8_t i;
-
-  StopStateMachine();
-  ECODANDECODER::CreateBlankTxMessage(SET_REQUEST, 0x10);
-  ECODANDECODER::EncodeNormalDHW(OnOff, Z1H, Z1C, Z2H, Z1C);
-  CommandSize = ECODANDECODER::PrepareTxCommand(Buffer);
-  DeviceStream->write(Buffer, CommandSize);
-  lastmsgdispatchedMillis = millis();
-  DeviceStream->flush();
-
-  for (i = 0; i < CommandSize; i++) {
-    if (Buffer[i] < 0x10) DEBUG_PRINT("0");
-    DEBUG_PRINT(String(Buffer[i], HEX));
-    DEBUG_PRINT(", ");
-  }
-  DEBUG_PRINTLN();
-}
-
-
 void ECODAN::SetProhibits(uint8_t Flags, uint8_t OnOff) {
   uint8_t Buffer[COMMANDSIZE];
   uint8_t CommandSize = 0;
@@ -395,7 +373,7 @@ void ECODAN::SetHeatingControlMode(uint8_t Mode, uint8_t Zone) {
 
   StopStateMachine();
   ECODANDECODER::CreateBlankTxMessage(SET_REQUEST, 0x10);
-  ECODANDECODER::EncodeControlMode(Mode,Zone);
+  ECODANDECODER::EncodeControlMode(Mode, Zone);
   CommandSize = ECODANDECODER::PrepareTxCommand(Buffer);
   DeviceStream->write(Buffer, CommandSize);
   lastmsgdispatchedMillis = millis();

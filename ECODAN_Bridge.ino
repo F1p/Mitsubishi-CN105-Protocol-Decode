@@ -169,8 +169,8 @@ void EnergyReport(void);
 void TriggerFTCVersion(void);
 
 
-TimerCallBack HeatPumpQuery1(500, HeatPumpQueryStateEngine);  // Set to 500ms (Safe), 320-350ms best time between messages
-TimerCallBack HeatPumpQuery2(30000, HeatPumpKeepAlive);       // Set to 10-30s for heat pump query frequency
+TimerCallBack HeatPumpQuery1(350, HeatPumpQueryStateEngine);  // Set to 500ms (Safe), 320-350ms best time between messages
+TimerCallBack HeatPumpQuery2(10000, HeatPumpKeepAlive);       // Set to 10-30s for heat pump query frequency
 TimerCallBack HeatPumpQuery3(10800000, TriggerFTCVersion);    // Set to 3hrs for FTC Version Query
 
 unsigned long looppreviousMillis = 0;  // variable for comparing millis counter
@@ -180,8 +180,9 @@ int FTCLoopSpeed, CPULoopSpeed;        // variable for holding loop time in ms
 bool WiFiOneShot = true;
 bool HeatPumpQueryOneShot = false;
 bool HeatPumpFirstRead = true;
-bool PostWriteUpdateRequired = false;
+bool WriteInProgress = false;
 byte NormalHWBoostOperating = 0;
+byte PreHWBoostSvrCtrlMode = 0;
 
 #ifdef ARDUINO_WT32_ETH01
 static bool eth_connected = false;
@@ -256,11 +257,11 @@ void loop() {
   if (shouldSaveConfig) { saveConfig(); }  // Handles WiFiManager Settings Changes
 
   // -- Heat Pump Write Command Handler -- //
-  if (HeatPump.Status.Write_To_Ecodan_OK && PostWriteUpdateRequired) {  // A write command has just been written (Not Keep Alive)
-    DEBUG_PRINTLN("Write OK!");                                         // Pause normal processsing until complete
-    HeatPump.Status.Write_To_Ecodan_OK = false;                         // Set back to false
-    PostWriteUpdateRequired = false;                                    // Set back to false
-    if (MQTTReconnect()) { PublishAllReports(); }                       // Publish update to the MQTT Topics
+  if (HeatPump.Status.Write_To_Ecodan_OK && WriteInProgress) {  // A write command is executing
+    DEBUG_PRINTLN("Write OK!");                                 // Pause normal processsing until complete
+    HeatPump.Status.Write_To_Ecodan_OK = false;                 // Set back to false
+    WriteInProgress = false;                                    // Set back to false
+    if (MQTTReconnect()) { PublishAllReports(); }               // Publish update to the MQTT Topics
   }
 
   // -- WiFi Status Handler -- //
@@ -373,9 +374,8 @@ void loop() {
 
   // -- Normal DHW Boost Handler (Enter SCM > Remove DHW Prohibit > Exit SCM) -- //
   if (HeatPump.Status.LastSystemOperationMode == 1 && HeatPump.Status.SystemOperationMode != 1 && NormalHWBoostOperating == 1) {
-    // Exit Server Control Mode when the System Operation Mode
-    HeatPump.NormalDHWBoost(0, HeatPump.Status.ProhibitHeatingZ1, HeatPump.Status.ProhibitCoolingZ1, HeatPump.Status.ProhibitHeatingZ2, HeatPump.Status.ProhibitCoolingZ2);
-    NormalHWBoostOperating = 0;  // Don't enter again
+    HeatPump.SetSvrControlMode(PreHWBoostSvrCtrlMode, 1, HeatPump.Status.ProhibitHeatingZ1, HeatPump.Status.ProhibitCoolingZ1, HeatPump.Status.ProhibitHeatingZ2, HeatPump.Status.ProhibitCoolingZ2);  // Enable the Prohibit and Return Server Control Mode to the previous state when the System Operation Mode changes from Hot Water to anything else
+    NormalHWBoostOperating = 0;                                                                                                                                                                        // Don't enter again
   }
 
   // -- CPU Loop Time End -- //
@@ -492,9 +492,10 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
   }
   if (Topic == MQTTCommandHotwaterNormalBoost) {
     MQTTWriteReceived("MQTT Normal DHW Boost Run", 16);
-    HeatPump.NormalDHWBoost(Payload.toInt(), HeatPump.Status.ProhibitHeatingZ1, HeatPump.Status.ProhibitCoolingZ1, HeatPump.Status.ProhibitHeatingZ2, HeatPump.Status.ProhibitCoolingZ2);
-    HeatPump.Status.SvrControlMode = Payload.toInt();
-    HeatPump.Status.ProhibitDHW = 1 - Payload.toInt();
+    PreHWBoostSvrCtrlMode = HeatPump.Status.SvrControlMode;  // Take the Server Control Mode when Entering Boost
+    HeatPump.SetSvrControlMode(Payload.toInt(), 1 - Payload.toInt(), HeatPump.Status.ProhibitHeatingZ1, HeatPump.Status.ProhibitCoolingZ1, HeatPump.Status.ProhibitHeatingZ2, HeatPump.Status.ProhibitCoolingZ2);
+    if (PreHWBoostSvrCtrlMode == 0) { HeatPump.Status.SvrControlMode = Payload.toInt(); }  // Show Server Control Mode is now On
+    HeatPump.Status.ProhibitDHW = 1 - Payload.toInt();                                     // Hot Water Boost is Inverse
     NormalHWBoostOperating = Payload.toInt();
   }
   if (Topic == MQTTCommandSystemHolidayMode) {
@@ -651,7 +652,6 @@ void SystemReport(void) {
   doc[F("HeaterFlow")] = HeatPump.Status.HeaterOutputFlowTemperature;
   doc[F("HeaterReturn")] = HeatPump.Status.HeaterReturnFlowTemperature;
   doc[F("FlowReturnDeltaT")] = HeatPump.Status.HeaterDeltaT;
-  doc[F("HeaterSetpoint")] = HeatPump.Status.HeaterFlowSetpoint;
   doc[F("OutsideTemp")] = HeatPump.Status.OutsideTemperature;
   doc[F("Defrost")] = DefrostModeString[HeatPump.Status.Defrost];
   doc[F("InputPower")] = HeatPump.Status.InputPower;
@@ -680,7 +680,6 @@ void AdvancedReport(void) {
   doc[F("BoilerReturn")] = HeatPump.Status.ExternalBoilerReturnTemperature;
   doc[F("MixingTemp")] = HeatPump.Status.MixingTemperature;
   doc[F("MixingStep")] = HeatPump.Status.MixingStep;
-  doc[F("ExternalFlowTemp")] = HeatPump.Status.ExternalFlowTemp;
   doc[F("Immersion")] = OFF_ON_String[HeatPump.Status.ImmersionActive];
   doc[F("Booster")] = OFF_ON_String[HeatPump.Status.BoosterActive];
   doc[F("ThreeWayValve")] = HeatPump.Status.ThreeWayValve;
@@ -904,7 +903,7 @@ double round2(double value) {
 
 void MQTTWriteReceived(String message, int MsgNumber) {
   DEBUG_PRINTLN(message);
-  PostWriteUpdateRequired = true;  // Wait For OK
+  WriteInProgress = true;  // Wait For OK
 }
 
 #ifdef ARDUINO_WT32_ETH01
@@ -946,4 +945,4 @@ void onEvent(arduino_event_id_t event) {
 }
 #endif
 
-#endif                                                                                  
+#endif

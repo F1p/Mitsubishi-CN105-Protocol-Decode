@@ -321,28 +321,28 @@ void ECODANDECODER::Process0x07(uint8_t *Buffer, EcodanStatus *Status) {
 
 
 void ECODANDECODER::Process0x09(uint8_t *Buffer, EcodanStatus *Status) {
-  float fZone1TempSetpoint, fZone2TempSetpoint;
-  float fZ1FlowSetpoint, fZ2FlowSetpoint, fLegionellaSetpoint;
-  float fHWTempDrop, fFlowTempMax, fFlowTempMin;
+  float Zone1TempSetpoint, Zone2TempSetpoint;
+  float Z1FlowSetpoint, Z2FlowSetpoint, LegionellaSetpoint;
+  float HWTempDrop, FlowTempMax, FlowTempMin;
 
-  fZone1TempSetpoint = ((float)ExtractUInt16(Buffer, 1) / 100);
-  fZone2TempSetpoint = ((float)ExtractUInt16(Buffer, 3) / 100);
-  fZ1FlowSetpoint = ((float)ExtractUInt16(Buffer, 5) / 100);
-  fZ2FlowSetpoint = ((float)ExtractUInt16(Buffer, 7) / 100);
-  fLegionellaSetpoint = ((float)ExtractUInt16(Buffer, 9) / 100);
+  Zone1TempSetpoint = ((float)ExtractUInt16(Buffer, 1) / 100);
+  Zone2TempSetpoint = ((float)ExtractUInt16(Buffer, 3) / 100);
+  Z1FlowSetpoint = ((float)ExtractUInt16(Buffer, 5) / 100);
+  Z2FlowSetpoint = ((float)ExtractUInt16(Buffer, 7) / 100);
+  LegionellaSetpoint = ((float)ExtractUInt16(Buffer, 9) / 100);
 
-  fHWTempDrop = ExtractUInt8_v2(Buffer, 11);
-  fFlowTempMax = ExtractUInt8_v2(Buffer, 12);
-  fFlowTempMin = ExtractUInt8_v2(Buffer, 13);
+  HWTempDrop = ExtractUInt8_v2(Buffer, 11);
+  FlowTempMax = ExtractUInt8_v2(Buffer, 12);
+  FlowTempMin = ExtractUInt8_v2(Buffer, 13);
 
-  Status->Zone1TemperatureSetpoint = fZone1TempSetpoint;
-  Status->Zone2TemperatureSetpoint = fZone2TempSetpoint;
-  Status->Zone1FlowTemperatureSetpoint = fZ1FlowSetpoint;
-  Status->Zone2FlowTemperatureSetpoint = fZ2FlowSetpoint;
-  Status->LegionellaSetpoint = fLegionellaSetpoint;
-  Status->HotWaterMaximumTempDrop = fHWTempDrop;
-  Status->FlowTempMax = fFlowTempMax;
-  Status->FlowTempMin = fFlowTempMin;
+  Status->Zone1TemperatureSetpoint = Zone1TempSetpoint;
+  Status->Zone2TemperatureSetpoint = Zone2TempSetpoint;
+  Status->Zone1FlowTemperatureSetpoint = Z1FlowSetpoint;
+  Status->Zone2FlowTemperatureSetpoint = Z2FlowSetpoint;
+  Status->LegionellaSetpoint = LegionellaSetpoint;
+  Status->HotWaterMaximumTempDrop = HWTempDrop;
+  Status->FlowTempMax = FlowTempMax;
+  Status->FlowTempMin = FlowTempMin;
 }
 
 void ECODANDECODER::Process0x0B(uint8_t *Buffer, EcodanStatus *Status) {
@@ -501,7 +501,7 @@ void ECODANDECODER::Process0x16(uint8_t *Buffer, EcodanStatus *Status) {
 
 
 void ECODANDECODER::Process0x26(uint8_t *Buffer, EcodanStatus *Status) {
-  float fHWSetpoint, fExternalSetpoint, fExternalFlowTemp;
+  float DHWSetpoint;
   uint8_t SystemPowerMode, SystemOperationMode, HotWaterPowerMode;
   uint8_t HeatingControlModeZone1, HeatingControlModeZone2, HotWaterControlMode;
 
@@ -512,18 +512,16 @@ void ECODANDECODER::Process0x26(uint8_t *Buffer, EcodanStatus *Status) {
   HotWaterControlMode = Buffer[5];
   HeatingControlModeZone1 = Buffer[6];
   HeatingControlModeZone2 = Buffer[7];
-  fHWSetpoint = ((float)ExtractUInt16(Buffer, 8) / 100);
-  fExternalSetpoint = ((float)ExtractUInt16(Buffer, 10) / 100);
-  fExternalFlowTemp = ((float)ExtractUInt16(Buffer, 12) / 100);
+  DHWSetpoint = ((float)ExtractUInt16(Buffer, 8) / 100);
+  //Zone1FlowSetpoint = ((float)ExtractUInt16(Buffer, 10) / 100);   // Duplicate of 0x09
+  //Zone2FlowSetpoint = ((float)ExtractUInt16(Buffer, 12) / 100);   // Duplicate of 0x09
 
   Status->SystemPowerMode = SystemPowerMode;
   Status->SystemOperationMode = SystemOperationMode;
   Status->HotWaterControlMode = HotWaterControlMode;
   Status->HeatingControlModeZ1 = HeatingControlModeZone1;
   Status->HeatingControlModeZ2 = HeatingControlModeZone2;
-  Status->HotWaterSetpoint = fHWSetpoint;
-  Status->HeaterFlowSetpoint = fExternalSetpoint;
-  Status->ExternalFlowTemp = fExternalFlowTemp;
+  Status->HotWaterSetpoint = DHWSetpoint;
 }
 
 
@@ -846,44 +844,16 @@ void ECODANDECODER::EncodeFTCVersion() {
 
 
 void ECODANDECODER::EncodeServerControlMode(uint8_t OnOff, uint8_t DHW, uint8_t Z1H, uint8_t Z1C, uint8_t Z2H, uint8_t Z2C) {
-  uint8_t Flags = TX_MESSAGE_SETTING_SRV_Flag;
-
   TxMessage.Payload[0] = TX_MESSAGE_CONTROLLER;
-
-  if (DHW) { Flags = Flags | TX_MESSAGE_SETTING_DHW_INH_Flag; }
-  if (Z1H) { Flags = Flags | TX_MESSAGE_SETTING_HEAT_Z1_INH_Flag; }
-  if (Z1C) { Flags = Flags | TX_MESSAGE_SETTING_COOL_Z1_INH_Flag; }
-  if (Z2H) { Flags = Flags | TX_MESSAGE_SETTING_HEAT_Z2_INH_Flag; }
-  if (Z2C) { Flags = Flags | TX_MESSAGE_SETTING_COOL_Z2_INH_Flag; }
-
-  TxMessage.Payload[1] = Flags;   // Write the flags where Zones are to be enabled
-  TxMessage.Payload[5] = DHW;     // Write the current status of DHW
-  TxMessage.Payload[6] = Z1H;     // Write the current status of Z1 Heating
-  TxMessage.Payload[7] = Z1C;     // Write the current status of Z1 Cooling
-  TxMessage.Payload[8] = Z2H;     // Write the current status of Z2 Heating
-  TxMessage.Payload[9] = Z2C;     // Write the current status of Z2 Cooling
-  TxMessage.Payload[10] = OnOff;  // Enter or Exit SCM Mode
+  TxMessage.Payload[1] = TX_MESSAGE_SETTING_SRV_Flag | TX_MESSAGE_SETTING_DHW_INH_Flag | TX_MESSAGE_SETTING_HEAT_Z1_INH_Flag | TX_MESSAGE_SETTING_COOL_Z1_INH_Flag | TX_MESSAGE_SETTING_HEAT_Z2_INH_Flag | TX_MESSAGE_SETTING_COOL_Z2_INH_Flag;  // Write the flags where Zones are to be enabled
+  TxMessage.Payload[5] = DHW;                                                                                                                                                                                                                    // Write the current status of DHW
+  TxMessage.Payload[6] = Z1H;                                                                                                                                                                                                                    // Write the current status of Z1 Heating
+  TxMessage.Payload[7] = Z1C;                                                                                                                                                                                                                    // Write the current status of Z1 Cooling
+  TxMessage.Payload[8] = Z2H;                                                                                                                                                                                                                    // Write the current status of Z2 Heating
+  TxMessage.Payload[9] = Z2C;                                                                                                                                                                                                                    // Write the current status of Z2 Cooling
+  TxMessage.Payload[10] = OnOff;                                                                                                                                                                                                                 // Enter or Exit SCM Mode
 }
 
-
-void ECODANDECODER::EncodeNormalDHW(uint8_t OnOff, uint8_t Z1H, uint8_t Z1C, uint8_t Z2H, uint8_t Z2C) {
-  uint8_t Flags = TX_MESSAGE_SETTING_Normal_DHW_Flag;
-
-  TxMessage.Payload[0] = TX_MESSAGE_CONTROLLER;
-
-  if (Z1H) { Flags = Flags | TX_MESSAGE_SETTING_HEAT_Z1_INH_Flag; }
-  if (Z1C) { Flags = Flags | TX_MESSAGE_SETTING_COOL_Z1_INH_Flag; }
-  if (Z2H) { Flags = Flags | TX_MESSAGE_SETTING_HEAT_Z2_INH_Flag; }
-  if (Z2C) { Flags = Flags | TX_MESSAGE_SETTING_COOL_Z2_INH_Flag; }
-
-  TxMessage.Payload[1] = Flags;      // Write the flags where Zones are to be enabled
-  TxMessage.Payload[5] = 1 - OnOff;  // Disable or Enable the Inhibit (Inverse of SCM)
-  TxMessage.Payload[6] = Z1H;        // Write the current status of Z1 Heating
-  TxMessage.Payload[7] = Z1C;        // Write the current status of Z1 Cooling
-  TxMessage.Payload[8] = Z2H;        // Write the current status of Z2 Heating
-  TxMessage.Payload[9] = Z2C;        // Write the current status of Z2 Cooling
-  TxMessage.Payload[10] = OnOff;     // Enter or Exit SCM Mode
-}
 
 void ECODANDECODER::EncodeProhibit(uint8_t Flags, uint8_t OnOff) {
   // Heating & DHW Inhibit "Server Control" Mode

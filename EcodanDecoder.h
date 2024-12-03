@@ -47,8 +47,6 @@
 #define TX_MESSAGE_SETTING_COOL_Z2_INH_Flag 0x40
 #define TX_MESSAGE_SETTING_SRV_Flag 0x80
 
-#define TX_MESSAGE_SETTING_Normal_DHW_Flag 0x84
-
 #define COMMANDSIZE 22  // 5 Byte Header + 16 Byte Payload  + 1 Byte Checksum
 #define HEADERSIZE 5
 #define MAXDATABLOCKSIZE 16
@@ -208,7 +206,7 @@ typedef struct _EcodanStatus {
   //From Message 0x0E
   float ExternalBoilerFlowTemperature, ExternalBoilerReturnTemperature;
 
-  //From Message 0x0F  
+  //From Message 0x0F
   float MixingTemperature, CondensingTemp;
 
   //From Message 0x10
@@ -233,7 +231,7 @@ typedef struct _EcodanStatus {
   //From Message 0x26
   uint8_t SystemPowerMode, SystemOperationMode, LastSystemOperationMode, HotWaterControlMode;
   uint8_t HeatingControlModeZ1, HeatingControlModeZ2;
-  float HotWaterSetpoint, HeaterFlowSetpoint, ExternalFlowTemp;
+  float HotWaterSetpoint;
 
   //From Message 0x28
   uint8_t HotWaterBoostActive, HolidayModeActive, ProhibitDHW;
@@ -282,7 +280,6 @@ public:
   void EncodeDHWSetpoint(float HotWaterSetpoint);
   void EncodeRoomThermostat(float Setpoint, uint8_t ControlMode, uint8_t Zone);
   void EncodeFlowTemperature(float Setpoint, uint8_t ControlMode, uint8_t Zone);
-  void EncodeNormalDHW(uint8_t OnOff, uint8_t Z1H, uint8_t Z1C, uint8_t Z2H, uint8_t Z2C);
   void EncodeForcedDHW(uint8_t OnOff);
   void EncodeHolidayMode(uint8_t OnOff);
   void EncodeFTCVersion(void);
