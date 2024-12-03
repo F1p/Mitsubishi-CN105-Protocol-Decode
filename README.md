@@ -403,7 +403,7 @@ Responses so far identified.
 ### 0x26 - Operation Information
 |  0  | 1 | 2 |  3  | 4  | 5  | 6  |  7 |   8  |  9   |  10 |  11 | 12 | 13 | 14 | 15 | 16 |
 |-----|---|---|-----|----|----|----|----|------|------|-----|-----|----|----|----|----|----|
-| 0x26|   |   | Pwr | OM | HW |OpZ1|OpZ2| HWSP | HWSP | HSP | HSP | SP | SP | ?? |    |    | 
+| 0x26|   |   | Pwr | OM | HW |OpZ1|OpZ2| HWSP | HWSP | HSPZ1 | HSPZ1 | HSPZ2| HSPZ2 | ?? |    |    | 
 * Pwr - Power
   * 0 : Standby
   * 1 : On
@@ -416,7 +416,7 @@ Responses so far identified.
 * HW - Hot Water Mode
   * 0 : Normal
   * 1 : Economy
-* Op - Operation Mode (Zone 1 / Zone 2): 
+* Op - Heating/Cooling Operation Mode (Zone 1 / Zone 2): 
   * 0 : Heating Temperature Mode
   * 1 : Heating Flow Control Mode
   * 2 : Heating Compensation Curve Mode
@@ -424,8 +424,8 @@ Responses so far identified.
   * 4 : Cooling Flow Control Mode
   * 5 : Dry Up
 * HWSP : HotWater SetPoint * 100;
-* HSP : Heating Flow SetPoint * 100;
-* SP : External Flow SetPoint
+* HSPZ1 : Heating Flow Setpoint Zone 1 * 100;  (Duplicated from 0x09)
+* HSPZ2 : Heating Flow Setpoint Zone 2 * 100;  (Duplicated from 0x09)
 * ?? : 1 for a few cycles when writing to 0x32 byte 14
 ### 0x28 - Various Flags
 |   0   | 1 | 2 | 3 | 4  | 5  |  6 | 7  |  8 |  9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
