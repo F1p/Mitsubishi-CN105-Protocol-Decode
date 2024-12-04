@@ -639,7 +639,6 @@ void readSettingsFromConfig() {
 #endif
       MQTTReconnect();
     }
-    MQTTClient.loop();
   }
 
 

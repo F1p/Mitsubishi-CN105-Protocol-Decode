@@ -169,9 +169,10 @@ void EnergyReport(void);
 void TriggerFTCVersion(void);
 
 
-TimerCallBack HeatPumpQuery1(350, HeatPumpQueryStateEngine);  // Set to 500ms (Safe), 320-350ms best time between messages
-TimerCallBack HeatPumpQuery2(10000, HeatPumpKeepAlive);       // Set to 10-30s for heat pump query frequency
+TimerCallBack HeatPumpQuery1(500, HeatPumpQueryStateEngine);  // Set to 500ms (Safe), 320-350ms best time between messages
+TimerCallBack HeatPumpQuery2(30000, HeatPumpKeepAlive);       // Set to 10-30s for heat pump query frequency
 TimerCallBack HeatPumpQuery3(10800000, TriggerFTCVersion);    // Set to 3hrs for FTC Version Query
+TimerCallBack HeatPumpQuery4(30000, handleMqttState);         // Re-connect attempt timer if MQTT is not online
 
 unsigned long looppreviousMillis = 0;  // variable for comparing millis counter
 unsigned long ftcpreviousMillis = 0;   // variable for comparing millis counter
@@ -248,7 +249,9 @@ void loop() {
   HeatPumpQuery1.Process();
   HeatPumpQuery2.Process();
   HeatPumpQuery3.Process();
-  handleMqttState();
+  HeatPumpQuery4.Process();
+  
+  MQTTClient.loop();
   TelnetServer.loop();
   HeatPump.Process();
   wifiManager.process();
