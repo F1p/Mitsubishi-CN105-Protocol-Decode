@@ -357,7 +357,7 @@ void ECODANDECODER::Process0x0B(uint8_t *Buffer, EcodanStatus *Status) {
   }
 
   //Unknown = ((float)ExtractUInt16(Buffer, 5) / 100);
-  RefrigeTemp = ((float)ExtractUInt16(Buffer, 8) / 100);
+  RefrigeTemp = ((float)ExtractUInt16_Signed(Buffer, 8) / 100);
   //Unknown = ExtractUInt8_v1(Buffer, 10);
   fOutside = ExtractUInt8_v1(Buffer, 11);
 
@@ -630,6 +630,12 @@ float ECODANDECODER::ExtractEnergy(uint8_t *Buffer, uint8_t index) {
   Energy += (float)ExtractUInt16(Buffer, index);
 
   return Energy;
+}
+
+float ECODANDECODER::ExtractUInt16_Signed(uint8_t *Buffer, uint8_t Index) {
+  float Value;
+  Value = (Buffer[Index] << 8) + Buffer[Index + 1];
+  return Value /= 100.0f;
 }
 
 uint16_t ECODANDECODER::ExtractUInt16(uint8_t *Buffer, uint8_t Index) {
