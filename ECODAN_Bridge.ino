@@ -788,7 +788,6 @@ void AdvancedTwoReport(void) {
     doc[F("FltCode")] = String(FltCodeString);
   }
 
-  doc[F("SingleZoneRun")] = HeatPump.Status.SingleZoneParam;
   doc[F("Z1TstatDemand")] = OFF_ON_String[HeatPump.Status.Zone1ThermostatDemand];
   doc[F("Z2TstatDemand")] = OFF_ON_String[HeatPump.Status.Zone2ThermostatDemand];
   doc[F("OTstatDemand")] = OFF_ON_String[HeatPump.Status.OutdoorThermostatDemand];

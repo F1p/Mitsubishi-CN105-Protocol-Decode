@@ -245,7 +245,6 @@ void ECODANDECODER::Process0x02(uint8_t *Buffer, EcodanStatus *Status) {
 void ECODANDECODER::Process0x03(uint8_t *Buffer, EcodanStatus *Status) {
   uint8_t RefrigeFltCode, ErrCode1, ErrCode2, FltCode1, FltCode2;
   uint8_t TwoZone_Z1Working, TwoZone_Z2Working;
-  uint8_t SingleZoneParam;
 
   RefrigeFltCode = Buffer[1];
   ErrCode1 = Buffer[2];
@@ -267,7 +266,7 @@ void ECODANDECODER::Process0x03(uint8_t *Buffer, EcodanStatus *Status) {
     TwoZone_Z2Working = 0;
   }
 
-  SingleZoneParam = Buffer[9];  // Single Zone Running Parameter?
+  //CascadeMasterFreq = Buffer[9];  // Single Zone Running Parameter?
 
   Status->RefrigeFltCode = RefrigeFltCode;
   Status->ErrCode1 = ErrCode1;
@@ -276,7 +275,6 @@ void ECODANDECODER::Process0x03(uint8_t *Buffer, EcodanStatus *Status) {
   Status->FltCode2 = FltCode2;
   Status->TwoZone_Z1Working = TwoZone_Z1Working;
   Status->TwoZone_Z2Working = TwoZone_Z2Working;
-  Status->SingleZoneParam = SingleZoneParam;
 }
 
 
@@ -633,30 +631,24 @@ float ECODANDECODER::ExtractEnergy(uint8_t *Buffer, uint8_t index) {
 }
 
 float ECODANDECODER::ExtractUInt16_Signed(uint8_t *Buffer, uint8_t Index) {
-  float Value;
-  Value = (Buffer[Index] << 8) + Buffer[Index + 1];
-  return Value /= 100.0f;
+  float Value = (Buffer[Index] << 8) + Buffer[Index + 1];
+  return Value;
 }
 
 uint16_t ECODANDECODER::ExtractUInt16(uint8_t *Buffer, uint8_t Index) {
-  uint16_t Value;
-
-  Value = (Buffer[Index] << 8) + Buffer[Index + 1];
-
+  uint16_t Value = (Buffer[Index] << 8) + Buffer[Index + 1];
   return Value;
 }
 
 // Used for most single-byte floating point values
 float ECODANDECODER::ExtractUInt8_v1(uint8_t *Buffer, uint8_t Index) {
-  float Value;
-  Value = (Buffer[Index] / 2) - 40;
+  float Value = (Buffer[Index] / 2) - 40;
   return Value;
 }
 
 
 float ECODANDECODER::ExtractUInt8_v2(uint8_t *Buffer, uint8_t Index) {
-  float Value;
-  Value = (Buffer[Index] - 40) / 2;
+  float Value = (Buffer[Index] - 40) / 2;
   return Value;
 }
 

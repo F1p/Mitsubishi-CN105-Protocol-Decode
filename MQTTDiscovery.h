@@ -543,7 +543,7 @@ int MQTT_CLIMATE_MIN[] PROGMEM = {
 };
 
 float MQTT_CLIMATE_TEMP_STEP[] PROGMEM = {
-  1.0,
+  0.5,
   0.5,
   0.5,
   0.5,

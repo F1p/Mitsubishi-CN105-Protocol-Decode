@@ -169,7 +169,6 @@ typedef struct _EcodanStatus {
   //From Message 0x03
   uint8_t RefrigeFltCode, ErrCode1, ErrCode2, FltCode1, FltCode2;
   uint8_t TwoZone_Z1Working, TwoZone_Z2Working;
-  uint8_t SingleZoneParam;
 
   // From Message 0x04
   uint8_t CompressorFrequency;
