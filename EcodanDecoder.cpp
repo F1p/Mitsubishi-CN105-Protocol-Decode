@@ -636,7 +636,7 @@ float ECODANDECODER::ExtractEnergy(uint8_t *Buffer, uint8_t index) {
 }
 
 float ECODANDECODER::ExtractUInt16_Signed(uint8_t *Buffer, uint8_t Index) {
-  float Value = (Buffer[Index] << 8) + Buffer[Index + 1];
+  float Value = int16_t(Buffer[Index] << 8) + Buffer[Index + 1];
   return Value;
 }
 
