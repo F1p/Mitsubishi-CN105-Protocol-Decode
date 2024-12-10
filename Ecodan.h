@@ -22,8 +22,6 @@
 #include <Arduino.h>
 #include "EcodanDecoder.h"
 
-
-
 class ECODAN : public ECODANDECODER {
 public:
   ECODAN(void);
@@ -33,21 +31,19 @@ public:
   void TriggerStatusStateMachine(void);
   void StopStateMachine(void);
   void StatusStateMachine(void);
-  void KeepAlive(void);
   uint8_t UpdateComplete(void);
   uint8_t Lastmsbetweenmsg(void);
 
   void SetZoneTempSetpoint(float Setpoint, uint8_t Mode, uint8_t Zone);
   void SetFlowSetpoint(float Setpoint, uint8_t Mode, uint8_t Zone);
-  void NormalDHWBoost(uint8_t OnOff, uint8_t Z1H, uint8_t Z1C, uint8_t Z2H, uint8_t Z2C);
   void SetProhibits(uint8_t Flags, uint8_t OnOff);
   void ForceDHW(uint8_t OnOff);
   void SetDHWMode(String *Mode);
   void SetHolidayMode(uint8_t OnOff);
-  void SetSvrControlMode(uint8_t OnOff);
+  void SetSvrControlMode(uint8_t OnOff, uint8_t DHW, uint8_t Z1H, uint8_t Z1C, uint8_t Z2H, uint8_t Z2C);
   void GetFTCVersion(void);
   void SetHotWaterSetpoint(uint8_t Target);
-  void SetHeatingControlMode(uint8_t Mode);
+  void SetHeatingControlMode(uint8_t Mode, uint8_t Zone);
   void SetSystemPowerMode(uint8_t OnOff);
   void WriteMELCloudCMD(uint8_t cmd);
 
@@ -57,14 +53,14 @@ private:
   uint8_t CurrentMessage;
 
   uint8_t UpdateFlag;
+  bool ProcessFlag;
   uint8_t Connected;
-  
+
   uint8_t msbetweenmsg;
 
   MessageStruct TXMessage;
   Stream *DeviceStream;
   void Connect(void);
-  void PrintTumble(void);
 };
 
 #endif

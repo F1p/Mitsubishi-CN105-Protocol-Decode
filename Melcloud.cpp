@@ -22,8 +22,12 @@ extern ESPTelnet TelnetServer;
 
 uint8_t MELCloudInit3[] = { 0xfc, 0x7a, 0x02, 0x7a, 0x01, 0x00, 0x09 };
 uint8_t MELCloudInit6[] = { 0x02, 0xff, 0xff, 0x80, 0x00, 0x00, 0x0A, 0x01, 0x00, 0x40, 0x00, 0x00, 0x06, 0x02, 0x7A, 0x00, 0x00, 0xB5 };
+uint8_t MELCloudInit7[] = { 0x02, 0xff, 0xff, 0x81, 0x00, 0x00, 0x00, 0x81 };
+uint8_t MELCloudInit8[] = { 0x02, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0x02 };  // MELCloud Connect Msg
+uint8_t MELCloudInit9[] = { 0x6e, 0x02 };                                      // Little msg
 
 unsigned long mellastmsgdispatchedMillis = 0;  // variable for comparing millis counter
+bool PrintMELStart = false;
 
 MELCLOUD::MELCLOUD(void)
   : MELCLOUDDECODER() {
@@ -37,6 +41,10 @@ void MELCLOUD::Process(void) {
   uint8_t c;
 
   while (DeviceStream->available()) {
+    if (!PrintMELStart) {
+      DEBUG_PRINT("[MEL > Bridge] ");
+      PrintMELStart = true;
+    }
     c = DeviceStream->read();
 
     if (c == 0)
@@ -48,7 +56,7 @@ void MELCLOUD::Process(void) {
     }
 
     if (MELCLOUDDECODER::Process(c)) {
-      DEBUG_PRINT(" [MEL > Bridge]");
+      PrintMELStart = false;
       msbetweenmsg = millis() - mellastmsgdispatchedMillis;
       DEBUG_PRINTLN();
       Connected = true;
@@ -62,14 +70,21 @@ void MELCLOUD::SetStream(Stream *MELCloudStream) {
 
 
 
-void MELCLOUD::RequestStatus(uint8_t TargetMessage) {
+void MELCLOUD::ReplyStatus(uint8_t TargetMessage) {
   uint8_t Buffer[COMMANDSIZE];
   uint8_t CommandSize;
   uint8_t i;
 
   DEBUG_PRINT("[Bridge > MEL] ");
 
-  MELCLOUDDECODER::CreateBlankTxMessage(GET_RESPONSE, 0x10);
+  if ((TargetMessage == 0x32) | (TargetMessage == 0x33) | (TargetMessage == 0x34) | (TargetMessage == 0x35)) {
+    MELCLOUDDECODER::CreateBlankTxMessage(SET_RESPONSE, 0x10);
+  } else if (TargetMessage == 0xC9) {
+    MELCLOUDDECODER::CreateBlankTxMessage(EXCONNECT_RESPONSE, 0x10);
+  } else {
+    MELCLOUDDECODER::CreateBlankTxMessage(GET_RESPONSE, 0x10);
+  }
+
   MELCLOUDDECODER::SetPayloadByte(TargetMessage, 0);
 
   if (TargetMessage == 0x01) {
@@ -220,14 +235,9 @@ void MELCLOUD::RequestStatus(uint8_t TargetMessage) {
     for (int i = 1; i < 16; i++) {
       MELCLOUDDECODER::SetPayloadByte(Array0xa2[i], i);
     }
-  } else if (TargetMessage == 0x32) {
-    MELCLOUDDECODER::SetPayloadByte(0x00, 0);   // Ok Message reply to writes
-  } else if (TargetMessage == 0x33) {
-    MELCLOUDDECODER::SetPayloadByte(0x00, 0);   // Ok Message reply to writes
-  } else if (TargetMessage == 0x34) {
-    MELCLOUDDECODER::SetPayloadByte(0x00, 0);   // Ok Message reply to writes
-  }
-  else if (TargetMessage == 0xC9) {
+  } else if ((TargetMessage == 0x32) | (TargetMessage == 0x33) | (TargetMessage == 0x34) | (TargetMessage == 0x35)) {
+    MELCLOUDDECODER::SetPayloadByte(0x00, 0);  // Ok Message reply to writes
+  } else if (TargetMessage == 0xC9) {
     for (int i = 1; i < 16; i++) {
       MELCLOUDDECODER::SetPayloadByte(Array0xc9[i], i);
     }
@@ -256,9 +266,17 @@ void MELCLOUD::Connect(void) {
 }
 
 
-void MELCLOUD::BaudNegotiate(void) {
-  DEBUG_PRINTLN("[MELCloud] Negotiating Baud with MELCloud Device...");
+void MELCLOUD::MELNegotiate1(void) {
+  DEBUG_PRINTLN("[MELCloud] Negotiating First with MELCloud Device...");
   DeviceStream->write(MELCloudInit6, 18);
+  DeviceStream->flush();
+  Process();
+}
+
+
+void MELCLOUD::MELNegotiate2(void) {
+  DEBUG_PRINTLN("[MELCloud] Negotiating Second with MELCloud Device...");
+  DeviceStream->write(MELCloudInit7, 8);
   DeviceStream->flush();
   Process();
 }

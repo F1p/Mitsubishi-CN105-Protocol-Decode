@@ -33,22 +33,19 @@
 #define CONNECT_RESPONSE 0x7A
 #define EXCONNECT_REQUEST 0x5B
 #define EXCONNECT_RESPONSE 0x7B
-#define CONNECT_BAUD_SET 0xFF
+#define CONNECT_MEL_REQUEST 0xFF
 
 #define TX_MESSAGE_BASIC 0x032
 #define TX_MESSAGE_CONTROLLER 0x034
 #define TX_MESSAGE_ROOM_STAT 0x035
 
+#define TX_MESSAGE_SETTING_DHW_Flag 0x01
+#define TX_MESSAGE_SETTING_HOL_Flag 0x02
 #define TX_MESSAGE_SETTING_DHW_INH_Flag 0x04
 #define TX_MESSAGE_SETTING_HEAT_Z1_INH_Flag 0x08
 #define TX_MESSAGE_SETTING_COOL_Z1_INH_Flag 0x10
 #define TX_MESSAGE_SETTING_HEAT_Z2_INH_Flag 0x20
 #define TX_MESSAGE_SETTING_COOL_Z2_INH_Flag 0x40
-
-#define TX_MESSAGE_SETTING_Normal_DHW_Flag 0x84
-
-#define TX_MESSAGE_SETTING_DHW_Flag 0x01
-#define TX_MESSAGE_SETTING_HOL_Flag 0x02
 #define TX_MESSAGE_SETTING_SRV_Flag 0x80
 
 #define COMMANDSIZE 22  // 5 Byte Header + 16 Byte Payload  + 1 Byte Checksum
@@ -173,7 +170,6 @@ typedef struct _EcodanStatus {
   //From Message 0x03
   uint8_t RefrigeFltCode, ErrCode1, ErrCode2, FltCode1, FltCode2;
   uint8_t TwoZone_Z1Working, TwoZone_Z2Working;
-  uint8_t SingleZoneParam;
 
   // From Message 0x04
   uint8_t CompressorFrequency;
@@ -210,7 +206,7 @@ typedef struct _EcodanStatus {
   //From Message 0x0E
   float ExternalBoilerFlowTemperature, ExternalBoilerReturnTemperature;
 
-  //From Message 0x0F  
+  //From Message 0x0F
   float MixingTemperature, CondensingTemp;
 
   //From Message 0x10
@@ -227,7 +223,7 @@ typedef struct _EcodanStatus {
   uint8_t BoosterActive, ImmersionActive;
 
   //From Message 0x15
-  uint8_t PrimaryWaterPump, WaterPump2, ThreeWayValve, ThreeWayValve2;
+  uint8_t PrimaryWaterPump, WaterPump2, ThreeWayValve, ThreeWayValve2, MixingStep;
 
   //From Message 0x16
   uint8_t WaterPump4, WaterPump3, WaterPump13;
@@ -235,7 +231,7 @@ typedef struct _EcodanStatus {
   //From Message 0x26
   uint8_t SystemPowerMode, SystemOperationMode, LastSystemOperationMode, HotWaterControlMode;
   uint8_t HeatingControlModeZ1, HeatingControlModeZ2;
-  float HotWaterSetpoint, HeaterFlowSetpoint, ExternalFlowTemp;
+  float HotWaterSetpoint;
 
   //From Message 0x28
   uint8_t HotWaterBoostActive, HolidayModeActive, ProhibitDHW;
@@ -279,16 +275,15 @@ public:
   void SetPayloadByte(uint8_t Data, uint8_t Location);
   uint8_t PrepareTxCommand(uint8_t *Buffer);
   void EncodePower(uint8_t Power);
-  void EncodeControlMode(uint8_t ControlMode);
+  void EncodeControlMode(uint8_t ControlMode, uint8_t Zone);
   void EncodeDHWMode(uint8_t HotWaterMode);
   void EncodeDHWSetpoint(float HotWaterSetpoint);
   void EncodeRoomThermostat(float Setpoint, uint8_t ControlMode, uint8_t Zone);
   void EncodeFlowTemperature(float Setpoint, uint8_t ControlMode, uint8_t Zone);
-  void EncodeNormalDHW(uint8_t OnOff, uint8_t Z1H, uint8_t Z1C, uint8_t Z2H, uint8_t Z2C);
   void EncodeForcedDHW(uint8_t OnOff);
   void EncodeHolidayMode(uint8_t OnOff);
   void EncodeFTCVersion(void);
-  void EncodeServerControlMode(uint8_t OnOff);
+  void EncodeServerControlMode(uint8_t OnOff, uint8_t DHW, uint8_t Z1H, uint8_t Z1C, uint8_t Z2H, uint8_t Z2C);
   void EncodeProhibit(uint8_t Flags, uint8_t OnOff);
   void EncodeMELCloud(uint8_t cmd);
 
@@ -310,6 +305,8 @@ private:
 
 
   uint16_t ExtractUInt16(uint8_t *Buffer, uint8_t Index);
+  float Extract_Float_24(uint8_t *Buffer, uint8_t Index);
+  float ExtractUInt16_Signed(uint8_t *Buffer, uint8_t Index);
   float ExtractUInt8_v1(uint8_t *Buffer, uint8_t Index);
   float ExtractUInt8_v2(uint8_t *Buffer, uint8_t Index);
   float ExtractEnergy(uint8_t *Buffer, uint8_t index);
@@ -324,6 +321,7 @@ private:
   void Process0x05(uint8_t *Payload, EcodanStatus *Status);
   void Process0x06(uint8_t *Payload, EcodanStatus *Status);
   void Process0x07(uint8_t *Payload, EcodanStatus *Status);
+  void Process0x08(uint8_t *Payload, EcodanStatus *Status);
   void Process0x09(uint8_t *Payload, EcodanStatus *Status);
   void Process0x0B(uint8_t *Payload, EcodanStatus *Status);
   void Process0x0C(uint8_t *Payload, EcodanStatus *Status);
@@ -332,10 +330,21 @@ private:
   void Process0x0F(uint8_t *Payload, EcodanStatus *Status);
   void Process0x10(uint8_t *Payload, EcodanStatus *Status);
   void Process0x11(uint8_t *Payload, EcodanStatus *Status);
+  void Process0x12(uint8_t *Payload, EcodanStatus *Status);
   void Process0x13(uint8_t *Payload, EcodanStatus *Status);
   void Process0x14(uint8_t *Payload, EcodanStatus *Status);
   void Process0x15(uint8_t *Payload, EcodanStatus *Status);
   void Process0x16(uint8_t *Payload, EcodanStatus *Status);
+  void Process0x17(uint8_t *Payload, EcodanStatus *Status);
+  void Process0x18(uint8_t *Payload, EcodanStatus *Status);
+  void Process0x19(uint8_t *Payload, EcodanStatus *Status);
+  void Process0x1a(uint8_t *Payload, EcodanStatus *Status);
+  void Process0x1b(uint8_t *Payload, EcodanStatus *Status);
+  void Process0x1c(uint8_t *Payload, EcodanStatus *Status);
+  void Process0x1d(uint8_t *Payload, EcodanStatus *Status);
+  void Process0x1e(uint8_t *Payload, EcodanStatus *Status);
+  void Process0x1f(uint8_t *Payload, EcodanStatus *Status);
+  void Process0x20(uint8_t *Payload, EcodanStatus *Status);
   void Process0x26(uint8_t *Payload, EcodanStatus *Status);
   void Process0x27(uint8_t *Payload, EcodanStatus *Status);
   void Process0x28(uint8_t *Payload, EcodanStatus *Status);

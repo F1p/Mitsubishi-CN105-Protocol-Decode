@@ -30,8 +30,9 @@ public:
   void Process(void);
   void SetStream(Stream *MELCloudStream);
   void Connect(void);
-  void BaudNegotiate(void);
-  void RequestStatus(uint8_t TargetMessage);
+  void MELNegotiate1(void);
+  void MELNegotiate2(void);
+  void ReplyStatus(uint8_t TargetMessage);
   uint8_t UpdateComplete(void);
   uint8_t Lastmsbetweenmsg(void);
 

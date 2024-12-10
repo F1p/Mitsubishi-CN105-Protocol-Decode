@@ -58,6 +58,7 @@ uint8_t Array0xc9[] = {};
 uint8_t Array0x32[] = {};
 uint8_t Array0x33[] = {};
 uint8_t Array0x34[] = {};
+uint8_t Array0x35[] = {};
 
 
 ECODANDECODER::ECODANDECODER(void) {
@@ -91,8 +92,14 @@ uint8_t ECODANDECODER::Process(uint8_t c) {
         case 0x05:
           Process0x05(RxMessage.Payload, &Status);
           break;
+        case 0x06:
+          Process0x06(RxMessage.Payload, &Status);
+          break;
         case 0x07:
           Process0x07(RxMessage.Payload, &Status);
+          break;
+        case 0x08:
+          Process0x08(RxMessage.Payload, &Status);
           break;
         case 0x09:
           Process0x09(RxMessage.Payload, &Status);
@@ -118,6 +125,9 @@ uint8_t ECODANDECODER::Process(uint8_t c) {
         case 0x11:
           Process0x11(RxMessage.Payload, &Status);
           break;
+        case 0x12:
+          Process0x12(RxMessage.Payload, &Status);
+          break;
         case 0x13:
           Process0x13(RxMessage.Payload, &Status);
           break;
@@ -130,8 +140,41 @@ uint8_t ECODANDECODER::Process(uint8_t c) {
         case 0x16:
           Process0x16(RxMessage.Payload, &Status);
           break;
+        case 0x17:
+          Process0x17(RxMessage.Payload, &Status);
+          break;
+        case 0x18:
+          Process0x18(RxMessage.Payload, &Status);
+          break;
+        case 0x19:
+          Process0x19(RxMessage.Payload, &Status);
+          break;
+        case 0x1a:
+          Process0x1a(RxMessage.Payload, &Status);
+          break;
+        case 0x1b:
+          Process0x1b(RxMessage.Payload, &Status);
+          break;
+        case 0x1c:
+          Process0x1c(RxMessage.Payload, &Status);
+          break;
+        case 0x1d:
+          Process0x1d(RxMessage.Payload, &Status);
+          break;
+        case 0x1e:
+          Process0x1e(RxMessage.Payload, &Status);
+          break;
+        case 0x1f:
+          Process0x1f(RxMessage.Payload, &Status);
+          break;
+        case 0x20:
+          Process0x20(RxMessage.Payload, &Status);
+          break;
         case 0x26:
           Process0x26(RxMessage.Payload, &Status);
+          break;
+        case 0x27:
+          Process0x27(RxMessage.Payload, &Status);
           break;
         case 0x28:
           Process0x28(RxMessage.Payload, &Status);
@@ -256,21 +299,20 @@ void ECODANDECODER::Process0x01(uint8_t *Buffer, EcodanStatus *Status) {
   uint8_t Year, Month, Day;
   uint8_t Hour, Min, Sec;
 
+  for (int i = 1; i < 16; i++) {
+    Array0x01[i] = Buffer[i];
+  }
+
   Year = Buffer[1];
   Month = Buffer[2];
   Day = Buffer[3];
   Hour = Buffer[4];
   Min = Buffer[5];
   Sec = Buffer[6];
-
-  for (int i = 1; i < 16; i++) {
-    Array0x01[i] = Buffer[i];
-  }
-
+  
   Status->DateTimeStamp.tm_year = 100 + Year;
   Status->DateTimeStamp.tm_mon = Month - 1;
   Status->DateTimeStamp.tm_mday = Day;
-
   Status->DateTimeStamp.tm_hour = Hour;
   Status->DateTimeStamp.tm_min = Min;
   Status->DateTimeStamp.tm_sec = Sec;
@@ -284,7 +326,6 @@ void ECODANDECODER::Process0x02(uint8_t *Buffer, EcodanStatus *Status) {
   for (int i = 1; i < 16; i++) {
     Array0x02[i] = Buffer[i];
   }
-
   //Unknown = Buffer[1];  // Value 01
   //Unknown = Buffer[2];  // Value 02
   Defrost = Buffer[3];
@@ -295,9 +336,6 @@ void ECODANDECODER::Process0x02(uint8_t *Buffer, EcodanStatus *Status) {
 void ECODANDECODER::Process0x03(uint8_t *Buffer, EcodanStatus *Status) {
   uint8_t RefrigeFltCode, ErrCode1, ErrCode2, FltCode1, FltCode2;
   uint8_t TwoZone_Z1Working, TwoZone_Z2Working;
-  uint8_t SingleZoneParam;
-
-
   for (int i = 1; i < 16; i++) {
     Array0x03[i] = Buffer[i];
   }
@@ -322,7 +360,7 @@ void ECODANDECODER::Process0x03(uint8_t *Buffer, EcodanStatus *Status) {
     TwoZone_Z2Working = 0;
   }
 
-  SingleZoneParam = Buffer[9];  // Single Zone Running Parameter?
+  //MasterCascadeFreq = Buffer[9];  // Single Zone Running Parameter?
 
   Status->RefrigeFltCode = RefrigeFltCode;
   Status->ErrCode1 = ErrCode1;
@@ -331,7 +369,6 @@ void ECODANDECODER::Process0x03(uint8_t *Buffer, EcodanStatus *Status) {
   Status->FltCode2 = FltCode2;
   Status->TwoZone_Z1Working = TwoZone_Z1Working;
   Status->TwoZone_Z2Working = TwoZone_Z2Working;
-  Status->SingleZoneParam = SingleZoneParam;
 }
 
 
@@ -394,33 +431,40 @@ void ECODANDECODER::Process0x07(uint8_t *Buffer, EcodanStatus *Status) {
 }
 
 
+void ECODANDECODER::Process0x08(uint8_t *Buffer, EcodanStatus *Status) {
+  for (int i = 1; i < 16; i++) {
+    Array0x08[i] = Buffer[i];
+  }
+}
+
+
 void ECODANDECODER::Process0x09(uint8_t *Buffer, EcodanStatus *Status) {
-  float fZone1TempSetpoint, fZone2TempSetpoint;
-  float fZ1FlowSetpoint, fZ2FlowSetpoint, fLegionellaSetpoint;
-  float fHWTempDrop, fFlowTempMax, fFlowTempMin;
+  float Zone1TempSetpoint, Zone2TempSetpoint;
+  float Z1FlowSetpoint, Z2FlowSetpoint, LegionellaSetpoint;
+  float HWTempDrop, FlowTempMax, FlowTempMin;
 
   for (int i = 1; i < 16; i++) {
     Array0x09[i] = Buffer[i];
   }
 
-  fZone1TempSetpoint = ((float)ExtractUInt16(Buffer, 1) / 100);
-  fZone2TempSetpoint = ((float)ExtractUInt16(Buffer, 3) / 100);
-  fZ1FlowSetpoint = ((float)ExtractUInt16(Buffer, 5) / 100);
-  fZ2FlowSetpoint = ((float)ExtractUInt16(Buffer, 7) / 100);
-  fLegionellaSetpoint = ((float)ExtractUInt16(Buffer, 9) / 100);
+  Zone1TempSetpoint = ((float)ExtractUInt16(Buffer, 1) / 100);
+  Zone2TempSetpoint = ((float)ExtractUInt16(Buffer, 3) / 100);
+  Z1FlowSetpoint = ((float)ExtractUInt16(Buffer, 5) / 100);
+  Z2FlowSetpoint = ((float)ExtractUInt16(Buffer, 7) / 100);
+  LegionellaSetpoint = ((float)ExtractUInt16(Buffer, 9) / 100);
 
-  fHWTempDrop = ExtractUInt8_v2(Buffer, 11);
-  fFlowTempMax = ExtractUInt8_v2(Buffer, 12);
-  fFlowTempMin = ExtractUInt8_v2(Buffer, 13);
+  HWTempDrop = ExtractUInt8_v2(Buffer, 11);
+  FlowTempMax = ExtractUInt8_v2(Buffer, 12);
+  FlowTempMin = ExtractUInt8_v2(Buffer, 13);
 
-  Status->Zone1TemperatureSetpoint = fZone1TempSetpoint;
-  Status->Zone2TemperatureSetpoint = fZone2TempSetpoint;
-  Status->Zone1FlowTemperatureSetpoint = fZ1FlowSetpoint;
-  Status->Zone2FlowTemperatureSetpoint = fZ2FlowSetpoint;
-  Status->LegionellaSetpoint = fLegionellaSetpoint;
-  Status->HotWaterMaximumTempDrop = fHWTempDrop;
-  Status->FlowTempMax = fFlowTempMax;
-  Status->FlowTempMin = fFlowTempMin;
+  Status->Zone1TemperatureSetpoint = Zone1TempSetpoint;
+  Status->Zone2TemperatureSetpoint = Zone2TempSetpoint;
+  Status->Zone1FlowTemperatureSetpoint = Z1FlowSetpoint;
+  Status->Zone2FlowTemperatureSetpoint = Z2FlowSetpoint;
+  Status->LegionellaSetpoint = LegionellaSetpoint;
+  Status->HotWaterMaximumTempDrop = HWTempDrop;
+  Status->FlowTempMax = FlowTempMax;
+  Status->FlowTempMin = FlowTempMin;
 }
 
 void ECODANDECODER::Process0x0B(uint8_t *Buffer, EcodanStatus *Status) {
@@ -439,7 +483,7 @@ void ECODANDECODER::Process0x0B(uint8_t *Buffer, EcodanStatus *Status) {
   }
 
   //Unknown = ((float)ExtractUInt16(Buffer, 5) / 100);
-  RefrigeTemp = ((float)ExtractUInt16(Buffer, 8) / 100);
+  RefrigeTemp = ((float)ExtractUInt16_Signed(Buffer, 8) / 100);
   //Unknown = ExtractUInt8_v1(Buffer, 10);
   fOutside = ExtractUInt8_v1(Buffer, 11);
 
@@ -451,7 +495,7 @@ void ECODANDECODER::Process0x0B(uint8_t *Buffer, EcodanStatus *Status) {
 
 void ECODANDECODER::Process0x0C(uint8_t *Buffer, EcodanStatus *Status) {
   float fWaterHeatingFeed, fWaterHeatingReturn, fHotWater, fHotWaterTHW5A;
-
+  
   for (int i = 1; i < 16; i++) {
     Array0x0c[i] = Buffer[i];
   }
@@ -508,7 +552,7 @@ void ECODANDECODER::Process0x0F(uint8_t *Buffer, EcodanStatus *Status) {  // FTC
   for (int i = 1; i < 16; i++) {
     Array0x0f[i] = Buffer[i];
   }
-
+  
   MixingTemperature = ((float)ExtractUInt16(Buffer, 1) / 100);  // Mixing Tank Temperature (THW10)
   CondensingTemp = ((float)ExtractUInt16(Buffer, 4) / 100);     // Condensing Temperature
 
@@ -536,7 +580,6 @@ void ECODANDECODER::Process0x10(uint8_t *Buffer, EcodanStatus *Status) {
 
 void ECODANDECODER::Process0x11(uint8_t *Buffer, EcodanStatus *Status) {
 
-
   for (int i = 1; i < 16; i++) {
     Array0x11[i] = Buffer[i];
   }
@@ -547,10 +590,15 @@ void ECODANDECODER::Process0x11(uint8_t *Buffer, EcodanStatus *Status) {
   //Unknown5 = Buffer[9];  // 2 or 0 when unknown 2 is 0
 }
 
+void ECODANDECODER::Process0x12(uint8_t *Buffer, EcodanStatus *Status) {
+  for (int i = 1; i < 16; i++) {
+    Array0x12[i] = Buffer[i];
+  }
+}
+
 
 void ECODANDECODER::Process0x13(uint8_t *Buffer, EcodanStatus *Status) {
   uint32_t RunHours;
-
 
   for (int i = 1; i < 16; i++) {
     Array0x13[i] = Buffer[i];
@@ -587,7 +635,7 @@ void ECODANDECODER::Process0x14(uint8_t *Buffer, EcodanStatus *Status) {
 
 
 void ECODANDECODER::Process0x15(uint8_t *Buffer, EcodanStatus *Status) {
-  uint8_t PrimaryWaterPump, WaterPump2, ThreeWayValve, ThreeWayValve2;
+  uint8_t PrimaryWaterPump, WaterPump2, ThreeWayValve, ThreeWayValve2, MixingStep;
 
   for (int i = 1; i < 16; i++) {
     Array0x15[i] = Buffer[i];
@@ -597,17 +645,18 @@ void ECODANDECODER::Process0x15(uint8_t *Buffer, EcodanStatus *Status) {
   WaterPump2 = Buffer[4];        // Water Pump 2 Active
   ThreeWayValve = Buffer[6];     // 3 Way Valve Position
   ThreeWayValve2 = Buffer[7];    // 3 Way Valve 2 Position
+  MixingStep = Buffer[10];       // Mixing Valve Step
 
   Status->PrimaryWaterPump = PrimaryWaterPump;
   Status->WaterPump2 = WaterPump2;
   Status->ThreeWayValve = ThreeWayValve;
   Status->ThreeWayValve2 = ThreeWayValve2;
+  Status->MixingStep = MixingStep;
 }
 
 
 void ECODANDECODER::Process0x16(uint8_t *Buffer, EcodanStatus *Status) {
   uint8_t WaterPump4, WaterPump3, WaterPump13;
-
 
   for (int i = 1; i < 16; i++) {
     Array0x16[i] = Buffer[i];
@@ -622,12 +671,72 @@ void ECODANDECODER::Process0x16(uint8_t *Buffer, EcodanStatus *Status) {
   Status->WaterPump13 = WaterPump13;
 }
 
+void ECODANDECODER::Process0x17(uint8_t *Buffer, EcodanStatus *Status) {
+  for (int i = 1; i < 16; i++) {
+    Array0x17[i] = Buffer[i];
+  }
+}
+
+void ECODANDECODER::Process0x18(uint8_t *Buffer, EcodanStatus *Status) {
+  for (int i = 1; i < 16; i++) {
+    Array0x18[i] = Buffer[i];
+  }
+}
+
+void ECODANDECODER::Process0x19(uint8_t *Buffer, EcodanStatus *Status) {
+  for (int i = 1; i < 16; i++) {
+    Array0x19[i] = Buffer[i];
+  }
+}
+
+void ECODANDECODER::Process0x1a(uint8_t *Buffer, EcodanStatus *Status) {
+  for (int i = 1; i < 16; i++) {
+    Array0x1a[i] = Buffer[i];
+  }
+}
+
+void ECODANDECODER::Process0x1b(uint8_t *Buffer, EcodanStatus *Status) {
+  for (int i = 1; i < 16; i++) {
+    Array0x1b[i] = Buffer[i];
+  }
+}
+
+void ECODANDECODER::Process0x1c(uint8_t *Buffer, EcodanStatus *Status) {
+  for (int i = 1; i < 16; i++) {
+    Array0x1c[i] = Buffer[i];
+  }
+}
+
+void ECODANDECODER::Process0x1d(uint8_t *Buffer, EcodanStatus *Status) {
+  for (int i = 1; i < 16; i++) {
+    Array0x1d[i] = Buffer[i];
+  }
+}
+
+void ECODANDECODER::Process0x1e(uint8_t *Buffer, EcodanStatus *Status) {
+  for (int i = 1; i < 16; i++) {
+    Array0x1e[i] = Buffer[i];
+  }
+}
+
+void ECODANDECODER::Process0x1f(uint8_t *Buffer, EcodanStatus *Status) {
+  for (int i = 1; i < 16; i++) {
+    Array0x1f[i] = Buffer[i];
+  }
+}
+
+void ECODANDECODER::Process0x20(uint8_t *Buffer, EcodanStatus *Status) {
+  for (int i = 1; i < 16; i++) {
+    Array0x20[i] = Buffer[i];
+  }
+}
+
+
 
 void ECODANDECODER::Process0x26(uint8_t *Buffer, EcodanStatus *Status) {
-  float fHWSetpoint, fExternalSetpoint, fExternalFlowTemp;
+  float DHWSetpoint;
   uint8_t SystemPowerMode, SystemOperationMode, HotWaterPowerMode;
   uint8_t HeatingControlModeZone1, HeatingControlModeZone2, HotWaterControlMode;
-
 
   for (int i = 1; i < 16; i++) {
     Array0x26[i] = Buffer[i];
@@ -640,27 +749,24 @@ void ECODANDECODER::Process0x26(uint8_t *Buffer, EcodanStatus *Status) {
   HotWaterControlMode = Buffer[5];
   HeatingControlModeZone1 = Buffer[6];
   HeatingControlModeZone2 = Buffer[7];
-  fHWSetpoint = ((float)ExtractUInt16(Buffer, 8) / 100);
-  fExternalSetpoint = ((float)ExtractUInt16(Buffer, 10) / 100);
-  fExternalFlowTemp = ((float)ExtractUInt16(Buffer, 12) / 100);
+  DHWSetpoint = ((float)ExtractUInt16(Buffer, 8) / 100);
+  //Zone1FlowSetpoint = ((float)ExtractUInt16(Buffer, 10) / 100);   // Duplicate of 0x09
+  //Zone2FlowSetpoint = ((float)ExtractUInt16(Buffer, 12) / 100);   // Duplicate of 0x09
 
   Status->SystemPowerMode = SystemPowerMode;
   Status->SystemOperationMode = SystemOperationMode;
   Status->HotWaterControlMode = HotWaterControlMode;
   Status->HeatingControlModeZ1 = HeatingControlModeZone1;
   Status->HeatingControlModeZ2 = HeatingControlModeZone2;
-  Status->HotWaterSetpoint = fHWSetpoint;
-  Status->HeaterFlowSetpoint = fExternalSetpoint;
-  Status->ExternalFlowTemp = fExternalFlowTemp;
+  Status->HotWaterSetpoint = DHWSetpoint;
 }
-
-
 
 void ECODANDECODER::Process0x27(uint8_t *Buffer, EcodanStatus *Status) {
   for (int i = 1; i < 16; i++) {
     Array0x27[i] = Buffer[i];
   }
 }
+
 
 void ECODANDECODER::Process0x28(uint8_t *Buffer, EcodanStatus *Status) {
   uint8_t HotWaterBoostActive, HolidayModeActive, ProhibitDHW;
@@ -789,25 +895,24 @@ float ECODANDECODER::ExtractEnergy(uint8_t *Buffer, uint8_t index) {
   return Energy;
 }
 
+float ECODANDECODER::ExtractUInt16_Signed(uint8_t *Buffer, uint8_t Index) {
+  float Value = int16_t(Buffer[Index] << 8) + Buffer[Index + 1];
+  return Value;
+}
+
 uint16_t ECODANDECODER::ExtractUInt16(uint8_t *Buffer, uint8_t Index) {
-  uint16_t Value;
-
-  Value = (Buffer[Index] << 8) + Buffer[Index + 1];
-
+  uint16_t Value = (Buffer[Index] << 8) + Buffer[Index + 1];
   return Value;
 }
 
 // Used for most single-byte floating point values
 float ECODANDECODER::ExtractUInt8_v1(uint8_t *Buffer, uint8_t Index) {
-  float Value;
-  Value = (Buffer[Index] / 2) - 40;
+  float Value = (Buffer[Index] / 2) - 40;
   return Value;
 }
 
-
 float ECODANDECODER::ExtractUInt8_v2(uint8_t *Buffer, uint8_t Index) {
-  float Value;
-  Value = (Buffer[Index] - 40) / 2;
+  float Value = (Buffer[Index] - 40) / 2;
   return Value;
 }
 
@@ -895,11 +1000,15 @@ void ECODANDECODER::EncodeDHWSetpoint(float HotWaterSetpoint) {
 }
 
 
-void ECODANDECODER::EncodeControlMode(uint8_t ControlMode) {
+void ECODANDECODER::EncodeControlMode(uint8_t ControlMode, uint8_t Zone) {
   TxMessage.Payload[0] = TX_MESSAGE_BASIC;
-  TxMessage.Payload[1] = SET_HEATING_CONTROL_MODE_Z1 | SET_HEATING_CONTROL_MODE_Z2;
-  TxMessage.Payload[6] = ControlMode;
-  TxMessage.Payload[7] = ControlMode;
+  TxMessage.Payload[1] = Zone;
+  if (SET_HEATING_CONTROL_MODE_Z1 == Zone) {
+    TxMessage.Payload[6] = ControlMode;
+  }
+  if (SET_HEATING_CONTROL_MODE_Z2 == Zone) {
+    TxMessage.Payload[7] = ControlMode;
+  }
 }
 
 
@@ -995,31 +1104,18 @@ void ECODANDECODER::EncodeFTCVersion() {
   TxMessage.Payload[1] = 0x5F;
 }
 
-void ECODANDECODER::EncodeServerControlMode(uint8_t OnOff) {
-  // Heating & DHW "Server Control" Mode
+
+void ECODANDECODER::EncodeServerControlMode(uint8_t OnOff, uint8_t DHW, uint8_t Z1H, uint8_t Z1C, uint8_t Z2H, uint8_t Z2C) {
   TxMessage.Payload[0] = TX_MESSAGE_CONTROLLER;
-  TxMessage.Payload[1] = TX_MESSAGE_SETTING_SRV_Flag;
-  TxMessage.Payload[10] = OnOff;  // Enable the Mode
+  TxMessage.Payload[1] = TX_MESSAGE_SETTING_SRV_Flag | TX_MESSAGE_SETTING_DHW_INH_Flag | TX_MESSAGE_SETTING_HEAT_Z1_INH_Flag | TX_MESSAGE_SETTING_COOL_Z1_INH_Flag | TX_MESSAGE_SETTING_HEAT_Z2_INH_Flag | TX_MESSAGE_SETTING_COOL_Z2_INH_Flag;  // Write the flags where Zones are to be enabled
+  TxMessage.Payload[5] = DHW;                                                                                                                                                                                                                    // Write the current status of DHW
+  TxMessage.Payload[6] = Z1H;                                                                                                                                                                                                                    // Write the current status of Z1 Heating
+  TxMessage.Payload[7] = Z1C;                                                                                                                                                                                                                    // Write the current status of Z1 Cooling
+  TxMessage.Payload[8] = Z2H;                                                                                                                                                                                                                    // Write the current status of Z2 Heating
+  TxMessage.Payload[9] = Z2C;                                                                                                                                                                                                                    // Write the current status of Z2 Cooling
+  TxMessage.Payload[10] = OnOff;                                                                                                                                                                                                                 // Enter or Exit SCM Mode
 }
 
-void ECODANDECODER::EncodeNormalDHW(uint8_t OnOff, uint8_t Z1H, uint8_t Z1C, uint8_t Z2H, uint8_t Z2C) {
-  uint8_t Flags = TX_MESSAGE_SETTING_Normal_DHW_Flag;
-
-  TxMessage.Payload[0] = TX_MESSAGE_CONTROLLER;
-
-  if (Z1H) { Flags = Flags | TX_MESSAGE_SETTING_HEAT_Z1_INH_Flag; }
-  if (Z1C) { Flags = Flags | TX_MESSAGE_SETTING_COOL_Z1_INH_Flag; }
-  if (Z2H) { Flags = Flags | TX_MESSAGE_SETTING_HEAT_Z2_INH_Flag; }
-  if (Z2C) { Flags = Flags | TX_MESSAGE_SETTING_COOL_Z2_INH_Flag; }
-
-  TxMessage.Payload[1] = Flags;      // Write the flags where Zones are to be enabled
-  TxMessage.Payload[5] = 1 - OnOff;  // Disable or Enable the Inhibit (Inverse of SCM)
-  TxMessage.Payload[6] = Z1H;        // Write the current status of Z1 Heating
-  TxMessage.Payload[7] = Z1C;        // Write the current status of Z1 Cooling
-  TxMessage.Payload[8] = Z2H;        // Write the current status of Z2 Heating
-  TxMessage.Payload[9] = Z2C;        // Write the current status of Z2 Cooling
-  TxMessage.Payload[10] = OnOff;     // Enter or Exit SCM Mode
-}
 
 void ECODANDECODER::EncodeProhibit(uint8_t Flags, uint8_t OnOff) {
   // Heating & DHW Inhibit "Server Control" Mode
@@ -1044,7 +1140,6 @@ void ECODANDECODER::EncodeProhibit(uint8_t Flags, uint8_t OnOff) {
 }
 
 
-
 void ECODANDECODER::EncodeMELCloud(uint8_t cmd) {
   TxMessage.Payload[0] = TX_MESSAGE_BASIC;
   for (int i = 1; i < 16; i++) {
@@ -1054,6 +1149,8 @@ void ECODANDECODER::EncodeMELCloud(uint8_t cmd) {
       TxMessage.Payload[i] = Array0x33[i];
     } else if (cmd == 0x34) {
       TxMessage.Payload[i] = Array0x34[i];
+    }else if (cmd == 0x35) {
+      TxMessage.Payload[i] = Array0x35[i];
     }
   }
 }
