@@ -664,7 +664,11 @@ void SystemReport(void) {
   doc[F("EstCoolOutputPower")] = round2(CoolOutputPower);
   doc[F("Compressor")] = HeatPump.Status.CompressorFrequency;
   doc[F("SystemPower")] = SystemPowerModeString[HeatPump.Status.SystemPowerMode];
-  doc[F("SystemOperationMode")] = SystemOperationModeString[HeatPump.Status.SystemOperationMode];
+  if (HeatPump.Status.Defrost == 2) {
+    doc[F("SystemOperationMode")] = "Defrosting";
+  } else {
+    doc[F("SystemOperationMode")] = SystemOperationModeString[HeatPump.Status.SystemOperationMode];
+  }
   doc[F("HolidayMode")] = HeatPump.Status.HolidayModeActive;
   doc[F("FlowRate")] = HeatPump.Status.PrimaryFlowRate;
   doc[F("RunHours")] = HeatPump.Status.RunHours;
