@@ -44,8 +44,8 @@ private:
 
   uint8_t Preamble[PREAMBLESIZE];
 
-  uint8_t CheckForSyncMsg(MessageStruct *Message, uint8_t c);
-  uint8_t CheckForAbout(MessageStruct *Message, uint8_t c);
+  uint8_t CheckForSyncMsg1(MessageStruct *Message, uint8_t c);
+  uint8_t CheckForSyncMsg2(MessageStruct *Message, uint8_t c);
   uint8_t BuildRxMessage(MessageStruct *Message, uint8_t c);
 
   void CreateBlankMessageTemplate(MessageStruct *Message, uint8_t PacketType, uint8_t PayloadSize);
@@ -54,7 +54,7 @@ private:
   uint8_t CheckSum(uint8_t *Buffer, uint8_t len);
 
   void Process0x5A(uint8_t *Payload, MelCloudStatus *Status);
-  void Process0xFF(uint8_t *Payload, MelCloudStatus *Status);
+  void Process0xFF(uint8_t *Payload, MelCloudStatus *Status, uint8_t type);
   void Process0x01(uint8_t *Payload, MelCloudStatus *Status);
   void Process0x02(uint8_t *Payload, MelCloudStatus *Status);
   void Process0x03(uint8_t *Payload, MelCloudStatus *Status);

@@ -23,10 +23,7 @@ extern ESPTelnet TelnetServer;
 uint8_t MELCloudInit3[] = { 0xfc, 0x7a, 0x02, 0x7a, 0x01, 0x00, 0x09 };
 uint8_t MELCloudInit6[] = { 0x02, 0xff, 0xff, 0x80, 0x00, 0x00, 0x0A, 0x01, 0x00, 0x40, 0x00, 0x00, 0x06, 0x02, 0x7A, 0x00, 0x00, 0xB5 };
 uint8_t MELCloudInit7[] = { 0x02, 0xff, 0xff, 0x81, 0x00, 0x00, 0x00, 0x81 };
-uint8_t MELCloudInit8[] = { 0x02, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0x02 };  // MELCloud Connect Msg
-uint8_t MELCloudInit9[] = { 0x6e, 0x02 };                                      // Little msg
 
-unsigned long mellastmsgdispatchedMillis = 0;  // variable for comparing millis counter
 bool PrintMELStart = false;
 
 MELCLOUD::MELCLOUD(void)
@@ -57,8 +54,6 @@ void MELCLOUD::Process(void) {
 
     if (MELCLOUDDECODER::Process(c)) {
       PrintMELStart = false;
-      msbetweenmsg = millis() - mellastmsgdispatchedMillis;
-      DEBUG_PRINTLN();
       Connected = true;
     }
   }

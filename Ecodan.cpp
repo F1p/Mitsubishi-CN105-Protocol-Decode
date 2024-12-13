@@ -21,11 +21,26 @@ extern ESPTelnet TelnetServer;
 #include "Debug.h"
 
 // Initialisation Commands
-uint8_t Init3[] = { 0xfc, 0x5a, 0x02, 0x7a, 0x02, 0xca, 0x01, 0x5d };  // Air to Water Connect
+uint8_t Init3[] = { 0xfc, 0x5a, 0x02, 0x7a, 0x02, 0xca, 0x01, 0x5d };                                      // Air to Water Connect
+
+
+uint8_t Init4[] = { 0x00, 0x02, 0x02, 0xff, 0xff, 0x00, 0x00, 0x00 };                                      // 2400 request
+uint8_t Init5[] = { 0x00, 0x02, 0x6e, 0x00, 0x6e, 0x10, 0x6e, 0x00, 0x02, 0xff, 0xff, 0x00, 0x00, 0x00 };  // 2400 request 2
+
+// Gekkekoe cmds
+uint8_t Init6[] = { 0x02, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0x02 };                                      // 9600 request
+uint8_t Init7[] = { 0x02, 0xff, 0xff, 0x01, 0x00, 0x00, 0x01, 0x00, 0x00 };                                // 9600 request 2
+
+// F1p seen
+uint8_t Init8[] = { 0x01, 0x00, 0x00, 0x02, 0xff, 0xff, 0x01, 0x00, 0x00 };                                // 9600 Fast send MEL Request
+//80, __, f8, 78, 78, __, __, __, 80, __, 80, __, f8, 78, 78, __, __, __, 80, __, 80, __, f8, 78, 78, __, __, __, 80, __, 02, ff, ff, __, __, __, 
+
+
+
 
 #define NUMBER_COMMANDS 37
 uint8_t ActiveCommand[] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x09, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
-                            0x10, 0x11, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 
+                            0x10, 0x11, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E,
                             0x1F, 0x20, 0x26, 0x27, 0x28, 0x29, 0xA1, 0xA2, 0x00 };
 
 
@@ -45,7 +60,10 @@ void ECODAN::Process(void) {
   uint8_t c;
 
   while (DeviceStream->available()) {
-    if (!ProcessFlag){ DEBUG_PRINT("[FTC > Bridge] "); ProcessFlag = true; }
+    if (!ProcessFlag) {
+      DEBUG_PRINT("[FTC > Bridge] ");
+      ProcessFlag = true;
+    }
     c = DeviceStream->read();
 
     if (c == 0)
@@ -62,7 +80,7 @@ void ECODAN::Process(void) {
       DEBUG_PRINTLN();
       //DEBUG_PRINT(msbetweenmsg);
       //DEBUG_PRINTLN("ms");
-      Connected = false;
+      Connected = true;
     }
   }
 }
@@ -158,7 +176,7 @@ void ECODAN::RequestStatus(uint8_t TargetMessage) {
 
 void ECODAN::Connect(void) {
   DEBUG_PRINTLN("Connecting to Heat Pump...");
-  DeviceStream->write(Init3, 8);
+  DeviceStream->write(Init8, 9);
   DeviceStream->flush();
   Process();
 }
