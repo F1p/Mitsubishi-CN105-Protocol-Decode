@@ -1141,7 +1141,7 @@ void ECODANDECODER::EncodeProhibit(uint8_t Flags, uint8_t OnOff) {
 
 
 void ECODANDECODER::EncodeMELCloud(uint8_t cmd) {
-  TxMessage.Payload[0] = TX_MESSAGE_BASIC;
+  TxMessage.Payload[0] = cmd;
   for (int i = 1; i < 16; i++) {
     if (cmd == 0x32) {
       TxMessage.Payload[i] = Array0x32[i];
