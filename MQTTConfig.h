@@ -554,6 +554,11 @@ void readSettingsFromConfig() {
 
     delay(10);
     PublishDiscoveryTopics();
+#ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack LED
+    leds[0] = CRGB::Green;
+    FastLED.setBrightness(100);  // LED on, reduced brightness
+    FastLED.show();
+#endif
   }
 
 
@@ -572,15 +577,6 @@ void readSettingsFromConfig() {
     if (MQTTClient.connect(mqttSettings.clientId, mqttSettings.user, mqttSettings.password, MQTT_LWT.c_str(), 0, true, "offline")) {
       DEBUG_PRINTLN("MQTT Server Connected");
       MQTTonConnect();
-
-#ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack LED
-      leds[0] = CRGB::Green;   // Turn the Red LED On
-      FastLED.setBrightness(255);
-      FastLED.show();
-      delay(10);
-      FastLED.setBrightness(0);
-      FastLED.show();
-#endif
 #ifdef ESP8266                            // Define the Witty ESP8266 Ports
       digitalWrite(Red_RGB_LED, LOW);     // Turn off the Red LED
       digitalWrite(Green_RGB_LED, HIGH);  // Flash the Green LED
@@ -589,6 +585,10 @@ void readSettingsFromConfig() {
 #endif
       return 1;
     } else {
+#ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack LED
+      leds[0] = CRGB::Orange;
+      FastLED.setBrightness(255);  // LED on, reduced brightness
+#endif
       DEBUG_PRINT("Failed with Error Code: ");
       DEBUG_PRINTLN(MQTTClient.state());
       switch (MQTTClient.state()) {

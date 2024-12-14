@@ -340,244 +340,178 @@ uint8_t MELCLOUDDECODER::BuildRxMessage(MessageStruct *Message, uint8_t c) {
 void MELCLOUDDECODER::Process0x5A(uint8_t *Buffer, MelCloudStatus *Status) {
   Status->ConnectRequest = true;
 }
-
 void MELCLOUDDECODER::Process0x01(uint8_t *Buffer, MelCloudStatus *Status) {
   Status->ReplyNow = true;
   Status->ActiveMessage = 0x01;
 }
-
 void MELCLOUDDECODER::Process0x02(uint8_t *Buffer, MelCloudStatus *Status) {
   Status->ReplyNow = true;
   Status->ActiveMessage = 0x02;
 }
-
 void MELCLOUDDECODER::Process0x03(uint8_t *Buffer, MelCloudStatus *Status) {
   Status->ReplyNow = true;
   Status->ActiveMessage = 0x03;
 }
-
-
 void MELCLOUDDECODER::Process0x04(uint8_t *Buffer, MelCloudStatus *Status) {
   Status->ReplyNow = true;
   Status->ActiveMessage = 0x04;
 }
-
-
 void MELCLOUDDECODER::Process0x05(uint8_t *Buffer, MelCloudStatus *Status) {
   Status->ReplyNow = true;
   Status->ActiveMessage = 0x05;
 }
-
-
 void MELCLOUDDECODER::Process0x06(uint8_t *Buffer, MelCloudStatus *Status) {
   Status->ReplyNow = true;
   Status->ActiveMessage = 0x06;
 }
-
 void MELCLOUDDECODER::Process0x07(uint8_t *Buffer, MelCloudStatus *Status) {
   Status->ReplyNow = true;
   Status->ActiveMessage = 0x07;
 }
-
-
 void MELCLOUDDECODER::Process0x09(uint8_t *Buffer, MelCloudStatus *Status) {
   Status->ReplyNow = true;
   Status->ActiveMessage = 0x09;
 }
-
 void MELCLOUDDECODER::Process0x0B(uint8_t *Buffer, MelCloudStatus *Status) {
   Status->ReplyNow = true;
   Status->ActiveMessage = 0x0B;
 }
-
 void MELCLOUDDECODER::Process0x0C(uint8_t *Buffer, MelCloudStatus *Status) {
   Status->ReplyNow = true;
   Status->ActiveMessage = 0x0C;
 }
-
 void MELCLOUDDECODER::Process0x0D(uint8_t *Buffer, MelCloudStatus *Status) {
   Status->ReplyNow = true;
   Status->ActiveMessage = 0x0D;
 }
-
 void MELCLOUDDECODER::Process0x0E(uint8_t *Buffer, MelCloudStatus *Status) {
   Status->ReplyNow = true;
   Status->ActiveMessage = 0x0E;
 }
-
 void MELCLOUDDECODER::Process0x0F(uint8_t *Buffer, MelCloudStatus *Status) {
   Status->ReplyNow = true;
   Status->ActiveMessage = 0x0F;
 }
-
-
 void MELCLOUDDECODER::Process0x10(uint8_t *Buffer, MelCloudStatus *Status) {
   Status->ReplyNow = true;
   Status->ActiveMessage = 0x10;
 }
-
-
 void MELCLOUDDECODER::Process0x11(uint8_t *Buffer, MelCloudStatus *Status) {
   Status->ReplyNow = true;
   Status->ActiveMessage = 0x11;
 }
-
-
 void MELCLOUDDECODER::Process0x13(uint8_t *Buffer, MelCloudStatus *Status) {
   Status->ReplyNow = true;
   Status->ActiveMessage = 0x13;
 }
-
-
 void MELCLOUDDECODER::Process0x14(uint8_t *Buffer, MelCloudStatus *Status) {
   Status->ReplyNow = true;
   Status->ActiveMessage = 0x14;
 }
-
-
 void MELCLOUDDECODER::Process0x15(uint8_t *Buffer, MelCloudStatus *Status) {
   Status->ReplyNow = true;
   Status->ActiveMessage = 0x15;
 }
-
-
 void MELCLOUDDECODER::Process0x16(uint8_t *Buffer, MelCloudStatus *Status) {
   Status->ReplyNow = true;
   Status->ActiveMessage = 0x16;
 }
-
-
 void MELCLOUDDECODER::Process0x17(uint8_t *Buffer, MelCloudStatus *Status) {
   Status->ReplyNow = true;
   Status->ActiveMessage = 0x17;
 }
-
-
-
 void MELCLOUDDECODER::Process0x18(uint8_t *Buffer, MelCloudStatus *Status) {
   Status->ReplyNow = true;
   Status->ActiveMessage = 0x18;
 }
-
-
-
 void MELCLOUDDECODER::Process0x19(uint8_t *Buffer, MelCloudStatus *Status) {
   Status->ReplyNow = true;
   Status->ActiveMessage = 0x19;
 }
-
-
-
 void MELCLOUDDECODER::Process0x1a(uint8_t *Buffer, MelCloudStatus *Status) {
   Status->ReplyNow = true;
   Status->ActiveMessage = 0x1a;
 }
-
 void MELCLOUDDECODER::Process0x1b(uint8_t *Buffer, MelCloudStatus *Status) {
   Status->ReplyNow = true;
   Status->ActiveMessage = 0x1b;
 }
-
 void MELCLOUDDECODER::Process0x1c(uint8_t *Buffer, MelCloudStatus *Status) {
   Status->ReplyNow = true;
   Status->ActiveMessage = 0x1c;
 }
-
-
 void MELCLOUDDECODER::Process0x1d(uint8_t *Buffer, MelCloudStatus *Status) {
   Status->ReplyNow = true;
   Status->ActiveMessage = 0x1d;
 }
-
-
 void MELCLOUDDECODER::Process0x1e(uint8_t *Buffer, MelCloudStatus *Status) {
   Status->ReplyNow = true;
   Status->ActiveMessage = 0x1e;
 }
-
-
 void MELCLOUDDECODER::Process0x1f(uint8_t *Buffer, MelCloudStatus *Status) {
   Status->ReplyNow = true;
   Status->ActiveMessage = 0x1f;
 }
-
-
 void MELCLOUDDECODER::Process0x20(uint8_t *Buffer, MelCloudStatus *Status) {
   Status->ReplyNow = true;
   Status->ActiveMessage = 0x20;
 }
-
 void MELCLOUDDECODER::Process0x26(uint8_t *Buffer, MelCloudStatus *Status) {
   Status->ReplyNow = true;
   Status->ActiveMessage = 0x26;
 }
-
 void MELCLOUDDECODER::Process0x27(uint8_t *Buffer, MelCloudStatus *Status) {
   Status->ReplyNow = true;
   Status->ActiveMessage = 0x27;
 }
-
 void MELCLOUDDECODER::Process0x28(uint8_t *Buffer, MelCloudStatus *Status) {
   Status->ReplyNow = true;
   Status->ActiveMessage = 0x28;
 }
-
 void MELCLOUDDECODER::Process0x29(uint8_t *Buffer, MelCloudStatus *Status) {
   Status->ReplyNow = true;
   Status->ActiveMessage = 0x29;
 }
-
 void MELCLOUDDECODER::Process0xA1(uint8_t *Buffer, MelCloudStatus *Status) {
   Status->ReplyNow = true;
   Status->ActiveMessage = 0xA1;
 }
-
 void MELCLOUDDECODER::Process0xA2(uint8_t *Buffer, MelCloudStatus *Status) {
   Status->ReplyNow = true;
   Status->ActiveMessage = 0xA2;
 }
-
 void MELCLOUDDECODER::Process0xC9(uint8_t *Buffer, MelCloudStatus *Status) {
   Status->ReplyNow = true;
   Status->ActiveMessage = 0xC9;
 }
-
 void MELCLOUDDECODER::Process0x32(uint8_t *Buffer, MelCloudStatus *Status) {
   for (int i = 1; i < 16; i++) {
     Array0x32[i] = Buffer[i];
   }
-
   Status->ReplyNow = true;
   Status->ActiveMessage = 0x32;
 }
-
 void MELCLOUDDECODER::Process0x33(uint8_t *Buffer, MelCloudStatus *Status) {
   for (int i = 1; i < 16; i++) {
     Array0x33[i] = Buffer[i];
   }
-
   Status->ReplyNow = true;
   Status->ActiveMessage = 0x33;
 }
-
 void MELCLOUDDECODER::Process0x34(uint8_t *Buffer, MelCloudStatus *Status) {
   for (int i = 1; i < 16; i++) {
     Array0x34[i] = Buffer[i];
   }
-
   Status->ReplyNow = true;
   Status->ActiveMessage = 0x34;
 }
-
 void MELCLOUDDECODER::Process0x35(uint8_t *Buffer, MelCloudStatus *Status) {
   for (int i = 1; i < 16; i++) {
     Array0x35[i] = Buffer[i];
   }
-
   Status->ReplyNow = true;
   Status->ActiveMessage = 0x35;
 }
-
 void MELCLOUDDECODER::Process0xFF(uint8_t *Buffer, MelCloudStatus *Status, uint8_t type) {
   if (type == 0) {
     Status->MELRequest1 = true;  // Type 1

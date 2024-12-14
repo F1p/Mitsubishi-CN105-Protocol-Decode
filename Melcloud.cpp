@@ -53,6 +53,7 @@ void MELCLOUD::Process(void) {
     }
 
     if (MELCLOUDDECODER::Process(c)) {
+      DEBUG_PRINTLN();
       PrintMELStart = false;
       Connected = true;
     }
@@ -254,7 +255,7 @@ void MELCLOUD::ReplyStatus(uint8_t TargetMessage) {
 
 
 void MELCLOUD::Connect(void) {
-  DEBUG_PRINTLN("[MELCloud] Connecting to MELCloud Device...");
+  DEBUG_PRINTLN("[Bridge > MEL] Connecting to MELCloud Device...");
   DeviceStream->write(MELCloudInit3, 7);
   DeviceStream->flush();
   Process();
@@ -262,7 +263,7 @@ void MELCLOUD::Connect(void) {
 
 
 void MELCLOUD::MELNegotiate1(void) {
-  DEBUG_PRINTLN("[MELCloud] Negotiating First with MELCloud Device...");
+  DEBUG_PRINTLN("[Bridge > MEL] Negotiating First with MELCloud Device...");
   DeviceStream->write(MELCloudInit6, 18);
   DeviceStream->flush();
   Process();
@@ -270,7 +271,7 @@ void MELCLOUD::MELNegotiate1(void) {
 
 
 void MELCLOUD::MELNegotiate2(void) {
-  DEBUG_PRINTLN("[MELCloud] Negotiating Second with MELCloud Device...");
+  DEBUG_PRINTLN("[Bridge > MEL] Negotiating Second with MELCloud Device...");
   DeviceStream->write(MELCloudInit7, 8);
   DeviceStream->flush();
   Process();

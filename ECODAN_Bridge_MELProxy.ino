@@ -180,7 +180,6 @@ void StatusReport(void);
 TimerCallBack HeatPumpQuery1(500, HeatPumpQueryStateEngine);  // Set to 500ms (Safe), 320-350ms best time between messages
 TimerCallBack HeatPumpQuery2(30000, HeatPumpKeepAlive);       // Set to 20-30s for heat pump query frequency
 TimerCallBack HeatPumpQuery3(30000, handleMqttState);         // Re-connect attempt timer if MQTT is not online
-TimerCallBack HeatPumpQuery4(1000, StatusReport);             // Re-connect attempt timer if MQTT is not online
 
 
 unsigned long looppreviousMillis = 0;  // variable for comparing millis counter
@@ -260,7 +259,6 @@ void loop() {
   HeatPumpQuery1.Process();
   HeatPumpQuery2.Process();
   HeatPumpQuery3.Process();
-  HeatPumpQuery4.Process();
 
   MELCloudQueryReplyEngine();
   MQTTClient.loop();
@@ -286,15 +284,15 @@ void loop() {
     digitalWrite(Green_RGB_LED, LOW);  // Turn the Green LED Off
     digitalWrite(Red_RGB_LED, HIGH);   // Turn the Red LED On
 #endif
-#ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack LED
-    leds[0] = CRGB::Red;       // Turn the Red LED On
-    FastLED.setBrightness(255);
-    FastLED.show();
-#endif
 
     if (WiFiOneShot) {
       wifipreviousMillis = millis();
       WiFiOneShot = false;
+#ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack LED
+      leds[0] = CRGB::Red;     // Turn the Red LED On
+      FastLED.setBrightness(255);
+      FastLED.show();
+#endif
     }  // Oneshot to start the timer
     if (millis() - wifipreviousMillis >= 300000) {
 #ifdef ESP8266                          // Define the Witty ESP8266 Ports
@@ -332,16 +330,6 @@ void loop() {
 #ifdef ESP8266                       // Define the Witty ESP8266 Ports
     analogWrite(Green_RGB_LED, 30);  // Green LED on, 25% brightness
     digitalWrite(Red_RGB_LED, LOW);  // Turn the Red LED Off
-#endif
-#ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack LED
-    if (!MQTTClient.connected()) {
-      leds[0] = CRGB::Orange;
-      FastLED.setBrightness(255);  // LED on, reduced brightness
-    } else {
-      leds[0] = CRGB::Green;
-      FastLED.setBrightness(100);  // LED on, reduced brightness
-    }                              // Turn the Green LED On
-    FastLED.show();
 #endif
   }
 
@@ -880,7 +868,11 @@ void FlashGreenLED(void) {
 #ifdef ESP8266                        // Define the Witty ESP8266 Ports
   digitalWrite(Green_RGB_LED, HIGH);  // Flash the Green LED full brightness
 #endif
-  delay(10);  // Hold for 10ms then WiFi brightness will return it to 25%
+  delay(10);                   // Hold for 10ms then WiFi brightness will return it to 25%
+#ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack LED
+  FastLED.setBrightness(100);
+  FastLED.show();
+#endif
 }
 
 void setupTelnet() {
