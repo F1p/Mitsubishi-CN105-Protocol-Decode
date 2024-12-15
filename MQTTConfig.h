@@ -586,8 +586,9 @@ void readSettingsFromConfig() {
       return 1;
     } else {
 #ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack LED
+      //FastLED.setBrightness(255);  // LED on, reduced brightness
       leds[0] = CRGB::Orange;
-      FastLED.setBrightness(255);  // LED on, reduced brightness
+      //
 #endif
       DEBUG_PRINT("Failed with Error Code: ");
       DEBUG_PRINTLN(MQTTClient.state());

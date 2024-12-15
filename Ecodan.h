@@ -32,6 +32,7 @@ public:
   void StatusStateMachine(void);
   void WriteStateMachine(void);
   uint8_t UpdateComplete(void);
+  uint8_t HeatPumpConnected(void);
   uint8_t Lastmsbetweenmsg(void);
 
   void SetZoneTempSetpoint(float Setpoint, uint8_t Mode, uint8_t Zone);

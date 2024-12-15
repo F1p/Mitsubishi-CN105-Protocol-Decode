@@ -77,8 +77,10 @@ int Blue_RGB_LED = 13;
 #define DATA_PIN 35
 CRGB leds[NUM_LEDS];
 int Reset_Button = 41;
-#define FTCRxPin 38
-#define FTCTxPin 39
+#define FTCCable_RxPin 2
+#define FTCCable_TxPin 1
+#define FTCProxy_RxPin 38
+#define FTCProxy_TxPin 39
 #define MELRxPin 8
 #define MELTxPin 7
 #endif
@@ -184,11 +186,14 @@ TimerCallBack HeatPumpQuery3(30000, handleMqttState);         // Re-connect atte
 TimerCallBack HeatPumpQuery4(500, HeatPumpWriteStateEngine);  // Set to 500ms (Safe), 320-350ms best time between messages
 
 
-unsigned long looppreviousMillis = 0;  // variable for comparing millis counter
-unsigned long ftcpreviousMillis = 0;   // variable for comparing millis counter
-unsigned long wifipreviousMillis = 0;  // variable for comparing millis counter
-int FTCLoopSpeed, CPULoopSpeed;        // variable for holding loop time in ms
+unsigned long looppreviousMillis = 0;    // variable for comparing millis counter
+unsigned long ftcpreviousMillis = 0;     // variable for comparing millis counter
+unsigned long wifipreviousMillis = 0;    // variable for comparing millis counter
+unsigned long ftcconpreviousMillis = 0;  // variable for comparing millis counter
+int FTCLoopSpeed, CPULoopSpeed;          // variable for holding loop time in ms
 bool WiFiOneShot = true;
+bool FTCOneShot = true;
+bool CableConnected = false;
 extern int cmd_queue_length;
 extern int cmd_queue_position;
 extern bool WriteInProgress;
@@ -205,7 +210,7 @@ void setup() {
   WiFi.mode(WIFI_STA);         // explicitly set mode, esp defaults to STA+AP
   DEBUGPORT.begin(DEBUGBAUD);  // Start Debug
 
-  HEATPUMP_STREAM.begin(SERIAL_BAUD, SERIAL_CONFIG, FTCRxPin, FTCTxPin);  // Rx, Tx
+  HEATPUMP_STREAM.begin(SERIAL_BAUD, SERIAL_CONFIG, FTCProxy_RxPin, FTCProxy_TxPin);  // Rx, Tx
   HeatPump.SetStream(&HEATPUMP_STREAM);
   MEL_STREAM.begin(SERIAL_BAUD, SERIAL_CONFIG, MELRxPin, MELTxPin);  // Rx, Tx
   MELCloud.SetStream(&MEL_STREAM);
@@ -281,9 +286,9 @@ void loop() {
     HeatPump.Status.Write_To_Ecodan_OK = false;                 // Set back to false
     WriteInProgress = false;                                    // Set back to false
     if (cmd_queue_length > cmd_queue_position) {
-      cmd_queue_position++;                                     // Increment the position
+      cmd_queue_position++;  // Increment the position
     } else {
-      cmd_queue_position = 1;                                   // All commands written, reset
+      cmd_queue_position = 1;  // All commands written, reset
       cmd_queue_length = 0;
     }                                              // Dequeue the last message that was written
     if (MQTTReconnect()) { PublishAllReports(); }  // Publish update to the MQTT Topics
@@ -395,9 +400,29 @@ void loop() {
 }
 
 void HeatPumpKeepAlive(void) {
-  //ftcpreviousMillis = millis();
-  // Queue Trigger Placeholder
-  HeatPump.TriggerStatusStateMachine();
+  if (!HeatPump.HeatPumpConnected()) {
+    DEBUG_PRINTLN("Heat Pump Disconnected");
+    if (FTCOneShot) {
+      ftcconpreviousMillis = millis();
+      FTCOneShot = false;
+    }
+    if (millis() - ftcconpreviousMillis >= 30000) {
+      // Swap to the other pins and test the connection
+      if (CableConnected) {
+        DEBUG_PRINTLN("Trying to connect via Proxy Circuit Board");
+        HEATPUMP_STREAM.begin(SERIAL_BAUD, SERIAL_CONFIG, FTCProxy_RxPin, FTCProxy_TxPin);  // Rx, Tx
+        HeatPump.SetStream(&HEATPUMP_STREAM);
+        CableConnected = false;
+      } else {
+        DEBUG_PRINTLN("Trying to connect via Cable");
+        HEATPUMP_STREAM.begin(SERIAL_BAUD, SERIAL_CONFIG, FTCCable_RxPin, FTCCable_TxPin);  // Rx, Tx
+        HeatPump.SetStream(&HEATPUMP_STREAM);
+        CableConnected = true;
+      }
+    }
+  } else {
+    HeatPump.TriggerStatusStateMachine();
+  }
 }
 
 void HeatPumpQueryStateEngine(void) {

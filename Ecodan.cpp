@@ -68,8 +68,6 @@ void ECODAN::Process(void) {
       ProcessFlag = false;
       msbetweenmsg = millis() - lastmsgdispatchedMillis;
       DEBUG_PRINTLN();
-      //DEBUG_PRINT(msbetweenmsg);
-      //DEBUG_PRINTLN("ms");
       Connected = true;
     }
   }
@@ -169,6 +167,9 @@ void ECODAN::Connect(void) {
   Process();
 }
 
+uint8_t ECODAN::HeatPumpConnected(void){
+  return Connected;
+}
 
 uint8_t ECODAN::UpdateComplete(void) {
   if (UpdateFlag) {
