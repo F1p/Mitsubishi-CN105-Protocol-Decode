@@ -21,7 +21,7 @@ extern ESPTelnet TelnetServer;
 #include "Debug.h"
 
 // Initialisation Commands
-uint8_t Init3[] = { 0xfc, 0x5a, 0x02, 0x7a, 0x02, 0xca, 0x01, 0x5d };                                      // Air to Water Connect
+uint8_t Init3[] = { 0xfc, 0x5a, 0x02, 0x7a, 0x02, 0xca, 0x01, 0x5d };  // Air to Water Connect
 
 
 #define NUMBER_COMMANDS 37
@@ -31,10 +31,14 @@ uint8_t ActiveCommand[] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x09
 
 
 unsigned long lastmsgdispatchedMillis = 0;  // variable for comparing millis counter
+int cmd_queue_length = 0;
+int cmd_queue_position = 1;
+bool WriteInProgress = false;
 
 ECODAN::ECODAN(void)
   : ECODANDECODER() {
   CurrentMessage = 0;
+  CurrentCommand = 0;
   UpdateFlag = 0;
   ProcessFlag = false;
   Connected = false;
@@ -78,8 +82,6 @@ void ECODAN::SetStream(Stream *HeatPumpStream) {
 
 
 void ECODAN::TriggerStatusStateMachine(void) {
-  //DEBUG_PRINTLN("\e[1;1H\e[2J");  // Clear terminal
-  //DEBUG_PRINTLN("Triggering Heat Pump Query");
   if (!Connected) {
     Connect();
   }
@@ -90,14 +92,8 @@ void ECODAN::TriggerStatusStateMachine(void) {
 
 void ECODAN::StopStateMachine(void) {
   if (CurrentMessage != 0) {
-    DEBUG_PRINTLN("Stopping Heat Pump Read Operation to FTC");    
-    DEBUG_PRINT("[Bridge > FTC] ");
+    DEBUG_PRINTLN("Stopping Heat Pump Read Operation to FTC");
     CurrentMessage = 0;
-    DeviceStream->flush();  // Clear the Serial Buffer
-    int TimeSinceLastDispatch = millis() - lastmsgdispatchedMillis;
-    if (TimeSinceLastDispatch > 0 && TimeSinceLastDispatch <= 500) {
-      delay(500 - TimeSinceLastDispatch);  // Ensure a minimum spacing between msgs
-    }
   }
 }
 
@@ -135,30 +131,35 @@ void ECODAN::StatusStateMachine(void) {
 }
 
 
-void ECODAN::RequestStatus(uint8_t TargetMessage) {
+
+
+void ECODAN::WriteStateMachine(void) {
   uint8_t Buffer[COMMANDSIZE];
   uint8_t CommandSize;
   uint8_t i;
 
-  if (!Connected) { Connect(); }
-  StopStateMachine();
-  DEBUG_PRINT("[Bridge > FTC] ");
-  ECODANDECODER::CreateBlankTxMessage(GET_REQUEST, 0x10);
-  ECODANDECODER::SetPayloadByte(ActiveCommand[TargetMessage], 0);
-  CommandSize = ECODANDECODER::PrepareTxCommand(Buffer);
-  DeviceStream->write(Buffer, CommandSize);
-  lastmsgdispatchedMillis = millis();
-  DeviceStream->flush();
+  if (cmd_queue_length > 0 && cmd_queue_length < 10) {
+    StopStateMachine();
+    DEBUG_PRINT("Writing msg at position: ");DEBUG_PRINTLN(cmd_queue_position);
+    DEBUG_PRINT("[Bridge > FTC] ");
+    ECODANDECODER::CreateBlankTxMessage(SET_REQUEST, 0x10);
+    ECODANDECODER::EncodeNextCommand(cmd_queue_position);
+    CommandSize = ECODANDECODER::PrepareTxCommand(Buffer);
+    DeviceStream->write(Buffer, CommandSize);
+    lastmsgdispatchedMillis = millis();
+    DeviceStream->flush();
 
-  for (i = 0; i < CommandSize; i++) {
-    if (Buffer[i] < 0x10) {
-      DEBUG_PRINT("0");
+    for (i = 0; i < CommandSize; i++) {
+      if (Buffer[i] < 0x10) DEBUG_PRINT("0");
+      DEBUG_PRINT(String(Buffer[i], HEX));
+      DEBUG_PRINT(", ");
     }
-    DEBUG_PRINT(String(Buffer[i], HEX));
-    DEBUG_PRINT(", ");
+    DEBUG_PRINTLN();
+
+    WriteInProgress = true;
   }
-  DEBUG_PRINTLN();
 }
+
 
 
 void ECODAN::Connect(void) {
@@ -184,73 +185,33 @@ uint8_t ECODAN::Lastmsbetweenmsg(void) {
 
 
 void ECODAN::SetZoneTempSetpoint(float Setpoint, uint8_t Mode, uint8_t Zone) {
-  uint8_t Buffer[COMMANDSIZE];
-  uint8_t CommandSize = 0;
-  uint8_t i;
-
-  StopStateMachine();
   ECODANDECODER::CreateBlankTxMessage(SET_REQUEST, 0x10);
   ECODANDECODER::EncodeRoomThermostat(Setpoint, Mode, Zone);  // Can OR the write with the mode but removed as different MQTT topic:      SET_ZONE_SETPOINT | SET_HEATING_CONTROL_MODE
-  CommandSize = ECODANDECODER::PrepareTxCommand(Buffer);
-  DeviceStream->write(Buffer, CommandSize);
-  lastmsgdispatchedMillis = millis();
-  DeviceStream->flush();
-
-  for (i = 0; i < CommandSize; i++) {
-    if (Buffer[i] < 0x10) DEBUG_PRINT("0");
-    DEBUG_PRINT(String(Buffer[i], HEX));
-    DEBUG_PRINT(", ");
-  }
-  DEBUG_PRINTLN();
+  cmd_queue_length++;
+  ECODANDECODER::TransfertoBuffer(cmd_queue_length);
+  DEBUG_PRINT("Transferred msg to position: ");DEBUG_PRINTLN(cmd_queue_length);
 }
 
 
 void ECODAN::SetFlowSetpoint(float Setpoint, uint8_t Mode, uint8_t Zone) {
-  uint8_t Buffer[COMMANDSIZE];
-  uint8_t CommandSize = 0;
-  uint8_t i;
-
-  StopStateMachine();
   ECODANDECODER::CreateBlankTxMessage(SET_REQUEST, 0x10);
   ECODANDECODER::EncodeFlowTemperature(Setpoint, Mode, Zone);  // Can OR the write with the mode but removed as different MQTT topic:      SET_ZONE_SETPOINT | SET_HEATING_CONTROL_MODE
-  CommandSize = ECODANDECODER::PrepareTxCommand(Buffer);
-  DeviceStream->write(Buffer, CommandSize);
-  lastmsgdispatchedMillis = millis();
-  DeviceStream->flush();
-
-  for (i = 0; i < CommandSize; i++) {
-    if (Buffer[i] < 0x10) DEBUG_PRINT("0");
-    DEBUG_PRINT(String(Buffer[i], HEX));
-    DEBUG_PRINT(", ");
-  }
-  DEBUG_PRINTLN();
+  cmd_queue_length++;
+  ECODANDECODER::TransfertoBuffer(cmd_queue_length);
+  DEBUG_PRINT("Transferred msg to position: ");DEBUG_PRINTLN(cmd_queue_length);
 }
 
 
 void ECODAN::SetDHWMode(String *Mode) {
-  uint8_t Buffer[COMMANDSIZE];
-  uint8_t CommandSize = 0;
-  uint8_t i;
-
-  StopStateMachine();
   ECODANDECODER::CreateBlankTxMessage(SET_REQUEST, 0x10);
   if (*Mode == String("Normal")) {
     ECODANDECODER::EncodeDHWMode(0);
   } else if (*Mode == String("Eco")) {
     ECODANDECODER::EncodeDHWMode(1);
   }
-
-  CommandSize = ECODANDECODER::PrepareTxCommand(Buffer);
-  DeviceStream->write(Buffer, CommandSize);
-  lastmsgdispatchedMillis = millis();
-  DeviceStream->flush();
-
-  for (i = 0; i < CommandSize; i++) {
-    if (Buffer[i] < 0x10) DEBUG_PRINT("0");
-    DEBUG_PRINT(String(Buffer[i], HEX));
-    DEBUG_PRINT(", ");
-  }
-  DEBUG_PRINTLN();
+  cmd_queue_length++;
+  ECODANDECODER::TransfertoBuffer(cmd_queue_length);
+  DEBUG_PRINT("Transferred msg to position: ");DEBUG_PRINTLN(cmd_queue_length);
 }
 
 
@@ -262,150 +223,61 @@ void ECODAN::ForceDHW(uint8_t OnOff) {
   StopStateMachine();
   ECODANDECODER::CreateBlankTxMessage(SET_REQUEST, 0x10);
   ECODANDECODER::EncodeForcedDHW(OnOff);
-  CommandSize = ECODANDECODER::PrepareTxCommand(Buffer);
-  DeviceStream->write(Buffer, CommandSize);
-  lastmsgdispatchedMillis = millis();
-  DeviceStream->flush();
-
-  for (i = 0; i < CommandSize; i++) {
-    if (Buffer[i] < 0x10) DEBUG_PRINT("0");
-    DEBUG_PRINT(String(Buffer[i], HEX));
-    DEBUG_PRINT(", ");
-  }
-  DEBUG_PRINTLN();
+  ECODANDECODER::TransfertoBuffer(cmd_queue_length + 1);
+  cmd_queue_length++;
 }
 
 
 void ECODAN::SetHolidayMode(uint8_t OnOff) {
-  uint8_t Buffer[COMMANDSIZE];
-  uint8_t CommandSize = 0;
-  uint8_t i;
-
-  StopStateMachine();
   ECODANDECODER::CreateBlankTxMessage(SET_REQUEST, 0x10);
   ECODANDECODER::EncodeHolidayMode(OnOff);
-  CommandSize = ECODANDECODER::PrepareTxCommand(Buffer);
-  DeviceStream->write(Buffer, CommandSize);
-  lastmsgdispatchedMillis = millis();
-  DeviceStream->flush();
-
-  for (i = 0; i < CommandSize; i++) {
-    if (Buffer[i] < 0x10) DEBUG_PRINT("0");
-    DEBUG_PRINT(String(Buffer[i], HEX));
-    DEBUG_PRINT(", ");
-  }
-  DEBUG_PRINTLN();
+  ECODANDECODER::TransfertoBuffer(cmd_queue_length + 1);
+  cmd_queue_length++;
 }
 
 
 void ECODAN::SetProhibits(uint8_t Flags, uint8_t OnOff) {
-  uint8_t Buffer[COMMANDSIZE];
-  uint8_t CommandSize = 0;
-  uint8_t i;
-
-  StopStateMachine();
   ECODANDECODER::CreateBlankTxMessage(SET_REQUEST, 0x10);
   ECODANDECODER::EncodeProhibit(Flags, OnOff);
-  CommandSize = ECODANDECODER::PrepareTxCommand(Buffer);
-  DeviceStream->write(Buffer, CommandSize);
-  lastmsgdispatchedMillis = millis();
-  DeviceStream->flush();
-
-  for (i = 0; i < CommandSize; i++) {
-    if (Buffer[i] < 0x10) DEBUG_PRINT("0");
-    DEBUG_PRINT(String(Buffer[i], HEX));
-    DEBUG_PRINT(", ");
-  }
-  DEBUG_PRINTLN();
+  cmd_queue_length++;
+  ECODANDECODER::TransfertoBuffer(cmd_queue_length);
+  DEBUG_PRINT("Transferred msg to position: ");DEBUG_PRINTLN(cmd_queue_length);
 }
 
 
 void ECODAN::SetSvrControlMode(uint8_t OnOff, uint8_t DHW, uint8_t Z1H, uint8_t Z1C, uint8_t Z2H, uint8_t Z2C) {
-  uint8_t Buffer[COMMANDSIZE];
-  uint8_t CommandSize = 0;
-  uint8_t i;
-
-  StopStateMachine();
   ECODANDECODER::CreateBlankTxMessage(SET_REQUEST, 0x10);
   ECODANDECODER::EncodeServerControlMode(OnOff, DHW, Z1H, Z1C, Z2H, Z2C);
-  CommandSize = ECODANDECODER::PrepareTxCommand(Buffer);
-  DeviceStream->write(Buffer, CommandSize);
-  lastmsgdispatchedMillis = millis();
-  DeviceStream->flush();
-
-  for (i = 0; i < CommandSize; i++) {
-    if (Buffer[i] < 0x10) DEBUG_PRINT("0");
-    DEBUG_PRINT(String(Buffer[i], HEX));
-    DEBUG_PRINT(", ");
-  }
-  DEBUG_PRINTLN();
+  cmd_queue_length++;
+  ECODANDECODER::TransfertoBuffer(cmd_queue_length);
+  DEBUG_PRINT("Transferred msg to position: ");DEBUG_PRINTLN(cmd_queue_length);
 }
 
 
 void ECODAN::SetHotWaterSetpoint(uint8_t Target) {
-  uint8_t Buffer[COMMANDSIZE];
-  uint8_t CommandSize = 0;
-  uint8_t i;
-
-  StopStateMachine();
   ECODANDECODER::CreateBlankTxMessage(SET_REQUEST, 0x10);
   ECODANDECODER::EncodeDHWSetpoint(Target);
-  CommandSize = ECODANDECODER::PrepareTxCommand(Buffer);
-  DeviceStream->write(Buffer, CommandSize);
-  lastmsgdispatchedMillis = millis();
-  DeviceStream->flush();
-
-  for (i = 0; i < CommandSize; i++) {
-    if (Buffer[i] < 0x10) DEBUG_PRINT("0");
-    DEBUG_PRINT(String(Buffer[i], HEX));
-    DEBUG_PRINT(", ");
-  }
-  DEBUG_PRINTLN();
+  cmd_queue_length++;
+  ECODANDECODER::TransfertoBuffer(cmd_queue_length);
+  DEBUG_PRINT("Transferred msg to position: ");DEBUG_PRINTLN(cmd_queue_length);
 }
 
 
 void ECODAN::SetHeatingControlMode(uint8_t Mode, uint8_t Zone) {
-  uint8_t Buffer[COMMANDSIZE];
-  uint8_t CommandSize = 0;
-  uint8_t i;
-
-  StopStateMachine();
   ECODANDECODER::CreateBlankTxMessage(SET_REQUEST, 0x10);
   ECODANDECODER::EncodeControlMode(Mode, Zone);
-  CommandSize = ECODANDECODER::PrepareTxCommand(Buffer);
-  DeviceStream->write(Buffer, CommandSize);
-  lastmsgdispatchedMillis = millis();
-  DeviceStream->flush();
-
-  for (i = 0; i < CommandSize; i++) {
-    if (Buffer[i] < 0x10) DEBUG_PRINT("0");
-    DEBUG_PRINT(String(Buffer[i], HEX));
-    DEBUG_PRINT(", ");
-  }
-  DEBUG_PRINTLN();
+  cmd_queue_length++;
+  ECODANDECODER::TransfertoBuffer(cmd_queue_length);
+  DEBUG_PRINT("Transferred msg to position: ");DEBUG_PRINTLN(cmd_queue_length);
 }
 
 
 void ECODAN::SetSystemPowerMode(uint8_t OnOff) {
-  uint8_t Buffer[COMMANDSIZE];
-  uint8_t CommandSize = 0;
-  uint8_t i;
-
-  StopStateMachine();
   ECODANDECODER::CreateBlankTxMessage(SET_REQUEST, 0x10);
   ECODANDECODER::EncodePower(OnOff);
-  CommandSize = ECODANDECODER::PrepareTxCommand(Buffer);
-  DeviceStream->write(Buffer, CommandSize);
-
-  lastmsgdispatchedMillis = millis();
-  DeviceStream->flush();
-
-  for (i = 0; i < CommandSize; i++) {
-    if (Buffer[i] < 0x10) DEBUG_PRINT("0");
-    DEBUG_PRINT(String(Buffer[i], HEX));
-    DEBUG_PRINT(", ");
-  }
-  DEBUG_PRINTLN();
+  cmd_queue_length++;
+  ECODANDECODER::TransfertoBuffer(cmd_queue_length);
+  DEBUG_PRINT("Transferred msg to position: ");DEBUG_PRINTLN(cmd_queue_length);
 }
 
 
@@ -434,22 +306,9 @@ void ECODAN::GetFTCVersion() {
 
 
 void ECODAN::WriteMELCloudCMD(uint8_t cmd) {
-  uint8_t Buffer[COMMANDSIZE];
-  uint8_t CommandSize = 0;
-  uint8_t i;
-
-  StopStateMachine();
   ECODANDECODER::CreateBlankTxMessage(SET_REQUEST, 0x10);
   ECODANDECODER::EncodeMELCloud(cmd);
-  CommandSize = ECODANDECODER::PrepareTxCommand(Buffer);
-  DeviceStream->write(Buffer, CommandSize);
-  lastmsgdispatchedMillis = millis();
-  DeviceStream->flush();
-
-  for (i = 0; i < CommandSize; i++) {
-    if (Buffer[i] < 0x10) DEBUG_PRINT("0");
-    DEBUG_PRINT(String(Buffer[i], HEX));
-    DEBUG_PRINT(", ");
-  }
-  DEBUG_PRINTLN();
+  cmd_queue_length++;
+  ECODANDECODER::TransfertoBuffer(cmd_queue_length);
+  DEBUG_PRINT("Transferred msg to position: ");DEBUG_PRINTLN(cmd_queue_length);
 }

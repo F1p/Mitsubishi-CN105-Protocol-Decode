@@ -286,6 +286,8 @@ public:
   void EncodeServerControlMode(uint8_t OnOff, uint8_t DHW, uint8_t Z1H, uint8_t Z1C, uint8_t Z2H, uint8_t Z2C);
   void EncodeProhibit(uint8_t Flags, uint8_t OnOff);
   void EncodeMELCloud(uint8_t cmd);
+  void TransfertoBuffer(uint8_t bufferposition);
+  void EncodeNextCommand(uint8_t bufferposition);
 
   EcodanStatus Status;
 protected:
@@ -355,5 +357,7 @@ private:
 
   void WriteOK(uint8_t *Payload, EcodanStatus *Status);
 };
+
+
 
 #endif

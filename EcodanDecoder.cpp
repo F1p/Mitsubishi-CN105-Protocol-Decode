@@ -60,6 +60,8 @@ uint8_t Array0x33[] = {};
 uint8_t Array0x34[] = {};
 uint8_t Array0x35[] = {};
 
+uint8_t BufferArray[][16] = {{},{},{},{},{}};
+
 
 ECODANDECODER::ECODANDECODER(void) {
   memset(&RxMessage, 0, sizeof(MessageStruct));
@@ -1152,5 +1154,18 @@ void ECODANDECODER::EncodeMELCloud(uint8_t cmd) {
     }else if (cmd == 0x35) {
       TxMessage.Payload[i] = Array0x35[i];
     }
+  }
+}
+
+
+void ECODANDECODER::TransfertoBuffer(uint8_t bufferposition){
+  for (int i = 0; i < 16; i++) {
+      BufferArray[bufferposition][i] = TxMessage.Payload[i];
+  }
+}
+
+void ECODANDECODER::EncodeNextCommand(uint8_t bufferposition){
+  for (int i = 0; i < 16; i++) {
+      TxMessage.Payload[i] = BufferArray[bufferposition][i];
   }
 }

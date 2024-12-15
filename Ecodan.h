@@ -27,10 +27,10 @@ public:
   ECODAN(void);
   void Process(void);
   void SetStream(Stream *HeatPumpStream);
-  void RequestStatus(uint8_t TargetMessage);
   void TriggerStatusStateMachine(void);
   void StopStateMachine(void);
   void StatusStateMachine(void);
+  void WriteStateMachine(void);
   uint8_t UpdateComplete(void);
   uint8_t Lastmsbetweenmsg(void);
 
@@ -51,6 +51,7 @@ protected:
 
 private:
   uint8_t CurrentMessage;
+  uint8_t CurrentCommand;
 
   uint8_t UpdateFlag;
   bool ProcessFlag;

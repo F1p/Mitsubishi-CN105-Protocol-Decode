@@ -165,6 +165,7 @@ WiFiManagerParameter custom_device_id("device_id", "Device ID<br><font size='0.8
 #include "MQTTConfig.h"
 
 void HeatPumpQueryStateEngine(void);
+void HeatPumpWriteStateEngine(void);
 void MELCloudQueryReplyEngine(void);
 void HeatPumpKeepAlive(void);
 void Zone1Report(void);
@@ -180,6 +181,7 @@ void StatusReport(void);
 TimerCallBack HeatPumpQuery1(500, HeatPumpQueryStateEngine);  // Set to 500ms (Safe), 320-350ms best time between messages
 TimerCallBack HeatPumpQuery2(30000, HeatPumpKeepAlive);       // Set to 20-30s for heat pump query frequency
 TimerCallBack HeatPumpQuery3(30000, handleMqttState);         // Re-connect attempt timer if MQTT is not online
+TimerCallBack HeatPumpQuery4(500, HeatPumpWriteStateEngine);  // Set to 500ms (Safe), 320-350ms best time between messages
 
 
 unsigned long looppreviousMillis = 0;  // variable for comparing millis counter
@@ -187,7 +189,9 @@ unsigned long ftcpreviousMillis = 0;   // variable for comparing millis counter
 unsigned long wifipreviousMillis = 0;  // variable for comparing millis counter
 int FTCLoopSpeed, CPULoopSpeed;        // variable for holding loop time in ms
 bool WiFiOneShot = true;
-bool WriteInProgress = false;
+extern int cmd_queue_length;
+extern int cmd_queue_position;
+extern bool WriteInProgress;
 byte NormalHWBoostOperating = 0;
 byte PreHWBoostSvrCtrlMode = 0;
 byte WriteFromSlave = 0;
@@ -259,6 +263,7 @@ void loop() {
   HeatPumpQuery1.Process();
   HeatPumpQuery2.Process();
   HeatPumpQuery3.Process();
+  HeatPumpQuery4.Process();
 
   MELCloudQueryReplyEngine();
   MQTTClient.loop();
@@ -275,7 +280,13 @@ void loop() {
     DEBUG_PRINTLN("Write OK!");                                 // Pause normal processsing until complete
     HeatPump.Status.Write_To_Ecodan_OK = false;                 // Set back to false
     WriteInProgress = false;                                    // Set back to false
-    if (MQTTReconnect()) { PublishAllReports(); }               // Publish update to the MQTT Topics
+    if (cmd_queue_length > cmd_queue_position) {
+      cmd_queue_position++;                                     // Increment the position
+    } else {
+      cmd_queue_position = 1;                                   // All commands written, reset
+      cmd_queue_length = 0;
+    }                                              // Dequeue the last message that was written
+    if (MQTTReconnect()) { PublishAllReports(); }  // Publish update to the MQTT Topics
   }
 
   // -- WiFi Status Handler -- //
@@ -399,6 +410,11 @@ void HeatPumpQueryStateEngine(void) {
     if (MQTTReconnect()) { PublishAllReports(); }
     HeatPump.GetFTCVersion();
   }
+}
+
+
+void HeatPumpWriteStateEngine(void) {
+  HeatPump.WriteStateMachine();  // Full Read trigged by CurrentMessage
 }
 
 
