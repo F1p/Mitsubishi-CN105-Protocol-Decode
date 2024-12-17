@@ -425,11 +425,11 @@ Responses so far identified.
 * HWSP : HotWater SetPoint * 100;
 * HSPZ1 : Heating Flow Setpoint Zone 1 * 100;  (Duplicated from 0x09)
 * HSPZ2 : Heating Flow Setpoint Zone 2 * 100;  (Duplicated from 0x09)
-* MELCloud : 1 for a few cycles when writing to 0x32 byte 14 (MELCloud performs write at start)
+* MRC : MRC Prohibit
 ### 0x28 - Various Flags
 |   0   | 1 | 2 | 3 | 4  | 5  |  6 | 7  |  8 |  9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
 |-------|---|---|---|----|----|----|----|----|----|----|----|----|----|----|----|----|
-| 0x28  |   |   |FHW| HM | HT |PHZ1|PCZ1|PHZ2|PCZ2| SC |    |    |    |    |    |    |
+| 0x28  |   |   |FHW| HM | HT |PHZ1|PCZ1|PHZ2|PCZ2| SC |MEL |    |    |    |    |    |
 * FHW : Forced DHW Mode Active
 * HM : Holiday Mode
 * HT : Prohibit DHW
@@ -438,6 +438,7 @@ Responses so far identified.
 * PHZ2 : Prohibit Heating Zone2
 * PCZ2 : Prohibit Cooling Zone2
 * SC : Server Control Mode Active
+* MEL : MELCloud Connect Flag (one cycle) - set by 0x34 Byte 11
 ### 0x29 - Thermostats
 |   0   | 1 | 2 | 3 |  4  |  5  |  6  |  7  | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
 |-------|---|---|---|-----|-----|-----|-----|---|---|----|----|----|----|----|----|----|
