@@ -122,22 +122,37 @@ const int basetopic_max_length = 30;
 // id/name placeholder/prompt default length
 // Here you can pre-set the settings for the MQTT connection. The settings can later be changed via Wifi Manager.
 struct MqttSettings {
-  // These are the placeholder objects for the User
+  // These are the placeholder objects for the custom fields  
+  char deviceId[deviceId_max_length] = "000000000000";
+  char wm_device_id_identifier[15] = "device_id";
+
+  // Client 1
   char hostname[hostname_max_length] = "IPorDNS";
   char user[user_max_length] = "Username";
   char password[password_max_length] = "Password";
   char port[port_max_length] = "1883";
   char baseTopic[basetopic_max_length] = "Ecodan/ASHP";
   char clientId[clientId_max_length] = "EcodanBridge";
-  char deviceId[deviceId_max_length] = "000000000000";
-  // These are the Index Values for the JSON
   char wm_mqtt_hostname_identifier[40] = "mqtt_hostname";
   char wm_mqtt_user_identifier[20] = "mqtt_user";
   char wm_mqtt_password_identifier[30] = "mqtt_password";
   char wm_mqtt_port_identifier[10] = "mqtt_port";
   char wm_mqtt_basetopic_identifier[20] = "mqtt_basetopic";
   char wm_mqtt_client_id_identifier[20] = "mqtt_client_id";
-  char wm_device_id_identifier[15] = "device_id";
+
+  // Client 2
+  char hostname2[hostname_max_length] = "IPorDNS";
+  char user2[user_max_length] = "Username";
+  char password2[password_max_length] = "Password";
+  char port2[port_max_length] = "1883";
+  char baseTopic2[basetopic_max_length] = "Ecodan/ASHP";
+  char clientId2[clientId_max_length] = "EcodanBridge";
+  char wm_mqtt2_hostname_identifier[40] = "mqtt2_hostname";
+  char wm_mqtt2_user_identifier[20] = "mqtt2_user";
+  char wm_mqtt2_password_identifier[30] = "mqtt2_password";
+  char wm_mqtt2_port_identifier[11] = "mqtt2_port";
+  char wm_mqtt2_basetopic_identifier[20] = "mqtt2_basetopic";
+  char wm_mqtt2_client_id_identifier[20] = "mqtt2_client_id";
 };
 
 MqttSettings mqttSettings;
@@ -149,25 +164,33 @@ SoftwareSerial SwSerial2;
 #endif
 WiFiClient NetworkClient;
 //WiFiClientSecure NetworkClient;              // Encryption Support
-PubSubClient MQTTClient(NetworkClient);
+PubSubClient MQTTClient1(NetworkClient);
+PubSubClient MQTTClient2(NetworkClient);
 ESPTelnet TelnetServer;
 WiFiManager wifiManager;
 
 
 // Delcare Global Scope for Non-Blocking, always active Portal with "TEMP" placeholder, real values populated later from filesystem
-WiFiManagerParameter custom_mqtt_server("server", "MQTT Server <b>(Required)</b>", "TEMP", hostname_max_length);
-WiFiManagerParameter custom_mqtt_user("user", "MQTT Username <b>(Required)</b>", "TEMP", user_max_length);
-WiFiManagerParameter custom_mqtt_pass("pass", "MQTT Password <b>(Required)</b>", "TEMP", password_max_length);
-WiFiManagerParameter custom_mqtt_port("port", "MQTT Server Port (Default: 1883)", "TEMP", port_max_length);
-WiFiManagerParameter custom_mqtt_client_id("client_id", "MQTT Client ID<br><font size='0.8em'>Unique ID when connecting to MQTT</font>", "TEMP", clientId_max_length);
-WiFiManagerParameter custom_mqtt_basetopic("basetopic", "MQTT Base Topic (Default: Ecodan/ASHP)<br><font size='0.8em'>Modify if you have multiple heat pumps connecting to the same MQTT server</font>", "TEMP", basetopic_max_length);
-WiFiManagerParameter custom_device_id("device_id", "Device ID<br><font size='0.8em'>Modify if upgrading or changing hardware, copy your previous device ID over</font>", "TEMP", deviceId_max_length);
+WiFiManagerParameter custom_mqtt_server("server", "<b>Required</b> Primary MQTT Server", "TEMP", hostname_max_length);
+WiFiManagerParameter custom_mqtt_user("user", "Primary MQTT Username", "TEMP", user_max_length);
+WiFiManagerParameter custom_mqtt_pass("pass", "Primary MQTT Password", "TEMP", password_max_length);
+WiFiManagerParameter custom_mqtt_port("port", "Primary MQTT Server Port (Default: 1883)", "TEMP", port_max_length);
+WiFiManagerParameter custom_mqtt_client_id("client_id", "Primary MQTT Client ID (Default: EcodanBridge-deviceID)<br><font size='0.8em'>Unique ID when connecting to MQTT</font>", "TEMP", clientId_max_length);
+WiFiManagerParameter custom_mqtt_basetopic("basetopic", "Primary MQTT Base Topic (Default: Ecodan/ASHP)<br><font size='0.8em'>Modify if you have multiple heat pumps connecting to the same MQTT server</font>", "TEMP", basetopic_max_length);
+WiFiManagerParameter custom_mqtt2_server("server2", "<hr><b>Optional</b> Secondary MQTT Server<br><font size='0.8em'>You can send data to a second MQTT broker, <b>leave default or blank if not in use</b></font>", "TEMP", hostname_max_length);
+WiFiManagerParameter custom_mqtt2_user("user2", "Secondary MQTT Username", "TEMP", user_max_length);
+WiFiManagerParameter custom_mqtt2_pass("pass2", "Secondary MQTT Password", "TEMP", password_max_length);
+WiFiManagerParameter custom_mqtt2_port("port2", "Secondary MQTT Server Port", "TEMP", port_max_length);
+WiFiManagerParameter custom_mqtt2_client_id("client_id2", "Secondary MQTT Client ID", "TEMP", clientId_max_length);
+WiFiManagerParameter custom_mqtt2_basetopic("basetopic2", "Secondary MQTT Base Topic", "TEMP", basetopic_max_length);
+WiFiManagerParameter custom_device_id("device_id", "<hr>Device ID<br><font size='0.8em'>Only modify if upgrading or changing hardware, copy your previous device ID over</font>", "TEMP", deviceId_max_length);
 
 
 #include "TimerCallBack.h"
 #include "Debug.h"
 #include "MQTTDiscovery.h"
 #include "MQTTConfig.h"
+
 
 void HeatPumpQueryStateEngine(void);
 void HeatPumpWriteStateEngine(void);
@@ -185,8 +208,9 @@ void StatusReport(void);
 
 TimerCallBack HeatPumpQuery1(400, HeatPumpQueryStateEngine);  // Set to 400ms (Safe), 320-350ms best time between messages
 TimerCallBack HeatPumpQuery2(20000, HeatPumpKeepAlive);       // Set to 20-30s for heat pump query frequency
-TimerCallBack HeatPumpQuery3(30000, handleMqttState);         // Re-connect attempt timer if MQTT is not online
-TimerCallBack HeatPumpQuery4(500, HeatPumpWriteStateEngine);  // Set to 500ms (Safe), 320-350ms best time between messages
+TimerCallBack HeatPumpQuery3(30000, handleMQTTState);         // Re-connect attempt timer if MQTT is not online
+TimerCallBack HeatPumpQuery4(30000, handleMQTT2State);        // Re-connect attempt timer if MQTT Stream 2 is not online
+TimerCallBack HeatPumpQuery5(500, HeatPumpWriteStateEngine);  // Set to 500ms (Safe), 320-350ms best time between messages
 
 
 unsigned long looppreviousMillis = 0;    // variable for comparing millis counter
@@ -254,10 +278,19 @@ void setup() {
   setupTelnet();
   startTelnet();
 
-  MQTTClient.setBufferSize(2048);  // Increase MQTT Buffer Size
+  MQTTClient1.setBufferSize(2048);  // Increase MQTT Buffer Size
+  MQTTClient2.setBufferSize(2048);  // Increase MQTT Buffer Size
+
   RecalculateMQTTTopics();
-  initializeMqttClient();
-  MQTTClient.setCallback(MQTTonData);
+  RecalculateMQTT2Topics();
+
+  initializeMQTTClient1();
+  MQTTClient1.setCallback(MQTTonData);
+
+  initializeMQTT2Client();
+  MQTTClient2.setCallback(MQTTonData);
+
+
   wifiManager.startWebPortal();
 
   HeatPump.Status.Write_To_Ecodan_OK = false;
@@ -273,9 +306,11 @@ void loop() {
   HeatPumpQuery2.Process();
   HeatPumpQuery3.Process();
   HeatPumpQuery4.Process();
+  HeatPumpQuery5.Process();
 
   MELCloudQueryReplyEngine();
-  MQTTClient.loop();
+  MQTTClient1.loop();
+  MQTTClient2.loop();
   TelnetServer.loop();
   HeatPump.Process();
   MELCloud.Process();
@@ -294,16 +329,17 @@ void loop() {
     } else {
       cmd_queue_position = 1;  // All commands written, reset
       cmd_queue_length = 0;
-    }                                              // Dequeue the last message that was written
-    if (MQTTReconnect()) { PublishAllReports(); }  // Publish update to the MQTT Topics
+    }                                                                 // Dequeue the last message that was written
+    if (MQTTReconnect() | MQTT2Reconnect()) { PublishAllReports(); }  // Publish update to the MQTT Topics
   }
 
   // -- WiFi Status Handler -- //
-  if (WiFi.status() != WL_CONNECTED) {
+  if (WiFi.status() != WL_CONNECTED && !wifiManager.getConfigPortalActive()) {
     if (WiFiOneShot) {
       wifipreviousMillis = millis();
       WiFiOneShot = false;
 #ifdef ESP8266                           // Define the Witty ESP8266 Ports
+      digitalWrite(Blue_RGB_LED, LOW);   // Turn the Blue LED Off
       digitalWrite(Green_RGB_LED, LOW);  // Turn the Green LED Off
       digitalWrite(Red_RGB_LED, HIGH);   // Turn the Red LED On
 #endif
@@ -346,11 +382,24 @@ void loop() {
 #endif
     }  // Wait for 5 mins to try reconnects then force restart
     WiFiConnectedLastLoop = false;
-  } else {                             // WiFi is connected
-    if (!WiFiConnectedLastLoop) {      // Used to update LEDs only on transition of state
+  } else if (WiFi.status() != WL_CONNECTED && wifiManager.getConfigPortalActive()) {
 #ifdef ESP8266                         // Define the Witty ESP8266 Ports
-      analogWrite(Green_RGB_LED, 30);  // Green LED on, 25% brightness
-      digitalWrite(Red_RGB_LED, LOW);  // Turn the Red LED Off
+    digitalWrite(Blue_RGB_LED, HIGH);  // Turn the Blue LED Off
+    analogWrite(Green_RGB_LED, LOW);   // Green LED on, 25% brightness
+    digitalWrite(Red_RGB_LED, LOW);    // Turn the Red LED Off
+#endif
+#ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack LED
+    leds[0] = CRGB::Blue;
+    FastLED.setBrightness(255);  // LED on, reduced brightness
+    FastLED.show();
+#endif
+    WiFiConnectedLastLoop = false;
+  } else {                              // WiFi is connected
+    if (!WiFiConnectedLastLoop) {       // Used to update LEDs only on transition of state
+#ifdef ESP8266                          // Define the Witty ESP8266 Ports
+      digitalWrite(Blue_RGB_LED, LOW);  // Turn the Blue LED Off
+      analogWrite(Green_RGB_LED, 30);   // Green LED on, 25% brightness
+      digitalWrite(Red_RGB_LED, LOW);   // Turn the Red LED Off
 #endif
 #ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack LED
       leds[0] = CRGB::Green;
@@ -446,7 +495,7 @@ void HeatPumpQueryStateEngine(void) {
   if (HeatPump.UpdateComplete()) {
     DEBUG_PRINTLN("Update Complete");
     FTCLoopSpeed = millis() - ftcpreviousMillis;  // Loop Speed End
-    if (MQTTReconnect()) { PublishAllReports(); }
+    if (MQTTReconnect() | MQTT2Reconnect()) { PublishAllReports(); }
     HeatPump.GetFTCVersion();
   }
 }
@@ -655,7 +704,8 @@ void Zone1Report(void) {
 
   serializeJson(doc, Buffer);
 
-  MQTTClient.publish(MQTT_STATUS_ZONE1.c_str(), Buffer, false);
+  MQTTClient1.publish(MQTT_STATUS_ZONE1.c_str(), Buffer, false);
+  MQTTClient2.publish(MQTT_STATUS_ZONE1.c_str(), Buffer, false);
 }
 
 void Zone2Report(void) {
@@ -674,7 +724,8 @@ void Zone2Report(void) {
   doc[F("HB_ID")] = Heart_Value;
 
   serializeJson(doc, Buffer);
-  MQTTClient.publish(MQTT_STATUS_ZONE2.c_str(), Buffer, false);
+  MQTTClient1.publish(MQTT_STATUS_ZONE2.c_str(), Buffer, false);
+  MQTTClient2.publish(MQTT_STATUS_ZONE2.c_str(), Buffer, false);
 }
 
 void HotWaterReport(void) {
@@ -695,7 +746,8 @@ void HotWaterReport(void) {
   doc[F("HB_ID")] = Heart_Value;
 
   serializeJson(doc, Buffer);
-  MQTTClient.publish(MQTT_STATUS_HOTWATER.c_str(), Buffer, false);
+  MQTTClient1.publish(MQTT_STATUS_HOTWATER.c_str(), Buffer, false);
+  MQTTClient2.publish(MQTT_STATUS_HOTWATER.c_str(), Buffer, false);
 }
 
 void SystemReport(void) {
@@ -743,7 +795,8 @@ void SystemReport(void) {
   doc[F("HB_ID")] = Heart_Value;
 
   serializeJson(doc, Buffer);
-  MQTTClient.publish(MQTT_STATUS_SYSTEM.c_str(), Buffer, false);
+  MQTTClient1.publish(MQTT_STATUS_SYSTEM.c_str(), Buffer, false);
+  MQTTClient2.publish(MQTT_STATUS_SYSTEM.c_str(), Buffer, false);
 }
 
 void AdvancedReport(void) {
@@ -767,7 +820,8 @@ void AdvancedReport(void) {
   doc[F("HB_ID")] = Heart_Value;
 
   serializeJson(doc, Buffer);
-  MQTTClient.publish(MQTT_STATUS_ADVANCED.c_str(), Buffer, false);
+  MQTTClient1.publish(MQTT_STATUS_ADVANCED.c_str(), Buffer, false);
+  MQTTClient2.publish(MQTT_STATUS_ADVANCED.c_str(), Buffer, false);
 }
 
 
@@ -832,7 +886,8 @@ void EnergyReport(void) {
   doc[F("HB_ID")] = Heart_Value;
 
   serializeJson(doc, Buffer);
-  MQTTClient.publish(MQTT_STATUS_ENERGY.c_str(), Buffer, false);
+  MQTTClient1.publish(MQTT_STATUS_ENERGY.c_str(), Buffer, false);
+  MQTTClient2.publish(MQTT_STATUS_ENERGY.c_str(), Buffer, false);
 }
 
 
@@ -870,7 +925,8 @@ void AdvancedTwoReport(void) {
   doc[F("HB_ID")] = Heart_Value;
 
   serializeJson(doc, Buffer);
-  MQTTClient.publish(MQTT_STATUS_ADVANCED_TWO.c_str(), Buffer, false);
+  MQTTClient1.publish(MQTT_STATUS_ADVANCED_TWO.c_str(), Buffer, false);
+  MQTTClient2.publish(MQTT_STATUS_ADVANCED_TWO.c_str(), Buffer, false);
 }
 
 void StatusReport(void) {
@@ -899,8 +955,10 @@ void StatusReport(void) {
   doc[F("HB_ID")] = Heart_Value;
 
   serializeJson(doc, Buffer);
-  MQTTClient.publish(MQTT_STATUS_WIFISTATUS.c_str(), Buffer, false);
-  MQTTClient.publish(MQTT_LWT.c_str(), "online");
+  MQTTClient1.publish(MQTT_STATUS_WIFISTATUS.c_str(), Buffer, false);
+  MQTTClient2.publish(MQTT_STATUS_WIFISTATUS.c_str(), Buffer, false);
+  MQTTClient1.publish(MQTT_LWT.c_str(), "online");
+  MQTTClient2.publish(MQTT_LWT.c_str(), "online");
 }
 
 void PublishAllReports(void) {
