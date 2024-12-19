@@ -27,11 +27,12 @@ public:
   ECODAN(void);
   void Process(void);
   void SetStream(Stream *HeatPumpStream);
-  void RequestStatus(uint8_t TargetMessage);
   void TriggerStatusStateMachine(void);
   void StopStateMachine(void);
   void StatusStateMachine(void);
+  void WriteStateMachine(void);
   uint8_t UpdateComplete(void);
+  uint8_t HeatPumpConnected(void);
   uint8_t Lastmsbetweenmsg(void);
 
   void SetZoneTempSetpoint(float Setpoint, uint8_t Mode, uint8_t Zone);
@@ -45,13 +46,16 @@ public:
   void SetHotWaterSetpoint(uint8_t Target);
   void SetHeatingControlMode(uint8_t Mode, uint8_t Zone);
   void SetSystemPowerMode(uint8_t OnOff);
+  void WriteMELCloudCMD(uint8_t cmd);
 
 protected:
 
 private:
   uint8_t CurrentMessage;
+  uint8_t CurrentCommand;
 
   uint8_t UpdateFlag;
+  bool ProcessFlag;
   uint8_t Connected;
 
   uint8_t msbetweenmsg;
@@ -59,7 +63,6 @@ private:
   MessageStruct TXMessage;
   Stream *DeviceStream;
   void Connect(void);
-  void PrintTumble(void);
 };
 
 #endif

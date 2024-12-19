@@ -21,7 +21,7 @@
 #include <stdint.h>
 #include <time.h>
 #include <string.h>
-
+#include "proxy.h"
 
 #define PACKET_SYNC 0xFC
 #define SET_REQUEST 0x41
@@ -33,6 +33,7 @@
 #define CONNECT_RESPONSE 0x7A
 #define EXCONNECT_REQUEST 0x5B
 #define EXCONNECT_RESPONSE 0x7B
+#define CONNECT_MEL_REQUEST 0xFF
 
 #define TX_MESSAGE_BASIC 0x032
 #define TX_MESSAGE_CONTROLLER 0x034
@@ -284,6 +285,9 @@ public:
   void EncodeFTCVersion(void);
   void EncodeServerControlMode(uint8_t OnOff, uint8_t DHW, uint8_t Z1H, uint8_t Z1C, uint8_t Z2H, uint8_t Z2C);
   void EncodeProhibit(uint8_t Flags, uint8_t OnOff);
+  void EncodeMELCloud(uint8_t cmd);
+  void TransfertoBuffer(uint8_t bufferposition);
+  void EncodeNextCommand(uint8_t bufferposition);
 
   EcodanStatus Status;
 protected:
@@ -303,6 +307,7 @@ private:
 
 
   uint16_t ExtractUInt16(uint8_t *Buffer, uint8_t Index);
+  float Extract_Float_24(uint8_t *Buffer, uint8_t Index);
   float ExtractUInt16_Signed(uint8_t *Buffer, uint8_t Index);
   float ExtractUInt8_v1(uint8_t *Buffer, uint8_t Index);
   float ExtractUInt8_v2(uint8_t *Buffer, uint8_t Index);
@@ -316,7 +321,9 @@ private:
   void Process0x03(uint8_t *Payload, EcodanStatus *Status);
   void Process0x04(uint8_t *Payload, EcodanStatus *Status);
   void Process0x05(uint8_t *Payload, EcodanStatus *Status);
+  void Process0x06(uint8_t *Payload, EcodanStatus *Status);
   void Process0x07(uint8_t *Payload, EcodanStatus *Status);
+  void Process0x08(uint8_t *Payload, EcodanStatus *Status);
   void Process0x09(uint8_t *Payload, EcodanStatus *Status);
   void Process0x0B(uint8_t *Payload, EcodanStatus *Status);
   void Process0x0C(uint8_t *Payload, EcodanStatus *Status);
@@ -325,11 +332,23 @@ private:
   void Process0x0F(uint8_t *Payload, EcodanStatus *Status);
   void Process0x10(uint8_t *Payload, EcodanStatus *Status);
   void Process0x11(uint8_t *Payload, EcodanStatus *Status);
+  void Process0x12(uint8_t *Payload, EcodanStatus *Status);
   void Process0x13(uint8_t *Payload, EcodanStatus *Status);
   void Process0x14(uint8_t *Payload, EcodanStatus *Status);
   void Process0x15(uint8_t *Payload, EcodanStatus *Status);
   void Process0x16(uint8_t *Payload, EcodanStatus *Status);
+  void Process0x17(uint8_t *Payload, EcodanStatus *Status);
+  void Process0x18(uint8_t *Payload, EcodanStatus *Status);
+  void Process0x19(uint8_t *Payload, EcodanStatus *Status);
+  void Process0x1a(uint8_t *Payload, EcodanStatus *Status);
+  void Process0x1b(uint8_t *Payload, EcodanStatus *Status);
+  void Process0x1c(uint8_t *Payload, EcodanStatus *Status);
+  void Process0x1d(uint8_t *Payload, EcodanStatus *Status);
+  void Process0x1e(uint8_t *Payload, EcodanStatus *Status);
+  void Process0x1f(uint8_t *Payload, EcodanStatus *Status);
+  void Process0x20(uint8_t *Payload, EcodanStatus *Status);
   void Process0x26(uint8_t *Payload, EcodanStatus *Status);
+  void Process0x27(uint8_t *Payload, EcodanStatus *Status);
   void Process0x28(uint8_t *Payload, EcodanStatus *Status);
   void Process0x29(uint8_t *Payload, EcodanStatus *Status);
   void Process0xA1(uint8_t *Payload, EcodanStatus *Status);
@@ -338,5 +357,7 @@ private:
 
   void WriteOK(uint8_t *Payload, EcodanStatus *Status);
 };
+
+
 
 #endif

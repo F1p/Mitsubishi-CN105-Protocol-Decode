@@ -324,16 +324,8 @@ void readSettingsFromConfig() {
     wifiManager.setAPClientCheck(true);                     // avoid timeout if client connected to softap
 
 
-#ifdef ARDUINO_WT32_ETH01
-    wifiManager.setConfigPortalBlocking(false);         // Doesn't block Rest of Code from operating
-    if (wifiManager.autoConnect("Ecodan Bridge AP")) {  // Try connecting to WiFi
-      DEBUG_PRINTLN("WiFi Connected!");
-    }
-#endif
-
-
 #ifndef ARDUINO_WT32_ETH01
-    wifiManager.setConfigPortalTimeout(120);  // Timeout before launching the config portal
+    wifiManager.setConfigPortalTimeout(120);  // Timeout before launching the config portal (WiFi Only)
     if (!wifiManager.autoConnect("Ecodan Bridge AP")) {
       DEBUG_PRINTLN("Failed to connect and hit timeout");
       delay(3000);
@@ -344,14 +336,16 @@ void readSettingsFromConfig() {
       ESP.restart();
 #endif
     }
+
     DEBUG_PRINTLN("WiFi Connected!");
 #endif
 
 #ifdef ESP8266                        // Define the Witty ESP8266 Ports
     digitalWrite(Blue_RGB_LED, LOW);  // Set the Blue LED off, ESP32 will do this in main loop
 #endif
-    wifiManager.startWebPortal();
+    wifiManager.startWebPortal();  // Start the web portal
   }
+
 
 
   void PublishDiscoveryTopics(void) {
@@ -415,8 +409,6 @@ void readSettingsFromConfig() {
           Config["temperature_command_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[i - 67]);
           Config["temperature_state_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[i - 73]);
           Config["temperature_state_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[78]);
-          Config["action_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[2]);
-          Config["action_template"] = String(MQTT_CLIMATE_MODE_STATE_TEMPLATE[i - 77]);
         } else if (i >= 80 && i < 82) {
           Config["current_temperature_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[2]);
           Config["current_temperature_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[6]);
@@ -432,7 +424,7 @@ void readSettingsFromConfig() {
         Config["initial"] = MQTT_CLIMATE_INITAL[i - 77];
         Config["action_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[2]);
         Config["action_template"] = String(MQTT_CLIMATE_MODE_STATE_TEMPLATE[i - 77]);
-        Config["mode_state_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[2]);
+        Config["mode_state_topic"] = MQTT_BASETOPIC + String(MQTT_TOPIC[8]);
         Config["mode_state_template"] = String(MQTT_CLIMATE_STATE_TOPIC[i - 77]);
         if (i == 77) {
           Config["modes"][0] = "heat";
@@ -556,80 +548,87 @@ void readSettingsFromConfig() {
 
     delay(10);
     PublishDiscoveryTopics();
+#ifdef ESP8266                       // Define the Witty ESP8266 Ports
+    analogWrite(Green_RGB_LED, 30);  // Green LED on, 25% brightness
+    digitalWrite(Red_RGB_LED, LOW);  // Turn the Red LED Off
+#endif
+#ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack LED
+    leds[0] = CRGB::Green;
+    FastLED.setBrightness(100);  // LED on, reduced brightness
+    FastLED.show();
+#endif
   }
 
 
   uint8_t MQTTReconnect() {
     if (MQTTClient.connected()) {
       return 1;
-    }
+    } else if (strcmp(mqttSettings.hostname, "IPorDNS") != 0 && strcmp(mqttSettings.hostname, "") != 0) {
+      DEBUG_PRINT("With Client ID: ");
+      DEBUG_PRINT(mqttSettings.clientId);
+      DEBUG_PRINT(", Username: ");
+      DEBUG_PRINT(mqttSettings.user);
+      DEBUG_PRINT(" and Password: ");
+      DEBUG_PRINTLN(mqttSettings.password);
 
-    DEBUG_PRINT("With Client ID: ");
-    DEBUG_PRINT(mqttSettings.clientId);
-    DEBUG_PRINT(", Username: ");
-    DEBUG_PRINT(mqttSettings.user);
-    DEBUG_PRINT(" and Password: ");
-    DEBUG_PRINTLN(mqttSettings.password);
-
-    if (MQTTClient.connect(mqttSettings.clientId, mqttSettings.user, mqttSettings.password, MQTT_LWT.c_str(), 0, true, "offline")) {
-      DEBUG_PRINTLN("MQTT Server Connected");
-      MQTTonConnect();
-
+      if (MQTTClient.connect(mqttSettings.clientId, mqttSettings.user, mqttSettings.password, MQTT_LWT.c_str(), 0, true, "offline")) {
+        DEBUG_PRINTLN("MQTT Server Connected");
+        MQTTonConnect();
+#ifdef ESP8266                              // Define the Witty ESP8266 Ports
+        digitalWrite(Red_RGB_LED, LOW);     // Turn off the Red LED
+        digitalWrite(Green_RGB_LED, HIGH);  // Flash the Green LED
+        delay(10);
+        digitalWrite(Green_RGB_LED, LOW);
+#endif
+        return 1;
+      } else {
 #ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack LED
-      leds[0] = CRGB::Green;   // Turn the Red LED On
-      FastLED.setBrightness(255);
-      FastLED.show();
-      delay(10);
-      FastLED.setBrightness(0);
-      FastLED.show();
+        //FastLED.setBrightness(255);  // LED on, reduced brightness
+        leds[0] = CRGB::Orange;
+        //
 #endif
-#ifdef ESP8266                            // Define the Witty ESP8266 Ports
-      digitalWrite(Red_RGB_LED, LOW);     // Turn off the Red LED
-      digitalWrite(Green_RGB_LED, HIGH);  // Flash the Green LED
-      delay(10);
-      digitalWrite(Green_RGB_LED, LOW);
-#endif
-      return 1;
-    } else {
-      DEBUG_PRINT("Failed with Error Code: ");
-      DEBUG_PRINTLN(MQTTClient.state());
-      switch (MQTTClient.state()) {
-        case -4:
-          DEBUG_PRINTLN("MQTT_CONNECTION_TIMEOUT");
-          break;
-        case -3:
-          DEBUG_PRINTLN("MQTT_CONNECTION_LOST");
-          break;
-        case -2:
-          DEBUG_PRINTLN("MQTT_CONNECT_FAILED");
-          break;
-        case -1:
-          DEBUG_PRINTLN("MQTT_DISCONNECTED");
-          break;
-        case 0:
-          DEBUG_PRINTLN("MQTT_CONNECTED");
-          break;
-        case 1:
-          DEBUG_PRINTLN("MQTT_CONNECT_BAD_PROTOCOL");
-          break;
-        case 2:
-          DEBUG_PRINTLN("MQTT_CONNECT_BAD_CLIENT_ID");
-          break;
-        case 3:
-          DEBUG_PRINTLN("MQTT_CONNECT_UNAVAILABLE");
-          break;
-        case 4:
-          DEBUG_PRINTLN("MQTT_CONNECT_BAD_CREDENTIALS");
-          break;
-        case 5:
-          DEBUG_PRINTLN("MQTT_CONNECT_UNAUTHORIZED");
-          break;
+        DEBUG_PRINT("Failed with Error Code: ");
+        DEBUG_PRINTLN(MQTTClient.state());
+        switch (MQTTClient.state()) {
+          case -4:
+            DEBUG_PRINTLN("MQTT_CONNECTION_TIMEOUT");
+            break;
+          case -3:
+            DEBUG_PRINTLN("MQTT_CONNECTION_LOST");
+            break;
+          case -2:
+            DEBUG_PRINTLN("MQTT_CONNECT_FAILED");
+            break;
+          case -1:
+            DEBUG_PRINTLN("MQTT_DISCONNECTED");
+            break;
+          case 0:
+            DEBUG_PRINTLN("MQTT_CONNECTED");
+            break;
+          case 1:
+            DEBUG_PRINTLN("MQTT_CONNECT_BAD_PROTOCOL");
+            break;
+          case 2:
+            DEBUG_PRINTLN("MQTT_CONNECT_BAD_CLIENT_ID");
+            break;
+          case 3:
+            DEBUG_PRINTLN("MQTT_CONNECT_UNAVAILABLE");
+            break;
+          case 4:
+            DEBUG_PRINTLN("MQTT_CONNECT_BAD_CREDENTIALS");
+            break;
+          case 5:
+            DEBUG_PRINTLN("MQTT_CONNECT_UNAUTHORIZED");
+            break;
+        }
+        return 0;
       }
       return 0;
+    } else {
+      DEBUG_PRINTLN("MQTT Server not set");
+      return 0;
     }
-    return 0;
   }
-
 
   void handleMqttState() {
     if (!MQTTClient.connected()) {

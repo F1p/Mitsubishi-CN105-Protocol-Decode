@@ -17,6 +17,51 @@
 #include "EcodanDecoder.h"
 #include <cstdio>
 
+uint8_t Array0x01[] = {};
+uint8_t Array0x02[] = {};
+uint8_t Array0x03[] = {};
+uint8_t Array0x04[] = {};
+uint8_t Array0x05[] = {};
+uint8_t Array0x06[] = {};
+uint8_t Array0x07[] = {};
+uint8_t Array0x08[] = {};
+uint8_t Array0x09[] = {};
+uint8_t Array0x0b[] = {};
+uint8_t Array0x0c[] = {};
+uint8_t Array0x0d[] = {};
+uint8_t Array0x0e[] = {};
+uint8_t Array0x0f[] = {};
+uint8_t Array0x10[] = {};
+uint8_t Array0x11[] = {};
+uint8_t Array0x12[] = {};
+uint8_t Array0x13[] = {};
+uint8_t Array0x14[] = {};
+uint8_t Array0x15[] = {};
+uint8_t Array0x16[] = {};
+uint8_t Array0x17[] = {};
+uint8_t Array0x18[] = {};
+uint8_t Array0x19[] = {};
+uint8_t Array0x1a[] = {};
+uint8_t Array0x1b[] = {};
+uint8_t Array0x1c[] = {};
+uint8_t Array0x1d[] = {};
+uint8_t Array0x1e[] = {};
+uint8_t Array0x1f[] = {};
+uint8_t Array0x20[] = {};
+uint8_t Array0x26[] = {};
+uint8_t Array0x27[] = {};
+uint8_t Array0x28[] = {};
+uint8_t Array0x29[] = {};
+uint8_t Array0xa1[] = {};
+uint8_t Array0xa2[] = {};
+uint8_t Array0xc9[] = {};
+uint8_t Array0x32[] = {};
+uint8_t Array0x33[] = {};
+uint8_t Array0x34[] = {};
+uint8_t Array0x35[] = {};
+
+uint8_t BufferArray[][16] = { {}, {}, {}, {}, {} };
+
 
 ECODANDECODER::ECODANDECODER(void) {
   memset(&RxMessage, 0, sizeof(MessageStruct));
@@ -49,8 +94,14 @@ uint8_t ECODANDECODER::Process(uint8_t c) {
         case 0x05:
           Process0x05(RxMessage.Payload, &Status);
           break;
+        case 0x06:
+          Process0x06(RxMessage.Payload, &Status);
+          break;
         case 0x07:
           Process0x07(RxMessage.Payload, &Status);
+          break;
+        case 0x08:
+          Process0x08(RxMessage.Payload, &Status);
           break;
         case 0x09:
           Process0x09(RxMessage.Payload, &Status);
@@ -76,6 +127,9 @@ uint8_t ECODANDECODER::Process(uint8_t c) {
         case 0x11:
           Process0x11(RxMessage.Payload, &Status);
           break;
+        case 0x12:
+          Process0x12(RxMessage.Payload, &Status);
+          break;
         case 0x13:
           Process0x13(RxMessage.Payload, &Status);
           break;
@@ -88,8 +142,41 @@ uint8_t ECODANDECODER::Process(uint8_t c) {
         case 0x16:
           Process0x16(RxMessage.Payload, &Status);
           break;
+        case 0x17:
+          Process0x17(RxMessage.Payload, &Status);
+          break;
+        case 0x18:
+          Process0x18(RxMessage.Payload, &Status);
+          break;
+        case 0x19:
+          Process0x19(RxMessage.Payload, &Status);
+          break;
+        case 0x1a:
+          Process0x1a(RxMessage.Payload, &Status);
+          break;
+        case 0x1b:
+          Process0x1b(RxMessage.Payload, &Status);
+          break;
+        case 0x1c:
+          Process0x1c(RxMessage.Payload, &Status);
+          break;
+        case 0x1d:
+          Process0x1d(RxMessage.Payload, &Status);
+          break;
+        case 0x1e:
+          Process0x1e(RxMessage.Payload, &Status);
+          break;
+        case 0x1f:
+          Process0x1f(RxMessage.Payload, &Status);
+          break;
+        case 0x20:
+          Process0x20(RxMessage.Payload, &Status);
+          break;
         case 0x26:
           Process0x26(RxMessage.Payload, &Status);
+          break;
+        case 0x27:
+          Process0x27(RxMessage.Payload, &Status);
           break;
         case 0x28:
           Process0x28(RxMessage.Payload, &Status);
@@ -214,6 +301,10 @@ void ECODANDECODER::Process0x01(uint8_t *Buffer, EcodanStatus *Status) {
   uint8_t Year, Month, Day;
   uint8_t Hour, Min, Sec;
 
+  for (int i = 1; i < 16; i++) {
+    Array0x01[i] = Buffer[i];
+  }
+
   Year = Buffer[1];
   Month = Buffer[2];
   Day = Buffer[3];
@@ -224,7 +315,6 @@ void ECODANDECODER::Process0x01(uint8_t *Buffer, EcodanStatus *Status) {
   Status->DateTimeStamp.tm_year = 100 + Year;
   Status->DateTimeStamp.tm_mon = Month - 1;
   Status->DateTimeStamp.tm_mday = Day;
-
   Status->DateTimeStamp.tm_hour = Hour;
   Status->DateTimeStamp.tm_min = Min;
   Status->DateTimeStamp.tm_sec = Sec;
@@ -235,6 +325,9 @@ void ECODANDECODER::Process0x01(uint8_t *Buffer, EcodanStatus *Status) {
 void ECODANDECODER::Process0x02(uint8_t *Buffer, EcodanStatus *Status) {
   uint8_t Defrost;
 
+  for (int i = 1; i < 16; i++) {
+    Array0x02[i] = Buffer[i];
+  }
   //Unknown = Buffer[1];  // Value 01
   //Unknown = Buffer[2];  // Value 02
   Defrost = Buffer[3];
@@ -245,6 +338,9 @@ void ECODANDECODER::Process0x02(uint8_t *Buffer, EcodanStatus *Status) {
 void ECODANDECODER::Process0x03(uint8_t *Buffer, EcodanStatus *Status) {
   uint8_t RefrigeFltCode, ErrCode1, ErrCode2, FltCode1, FltCode2;
   uint8_t TwoZone_Z1Working, TwoZone_Z2Working;
+  for (int i = 1; i < 16; i++) {
+    Array0x03[i] = Buffer[i];
+  }
 
   RefrigeFltCode = Buffer[1];
   ErrCode1 = Buffer[2];
@@ -266,7 +362,7 @@ void ECODANDECODER::Process0x03(uint8_t *Buffer, EcodanStatus *Status) {
     TwoZone_Z2Working = 0;
   }
 
-  //CascadeMasterFreq = Buffer[9];  // Single Zone Running Parameter?
+  //MasterCascadeFreq = Buffer[9];  // Single Zone Running Parameter?
 
   Status->RefrigeFltCode = RefrigeFltCode;
   Status->ErrCode1 = ErrCode1;
@@ -281,6 +377,10 @@ void ECODANDECODER::Process0x03(uint8_t *Buffer, EcodanStatus *Status) {
 void ECODANDECODER::Process0x04(uint8_t *Buffer, EcodanStatus *Status) {
   uint8_t CompressorFrequency;
 
+  for (int i = 1; i < 16; i++) {
+    Array0x04[i] = Buffer[i];
+  }
+
   CompressorFrequency = Buffer[1];
 
   Status->CompressorFrequency = CompressorFrequency;
@@ -290,6 +390,10 @@ void ECODANDECODER::Process0x04(uint8_t *Buffer, EcodanStatus *Status) {
 void ECODANDECODER::Process0x05(uint8_t *Buffer, EcodanStatus *Status) {
   uint8_t HotWaterBoost, DHWActive;
   uint8_t DHWHeatSourcePhase;
+
+  for (int i = 1; i < 16; i++) {
+    Array0x05[i] = Buffer[i];
+  }
 
   //if (Buffer[5] == 7)         // Eco Hot Water Running
   //HeatSource = Buffer[6];     // 0 = H/P, 1 = IH, 2 = BH, 3 = IH + BH, 4 = Boiler but doesn't seem to change
@@ -307,8 +411,19 @@ void ECODANDECODER::Process0x05(uint8_t *Buffer, EcodanStatus *Status) {
 }
 
 
+void ECODANDECODER::Process0x06(uint8_t *Buffer, EcodanStatus *Status) {
+  for (int i = 1; i < 16; i++) {
+    Array0x06[i] = Buffer[i];
+  }
+}
+
+
 void ECODANDECODER::Process0x07(uint8_t *Buffer, EcodanStatus *Status) {
   uint8_t InputPower, OutputPower;
+
+  for (int i = 1; i < 16; i++) {
+    Array0x07[i] = Buffer[i];
+  }
 
   InputPower = Buffer[4];
   OutputPower = Buffer[6];
@@ -318,10 +433,21 @@ void ECODANDECODER::Process0x07(uint8_t *Buffer, EcodanStatus *Status) {
 }
 
 
+void ECODANDECODER::Process0x08(uint8_t *Buffer, EcodanStatus *Status) {
+  for (int i = 1; i < 16; i++) {
+    Array0x08[i] = Buffer[i];
+  }
+}
+
+
 void ECODANDECODER::Process0x09(uint8_t *Buffer, EcodanStatus *Status) {
   float Zone1TempSetpoint, Zone2TempSetpoint;
   float Z1FlowSetpoint, Z2FlowSetpoint, LegionellaSetpoint;
   float HWTempDrop, FlowTempMax, FlowTempMin;
+
+  for (int i = 1; i < 16; i++) {
+    Array0x09[i] = Buffer[i];
+  }
 
   Zone1TempSetpoint = ((float)ExtractUInt16(Buffer, 1) / 100);
   Zone2TempSetpoint = ((float)ExtractUInt16(Buffer, 3) / 100);
@@ -347,12 +473,11 @@ void ECODANDECODER::Process0x0B(uint8_t *Buffer, EcodanStatus *Status) {
   float fZone1, fZone2, fOutside;
   float RefrigeTemp;
 
-  if (Buffer[1] != 0xf0) {  // Extract if zone connected (not default value)
-    fZone1 = ((float)ExtractUInt16(Buffer, 1) / 100);
-  } else {
-    fZone1 = 0;
+  for (int i = 1; i < 16; i++) {
+    Array0x0b[i] = Buffer[i];
   }
 
+  fZone1 = ((float)ExtractUInt16(Buffer, 1) / 100);
   if (Buffer[3] != 0xf0) {  // Extract if zone connected (not default value)
     fZone2 = ((float)ExtractUInt16(Buffer, 3) / 100);
   } else {
@@ -373,6 +498,10 @@ void ECODANDECODER::Process0x0B(uint8_t *Buffer, EcodanStatus *Status) {
 void ECODANDECODER::Process0x0C(uint8_t *Buffer, EcodanStatus *Status) {
   float fWaterHeatingFeed, fWaterHeatingReturn, fHotWater, fHotWaterTHW5A;
 
+  for (int i = 1; i < 16; i++) {
+    Array0x0c[i] = Buffer[i];
+  }
+
   fWaterHeatingFeed = ((float)ExtractUInt16(Buffer, 1) / 100);
   fWaterHeatingReturn = ((float)ExtractUInt16(Buffer, 4) / 100);
   fHotWater = ((float)ExtractUInt16(Buffer, 7) / 100);
@@ -388,6 +517,10 @@ void ECODANDECODER::Process0x0C(uint8_t *Buffer, EcodanStatus *Status) {
 void ECODANDECODER::Process0x0D(uint8_t *Buffer, EcodanStatus *Status) {
   float Zone1FlowTemperature, Zone1ReturnTemperature, Zone2FlowTemperature, Zone2ReturnTemperature;
 
+  for (int i = 1; i < 16; i++) {
+    Array0x0d[i] = Buffer[i];
+  }
+
   Zone1FlowTemperature = ((float)ExtractUInt16(Buffer, 1) / 100);     // Zone 1 Flow (THW6)
   Zone1ReturnTemperature = ((float)ExtractUInt16(Buffer, 4) / 100);   // Zone 1 Return (THW7)
   Zone2FlowTemperature = ((float)ExtractUInt16(Buffer, 7) / 100);     // Zone 2 Flow (THW8)
@@ -402,6 +535,10 @@ void ECODANDECODER::Process0x0D(uint8_t *Buffer, EcodanStatus *Status) {
 void ECODANDECODER::Process0x0E(uint8_t *Buffer, EcodanStatus *Status) {
   float ExternalBoilerFlowTemperature, ExternalBoilerReturnTemperature;
 
+  for (int i = 1; i < 16; i++) {
+    Array0x0e[i] = Buffer[i];
+  }
+
   ExternalBoilerFlowTemperature = ((float)ExtractUInt16(Buffer, 1) / 100);    // Suspected (THWB1)
   ExternalBoilerReturnTemperature = ((float)ExtractUInt16(Buffer, 4) / 100);  // Suspected (THWB2)
   //Unknown = ((float)ExtractUInt16(Buffer, 10) / 100);                       // Unknown
@@ -414,6 +551,10 @@ void ECODANDECODER::Process0x0E(uint8_t *Buffer, EcodanStatus *Status) {
 void ECODANDECODER::Process0x0F(uint8_t *Buffer, EcodanStatus *Status) {  // FTC6 Only Parameters
   float MixingTemperature, CondensingTemp;
 
+  for (int i = 1; i < 16; i++) {
+    Array0x0f[i] = Buffer[i];
+  }
+
   MixingTemperature = ((float)ExtractUInt16(Buffer, 1) / 100);  // Mixing Tank Temperature (THW10)
   CondensingTemp = ((float)ExtractUInt16(Buffer, 4) / 100);     // Condensing Temperature
 
@@ -424,6 +565,10 @@ void ECODANDECODER::Process0x0F(uint8_t *Buffer, EcodanStatus *Status) {  // FTC
 
 void ECODANDECODER::Process0x10(uint8_t *Buffer, EcodanStatus *Status) {
   uint8_t Zone1ThermostatDemand, Zone2ThermostatDemand, OutdoorThermostatDemand;
+
+  for (int i = 1; i < 16; i++) {
+    Array0x10[i] = Buffer[i];
+  }
 
   Zone1ThermostatDemand = Buffer[1];
   Zone2ThermostatDemand = Buffer[2];
@@ -437,15 +582,29 @@ void ECODANDECODER::Process0x10(uint8_t *Buffer, EcodanStatus *Status) {
 
 void ECODANDECODER::Process0x11(uint8_t *Buffer, EcodanStatus *Status) {
 
+  for (int i = 1; i < 16; i++) {
+    Array0x11[i] = Buffer[i];
+  }
+
   //Unknown2 = Buffer[1];  // 206 or 0, unknown what it is
   //Unknown3 = Buffer[3];  // 128 or 1 when unknown 2 is 0
   //Unknown4 = Buffer[5];  // 112 or 0 when unknown 2 is 0
   //Unknown5 = Buffer[9];  // 2 or 0 when unknown 2 is 0
 }
 
+void ECODANDECODER::Process0x12(uint8_t *Buffer, EcodanStatus *Status) {
+  for (int i = 1; i < 16; i++) {
+    Array0x12[i] = Buffer[i];
+  }
+}
+
 
 void ECODANDECODER::Process0x13(uint8_t *Buffer, EcodanStatus *Status) {
   uint32_t RunHours;
+
+  for (int i = 1; i < 16; i++) {
+    Array0x13[i] = Buffer[i];
+  }
 
   //Unknown6 = Buffer[1];  // 0 When off, on/off 1's when running
 
@@ -463,6 +622,10 @@ void ECODANDECODER::Process0x14(uint8_t *Buffer, EcodanStatus *Status) {
   uint8_t FlowRate;
   uint8_t BoosterActive, ImmersionActive;
 
+  for (int i = 1; i < 16; i++) {
+    Array0x14[i] = Buffer[i];
+  }
+
   BoosterActive = Buffer[2];
   ImmersionActive = Buffer[5];
   FlowRate = Buffer[12];
@@ -475,6 +638,10 @@ void ECODANDECODER::Process0x14(uint8_t *Buffer, EcodanStatus *Status) {
 
 void ECODANDECODER::Process0x15(uint8_t *Buffer, EcodanStatus *Status) {
   uint8_t PrimaryWaterPump, WaterPump2, ThreeWayValve, ThreeWayValve2, MixingStep;
+
+  for (int i = 1; i < 16; i++) {
+    Array0x15[i] = Buffer[i];
+  }
 
   PrimaryWaterPump = Buffer[1];  // 01 when running (Primary Water Pump)
   WaterPump2 = Buffer[4];        // Water Pump 2 Active
@@ -493,6 +660,10 @@ void ECODANDECODER::Process0x15(uint8_t *Buffer, EcodanStatus *Status) {
 void ECODANDECODER::Process0x16(uint8_t *Buffer, EcodanStatus *Status) {
   uint8_t WaterPump4, WaterPump3, WaterPump13;
 
+  for (int i = 1; i < 16; i++) {
+    Array0x16[i] = Buffer[i];
+  }
+
   WaterPump4 = Buffer[1];   // DHW Pump connected to CPN4
   WaterPump13 = Buffer[2];  // Zone Pump connected to OUT13
   WaterPump3 = Buffer[3];   // Zone Pump connected to OUT3
@@ -502,11 +673,76 @@ void ECODANDECODER::Process0x16(uint8_t *Buffer, EcodanStatus *Status) {
   Status->WaterPump13 = WaterPump13;
 }
 
+void ECODANDECODER::Process0x17(uint8_t *Buffer, EcodanStatus *Status) {
+  for (int i = 1; i < 16; i++) {
+    Array0x17[i] = Buffer[i];
+  }
+}
+
+void ECODANDECODER::Process0x18(uint8_t *Buffer, EcodanStatus *Status) {
+  for (int i = 1; i < 16; i++) {
+    Array0x18[i] = Buffer[i];
+  }
+}
+
+void ECODANDECODER::Process0x19(uint8_t *Buffer, EcodanStatus *Status) {
+  for (int i = 1; i < 16; i++) {
+    Array0x19[i] = Buffer[i];
+  }
+}
+
+void ECODANDECODER::Process0x1a(uint8_t *Buffer, EcodanStatus *Status) {
+  for (int i = 1; i < 16; i++) {
+    Array0x1a[i] = Buffer[i];
+  }
+}
+
+void ECODANDECODER::Process0x1b(uint8_t *Buffer, EcodanStatus *Status) {
+  for (int i = 1; i < 16; i++) {
+    Array0x1b[i] = Buffer[i];
+  }
+}
+
+void ECODANDECODER::Process0x1c(uint8_t *Buffer, EcodanStatus *Status) {
+  for (int i = 1; i < 16; i++) {
+    Array0x1c[i] = Buffer[i];
+  }
+}
+
+void ECODANDECODER::Process0x1d(uint8_t *Buffer, EcodanStatus *Status) {
+  for (int i = 1; i < 16; i++) {
+    Array0x1d[i] = Buffer[i];
+  }
+}
+
+void ECODANDECODER::Process0x1e(uint8_t *Buffer, EcodanStatus *Status) {
+  for (int i = 1; i < 16; i++) {
+    Array0x1e[i] = Buffer[i];
+  }
+}
+
+void ECODANDECODER::Process0x1f(uint8_t *Buffer, EcodanStatus *Status) {
+  for (int i = 1; i < 16; i++) {
+    Array0x1f[i] = Buffer[i];
+  }
+}
+
+void ECODANDECODER::Process0x20(uint8_t *Buffer, EcodanStatus *Status) {
+  for (int i = 1; i < 16; i++) {
+    Array0x20[i] = Buffer[i];
+  }
+}
+
+
 
 void ECODANDECODER::Process0x26(uint8_t *Buffer, EcodanStatus *Status) {
   float DHWSetpoint;
   uint8_t SystemPowerMode, SystemOperationMode, HotWaterPowerMode;
   uint8_t HeatingControlModeZone1, HeatingControlModeZone2, HotWaterControlMode;
+
+  for (int i = 1; i < 16; i++) {
+    Array0x26[i] = Buffer[i];
+  }
 
   Status->LastSystemOperationMode = Status->SystemOperationMode;
 
@@ -527,12 +763,22 @@ void ECODANDECODER::Process0x26(uint8_t *Buffer, EcodanStatus *Status) {
   Status->HotWaterSetpoint = DHWSetpoint;
 }
 
+void ECODANDECODER::Process0x27(uint8_t *Buffer, EcodanStatus *Status) {
+  for (int i = 1; i < 16; i++) {
+    Array0x27[i] = Buffer[i];
+  }
+}
+
 
 void ECODANDECODER::Process0x28(uint8_t *Buffer, EcodanStatus *Status) {
   uint8_t HotWaterBoostActive, HolidayModeActive, ProhibitDHW;
   uint8_t ProhibitHeatingZ1, ProhibitHeatingZ2;
   uint8_t ProhibitCoolingZ1, ProhibitCoolingZ2;
   uint8_t SvrControlMode;
+
+  for (int i = 1; i < 16; i++) {
+    Array0x28[i] = Buffer[i];
+  }
 
   HotWaterBoostActive = Buffer[3];  //Forced DHW Mode (Booster)
   HolidayModeActive = Buffer[4];    // Holiday Mode
@@ -557,6 +803,10 @@ void ECODANDECODER::Process0x29(uint8_t *Buffer, EcodanStatus *Status) {
   uint8_t HeatCool;
   //float fZone1TempSetpoint, fZone2TempSetpoint;
 
+  for (int i = 1; i < 16; i++) {
+    Array0x29[i] = Buffer[i];
+  }
+
   HeatCool = Buffer[3];
   //fZone1TempSetpoint = ((float)ExtractUInt16(Buffer, 4) / 100);
   //fZone2TempSetpoint = ((float)ExtractUInt16(Buffer, 6) / 100);
@@ -569,6 +819,10 @@ void ECODANDECODER::Process0x29(uint8_t *Buffer, EcodanStatus *Status) {
 void ECODANDECODER::Process0xA1(uint8_t *Buffer, EcodanStatus *Status) {
   uint8_t Year, Month, Day;
   float ConsumedHeating, ConsumedCooling, ConsumedHotWater;
+
+  for (int i = 1; i < 16; i++) {
+    Array0xa1[i] = Buffer[i];
+  }
 
   Year = Buffer[1];
   Month = Buffer[2];
@@ -591,6 +845,10 @@ void ECODANDECODER::Process0xA2(uint8_t *Buffer, EcodanStatus *Status) {
   uint8_t Year, Month, Day;
   float DeliveredHeating, DeliveredCooling, DeliveredHotWater;
 
+  for (int i = 1; i < 16; i++) {
+    Array0xa2[i] = Buffer[i];
+  }
+
   Year = Buffer[1];
   Month = Buffer[2];
   Day = Buffer[3];
@@ -611,6 +869,10 @@ void ECODANDECODER::Process0xA2(uint8_t *Buffer, EcodanStatus *Status) {
 
 void ECODANDECODER::Process0xC9(uint8_t *Buffer, EcodanStatus *Status) {
   uint8_t FTCVersion;
+
+  for (int i = 1; i < 16; i++) {
+    Array0xc9[i] = Buffer[i];
+  }
 
   FTCVersion = Buffer[6];
 
@@ -650,7 +912,6 @@ float ECODANDECODER::ExtractUInt8_v1(uint8_t *Buffer, uint8_t Index) {
   float Value = (Buffer[Index] / 2) - 40;
   return Value;
 }
-
 
 float ECODANDECODER::ExtractUInt8_v2(uint8_t *Buffer, uint8_t Index) {
   float Value = (Buffer[Index] - 40) / 2;
@@ -877,5 +1138,34 @@ void ECODANDECODER::EncodeProhibit(uint8_t Flags, uint8_t OnOff) {
   }
   if ((Flags & TX_MESSAGE_SETTING_COOL_Z2_INH_Flag) == TX_MESSAGE_SETTING_COOL_Z2_INH_Flag) {
     TxMessage.Payload[9] = OnOff;
+  }
+}
+
+
+void ECODANDECODER::EncodeMELCloud(uint8_t cmd) {
+  TxMessage.Payload[0] = cmd;
+  for (int i = 1; i < 16; i++) {
+    if (cmd == 0x32) {
+      TxMessage.Payload[i] = Array0x32[i];
+    } else if (cmd == 0x33) {
+      TxMessage.Payload[i] = Array0x33[i];
+    } else if (cmd == 0x34) {
+      TxMessage.Payload[i] = Array0x34[i];
+    } else if (cmd == 0x35) {
+      TxMessage.Payload[i] = Array0x35[i];
+    }
+  }
+}
+
+
+void ECODANDECODER::TransfertoBuffer(uint8_t bufferposition) {
+  for (int i = 0; i < 16; i++) {
+    BufferArray[bufferposition][i] = TxMessage.Payload[i];
+  }
+}
+
+void ECODANDECODER::EncodeNextCommand(uint8_t bufferposition) {
+  for (int i = 0; i < 16; i++) {
+    TxMessage.Payload[i] = BufferArray[bufferposition][i];
   }
 }
