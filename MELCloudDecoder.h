@@ -4,8 +4,7 @@
 #include <stdint.h>
 #include <time.h>
 #include <string.h>
-
-#include <EcodanDecoder.h>          // To get some of the definitions
+#include "EcodanDecoder.h"  // To get some of the definitions
 
 
 typedef struct _MelCloudMessgeStruct {

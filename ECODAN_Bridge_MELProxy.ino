@@ -28,10 +28,13 @@
 #include <ESP8266WebServer.h>
 #include <SoftwareSerial.h>
 #endif
-
 #ifdef ESP32
 #include <WiFi.h>
 #include <WebServer.h>
+#endif
+#ifdef ARDUINO_WT32_ETH01
+#include <ETH.h>
+#include <Arduino.h>
 #endif
 
 #include <DNSServer.h>
@@ -42,26 +45,23 @@
 #include "Ecodan.h"
 #include "Melcloud.h"
 
-#ifdef ARDUINO_WT32_ETH01
-#include <ETH.h>
-#include <Arduino.h>
-#endif
-
-
-String FirmwareVersion = "5.3.2 Proxy";
+String FirmwareVersion = "6.0.0";
 
 
 #ifdef ESP8266  // Define the Witty ESP8266 Serial Pins
-#define HEATPUMP_STREAM SwSerial
+#define HEATPUMP_STREAM SwSerial1
+#define MEL_STREAM SwSerial2
 #define SERIAL_CONFIG SWSERIAL_8E1
-#define RxPin 14
-#define TxPin 16
+int LDR = A0;
+#define MEL_RxPin 3
 int Activity_LED = 2;
 int Reset_Button = 4;
-int LDR = A0;
-int Red_RGB_LED = 15;
+#define MEL_TxPin 1
 int Green_RGB_LED = 12;
 int Blue_RGB_LED = 13;
+#define FTCCable_RxPin 14
+int Red_RGB_LED = 15;
+#define FTCCable_TxPin 16
 #endif
 
 #ifdef ESP32  // Define the M5Stack Serial Pins
@@ -81,15 +81,15 @@ int Reset_Button = 41;
 #define FTCCable_TxPin 1
 #define FTCProxy_RxPin 38
 #define FTCProxy_TxPin 39
-#define MELRxPin 8
-#define MELTxPin 7
+#define MEL_RxPin 8
+#define MEL_TxPin 7
 #endif
 
 #ifdef ARDUINO_WT32_ETH01
-#define FTCRxPin 4
-#define FTCTxPin 2
-#define MELRxPin 14
-#define MELTxPin 12
+#define FTCCable_RxPin 4
+#define FTCCable_TxPin 2
+#define MEL_RxPin 14
+#define MEL_TxPin 12
 #ifndef ETH_PHY_TYPE
 #define ETH_PHY_TYPE ETH_PHY_LAN8720
 #define ETH_PHY_ADDR 0
@@ -102,6 +102,8 @@ int Reset_Button = 41;
 #endif
 
 
+#define Heartbeat_Range 99  // Heatbeat Max value
+int Heart_Value = 0;        // Heatbeat ID
 
 unsigned long SERIAL_BAUD = 2400;
 bool shouldSaveConfig = false;
@@ -142,7 +144,8 @@ MqttSettings mqttSettings;
 ECODAN HeatPump;
 MELCLOUD MELCloud;
 #ifdef ESP8266
-SoftwareSerial SwSerial;
+SoftwareSerial SwSerial1;
+SoftwareSerial SwSerial2;
 #endif
 WiFiClient NetworkClient;
 //WiFiClientSecure NetworkClient;              // Encryption Support
@@ -180,8 +183,8 @@ void EnergyReport(void);
 void StatusReport(void);
 
 
-TimerCallBack HeatPumpQuery1(500, HeatPumpQueryStateEngine);  // Set to 500ms (Safe), 320-350ms best time between messages
-TimerCallBack HeatPumpQuery2(30000, HeatPumpKeepAlive);       // Set to 20-30s for heat pump query frequency
+TimerCallBack HeatPumpQuery1(400, HeatPumpQueryStateEngine);  // Set to 400ms (Safe), 320-350ms best time between messages
+TimerCallBack HeatPumpQuery2(20000, HeatPumpKeepAlive);       // Set to 20-30s for heat pump query frequency
 TimerCallBack HeatPumpQuery3(30000, handleMqttState);         // Re-connect attempt timer if MQTT is not online
 TimerCallBack HeatPumpQuery4(500, HeatPumpWriteStateEngine);  // Set to 500ms (Safe), 320-350ms best time between messages
 
@@ -193,13 +196,14 @@ unsigned long ftcconpreviousMillis = 0;  // variable for comparing millis counte
 int FTCLoopSpeed, CPULoopSpeed;          // variable for holding loop time in ms
 bool WiFiOneShot = true;
 bool FTCOneShot = true;
-bool CableConnected = false;
+bool CableConnected = true;
+bool WiFiConnectedLastLoop = false;
+
 extern int cmd_queue_length;
 extern int cmd_queue_position;
 extern bool WriteInProgress;
 byte NormalHWBoostOperating = 0;
 byte PreHWBoostSvrCtrlMode = 0;
-byte WriteFromSlave = 0;
 
 #ifdef ARDUINO_WT32_ETH01
 static bool eth_connected = false;
@@ -210,9 +214,9 @@ void setup() {
   WiFi.mode(WIFI_STA);         // explicitly set mode, esp defaults to STA+AP
   DEBUGPORT.begin(DEBUGBAUD);  // Start Debug
 
-  HEATPUMP_STREAM.begin(SERIAL_BAUD, SERIAL_CONFIG, FTCProxy_RxPin, FTCProxy_TxPin);  // Rx, Tx
+  HEATPUMP_STREAM.begin(SERIAL_BAUD, SERIAL_CONFIG, FTCCable_RxPin, FTCCable_TxPin);  // Rx, Tx
   HeatPump.SetStream(&HEATPUMP_STREAM);
-  MEL_STREAM.begin(SERIAL_BAUD, SERIAL_CONFIG, MELRxPin, MELTxPin);  // Rx, Tx
+  MEL_STREAM.begin(SERIAL_BAUD, SERIAL_CONFIG, MEL_RxPin, MEL_TxPin);  // Rx, Tx
   MELCloud.SetStream(&MEL_STREAM);
 
 #ifdef ARDUINO_WT32_ETH01
@@ -296,14 +300,13 @@ void loop() {
 
   // -- WiFi Status Handler -- //
   if (WiFi.status() != WL_CONNECTED) {
-#ifdef ESP8266                         // Define the Witty ESP8266 Ports
-    digitalWrite(Green_RGB_LED, LOW);  // Turn the Green LED Off
-    digitalWrite(Red_RGB_LED, HIGH);   // Turn the Red LED On
-#endif
-
     if (WiFiOneShot) {
       wifipreviousMillis = millis();
       WiFiOneShot = false;
+#ifdef ESP8266                           // Define the Witty ESP8266 Ports
+      digitalWrite(Green_RGB_LED, LOW);  // Turn the Green LED Off
+      digitalWrite(Red_RGB_LED, HIGH);   // Turn the Red LED On
+#endif
 #ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack LED
       leds[0] = CRGB::Red;     // Turn the Red LED On
       FastLED.setBrightness(255);
@@ -341,12 +344,21 @@ void loop() {
       FastLED.show();
       ESP.restart();
 #endif
-    }                                // Wait for 5 mins to try reconnects then force restart
-  } else {                           // WiFi is connected
-#ifdef ESP8266                       // Define the Witty ESP8266 Ports
-    analogWrite(Green_RGB_LED, 30);  // Green LED on, 25% brightness
-    digitalWrite(Red_RGB_LED, LOW);  // Turn the Red LED Off
+    }  // Wait for 5 mins to try reconnects then force restart
+    WiFiConnectedLastLoop = false;
+  } else {                             // WiFi is connected
+    if (!WiFiConnectedLastLoop) {      // Used to update LEDs only on transition of state
+#ifdef ESP8266                         // Define the Witty ESP8266 Ports
+      analogWrite(Green_RGB_LED, 30);  // Green LED on, 25% brightness
+      digitalWrite(Red_RGB_LED, LOW);  // Turn the Red LED Off
 #endif
+#ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack LED
+      leds[0] = CRGB::Green;
+      FastLED.setBrightness(100);  // LED on, reduced brightness
+      FastLED.show();
+#endif
+    }
+    WiFiConnectedLastLoop = true;
   }
 
   // -- Push Button Action Handler -- //
@@ -402,6 +414,7 @@ void loop() {
 void HeatPumpKeepAlive(void) {
   if (!HeatPump.HeatPumpConnected()) {
     DEBUG_PRINTLN("Heat Pump Disconnected");
+#ifdef ARDUINO_M5STACK_ATOMS3
     if (FTCOneShot) {
       ftcconpreviousMillis = millis();
       FTCOneShot = false;
@@ -420,9 +433,10 @@ void HeatPumpKeepAlive(void) {
         CableConnected = true;
       }
     }
-  } else {
-    HeatPump.TriggerStatusStateMachine();
+#endif
   }
+  ftcpreviousMillis = millis();
+  HeatPump.TriggerStatusStateMachine();
 }
 
 void HeatPumpQueryStateEngine(void) {
@@ -431,7 +445,7 @@ void HeatPumpQueryStateEngine(void) {
   // Call Once Full Update is complete
   if (HeatPump.UpdateComplete()) {
     DEBUG_PRINTLN("Update Complete");
-    //FTCLoopSpeed = millis() - ftcpreviousMillis;  // Loop Speed End
+    FTCLoopSpeed = millis() - ftcpreviousMillis;  // Loop Speed End
     if (MQTTReconnect()) { PublishAllReports(); }
     HeatPump.GetFTCVersion();
   }
@@ -445,13 +459,10 @@ void HeatPumpWriteStateEngine(void) {
 
 void MELCloudQueryReplyEngine(void) {
   if (MELCloud.Status.ReplyNow) {
-    ftcpreviousMillis = millis();
     MELCloud.ReplyStatus(MELCloud.Status.ActiveMessage);
-    FTCLoopSpeed = millis() - ftcpreviousMillis;
     MELCloud.Status.ReplyNow = false;
     if (MELCloud.Status.ActiveMessage == 0x32 | MELCloud.Status.ActiveMessage == 0x33 | MELCloud.Status.ActiveMessage == 0x34 | MELCloud.Status.ActiveMessage == 0x35) {  // The writes
       HeatPump.WriteMELCloudCMD(MELCloud.Status.ActiveMessage);
-      WriteFromSlave = 1;
     }
   } else if (MELCloud.Status.ConnectRequest) {
     MELCloud.Connect();  // Reply to the connect request
@@ -640,6 +651,7 @@ void Zone1Report(void) {
   doc[F("ProhibitCooling")] = HeatPump.Status.ProhibitCoolingZ1;
   doc[F("FlowTemp")] = HeatPump.Status.Zone1FlowTemperature;
   doc[F("ReturnTemp")] = HeatPump.Status.Zone1ReturnTemperature;
+  doc[F("HB_ID")] = Heart_Value;
 
   serializeJson(doc, Buffer);
 
@@ -659,6 +671,7 @@ void Zone2Report(void) {
   doc[F("ProhibitCooling")] = HeatPump.Status.ProhibitCoolingZ2;
   doc[F("FlowTemp")] = HeatPump.Status.Zone2FlowTemperature;
   doc[F("ReturnTemp")] = HeatPump.Status.Zone2ReturnTemperature;
+  doc[F("HB_ID")] = Heart_Value;
 
   serializeJson(doc, Buffer);
   MQTTClient.publish(MQTT_STATUS_ZONE2.c_str(), Buffer, false);
@@ -679,6 +692,7 @@ void HotWaterReport(void) {
   doc[F("LegionellaSetpoint")] = HeatPump.Status.LegionellaSetpoint;
   doc[F("HotWaterMaxTDrop")] = HeatPump.Status.HotWaterMaximumTempDrop;
   doc[F("HotWaterPhase")] = DHWPhaseString[HeatPump.Status.DHWHeatSourcePhase];
+  doc[F("HB_ID")] = Heart_Value;
 
   serializeJson(doc, Buffer);
   MQTTClient.publish(MQTT_STATUS_HOTWATER.c_str(), Buffer, false);
@@ -726,6 +740,7 @@ void SystemReport(void) {
   doc[F("HolidayMode")] = HeatPump.Status.HolidayModeActive;
   doc[F("FlowRate")] = HeatPump.Status.PrimaryFlowRate;
   doc[F("RunHours")] = HeatPump.Status.RunHours;
+  doc[F("HB_ID")] = Heart_Value;
 
   serializeJson(doc, Buffer);
   MQTTClient.publish(MQTT_STATUS_SYSTEM.c_str(), Buffer, false);
@@ -749,6 +764,7 @@ void AdvancedReport(void) {
   doc[F("CondensingTemp")] = HeatPump.Status.CondensingTemp;
   doc[F("HeatingActive")] = HeatingRunningBinary[HeatPump.Status.SystemOperationMode];
   doc[F("CoolingActive")] = CoolingRunningBinary[HeatPump.Status.SystemOperationMode];
+  doc[F("HB_ID")] = Heart_Value;
 
   serializeJson(doc, Buffer);
   MQTTClient.publish(MQTT_STATUS_ADVANCED.c_str(), Buffer, false);
@@ -813,6 +829,7 @@ void EnergyReport(void) {
   doc[F("COOL_CoP")] = round2(cool_cop);
   doc[F("DHW_CoP")] = round2(dhw_cop);
   doc[F("TOTAL_CoP")] = round2(total_cop);
+  doc[F("HB_ID")] = Heart_Value;
 
   serializeJson(doc, Buffer);
   MQTTClient.publish(MQTT_STATUS_ENERGY.c_str(), Buffer, false);
@@ -850,6 +867,7 @@ void AdvancedTwoReport(void) {
   doc[F("Z2TstatDemand")] = OFF_ON_String[HeatPump.Status.Zone2ThermostatDemand];
   doc[F("OTstatDemand")] = OFF_ON_String[HeatPump.Status.OutdoorThermostatDemand];
   doc[F("OpMode")] = HPControlModeString[HeatPump.Status.HeatCool];
+  doc[F("HB_ID")] = Heart_Value;
 
   serializeJson(doc, Buffer);
   MQTTClient.publish(MQTT_STATUS_ADVANCED_TWO.c_str(), Buffer, false);
@@ -875,18 +893,23 @@ void StatusReport(void) {
   doc[F("FTCReplyTime")] = HeatPump.Lastmsbetweenmsg();
   doc[F("FTCVersion")] = FTCString[HeatPump.Status.FTCVersion];
   doc[F("FTCSoftwareVersion")] = HeatPump.Status.FTCSoftware;
-  doc[F("GotWriteFromSlave")] = WriteFromSlave;
 
   strftime(TmBuffer, sizeof(TmBuffer), "%FT%TZ", &HeatPump.Status.DateTimeStamp);
   doc[F("FTCTime")] = TmBuffer;
+  doc[F("HB_ID")] = Heart_Value;
 
   serializeJson(doc, Buffer);
   MQTTClient.publish(MQTT_STATUS_WIFISTATUS.c_str(), Buffer, false);
   MQTTClient.publish(MQTT_LWT.c_str(), "online");
-  WriteFromSlave = 0;
 }
 
 void PublishAllReports(void) {
+  // Increment the Heatbeat ID Counter
+  ++Heart_Value;
+  if (Heart_Value > Heartbeat_Range) {
+    Heart_Value = 1;
+  }
+
   Zone1Report();
   Zone2Report();
   HotWaterReport();
@@ -909,7 +932,10 @@ void FlashGreenLED(void) {
 #ifdef ESP8266                        // Define the Witty ESP8266 Ports
   digitalWrite(Green_RGB_LED, HIGH);  // Flash the Green LED full brightness
 #endif
-  delay(10);                   // Hold for 10ms then WiFi brightness will return it to 25%
+  delay(10);                       // Hold for 10ms then WiFi brightness will return it to 25%
+#ifdef ESP8266                     // Define the Witty ESP8266 Ports
+  analogWrite(Green_RGB_LED, 30);  // Green LED on, 25% brightness
+#endif
 #ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack LED
   FastLED.setBrightness(100);
   FastLED.show();
@@ -988,22 +1014,18 @@ void onEvent(arduino_event_id_t event) {
     case ARDUINO_EVENT_ETH_GOT_IP:
       DEBUG_PRINTLN("ETH Got IP");
       DEBUG_PRINTLN(ETH);
-      wifiManager.stopWebPortal();  // Closes the WiFi Soft AP
       eth_connected = true;
       break;
     case ARDUINO_EVENT_ETH_LOST_IP:
       DEBUG_PRINTLN("ETH Lost IP");
-      wifiManager.autoConnect("Ecodan Bridge AP");  // Start WiFi Manager
       eth_connected = false;
       break;
     case ARDUINO_EVENT_ETH_DISCONNECTED:
       DEBUG_PRINTLN("ETH Disconnected");
-      wifiManager.autoConnect("Ecodan Bridge AP");  // Start WiFi Manager
       eth_connected = false;
       break;
     case ARDUINO_EVENT_ETH_STOP:
       DEBUG_PRINTLN("ETH Stopped");
-      wifiManager.autoConnect("Ecodan Bridge AP");  // Start WiFi Manager
       eth_connected = false;
       break;
     default: break;

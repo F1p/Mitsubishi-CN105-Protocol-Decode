@@ -138,7 +138,8 @@ void ECODAN::WriteStateMachine(void) {
 
   if (cmd_queue_length > 0 && cmd_queue_length < 10) {
     StopStateMachine();
-    DEBUG_PRINT("Writing msg at position: ");DEBUG_PRINTLN(cmd_queue_position);
+    DEBUG_PRINT("Writing msg at position: ");
+    DEBUG_PRINTLN(cmd_queue_position);
     DEBUG_PRINT("[Bridge > FTC] ");
     ECODANDECODER::CreateBlankTxMessage(SET_REQUEST, 0x10);
     ECODANDECODER::EncodeNextCommand(cmd_queue_position);
@@ -167,7 +168,7 @@ void ECODAN::Connect(void) {
   Process();
 }
 
-uint8_t ECODAN::HeatPumpConnected(void){
+uint8_t ECODAN::HeatPumpConnected(void) {
   return Connected;
 }
 
@@ -190,7 +191,8 @@ void ECODAN::SetZoneTempSetpoint(float Setpoint, uint8_t Mode, uint8_t Zone) {
   ECODANDECODER::EncodeRoomThermostat(Setpoint, Mode, Zone);  // Can OR the write with the mode but removed as different MQTT topic:      SET_ZONE_SETPOINT | SET_HEATING_CONTROL_MODE
   cmd_queue_length++;
   ECODANDECODER::TransfertoBuffer(cmd_queue_length);
-  DEBUG_PRINT("Transferred msg to position: ");DEBUG_PRINTLN(cmd_queue_length);
+  DEBUG_PRINT("Transferred msg to position: ");
+  DEBUG_PRINTLN(cmd_queue_length);
 }
 
 
@@ -199,7 +201,8 @@ void ECODAN::SetFlowSetpoint(float Setpoint, uint8_t Mode, uint8_t Zone) {
   ECODANDECODER::EncodeFlowTemperature(Setpoint, Mode, Zone);  // Can OR the write with the mode but removed as different MQTT topic:      SET_ZONE_SETPOINT | SET_HEATING_CONTROL_MODE
   cmd_queue_length++;
   ECODANDECODER::TransfertoBuffer(cmd_queue_length);
-  DEBUG_PRINT("Transferred msg to position: ");DEBUG_PRINTLN(cmd_queue_length);
+  DEBUG_PRINT("Transferred msg to position: ");
+  DEBUG_PRINTLN(cmd_queue_length);
 }
 
 
@@ -212,7 +215,8 @@ void ECODAN::SetDHWMode(String *Mode) {
   }
   cmd_queue_length++;
   ECODANDECODER::TransfertoBuffer(cmd_queue_length);
-  DEBUG_PRINT("Transferred msg to position: ");DEBUG_PRINTLN(cmd_queue_length);
+  DEBUG_PRINT("Transferred msg to position: ");
+  DEBUG_PRINTLN(cmd_queue_length);
 }
 
 
@@ -242,7 +246,8 @@ void ECODAN::SetProhibits(uint8_t Flags, uint8_t OnOff) {
   ECODANDECODER::EncodeProhibit(Flags, OnOff);
   cmd_queue_length++;
   ECODANDECODER::TransfertoBuffer(cmd_queue_length);
-  DEBUG_PRINT("Transferred msg to position: ");DEBUG_PRINTLN(cmd_queue_length);
+  DEBUG_PRINT("Transferred msg to position: ");
+  DEBUG_PRINTLN(cmd_queue_length);
 }
 
 
@@ -251,7 +256,8 @@ void ECODAN::SetSvrControlMode(uint8_t OnOff, uint8_t DHW, uint8_t Z1H, uint8_t 
   ECODANDECODER::EncodeServerControlMode(OnOff, DHW, Z1H, Z1C, Z2H, Z2C);
   cmd_queue_length++;
   ECODANDECODER::TransfertoBuffer(cmd_queue_length);
-  DEBUG_PRINT("Transferred msg to position: ");DEBUG_PRINTLN(cmd_queue_length);
+  DEBUG_PRINT("Transferred msg to position: ");
+  DEBUG_PRINTLN(cmd_queue_length);
 }
 
 
@@ -260,7 +266,8 @@ void ECODAN::SetHotWaterSetpoint(uint8_t Target) {
   ECODANDECODER::EncodeDHWSetpoint(Target);
   cmd_queue_length++;
   ECODANDECODER::TransfertoBuffer(cmd_queue_length);
-  DEBUG_PRINT("Transferred msg to position: ");DEBUG_PRINTLN(cmd_queue_length);
+  DEBUG_PRINT("Transferred msg to position: ");
+  DEBUG_PRINTLN(cmd_queue_length);
 }
 
 
@@ -269,7 +276,8 @@ void ECODAN::SetHeatingControlMode(uint8_t Mode, uint8_t Zone) {
   ECODANDECODER::EncodeControlMode(Mode, Zone);
   cmd_queue_length++;
   ECODANDECODER::TransfertoBuffer(cmd_queue_length);
-  DEBUG_PRINT("Transferred msg to position: ");DEBUG_PRINTLN(cmd_queue_length);
+  DEBUG_PRINT("Transferred msg to position: ");
+  DEBUG_PRINTLN(cmd_queue_length);
 }
 
 
@@ -278,7 +286,8 @@ void ECODAN::SetSystemPowerMode(uint8_t OnOff) {
   ECODANDECODER::EncodePower(OnOff);
   cmd_queue_length++;
   ECODANDECODER::TransfertoBuffer(cmd_queue_length);
-  DEBUG_PRINT("Transferred msg to position: ");DEBUG_PRINTLN(cmd_queue_length);
+  DEBUG_PRINT("Transferred msg to position: ");
+  DEBUG_PRINTLN(cmd_queue_length);
 }
 
 
@@ -311,5 +320,6 @@ void ECODAN::WriteMELCloudCMD(uint8_t cmd) {
   ECODANDECODER::EncodeMELCloud(cmd);
   cmd_queue_length++;
   ECODANDECODER::TransfertoBuffer(cmd_queue_length);
-  DEBUG_PRINT("Transferred msg to position: ");DEBUG_PRINTLN(cmd_queue_length);
+  DEBUG_PRINT("Transferred msg to position: ");
+  DEBUG_PRINTLN(cmd_queue_length);
 }

@@ -25,6 +25,7 @@ uint8_t MELCloudInit6[] = { 0x02, 0xff, 0xff, 0x80, 0x00, 0x00, 0x0A, 0x01, 0x00
 uint8_t MELCloudInit7[] = { 0x02, 0xff, 0xff, 0x81, 0x00, 0x00, 0x00, 0x81 };
 
 bool PrintMELStart = false;
+bool FirstReadAfterConnect = false;
 
 MELCLOUD::MELCLOUD(void)
   : MELCLOUDDECODER() {
@@ -219,6 +220,10 @@ void MELCLOUD::ReplyStatus(uint8_t TargetMessage) {
     for (int i = 1; i < 16; i++) {
       MELCLOUDDECODER::SetPayloadByte(Array0x28[i], i);
     }
+    if (FirstReadAfterConnect) {
+      FirstReadAfterConnect = false;
+      MELCLOUDDECODER::SetPayloadByte(0x01, 11);
+    }
   } else if (TargetMessage == 0x29) {
     for (int i = 1; i < 16; i++) {
       MELCLOUDDECODER::SetPayloadByte(Array0x29[i], i);
@@ -256,6 +261,7 @@ void MELCLOUD::ReplyStatus(uint8_t TargetMessage) {
 
 void MELCLOUD::Connect(void) {
   DEBUG_PRINTLN("[Bridge > MEL] Connecting to MELCloud Device...");
+  FirstReadAfterConnect = true;
   DeviceStream->write(MELCloudInit3, 7);
   DeviceStream->flush();
   Process();

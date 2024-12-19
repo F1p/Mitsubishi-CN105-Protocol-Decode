@@ -60,7 +60,7 @@ uint8_t Array0x33[] = {};
 uint8_t Array0x34[] = {};
 uint8_t Array0x35[] = {};
 
-uint8_t BufferArray[][16] = {{},{},{},{},{}};
+uint8_t BufferArray[][16] = { {}, {}, {}, {}, {} };
 
 
 ECODANDECODER::ECODANDECODER(void) {
@@ -311,7 +311,7 @@ void ECODANDECODER::Process0x01(uint8_t *Buffer, EcodanStatus *Status) {
   Hour = Buffer[4];
   Min = Buffer[5];
   Sec = Buffer[6];
-  
+
   Status->DateTimeStamp.tm_year = 100 + Year;
   Status->DateTimeStamp.tm_mon = Month - 1;
   Status->DateTimeStamp.tm_mday = Day;
@@ -497,7 +497,7 @@ void ECODANDECODER::Process0x0B(uint8_t *Buffer, EcodanStatus *Status) {
 
 void ECODANDECODER::Process0x0C(uint8_t *Buffer, EcodanStatus *Status) {
   float fWaterHeatingFeed, fWaterHeatingReturn, fHotWater, fHotWaterTHW5A;
-  
+
   for (int i = 1; i < 16; i++) {
     Array0x0c[i] = Buffer[i];
   }
@@ -554,7 +554,7 @@ void ECODANDECODER::Process0x0F(uint8_t *Buffer, EcodanStatus *Status) {  // FTC
   for (int i = 1; i < 16; i++) {
     Array0x0f[i] = Buffer[i];
   }
-  
+
   MixingTemperature = ((float)ExtractUInt16(Buffer, 1) / 100);  // Mixing Tank Temperature (THW10)
   CondensingTemp = ((float)ExtractUInt16(Buffer, 4) / 100);     // Condensing Temperature
 
@@ -1151,21 +1151,21 @@ void ECODANDECODER::EncodeMELCloud(uint8_t cmd) {
       TxMessage.Payload[i] = Array0x33[i];
     } else if (cmd == 0x34) {
       TxMessage.Payload[i] = Array0x34[i];
-    }else if (cmd == 0x35) {
+    } else if (cmd == 0x35) {
       TxMessage.Payload[i] = Array0x35[i];
     }
   }
 }
 
 
-void ECODANDECODER::TransfertoBuffer(uint8_t bufferposition){
+void ECODANDECODER::TransfertoBuffer(uint8_t bufferposition) {
   for (int i = 0; i < 16; i++) {
-      BufferArray[bufferposition][i] = TxMessage.Payload[i];
+    BufferArray[bufferposition][i] = TxMessage.Payload[i];
   }
 }
 
-void ECODANDECODER::EncodeNextCommand(uint8_t bufferposition){
+void ECODANDECODER::EncodeNextCommand(uint8_t bufferposition) {
   for (int i = 0; i < 16; i++) {
-      TxMessage.Payload[i] = BufferArray[bufferposition][i];
+    TxMessage.Payload[i] = BufferArray[bufferposition][i];
   }
 }
