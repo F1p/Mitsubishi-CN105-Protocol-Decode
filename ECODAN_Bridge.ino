@@ -266,7 +266,7 @@ void setup() {
 
 void loop() {
   // -- Loop Start -- //
-  looppreviousMillis = millis();  // Loop Speed Check
+  looppreviousMillis = micros();  // Loop Speed Check
 
   // -- Process Handlers -- //
   HeatPumpQuery1.Process();
@@ -408,7 +408,7 @@ void loop() {
   }
 
   // -- CPU Loop Time End -- //
-  CPULoopSpeed = millis() - looppreviousMillis;  // Loop Speed End Monitor
+  CPULoopSpeed = micros() - looppreviousMillis;  // Loop Speed End Monitor
 }
 
 void HeatPumpKeepAlive(void) {
@@ -464,8 +464,8 @@ void MELCloudQueryReplyEngine(void) {
     if (MELCloud.Status.ActiveMessage == 0x32 | MELCloud.Status.ActiveMessage == 0x33 | MELCloud.Status.ActiveMessage == 0x34 | MELCloud.Status.ActiveMessage == 0x35) {  // The writes
       HeatPump.WriteMELCloudCMD(MELCloud.Status.ActiveMessage);
     }
-  } else if (MELCloud.Status.ConnectRequest) {
-    MELCloud.Connect();  // Reply to the connect request
+  } else if ((MELCloud.Status.ConnectRequest) && (HeatPump.Status.FTCVersion != 0)) {  // Reply to the connect request once the FTC/ESP is ready
+    MELCloud.Connect();
     MELCloud.Status.ConnectRequest = false;
   } else if (MELCloud.Status.MELRequest1) {
     MELCloud.MELNegotiate1();  // Reply to the connect request
@@ -951,7 +951,11 @@ void setupTelnet() {
 
 void startTelnet() {
   DEBUG_PRINT("Telnet: ");
+#ifdef ARDUINO_WT32_ETH01
+  if (TelnetServer.begin(23, false)) {
+#else
   if (TelnetServer.begin()) {
+#endif
     DEBUG_PRINTLN("Running");
   } else {
     DEBUG_PRINTLN("error.");
