@@ -463,11 +463,10 @@ void readSettingsFromConfig() {
 #ifdef ESP8266                          // Define the Witty ESP8266 Ports
     digitalWrite(Blue_RGB_LED, HIGH);   // Turn the Blue LED Off
 #endif
-    wifiManager.setConfigPortalBlocking(false);             // Non-Blocking portal for ESP32, ESP8266 had rendering issues during testing
+    wifiManager.setConfigPortalBlocking(false);             // Non-Blocking portal
     wifiManager.setBreakAfterConfig(true);                  // Saves settings, even if WiFi Fails
     wifiManager.setSaveConfigCallback(saveConfigCallback);  // Set config save callback
-    //wifiManager.setSaveParamsCallback(saveConfigCallback);  // Set param save callback
-    wifiManager.setAPClientCheck(true);                     // avoid timeout if client connected to softap
+    wifiManager.setAPClientCheck(true);                     // Avoid timeout if client connected to softap
 
 #ifndef ARDUINO_WT32_ETH01
     wifiManager.setConfigPortalTimeout(120);  // Timeout before launching the config portal (WiFi Only)
@@ -701,6 +700,7 @@ void readSettingsFromConfig() {
     if (MQTTClient1.connected()) {
       return 1;
     } else if (strcmp(mqttSettings.hostname, "IPorDNS") != 0 && strcmp(mqttSettings.hostname, "") != 0) {
+      initializeMQTTClient1();
       DEBUG_PRINT("With Client ID: ");
       DEBUG_PRINT(mqttSettings.clientId);
       DEBUG_PRINT(", Username: ");
@@ -850,7 +850,7 @@ void readSettingsFromConfig() {
 
 
 
-  void initializeMQTT2Client() {
+  void initializeMQTTClient2() {
     DEBUG_PRINT("Attempting MQTT connection to: ");
     DEBUG_PRINT(mqttSettings.hostname2);
     DEBUG_PRINT(":");
@@ -892,6 +892,7 @@ void readSettingsFromConfig() {
     if (MQTTClient2.connected()) {
       return 1;
     } else if (strcmp(mqttSettings.hostname2, "IPorDNS") != 0 && strcmp(mqttSettings.hostname2, "") != 0) {
+      initializeMQTTClient2();
       DEBUG_PRINT("With Client ID: ");
       DEBUG_PRINT(mqttSettings.clientId2);
       DEBUG_PRINT(", Username: ");
@@ -899,7 +900,7 @@ void readSettingsFromConfig() {
       DEBUG_PRINT(" and Password: ");
       DEBUG_PRINTLN(mqttSettings.password2);
 
-      if (MQTTClient2.connect(mqttSettings.deviceId, MQTT_2_LWT.c_str(), 0, true, "offline")) {
+      if (MQTTClient2.connect(mqttSettings.clientId2, mqttSettings.user2, mqttSettings.password2, MQTT_2_LWT.c_str(), 0, true, "offline")) {
         DEBUG_PRINTLN("MQTT Server 2 Connected");
         MQTT2onConnect();
         return 1;

@@ -162,10 +162,13 @@ MELCLOUD MELCloud;
 SoftwareSerial SwSerial1;
 SoftwareSerial SwSerial2;
 #endif
-WiFiClient NetworkClient;
+WiFiClient NetworkClient1;
+WiFiClient NetworkClient2;
+
+
 //WiFiClientSecure NetworkClient;              // Encryption Support
-PubSubClient MQTTClient1(NetworkClient);
-PubSubClient MQTTClient2(NetworkClient);
+PubSubClient MQTTClient1(NetworkClient1);
+PubSubClient MQTTClient2(NetworkClient2);
 ESPTelnet TelnetServer;
 WiFiManager wifiManager;
 
@@ -287,7 +290,7 @@ void setup() {
   initializeMQTTClient1();
   MQTTClient1.setCallback(MQTTonData);
 
-  initializeMQTT2Client();
+  initializeMQTTClient2();
   MQTTClient2.setCallback(MQTTonData);
 
 
@@ -315,6 +318,8 @@ void loop() {
   HeatPump.Process();
   MELCloud.Process();
   wifiManager.process();
+
+  if(!wifiManager.getWebPortalActive()){ wifiManager.startWebPortal(); }
 
   // -- Config Saver -- //
   if (shouldSaveConfig) { saveConfig(); }  // Handles WiFiManager Settings Changes
@@ -705,7 +710,7 @@ void Zone1Report(void) {
   serializeJson(doc, Buffer);
 
   MQTTClient1.publish(MQTT_STATUS_ZONE1.c_str(), Buffer, false);
-  MQTTClient2.publish(MQTT_STATUS_ZONE1.c_str(), Buffer, false);
+  MQTTClient2.publish(MQTT_2_STATUS_ZONE1.c_str(), Buffer, false);
 }
 
 void Zone2Report(void) {
@@ -725,7 +730,7 @@ void Zone2Report(void) {
 
   serializeJson(doc, Buffer);
   MQTTClient1.publish(MQTT_STATUS_ZONE2.c_str(), Buffer, false);
-  MQTTClient2.publish(MQTT_STATUS_ZONE2.c_str(), Buffer, false);
+  MQTTClient2.publish(MQTT_2_STATUS_ZONE2.c_str(), Buffer, false);
 }
 
 void HotWaterReport(void) {
@@ -747,7 +752,7 @@ void HotWaterReport(void) {
 
   serializeJson(doc, Buffer);
   MQTTClient1.publish(MQTT_STATUS_HOTWATER.c_str(), Buffer, false);
-  MQTTClient2.publish(MQTT_STATUS_HOTWATER.c_str(), Buffer, false);
+  MQTTClient2.publish(MQTT_2_STATUS_HOTWATER.c_str(), Buffer, false);
 }
 
 void SystemReport(void) {
@@ -796,7 +801,7 @@ void SystemReport(void) {
 
   serializeJson(doc, Buffer);
   MQTTClient1.publish(MQTT_STATUS_SYSTEM.c_str(), Buffer, false);
-  MQTTClient2.publish(MQTT_STATUS_SYSTEM.c_str(), Buffer, false);
+  MQTTClient2.publish(MQTT_2_STATUS_SYSTEM.c_str(), Buffer, false);
 }
 
 void AdvancedReport(void) {
@@ -821,7 +826,7 @@ void AdvancedReport(void) {
 
   serializeJson(doc, Buffer);
   MQTTClient1.publish(MQTT_STATUS_ADVANCED.c_str(), Buffer, false);
-  MQTTClient2.publish(MQTT_STATUS_ADVANCED.c_str(), Buffer, false);
+  MQTTClient2.publish(MQTT_2_STATUS_ADVANCED.c_str(), Buffer, false);
 }
 
 
@@ -887,7 +892,7 @@ void EnergyReport(void) {
 
   serializeJson(doc, Buffer);
   MQTTClient1.publish(MQTT_STATUS_ENERGY.c_str(), Buffer, false);
-  MQTTClient2.publish(MQTT_STATUS_ENERGY.c_str(), Buffer, false);
+  MQTTClient2.publish(MQTT_2_STATUS_ENERGY.c_str(), Buffer, false);
 }
 
 
@@ -926,7 +931,7 @@ void AdvancedTwoReport(void) {
 
   serializeJson(doc, Buffer);
   MQTTClient1.publish(MQTT_STATUS_ADVANCED_TWO.c_str(), Buffer, false);
-  MQTTClient2.publish(MQTT_STATUS_ADVANCED_TWO.c_str(), Buffer, false);
+  MQTTClient2.publish(MQTT_2_STATUS_ADVANCED_TWO.c_str(), Buffer, false);
 }
 
 void StatusReport(void) {
@@ -956,9 +961,9 @@ void StatusReport(void) {
 
   serializeJson(doc, Buffer);
   MQTTClient1.publish(MQTT_STATUS_WIFISTATUS.c_str(), Buffer, false);
-  MQTTClient2.publish(MQTT_STATUS_WIFISTATUS.c_str(), Buffer, false);
+  MQTTClient2.publish(MQTT_2_STATUS_WIFISTATUS.c_str(), Buffer, false);
   MQTTClient1.publish(MQTT_LWT.c_str(), "online");
-  MQTTClient2.publish(MQTT_LWT.c_str(), "online");
+  MQTTClient2.publish(MQTT_2_LWT.c_str(), "online");
 }
 
 void PublishAllReports(void) {
@@ -1009,7 +1014,11 @@ void setupTelnet() {
 
 void startTelnet() {
   DEBUG_PRINT("Telnet: ");
+#ifdef ARDUINO_WT32_ETH01
+  if (TelnetServer.begin(23, false)) {
+#else
   if (TelnetServer.begin()) {
+#endif
     DEBUG_PRINTLN("Running");
   } else {
     DEBUG_PRINTLN("error.");
