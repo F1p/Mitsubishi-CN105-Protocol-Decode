@@ -165,7 +165,7 @@ void readSettingsFromConfig() {
             DEBUG_PRINTLN(error.c_str());
           } else {
             DEBUG_PRINTLN("Parsed JSON: ");
-            serializeJson(doc, Serial);
+            serializeJson(doc, TelnetServer);
             DEBUG_PRINTLN();
 
             // Build in safety check, otherwise ESP will crash out and you can't get back in
@@ -182,11 +182,6 @@ void readSettingsFromConfig() {
 #endif
               strcpy(mqttSettings.deviceId, snprintbuffer);
               shouldSaveConfig = true;  // Save config after exit to update the file
-            }
-            if (doc.containsKey(mqttSettings.wm_mqtt_client_id_identifier)) {
-              if ((sizeof(doc[mqttSettings.wm_mqtt_client_id_identifier]) > 0) && ((sizeof(doc[mqttSettings.wm_mqtt_client_id_identifier]) + 1) <= clientId_max_length)) {
-                strcpy(mqttSettings.clientId, doc[mqttSettings.wm_mqtt_client_id_identifier]);
-              }
             }
             if (doc.containsKey(mqttSettings.wm_mqtt_hostname_identifier)) {
               if ((sizeof(doc[mqttSettings.wm_mqtt_hostname_identifier]) > 0) && ((sizeof(doc[mqttSettings.wm_mqtt_hostname_identifier]) + 1) <= hostname_max_length)) {
@@ -215,15 +210,6 @@ void readSettingsFromConfig() {
               }
             }
             // MQTT Stream 2
-            if (doc.containsKey(mqttSettings.wm_mqtt2_client_id_identifier)) {
-              if ((sizeof(doc[mqttSettings.wm_mqtt2_client_id_identifier]) > 0) && ((sizeof(doc[mqttSettings.wm_mqtt2_client_id_identifier]) + 1) <= clientId_max_length)) {
-                strcpy(mqttSettings.clientId2, doc[mqttSettings.wm_mqtt2_client_id_identifier]);
-              }
-            } else {  // For upgrading from <6.0.0, create the entry
-              snprintf(snprintbuffer, clientId_max_length, mqttSettings.clientId2);
-              strcpy(mqttSettings.clientId2, snprintbuffer);
-              shouldSaveConfig = true;  // Save config after exit to update the file
-            }
             if (doc.containsKey(mqttSettings.wm_mqtt2_hostname_identifier)) {
               if ((sizeof(doc[mqttSettings.wm_mqtt2_hostname_identifier]) > 0) && ((sizeof(doc[mqttSettings.wm_mqtt2_hostname_identifier]) + 1) <= hostname_max_length)) {
                 strcpy(mqttSettings.hostname2, doc[mqttSettings.wm_mqtt2_hostname_identifier]);
@@ -284,9 +270,6 @@ void readSettingsFromConfig() {
 #endif
         strcpy(mqttSettings.deviceId, DeviceID);
         strcpy(mqttSettings.baseTopic2, DeviceID);  // Base topic 2 defaults to deviceID
-        snprintf(snprintbuffer, 30, "%s%s", ClientPrefix, DeviceID);
-        strcpy(mqttSettings.clientId, snprintbuffer);
-        strcpy(mqttSettings.clientId2, snprintbuffer);
       }
     } else {
       DEBUG_PRINTLN("Failed to mount File System");
@@ -367,13 +350,11 @@ void readSettingsFromConfig() {
     // Read MQTT Portal Values for save to file system
     DEBUG_PRINTLN("Copying Portal Values...");
     strcpy(mqttSettings.deviceId, custom_device_id.getValue());
-    strcpy(mqttSettings.clientId, custom_mqtt_client_id.getValue());
     strcpy(mqttSettings.hostname, custom_mqtt_server.getValue());
     strcpy(mqttSettings.port, custom_mqtt_port.getValue());
     strcpy(mqttSettings.user, custom_mqtt_user.getValue());
     strcpy(mqttSettings.password, custom_mqtt_pass.getValue());
     strcpy(mqttSettings.baseTopic, custom_mqtt_basetopic.getValue());
-    strcpy(mqttSettings.clientId2, custom_mqtt2_client_id.getValue());
     strcpy(mqttSettings.hostname2, custom_mqtt2_server.getValue());
     strcpy(mqttSettings.port2, custom_mqtt2_port.getValue());
     strcpy(mqttSettings.user2, custom_mqtt2_user.getValue());
@@ -387,13 +368,11 @@ void readSettingsFromConfig() {
     } else {
       JsonDocument doc;
       doc[mqttSettings.wm_device_id_identifier] = mqttSettings.deviceId;
-      doc[mqttSettings.wm_mqtt_client_id_identifier] = mqttSettings.clientId;
       doc[mqttSettings.wm_mqtt_hostname_identifier] = mqttSettings.hostname;
       doc[mqttSettings.wm_mqtt_port_identifier] = mqttSettings.port;
       doc[mqttSettings.wm_mqtt_user_identifier] = mqttSettings.user;
       doc[mqttSettings.wm_mqtt_password_identifier] = mqttSettings.password;
       doc[mqttSettings.wm_mqtt_basetopic_identifier] = mqttSettings.baseTopic;
-      doc[mqttSettings.wm_mqtt2_client_id_identifier] = mqttSettings.clientId2;
       doc[mqttSettings.wm_mqtt2_hostname_identifier] = mqttSettings.hostname2;
       doc[mqttSettings.wm_mqtt2_port_identifier] = mqttSettings.port2;
       doc[mqttSettings.wm_mqtt2_user_identifier] = mqttSettings.user2;
@@ -404,7 +383,7 @@ void readSettingsFromConfig() {
         DEBUG_PRINTLN("[FAILED]");
       } else {
         DEBUG_PRINTLN("[DONE]");
-        serializeJson(doc, Serial);
+        serializeJson(doc, TelnetServer);
         DEBUG_PRINTLN();
       }
     }
@@ -426,13 +405,11 @@ void readSettingsFromConfig() {
 
     // Set or Update the values
     custom_device_id.setValue(mqttSettings.deviceId, deviceId_max_length);
-    custom_mqtt_client_id.setValue(mqttSettings.clientId, clientId_max_length);
     custom_mqtt_server.setValue(mqttSettings.hostname, hostname_max_length);
     custom_mqtt_port.setValue(mqttSettings.port, port_max_length);
     custom_mqtt_user.setValue(mqttSettings.user, user_max_length);
     custom_mqtt_pass.setValue(mqttSettings.password, password_max_length);
     custom_mqtt_basetopic.setValue(mqttSettings.baseTopic, basetopic_max_length);
-    custom_mqtt2_client_id.setValue(mqttSettings.clientId2, clientId_max_length);
     custom_mqtt2_server.setValue(mqttSettings.hostname2, hostname_max_length);
     custom_mqtt2_port.setValue(mqttSettings.port2, port_max_length);
     custom_mqtt2_user.setValue(mqttSettings.user2, user_max_length);
@@ -445,13 +422,11 @@ void readSettingsFromConfig() {
     wifiManager.addParameter(&custom_mqtt_pass);
     wifiManager.addParameter(&custom_mqtt_port);
     wifiManager.addParameter(&custom_mqtt_basetopic);
-    wifiManager.addParameter(&custom_mqtt_client_id);
     wifiManager.addParameter(&custom_mqtt2_server);
     wifiManager.addParameter(&custom_mqtt2_user);
     wifiManager.addParameter(&custom_mqtt2_pass);
     wifiManager.addParameter(&custom_mqtt2_port);
     wifiManager.addParameter(&custom_mqtt2_basetopic);
-    wifiManager.addParameter(&custom_mqtt2_client_id);
     wifiManager.addParameter(&custom_device_id);
 
     //set minimum quality of signal so it ignores AP's under that quality
@@ -460,8 +435,8 @@ void readSettingsFromConfig() {
 
     snprintf(WiFiHostname, 26, "%s%s", ClientPrefix, mqttSettings.deviceId);
     WiFi.hostname(WiFiHostname);
-#ifdef ESP8266                          // Define the Witty ESP8266 Ports
-    digitalWrite(Blue_RGB_LED, HIGH);   // Turn the Blue LED Off
+#ifdef ESP8266                         // Define the Witty ESP8266 Ports
+    digitalWrite(Blue_RGB_LED, HIGH);  // Turn the Blue LED Off
 #endif
     wifiManager.setConfigPortalBlocking(false);             // Non-Blocking portal
     wifiManager.setBreakAfterConfig(true);                  // Saves settings, even if WiFi Fails
@@ -702,13 +677,13 @@ void readSettingsFromConfig() {
     } else if (strcmp(mqttSettings.hostname, "IPorDNS") != 0 && strcmp(mqttSettings.hostname, "") != 0) {
       initializeMQTTClient1();
       DEBUG_PRINT("With Client ID: ");
-      DEBUG_PRINT(mqttSettings.clientId);
+      DEBUG_PRINT(mqttSettings.deviceId);
       DEBUG_PRINT(", Username: ");
       DEBUG_PRINT(mqttSettings.user);
       DEBUG_PRINT(" and Password: ");
       DEBUG_PRINTLN(mqttSettings.password);
 
-      if (MQTTClient1.connect(mqttSettings.clientId, mqttSettings.user, mqttSettings.password, MQTT_LWT.c_str(), 0, true, "offline")) {
+      if (MQTTClient1.connect(mqttSettings.deviceId, mqttSettings.user, mqttSettings.password, MQTT_LWT.c_str(), 0, true, "offline")) {
         DEBUG_PRINTLN("MQTT Server Connected");
         MQTTonConnect();
 #ifdef ESP8266                              // Define the Witty ESP8266 Ports
@@ -894,13 +869,13 @@ void readSettingsFromConfig() {
     } else if (strcmp(mqttSettings.hostname2, "IPorDNS") != 0 && strcmp(mqttSettings.hostname2, "") != 0) {
       initializeMQTTClient2();
       DEBUG_PRINT("With Client ID: ");
-      DEBUG_PRINT(mqttSettings.clientId2);
+      DEBUG_PRINT(mqttSettings.deviceId);
       DEBUG_PRINT(", Username: ");
       DEBUG_PRINT(mqttSettings.user2);
       DEBUG_PRINT(" and Password: ");
       DEBUG_PRINTLN(mqttSettings.password2);
 
-      if (MQTTClient2.connect(mqttSettings.clientId2, mqttSettings.user2, mqttSettings.password2, MQTT_2_LWT.c_str(), 0, true, "offline")) {
+      if (MQTTClient2.connect(mqttSettings.deviceId, mqttSettings.user2, mqttSettings.password2, MQTT_2_LWT.c_str(), 0, true, "offline")) {
         DEBUG_PRINTLN("MQTT Server 2 Connected");
         MQTT2onConnect();
         return 1;

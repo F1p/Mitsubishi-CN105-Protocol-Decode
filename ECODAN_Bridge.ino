@@ -109,7 +109,6 @@ unsigned long SERIAL_BAUD = 2400;
 bool shouldSaveConfig = false;
 
 const int deviceId_max_length = 15;
-const int clientId_max_length = 25;
 const int hostname_max_length = 200;
 const int port_max_length = 10;
 const int user_max_length = 30;
@@ -124,7 +123,7 @@ const int basetopic_max_length = 30;
 struct MqttSettings {
   // These are the placeholder objects for the custom fields  
   char deviceId[deviceId_max_length] = "000000000000";
-  char wm_device_id_identifier[15] = "device_id";
+  char wm_device_id_identifier[10] = "device_id";
 
   // Client 1
   char hostname[hostname_max_length] = "IPorDNS";
@@ -132,13 +131,11 @@ struct MqttSettings {
   char password[password_max_length] = "Password";
   char port[port_max_length] = "1883";
   char baseTopic[basetopic_max_length] = "Ecodan/ASHP";
-  char clientId[clientId_max_length] = "EcodanBridge";
-  char wm_mqtt_hostname_identifier[40] = "mqtt_hostname";
-  char wm_mqtt_user_identifier[20] = "mqtt_user";
-  char wm_mqtt_password_identifier[30] = "mqtt_password";
+  char wm_mqtt_hostname_identifier[14] = "mqtt_hostname";
+  char wm_mqtt_user_identifier[10] = "mqtt_user";
+  char wm_mqtt_password_identifier[14] = "mqtt_password";
   char wm_mqtt_port_identifier[10] = "mqtt_port";
-  char wm_mqtt_basetopic_identifier[20] = "mqtt_basetopic";
-  char wm_mqtt_client_id_identifier[20] = "mqtt_client_id";
+  char wm_mqtt_basetopic_identifier[15] = "mqtt_basetopic";
 
   // Client 2
   char hostname2[hostname_max_length] = "IPorDNS";
@@ -146,13 +143,11 @@ struct MqttSettings {
   char password2[password_max_length] = "Password";
   char port2[port_max_length] = "1883";
   char baseTopic2[basetopic_max_length] = "Ecodan/ASHP";
-  char clientId2[clientId_max_length] = "EcodanBridge";
-  char wm_mqtt2_hostname_identifier[40] = "mqtt2_hostname";
-  char wm_mqtt2_user_identifier[20] = "mqtt2_user";
-  char wm_mqtt2_password_identifier[30] = "mqtt2_password";
+  char wm_mqtt2_hostname_identifier[15] = "mqtt2_hostname";
+  char wm_mqtt2_user_identifier[11] = "mqtt2_user";
+  char wm_mqtt2_password_identifier[15] = "mqtt2_password";
   char wm_mqtt2_port_identifier[11] = "mqtt2_port";
-  char wm_mqtt2_basetopic_identifier[20] = "mqtt2_basetopic";
-  char wm_mqtt2_client_id_identifier[20] = "mqtt2_client_id";
+  char wm_mqtt2_basetopic_identifier[16] = "mqtt2_basetopic";
 };
 
 MqttSettings mqttSettings;
@@ -178,13 +173,11 @@ WiFiManagerParameter custom_mqtt_server("server", "<b>Required</b> Primary MQTT 
 WiFiManagerParameter custom_mqtt_user("user", "Primary MQTT Username", "TEMP", user_max_length);
 WiFiManagerParameter custom_mqtt_pass("pass", "Primary MQTT Password", "TEMP", password_max_length);
 WiFiManagerParameter custom_mqtt_port("port", "Primary MQTT Server Port (Default: 1883)", "TEMP", port_max_length);
-WiFiManagerParameter custom_mqtt_client_id("client_id", "Primary MQTT Client ID (Default: EcodanBridge-deviceID)<br><font size='0.8em'>Unique ID when connecting to MQTT</font>", "TEMP", clientId_max_length);
 WiFiManagerParameter custom_mqtt_basetopic("basetopic", "Primary MQTT Base Topic (Default: Ecodan/ASHP)<br><font size='0.8em'>Modify if you have multiple heat pumps connecting to the same MQTT server</font>", "TEMP", basetopic_max_length);
 WiFiManagerParameter custom_mqtt2_server("server2", "<hr><b>Optional</b> Secondary MQTT Server<br><font size='0.8em'>You can send data to a second MQTT broker, <b>leave default or blank if not in use</b></font>", "TEMP", hostname_max_length);
 WiFiManagerParameter custom_mqtt2_user("user2", "Secondary MQTT Username", "TEMP", user_max_length);
 WiFiManagerParameter custom_mqtt2_pass("pass2", "Secondary MQTT Password", "TEMP", password_max_length);
 WiFiManagerParameter custom_mqtt2_port("port2", "Secondary MQTT Server Port", "TEMP", port_max_length);
-WiFiManagerParameter custom_mqtt2_client_id("client_id2", "Secondary MQTT Client ID", "TEMP", clientId_max_length);
 WiFiManagerParameter custom_mqtt2_basetopic("basetopic2", "Secondary MQTT Base Topic", "TEMP", basetopic_max_length);
 WiFiManagerParameter custom_device_id("device_id", "<hr>Device ID<br><font size='0.8em'>Only modify if upgrading or changing hardware, copy your previous device ID over</font>", "TEMP", deviceId_max_length);
 
