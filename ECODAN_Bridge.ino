@@ -910,7 +910,7 @@ void AdvancedTwoReport(void) {
   }
 
   String FltCodeString = String(FltCodeLetterOne[HeatPump.Status.FltCode1]) + String(FltCodeLetterTwo[HeatPump.Status.FltCode2]);
-  if (FltCodeString == "A1") {
+  if (FltCodeString == "A0") {
     doc[F("FltCode")] = String("Normal");
   } else {
     doc[F("FltCode")] = String(FltCodeString);
