@@ -376,8 +376,9 @@ Responses so far identified.
 ### 0x14 - Immerson/Booster and Primary Flow Rate
 |   0   | 1  | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
 |-------|----|---|---|---|---|---|---|---|---|----|----|----|----|----|----|----|
-| 0x14  |    | B |   |   | I |   |   |   |   |    | PF |    |    |    |    |    |  
-* B : Booster Heater Active
+| 0x14  |    |B1 | B2 |   | I |   |   |   |   |    | PF |    |    |    |    |    |  
+* B : Booster Heater 1 Active
+* B2 : Booster Heater 2 Active
 * I : Immersion Heater Active
 * PF : Primary Flow Rate (l/min)
 ### 0x15 - Unknown
