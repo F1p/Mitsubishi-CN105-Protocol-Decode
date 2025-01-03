@@ -209,7 +209,7 @@ TimerCallBack HeatPumpQuery4(30000, handleMQTT2State);        // Re-connect atte
 TimerCallBack HeatPumpQuery5(500, HeatPumpWriteStateEngine);  // Set to 500ms (Safe), 320-350ms best time between messages
 
 
-unsigned long looppreviousMicros = 0;    // variable for comparing millis counter
+unsigned long looppreviousMillis = 0;    // variable for comparing millis counter
 unsigned long ftcpreviousMillis = 0;     // variable for comparing millis counter
 unsigned long wifipreviousMillis = 0;    // variable for comparing millis counter
 unsigned long ftcconpreviousMillis = 0;  // variable for comparing millis counter
@@ -295,7 +295,7 @@ void setup() {
 
 void loop() {
   // -- Loop Start -- //
-  looppreviousMicros = micros();  // Loop Speed Check
+  looppreviousMillis = millis();  // Loop Speed Check
 
   // -- Process Handlers -- //
   HeatPumpQuery1.Process();
@@ -312,7 +312,8 @@ void loop() {
   MELCloud.Process();
   wifiManager.process();
 
-  
+  if(!wifiManager.getWebPortalActive()){ wifiManager.startWebPortal(); }
+
   // -- Config Saver -- //
   if (shouldSaveConfig) { saveConfig(); }  // Handles WiFiManager Settings Changes
 
@@ -454,7 +455,7 @@ void loop() {
   }
 
   // -- CPU Loop Time End -- //
-  CPULoopSpeed = micros() - looppreviousMicros;  // Loop Speed End Monitor
+  CPULoopSpeed = millis() - looppreviousMillis;  // Loop Speed End Monitor
 }
 
 void HeatPumpKeepAlive(void) {
@@ -685,7 +686,7 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
 
 
 void Zone1Report(void) {
-  JsonDocument doc;
+  StaticJsonDocument<512> doc;
   char Buffer[512];
 
   doc[F("Temperature")] = HeatPump.Status.Zone1Temperature;
@@ -706,7 +707,7 @@ void Zone1Report(void) {
 }
 
 void Zone2Report(void) {
-  JsonDocument doc;
+  StaticJsonDocument<512> doc;
   char Buffer[512];
 
   doc[F("Temperature")] = HeatPump.Status.Zone2Temperature;
@@ -726,7 +727,7 @@ void Zone2Report(void) {
 }
 
 void HotWaterReport(void) {
-  JsonDocument doc;
+  StaticJsonDocument<1024> doc;
   char Buffer[1024];
 
   doc[F("Temperature")] = HeatPump.Status.HotWaterTemperature;
@@ -748,7 +749,7 @@ void HotWaterReport(void) {
 }
 
 void SystemReport(void) {
-  JsonDocument doc;
+  StaticJsonDocument<1024> doc;
   char Buffer[1024];
 
   float HeatOutputPower, CoolOutputPower;
@@ -756,13 +757,13 @@ void SystemReport(void) {
 
   double OutputPower = (((float)HeatPump.Status.PrimaryFlowRate / 60) * (float)HeatPump.Status.HeaterDeltaT * 3.9);  // Approx Heat Capacity of Water & Glycol
   double EstInputPower = ((((((float)HeatPump.Status.CompressorFrequency * 2) * ((float)HeatPump.Status.HeaterOutputFlowTemperature * 0.8)) / 1000) / 2) - HeatPump.Status.InputPower) * ((HeatPump.Status.InputPower + 1) - HeatPump.Status.InputPower) / ((HeatPump.Status.InputPower + 1) - HeatPump.Status.InputPower) + HeatPump.Status.InputPower;
-  if (EstInputPower == 0 && (HeatPump.Status.ImmersionActive == 1 || HeatPump.Status.Booster1Active == 1 || HeatPump.Status.Booster2Active == 1)) { EstInputPower = HeatPump.Status.InputPower; }  // Account for Immersion or Booster Instead of HP
+  if (EstInputPower == 0 && (HeatPump.Status.ImmersionActive == 1 || HeatPump.Status.BoosterActive == 1)) { EstInputPower = HeatPump.Status.InputPower; }  // Account for Immersion or Booster Instead of HP
 
   if (OutputPower < 0) {
     HeatOutputPower = 0;
     CoolOutputPower = fabsf(OutputPower);
   } else {
-    if (OutputPower == 0 && (HeatPump.Status.ImmersionActive == 1 || HeatPump.Status.Booster1Active == 1 || HeatPump.Status.Booster2Active == 1)) { HeatOutputPower = HeatPump.Status.OutputPower; }  // Account for Immersion or Booster Instead of HP
+    if (OutputPower == 0 && (HeatPump.Status.ImmersionActive == 1 || HeatPump.Status.BoosterActive == 1)) { HeatOutputPower = HeatPump.Status.OutputPower; }  // Account for Immersion or Booster Instead of HP
     else {
       HeatOutputPower = OutputPower;
     }
@@ -797,7 +798,7 @@ void SystemReport(void) {
 }
 
 void AdvancedReport(void) {
-  JsonDocument doc;
+  StaticJsonDocument<1024> doc;
   char Buffer[1024];
 
   doc[F("FlowTMax")] = HeatPump.Status.FlowTempMax;
@@ -807,8 +808,7 @@ void AdvancedReport(void) {
   doc[F("MixingTemp")] = HeatPump.Status.MixingTemperature;
   doc[F("MixingStep")] = HeatPump.Status.MixingStep;
   doc[F("Immersion")] = OFF_ON_String[HeatPump.Status.ImmersionActive];
-  doc[F("Booster")] = OFF_ON_String[HeatPump.Status.Booster1Active];
-  doc[F("Booster2")] = OFF_ON_String[HeatPump.Status.Booster2Active];
+  doc[F("Booster")] = OFF_ON_String[HeatPump.Status.BoosterActive];
   doc[F("ThreeWayValve")] = HeatPump.Status.ThreeWayValve;
   doc[F("PrimaryWaterPump")] = OFF_ON_String[HeatPump.Status.PrimaryWaterPump];
   doc[F("RefrigeTemp")] = HeatPump.Status.RefrigeTemp;
@@ -824,7 +824,7 @@ void AdvancedReport(void) {
 
 
 void EnergyReport(void) {
-  JsonDocument doc;
+  StaticJsonDocument<512> doc;
   char Buffer[512];
 
   float heat_cop, cool_cop, dhw_cop, ctotal, dtotal, total_cop;
@@ -890,7 +890,7 @@ void EnergyReport(void) {
 
 
 void AdvancedTwoReport(void) {
-  JsonDocument doc;
+  StaticJsonDocument<1024> doc;
   char Buffer[1024];
 
   int ErrorCode = ((String(HeatPump.Status.ErrCode1, HEX)).toInt() * 100) + (String(HeatPump.Status.ErrCode2, HEX)).toInt();
@@ -928,7 +928,7 @@ void AdvancedTwoReport(void) {
 }
 
 void StatusReport(void) {
-  JsonDocument doc;
+  StaticJsonDocument<512> doc;
   char Buffer[512];
   char TmBuffer[32];
 

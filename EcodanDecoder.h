@@ -220,7 +220,7 @@ typedef struct _EcodanStatus {
 
   //From Message 0x14
   uint8_t PrimaryFlowRate;
-  uint8_t Booster1Active, Booster2Active, ImmersionActive;
+  uint8_t BoosterActive, ImmersionActive;
 
   //From Message 0x15
   uint8_t PrimaryWaterPump, WaterPump2, ThreeWayValve, ThreeWayValve2, MixingStep;
