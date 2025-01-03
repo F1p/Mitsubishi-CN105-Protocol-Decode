@@ -43,7 +43,7 @@ Wemos D1 Mini
     python upload.py --chip esp8266 --port "COM4" --baud "115200" "" erase_flash --before default_reset --after hard_reset write_flash 0x0 "ECODAN_Bridge_v5.2.1_WemosD1.bin"
     ```
 
-5. The Pins on the Wemos D1 Mini are: D0 = Tx, D5 = Rx
+5. The Pins on the Wemos D1 Mini are: D0 = Tx, D5 = Rx to the FTC and Tx/Rx to MELCloud
 
 
 

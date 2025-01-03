@@ -495,12 +495,12 @@ void readSettingsFromConfig() {
 
 
       // Sensors
-      if (i >= 0 && i < 77) {
+      if (i >= 0 && i < 78) {
         Config["state_topic"] = BASETOPIC + String(MQTT_TOPIC[MQTT_TOPIC_POS[i]]);                                    // Needs a positioner
         if (MQTT_UNITS_POS[i] > 0) { Config["unit_of_measurement"] = String(MQTT_SENSOR_UNITS[MQTT_UNITS_POS[i]]); }  // Don't send nothing
         Config["value_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[i]);
         Config["icon"] = String(MQTT_MDI_ICONS[i]);
-        if (i >= 41 && i < 49) {
+        if (i >= 39 && i < 47) {
           Config["device_class"] = String(MQTT_DEVICE_CLASS[0]);
         }
 
@@ -508,32 +508,32 @@ void readSettingsFromConfig() {
       }
 
       // Climate
-      if (i >= 77 && i < 82) {
-        Config["object_id"] = String(MQTT_OBJECT_ID[i - 77]);
-        if (i >= 77 && i < 80) {
-          Config["current_temperature_topic"] = BASETOPIC + String(MQTT_TOPIC[i - 73]);
+      if (i >= 78 && i < 83) {
+        Config["object_id"] = String(MQTT_OBJECT_ID[i - 78]);
+        if (i >= 78 && i < 81) {
+          Config["current_temperature_topic"] = BASETOPIC + String(MQTT_TOPIC[i - 74]);
           Config["current_temperature_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[25]);
-          Config["temperature_command_topic"] = BASETOPIC + String(MQTT_TOPIC[i - 67]);
-          Config["temperature_state_topic"] = BASETOPIC + String(MQTT_TOPIC[i - 73]);
-          Config["temperature_state_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[78]);
-        } else if (i >= 80 && i < 82) {
+          Config["temperature_command_topic"] = BASETOPIC + String(MQTT_TOPIC[i - 68]);
+          Config["temperature_state_topic"] = BASETOPIC + String(MQTT_TOPIC[i - 74]);
+          Config["temperature_state_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[79]);
+        } else if (i >= 81 && i < 83) {
           Config["current_temperature_topic"] = BASETOPIC + String(MQTT_TOPIC[2]);
           Config["current_temperature_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[6]);
-          Config["temperature_command_topic"] = BASETOPIC + String(MQTT_TOPIC[i - 57]);
-          Config["temperature_state_topic"] = BASETOPIC + String(MQTT_TOPIC[i - 75]);
-          Config["temperature_state_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[79]);
+          Config["temperature_command_topic"] = BASETOPIC + String(MQTT_TOPIC[i - 58]);
+          Config["temperature_state_topic"] = BASETOPIC + String(MQTT_TOPIC[i - 76]);
+          Config["temperature_state_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[80]);
         }
         Config["temperature_unit"] = String(MQTT_SENSOR_UNITS[9]);
-        Config["max_temp"] = MQTT_CLIMATE_MAX[i - 77];
-        Config["min_temp"] = MQTT_CLIMATE_MIN[i - 77];
-        Config["temp_step"] = MQTT_CLIMATE_TEMP_STEP[i - 77];
-        Config["precision"] = MQTT_CLIMATE_PRECISION[i - 77];
-        Config["initial"] = MQTT_CLIMATE_INITAL[i - 77];
+        Config["max_temp"] = MQTT_CLIMATE_MAX[i - 78];
+        Config["min_temp"] = MQTT_CLIMATE_MIN[i - 78];
+        Config["temp_step"] = MQTT_CLIMATE_TEMP_STEP[i - 78];
+        Config["precision"] = MQTT_CLIMATE_PRECISION[i - 78];
+        Config["initial"] = MQTT_CLIMATE_INITAL[i - 78];
         Config["action_topic"] = BASETOPIC + String(MQTT_TOPIC[2]);
-        Config["action_template"] = String(MQTT_CLIMATE_MODE_STATE_TEMPLATE[i - 77]);
+        Config["action_template"] = String(MQTT_CLIMATE_MODE_STATE_TEMPLATE[i - 78]);
         Config["mode_state_topic"] = BASETOPIC + String(MQTT_TOPIC[8]);
-        Config["mode_state_template"] = String(MQTT_CLIMATE_STATE_TOPIC[i - 77]);
-        if (i == 77) {
+        Config["mode_state_template"] = String(MQTT_CLIMATE_STATE_TOPIC[i - 78]);
+        if (i == 78) {
           Config["modes"][0] = "heat";
           Config["modes"][1] = "off";
         } else {
@@ -548,11 +548,11 @@ void readSettingsFromConfig() {
       }
 
       // Switches
-      if (i >= 82 && i < 92) {
-        Config["state_topic"] = BASETOPIC + String(MQTT_TOPIC[MQTT_SWITCH_STATE_POS[i - 82]]);
+      if (i >= 83 && i < 93) {
+        Config["state_topic"] = BASETOPIC + String(MQTT_TOPIC[MQTT_SWITCH_STATE_POS[i - 83]]);
         Config["value_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[i - 2]);
-        Config["command_topic"] = BASETOPIC + String(MQTT_TOPIC[i - 69]);
-        if (i == 83) {
+        Config["command_topic"] = BASETOPIC + String(MQTT_TOPIC[i - 70]);
+        if (i == 84) {
           Config["state_on"] = "On";
           Config["state_off"] = "Standby";
           Config["payload_on"] = "On";
@@ -570,12 +570,12 @@ void readSettingsFromConfig() {
 
 
       // Selects
-      if (i >= 92 && i < 95) {
+      if (i >= 93 && i < 96) {
         Config["name"] = String(MQTT_SENSOR_NAME[i]);
-        Config["command_topic"] = BASETOPIC + String(MQTT_TOPIC[i - 67]);
-        Config["state_topic"] = BASETOPIC + String(MQTT_TOPIC[i - 88]);
-        Config["value_template"] = String(MQTT_SELECT_VALUE_TOPIC[i - 92]);
-        if (i == 92) {
+        Config["command_topic"] = BASETOPIC + String(MQTT_TOPIC[i - 68]);
+        Config["state_topic"] = BASETOPIC + String(MQTT_TOPIC[i - 89]);
+        Config["value_template"] = String(MQTT_SELECT_VALUE_TOPIC[i - 93]);
+        if (i == 93) {
           Config["options"][0] = HotWaterControlModeString[0];
           Config["options"][1] = HotWaterControlModeString[1];
         } else {
@@ -592,14 +592,14 @@ void readSettingsFromConfig() {
 
 
       // Add Availability Topics
-      if (i >= 78) {
-        if (i >= 86 && i < 91) {  // Server Control Mode Interlocks
+      if (i >= 79) {
+        if (i >= 87 && i < 92) {  // Server Control Mode Interlocks
           Config["availability"]["topic"] = BASETOPIC + String(MQTT_TOPIC[8]);
-          Config["availability"]["value_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[83]);
+          Config["availability"]["value_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[84]);
           Config["availability"]["payload_available"] = ITEM_ON;
           Config["availability"]["payload_not_available"] = ITEM_OFF;
-        } else if (i >= 80 && i < 82) {  // Flow Op Mode Interlocks on Climate & Number
-          Config["availability"]["topic"] = BASETOPIC + String(MQTT_TOPIC[i - 75]);
+        } else if (i >= 81 && i < 83) {  // Flow Op Mode Interlocks on Climate & Number
+          Config["availability"]["topic"] = BASETOPIC + String(MQTT_TOPIC[i - 76]);
           Config["availability"]["value_template"] = String(MQTT_NUMBER_AVAIL_TEMPLATE[0]);
         } else {  // Everything else LWT
           Config["availability"]["topic"] = BASETOPIC + String(MQTT_TOPIC[0]);
@@ -611,8 +611,7 @@ void readSettingsFromConfig() {
 
       if (MQTTStream == 1) {
         MQTTClient1.publish(Buffer_Topic.c_str(), Buffer_Payload, true);
-      }
-      if (MQTTStream == 2) {
+      } else if (MQTTStream == 2) {
         MQTTClient2.publish(Buffer_Topic.c_str(), Buffer_Payload, true);
       }
 

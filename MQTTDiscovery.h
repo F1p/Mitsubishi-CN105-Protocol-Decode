@@ -1,9 +1,9 @@
 //-- MQTT Home Assistant Auto Discovery --//
 
-const int discovery_topics PROGMEM = 95;
+const int discovery_topics PROGMEM = 96;
 
 // Build the sensor JSON structure
-const char MQTT_DISCOVERY_OBJ_ID[][3] PROGMEM = { "aa", "ab", "ac", "ad", "ae", "af", "ag", "ai", "aj", "ak", "al", "am", "an", "ao", "ap", "aq", "ar", "as", "au", "av", "aw", "ax", "ay", "az", "ba", "bb", "bc", "bd", "be", "bf", "bg", "bh", "bi", "bj", "bk", "bl", "bm", "bn", "bo", "bp", "bq", "br", "bs", "bt", "bu", "bv", "bw", "bx", "by", "bz", "ca", "cb", "cc", "cd", "cu", "cv", "cw", "cx", "cz", "da", "db", "dc", "de", "df", "dg", "dh", "di", "dj", "dk", "dl", "dm", "dn", "do", "dp", "dq", "ds", "dt", "ce", "cf", "cg", "dt", "du", "ch", "ci", "cj", "ck", "cl", "cm", "cn", "co", "cp", "dr", "cs", "ct", "dv" };
+const char MQTT_DISCOVERY_OBJ_ID[][3] PROGMEM = { "aa", "ab", "ac", "ad", "ae", "af", "ag", "ai", "aj", "ak", "al", "am", "an", "ao", "ap", "aq", "ar", "as", "au", "av", "aw", "ax", "ay", "az", "ba", "bb", "bc", "bd", "be", "bf", "bg", "bh", "bi", "bj", "bk", "bl", "bm", "bn", "bo", "bp", "bq", "br", "bs", "bt", "bu", "bv", "bw", "bx", "by", "bz", "ca", "cb", "cc", "cd", "cu", "cv", "cw", "cx", "cz", "da", "db", "dc", "de", "df", "dg", "dh", "di", "dj", "dk", "dl", "dm", "dn", "do", "dp", "dq", "ds", "dt", "ce", "cf", "cg", "dt", "dw", "du", "ch", "ci", "cj", "ck", "cl", "cm", "cn", "co", "cp", "dr", "cs", "ct", "dv" };
 
 const char MQTT_SENSOR_UNIQUE_ID[][32] PROGMEM = {
   "ashp_bridge_lwt_",
@@ -83,6 +83,7 @@ const char MQTT_SENSOR_UNIQUE_ID[][32] PROGMEM = {
   "ashp_dhw_eco_boost_",
   "ashp_mix_valve_pos_",
   "ashp_bridge_cpu_",
+  "ashp_booster2_active_",
 
   "ashp_dhw_climate_",  //65
   "ashp_Zone1_climate_",
@@ -185,6 +186,7 @@ const char MQTT_MDI_ICONS[][30] PROGMEM = {
   "mdi:hand-water",
   "mdi:valve",
   "mdi:chip",
+  "mdi:thermometer-plus",
 
   "mdi:thermostat",  //65
   "mdi:thermostat",
@@ -233,7 +235,7 @@ const char MQTT_SENSOR_NAME[][40] PROGMEM = {
   "Mixing Tank Temperature",
   "Refrigerant Temperature",  //20
   "Immersion Heater",
-  "Booster Heater",
+  "Booster Heater 1",
   "Primary Water Pump",
   "Water Pump 2",
   "Three Way Valve 1",  //25
@@ -290,6 +292,7 @@ const char MQTT_SENSOR_NAME[][40] PROGMEM = {
   "DHW Boost",
   "Mixing Valve Step",
   "Bridge CPU Temperature",
+  "Booster Heater 2",
 
   "DHW Thermostat",  //70
   "Zone 1 Thermostat",
@@ -435,7 +438,8 @@ int MQTT_TOPIC_POS[] PROGMEM = {
   1,
   4,
   3,
-  1
+  1,
+  3
 };
 
 int MQTT_UNITS_POS[] PROGMEM = {
@@ -515,7 +519,8 @@ int MQTT_UNITS_POS[] PROGMEM = {
   0,
   0,
   0,
-  2
+  2,
+  0
 };
 
 const char MQTT_OBJECT_ID[][19] PROGMEM = {
@@ -688,6 +693,7 @@ const char MQTT_SENSOR_VALUE_TEMPLATE[][50] PROGMEM = {
   "{{ value_json.HotWaterEcoBoostActive }}",
   "{{ value_json.MixingStep }}",  //75
   "{{ value_json.CPUTemp }}",
+  "{{ value_json.Booster2 }}",
   "{{ value_json }}",
   "{{ value_json.Setpoint }}",
   "{{ value_json.FSP }}",
