@@ -121,7 +121,7 @@ const int basetopic_max_length = 30;
 // id/name placeholder/prompt default length
 // Here you can pre-set the settings for the MQTT connection. The settings can later be changed via Wifi Manager.
 struct MqttSettings {
-  // These are the placeholder objects for the custom fields  
+  // These are the placeholder objects for the custom fields
   char deviceId[deviceId_max_length] = "000000000000";
   char wm_device_id_identifier[10] = "device_id";
 
@@ -209,7 +209,7 @@ TimerCallBack HeatPumpQuery4(30000, handleMQTT2State);        // Re-connect atte
 TimerCallBack HeatPumpQuery5(500, HeatPumpWriteStateEngine);  // Set to 500ms (Safe), 320-350ms best time between messages
 
 
-unsigned long looppreviousMillis = 0;    // variable for comparing millis counter
+unsigned long looppreviousMicros = 0;    // variable for comparing millis counter
 unsigned long ftcpreviousMillis = 0;     // variable for comparing millis counter
 unsigned long wifipreviousMillis = 0;    // variable for comparing millis counter
 unsigned long ftcconpreviousMillis = 0;  // variable for comparing millis counter
@@ -295,7 +295,7 @@ void setup() {
 
 void loop() {
   // -- Loop Start -- //
-  looppreviousMillis = millis();  // Loop Speed Check
+  looppreviousMicros = micros();  // Loop Speed Check
 
   // -- Process Handlers -- //
   HeatPumpQuery1.Process();
@@ -312,7 +312,6 @@ void loop() {
   MELCloud.Process();
   wifiManager.process();
 
-  if(!wifiManager.getWebPortalActive()){ wifiManager.startWebPortal(); }
 
   // -- Config Saver -- //
   if (shouldSaveConfig) { saveConfig(); }  // Handles WiFiManager Settings Changes
@@ -328,7 +327,7 @@ void loop() {
       cmd_queue_position = 1;  // All commands written, reset
       cmd_queue_length = 0;
     }                                                                 // Dequeue the last message that was written
-    if (MQTTReconnect() | MQTT2Reconnect()) { PublishAllReports(); }  // Publish update to the MQTT Topics
+    if ((MQTTReconnect() || MQTT2Reconnect()) && (HeatPump.HeatPumpConnected())) { PublishAllReports(); }  // Publish update to the MQTT Topics
   }
 
   // -- WiFi Status Handler -- //
@@ -455,7 +454,7 @@ void loop() {
   }
 
   // -- CPU Loop Time End -- //
-  CPULoopSpeed = millis() - looppreviousMillis;  // Loop Speed End Monitor
+  CPULoopSpeed = micros() - looppreviousMicros;  // Loop Speed End Monitor
 }
 
 void HeatPumpKeepAlive(void) {
@@ -686,14 +685,18 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
 
 
 void Zone1Report(void) {
-  StaticJsonDocument<512> doc;
+  JsonDocument doc;
   char Buffer[512];
 
   doc[F("Temperature")] = HeatPump.Status.Zone1Temperature;
   doc[F("Setpoint")] = HeatPump.Status.Zone1TemperatureSetpoint;
   doc[F("HeatingControlMode")] = HeatingControlModeString[HeatPump.Status.HeatingControlModeZ1];
   doc[F("FSP")] = round2(HeatPump.Status.Zone1FlowTemperatureSetpoint);
-  doc[F("TwoZone_Z1Working")] = HeatPump.Status.TwoZone_Z1Working;
+  if ((HeatPump.Status.Zone2Temperature == 0) && (HeatPump.Status.SystemOperationMode == 2 || HeatPump.Status.SystemOperationMode == 3 || HeatPump.Status.SystemOperationMode == 7)) {
+    doc[F("TwoZone_Z1Working")] = 1;
+  } else {
+    doc[F("TwoZone_Z1Working")] = HeatPump.Status.TwoZone_Z1Working;
+  }
   doc[F("ProhibitHeating")] = HeatPump.Status.ProhibitHeatingZ1;
   doc[F("ProhibitCooling")] = HeatPump.Status.ProhibitCoolingZ1;
   doc[F("FlowTemp")] = HeatPump.Status.Zone1FlowTemperature;
@@ -707,7 +710,7 @@ void Zone1Report(void) {
 }
 
 void Zone2Report(void) {
-  StaticJsonDocument<512> doc;
+  JsonDocument doc;
   char Buffer[512];
 
   doc[F("Temperature")] = HeatPump.Status.Zone2Temperature;
@@ -727,7 +730,7 @@ void Zone2Report(void) {
 }
 
 void HotWaterReport(void) {
-  StaticJsonDocument<1024> doc;
+  JsonDocument doc;
   char Buffer[1024];
 
   doc[F("Temperature")] = HeatPump.Status.HotWaterTemperature;
@@ -749,7 +752,7 @@ void HotWaterReport(void) {
 }
 
 void SystemReport(void) {
-  StaticJsonDocument<1024> doc;
+  JsonDocument doc;
   char Buffer[1024];
 
   float HeatOutputPower, CoolOutputPower;
@@ -757,13 +760,13 @@ void SystemReport(void) {
 
   double OutputPower = (((float)HeatPump.Status.PrimaryFlowRate / 60) * (float)HeatPump.Status.HeaterDeltaT * 3.9);  // Approx Heat Capacity of Water & Glycol
   double EstInputPower = ((((((float)HeatPump.Status.CompressorFrequency * 2) * ((float)HeatPump.Status.HeaterOutputFlowTemperature * 0.8)) / 1000) / 2) - HeatPump.Status.InputPower) * ((HeatPump.Status.InputPower + 1) - HeatPump.Status.InputPower) / ((HeatPump.Status.InputPower + 1) - HeatPump.Status.InputPower) + HeatPump.Status.InputPower;
-  if (EstInputPower == 0 && (HeatPump.Status.ImmersionActive == 1 || HeatPump.Status.BoosterActive == 1)) { EstInputPower = HeatPump.Status.InputPower; }  // Account for Immersion or Booster Instead of HP
+  if (EstInputPower == 0 && (HeatPump.Status.ImmersionActive == 1 || HeatPump.Status.Booster1Active == 1 || HeatPump.Status.Booster2Active == 1)) { EstInputPower = HeatPump.Status.InputPower; }  // Account for Immersion or Booster Instead of HP
 
   if (OutputPower < 0) {
     HeatOutputPower = 0;
     CoolOutputPower = fabsf(OutputPower);
   } else {
-    if (OutputPower == 0 && (HeatPump.Status.ImmersionActive == 1 || HeatPump.Status.BoosterActive == 1)) { HeatOutputPower = HeatPump.Status.OutputPower; }  // Account for Immersion or Booster Instead of HP
+    if (OutputPower == 0 && (HeatPump.Status.ImmersionActive == 1 || HeatPump.Status.Booster1Active == 1 || HeatPump.Status.Booster2Active == 1)) { HeatOutputPower = HeatPump.Status.OutputPower; }  // Account for Immersion or Booster Instead of HP
     else {
       HeatOutputPower = OutputPower;
     }
@@ -798,7 +801,7 @@ void SystemReport(void) {
 }
 
 void AdvancedReport(void) {
-  StaticJsonDocument<1024> doc;
+  JsonDocument doc;
   char Buffer[1024];
 
   doc[F("FlowTMax")] = HeatPump.Status.FlowTempMax;
@@ -808,7 +811,8 @@ void AdvancedReport(void) {
   doc[F("MixingTemp")] = HeatPump.Status.MixingTemperature;
   doc[F("MixingStep")] = HeatPump.Status.MixingStep;
   doc[F("Immersion")] = OFF_ON_String[HeatPump.Status.ImmersionActive];
-  doc[F("Booster")] = OFF_ON_String[HeatPump.Status.BoosterActive];
+  doc[F("Booster")] = OFF_ON_String[HeatPump.Status.Booster1Active];
+  doc[F("Booster2")] = OFF_ON_String[HeatPump.Status.Booster2Active];
   doc[F("ThreeWayValve")] = HeatPump.Status.ThreeWayValve;
   doc[F("PrimaryWaterPump")] = OFF_ON_String[HeatPump.Status.PrimaryWaterPump];
   doc[F("RefrigeTemp")] = HeatPump.Status.RefrigeTemp;
@@ -824,7 +828,7 @@ void AdvancedReport(void) {
 
 
 void EnergyReport(void) {
-  StaticJsonDocument<512> doc;
+  JsonDocument doc;
   char Buffer[512];
 
   float heat_cop, cool_cop, dhw_cop, ctotal, dtotal, total_cop;
@@ -890,7 +894,7 @@ void EnergyReport(void) {
 
 
 void AdvancedTwoReport(void) {
-  StaticJsonDocument<1024> doc;
+  JsonDocument doc;
   char Buffer[1024];
 
   int ErrorCode = ((String(HeatPump.Status.ErrCode1, HEX)).toInt() * 100) + (String(HeatPump.Status.ErrCode2, HEX)).toInt();
@@ -928,7 +932,7 @@ void AdvancedTwoReport(void) {
 }
 
 void StatusReport(void) {
-  StaticJsonDocument<512> doc;
+  JsonDocument doc;
   char Buffer[512];
   char TmBuffer[32];
 

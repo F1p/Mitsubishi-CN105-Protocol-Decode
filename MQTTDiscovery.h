@@ -1,10 +1,10 @@
 //-- MQTT Home Assistant Auto Discovery --//
 
-const int discovery_topics PROGMEM = 95;
+const int discovery_topics PROGMEM = 96;
 
 // Build the sensor JSON structure
-const char MQTT_DISCOVERY_OBJ_ID[][3] PROGMEM = { "aa", "ab", "ac", "ad", "ae", "af", "ag", "ai", "aj", "ak", "al", "am", "an", "ao", "ap", "aq", "ar", "as", "au", "av", "aw", "ax", "ay", "az", "ba", "bb", "bc", "bd", "be", "bf", "bg", "bh", "bi", "bj", "bk", "bl", "bm", "bn", "bo", "bp", "bq", "br", "bs", "bt", "bu", "bv", "bw", "bx", "by", "bz", "ca", "cb", "cc", "cd", "cu", "cv", "cw", "cx", "cz", "da", "db", "dc", "de", "df", "dg", "dh", "di", "dj", "dk", "dl", "dm", "dn", "do", "dp", "dq", "ds", "dt", "ce", "cf", "cg", "dt", "du", "ch", "ci", "cj", "ck", "cl", "cm", "cn", "co", "cp", "dr", "cs", "ct", "dv" };
-
+const char MQTT_DISCOVERY_OBJ_ID[][3] PROGMEM = { "aa", "ab", "ac", "ad", "ae", "af", "ag", "ai", "aj", "ak", "al", "am", "an", "ao", "ap", "aq", "ar", "as", "au", "av", "aw", "ax", "ay", "az", "ba", "bb", "bc", "bd", "be", "bf", "bg", "bh", "bi", "bj", "bk", "bl", "bm", "bn", "bo", "bp", "bq", "br", "bs", "bt", "bu", "bv", "bw", "bx", "by", "bz", "ca", "cb", "cc", "cd", "cu", "cv", "cw", "cx", "cz", "da", "db", "dc", "de", "df", "dg", "dh", "di", "dj", "dk", "dl", "dm", "dn", "do", "dp", "dq", "ds", "dt", "dx", "ce", "cf", "cg", "dw", "du", "ch", "ci", "cj", "ck", "cl", "cm", "cn", "co", "cp", "dr", "cs", "ct", "dv" };
+                                                
 const char MQTT_SENSOR_UNIQUE_ID[][32] PROGMEM = {
   "ashp_bridge_lwt_",
   "ashp_bridge_firmware_",
@@ -83,6 +83,7 @@ const char MQTT_SENSOR_UNIQUE_ID[][32] PROGMEM = {
   "ashp_dhw_eco_boost_",
   "ashp_mix_valve_pos_",
   "ashp_bridge_cpu_",
+  "ashp_booster2_active_",
 
   "ashp_dhw_climate_",  //65
   "ashp_Zone1_climate_",
@@ -185,6 +186,7 @@ const char MQTT_MDI_ICONS[][30] PROGMEM = {
   "mdi:hand-water",
   "mdi:valve",
   "mdi:chip",
+  "mdi:thermometer-plus",
 
   "mdi:thermostat",  //65
   "mdi:thermostat",
@@ -233,7 +235,7 @@ const char MQTT_SENSOR_NAME[][40] PROGMEM = {
   "Mixing Tank Temperature",
   "Refrigerant Temperature",  //20
   "Immersion Heater",
-  "Booster Heater",
+  "Booster Heater 1",
   "Primary Water Pump",
   "Water Pump 2",
   "Three Way Valve 1",  //25
@@ -290,6 +292,7 @@ const char MQTT_SENSOR_NAME[][40] PROGMEM = {
   "DHW Boost",
   "Mixing Valve Step",
   "Bridge CPU Temperature",
+  "Booster Heater 2",
 
   "DHW Thermostat",  //70
   "Zone 1 Thermostat",
@@ -435,7 +438,8 @@ int MQTT_TOPIC_POS[] PROGMEM = {
   1,
   4,
   3,
-  1
+  1,
+  3
 };
 
 int MQTT_UNITS_POS[] PROGMEM = {
@@ -515,7 +519,8 @@ int MQTT_UNITS_POS[] PROGMEM = {
   0,
   0,
   0,
-  2
+  2,
+  0
 };
 
 const char MQTT_OBJECT_ID[][19] PROGMEM = {
@@ -571,7 +576,7 @@ const char MQTT_CLIMATE_MODE[][120] PROGMEM = {
 };
 
 const char MQTT_CLIMATE_STATE_TOPIC[][360] PROGMEM = {
-  "{{'heat' if states('sensor.ecodan_ashp_prohibit_dhw')=='0' or states('sensor.ecodan_ashp_dhw_heating_phase')!='Off' else 'off' }}",
+  "{{'heat' if states('sensor.ecodan_ashp_prohibit_dhw')=='0' or states('sensor.ecodan_ashp_dhw_heating_phase')!='Off' else 'off'}}",
   "{{'heat' if (value_json.OpMode=='Heat' and states('sensor.ecodan_ashp_zone_1_heating_prohibit')=='0') else 'cool' if (value_json.OpMode=='Cool' and states('sensor.ecodan_ashp_zone_1_heating_prohibit')=='0') else 'off'}}",
   "{{'heat' if (value_json.OpMode=='Heat' and state_attr('climate.zone2_climate','current_temperature')!=0 and states('sensor.ecodan_ashp_zone_2_heating_prohibit')=='0') else 'cool' if (value_json.OpMode=='Cool' and state_attr('climate.zone2_climate','current_temperature')!=0 and states('sensor.ecodan_ashp_zone_2_cooling_prohibit')=='0') else 'off'}}",
   "{{'heat' if (value_json.OpMode=='Heat' and states('sensor.ecodan_ashp_zone_2_heating_prohibit')=='0') else 'cool' if (value_json.OpMode=='Cool' and states('sensor.ecodan_ashp_zone_1_cooling_prohibit')=='0') else 'off'}}",
@@ -579,18 +584,18 @@ const char MQTT_CLIMATE_STATE_TOPIC[][360] PROGMEM = {
 };
 
 
-const char MQTT_CLIMATE_MODE_STATE_TEMPLATE[][535] PROGMEM = {
-  "{{'heating' if value_json.SystemOperationMode in ['Hot Water','Legionella'] else 'defrosting' if value_json.SystemOperationMode=='Defrosting' else 'idle' if states('sensor.ecodan_ashp_prohibit_dhw')!='1' else 'off'}}",
-  "{%set mode=value_json.SystemOperationMode|lower%}{%set zone_temp=state_attr('climate.zone2_climate','current_temperature')%}{%set h_prhbt=not(states('sensor.ecodan_ashp_zone_1_heating_prohibit')|bool)%}{%set c_prhbt=not(states('sensor.ecodan_ashp_zone_1_cooling_prohibit')|bool)%}{%set is_wrk=not(states('sensor.ecodan_ashp_zone_1_working')|bool)%}{%if mode=='off' and (h_prhbt or c_prhbt) and (zone_temp==0 or is_wrk)%}idle{%elif zone_temp>0 and is_wrk and (h_prhbt or c_prhbt)%}idle{%else%}{{mode}}{%endif%}",
-  "{%set mode=value_json.SystemOperationMode|lower%}{%set h_prhbt=not(states('sensor.ecodan_ashp_zone_2_heating_prohibit')|bool)%}{%set c_prhbt=not(states('sensor.ecodan_ashp_zone_2_cooling_prohibit')|bool)%}{%set is_wrk=not(states('sensor.ecodan_ashp_zone_2_working')|bool)%}{%if mode=='off' and (h_prhbt or c_prhbt) and (zone_temp==0 or is_wrk)%}idle{%elif is_wrk and (h_prhbt or c_prhbt)%}idle{%else%}{{mode}}{%endif%}",
-  "{%set mode=value_json.SystemOperationMode|lower%}{%set zone_temp=state_attr('climate.zone2_climate','current_temperature')%}{%set h_prhbt=not(states('sensor.ecodan_ashp_zone_1_heating_prohibit')|bool)%}{%set c_prhbt=not(states('sensor.ecodan_ashp_zone_1_cooling_prohibit')|bool)%}{%set is_wrk=not(states('sensor.ecodan_ashp_zone_1_working')|bool)%}{%if mode=='off' and (h_prhbt or c_prhbt) and (zone_temp==0 or is_wrk)%}idle{%elif zone_temp>0 and is_wrk and (h_prhbt or c_prhbt)%}idle{%else%}{{mode}}{%endif%}",
-  "{%set mode=value_json.SystemOperationMode|lower%}{%set h_prhbt=not(states('sensor.ecodan_ashp_zone_2_heating_prohibit')|bool)%}{%set c_prhbt=not(states('sensor.ecodan_ashp_zone_2_cooling_prohibit')|bool)%}{%set is_wrk=not(states('sensor.ecodan_ashp_zone_2_working')|bool)%}{%if mode=='off' and (h_prhbt or c_prhbt) and (zone_temp==0 or is_wrk)%}idle{%elif is_wrk and (h_prhbt or c_prhbt)%}idle{%else%}{{mode}}{%endif%}",
+const char MQTT_CLIMATE_MODE_STATE_TEMPLATE[][400] PROGMEM = {
+  "{{'heating' if value_json.SystemOperationMode in ['Hot Water','Legionella'] else 'defrosting' if value_json.SystemOperationMode in ['Defrosting','Frost Protect'] else 'idle' if states('sensor.ecodan_ashp_prohibit_dhw')!='1' else 'off'}}",
+  "{%set mode=value_json.SystemOperationMode|lower%}{%set h_prhbt=not(states('sensor.ecodan_ashp_zone_2_heating_prohibit')|bool)%}{%set c_prhbt=not(states('sensor.ecodan_ashp_zone_1_cooling_prohibit')|bool)%}{%set wrkg=states('sensor.ecodan_ashp_zone_1_working')|bool%}{%if mode in ['defrosting','frost protect']%}defrosting{%elif (h_prhbt or c_prhbt) and not(wrkg)%}idle{%else%}{{mode}}{%endif%}",
+  "{%set mode=value_json.SystemOperationMode|lower%}{%set h_prhbt=not(states('sensor.ecodan_ashp_zone_2_heating_prohibit')|bool)%}{%set c_prhbt=not(states('sensor.ecodan_ashp_zone_2_cooling_prohibit')|bool)%}{%set wrkg=states('sensor.ecodan_ashp_zone_2_working')|bool%}{%if mode in ['defrosting','frost protect']%}defrosting{%elif (h_prhbt or c_prhbt) and not(wrkg)%}idle{%else%}{{mode}}{%endif%}",
+  "{%set mode=value_json.SystemOperationMode|lower%}{%set h_prhbt=not(states('sensor.ecodan_ashp_zone_2_heating_prohibit')|bool)%}{%set c_prhbt=not(states('sensor.ecodan_ashp_zone_1_cooling_prohibit')|bool)%}{%set wrkg=states('sensor.ecodan_ashp_zone_1_working')|bool%}{%if mode in ['defrosting','frost protect']%}defrosting{%elif (h_prhbt or c_prhbt) and not(wrkg)%}idle{%else%}{{mode}}{%endif%}",
+  "{%set mode=value_json.SystemOperationMode|lower%}{%set h_prhbt=not(states('sensor.ecodan_ashp_zone_2_heating_prohibit')|bool)%}{%set c_prhbt=not(states('sensor.ecodan_ashp_zone_2_cooling_prohibit')|bool)%}{%set wrkg=states('sensor.ecodan_ashp_zone_2_working')|bool%}{%if mode in ['defrosting','frost protect']%}defrosting{%elif (h_prhbt or c_prhbt) and not(wrkg)%}idle{%else%}{{mode}}{%endif%}",
 };
 
 const char MQTT_SELECT_VALUE_TOPIC[][405] PROGMEM = {
-  "{{ 'Normal' if value_json.HotWaterControlMode=='Normal' else 'Eco' if value_json.HotWaterControlMode=='Eco' }}",
-  "{{'Heating Temperature' if value_json.HeatingControlMode=='Temp' else 'Heating Flow' if value_json.HeatingControlMode=='Flow' else 'Heating Compensation' if value_json.HeatingControlMode == 'Compensation' else 'Cooling Temperature' if value_json.HeatingControlMode == 'Cool' else 'Cooling Flow' if value_json.HeatingControlMode == 'Cool Flow' else 'Dry Up' if value_json.HeatingControlMode == 'Dry Up'}}",
-  "{{'Heating Temperature' if value_json.HeatingControlMode=='Temp' else 'Heating Flow' if value_json.HeatingControlMode=='Flow' else 'Heating Compensation' if value_json.HeatingControlMode == 'Compensation' else 'Cooling Temperature' if value_json.HeatingControlMode == 'Cool' else 'Cooling Flow' if value_json.HeatingControlMode == 'Cool Flow' else 'Dry Up' if value_json.HeatingControlMode == 'Dry Up'}}"
+  "{{'Normal' if value_json.HotWaterControlMode=='Normal' else 'Eco' if value_json.HotWaterControlMode=='Eco'}}",
+  "{{'Heating Temperature' if value_json.HeatingControlMode=='Temp' else 'Heating Flow' if value_json.HeatingControlMode=='Flow' else 'Heating Compensation' if value_json.HeatingControlMode=='Compensation' else 'Cooling Temperature' if value_json.HeatingControlMode=='Cool' else 'Cooling Flow' if value_json.HeatingControlMode=='Cool Flow' else 'Dry Up' if value_json.HeatingControlMode=='Dry Up'}}",
+  "{{'Heating Temperature' if value_json.HeatingControlMode=='Temp' else 'Heating Flow' if value_json.HeatingControlMode=='Flow' else 'Heating Compensation' if value_json.HeatingControlMode=='Compensation' else 'Cooling Temperature' if value_json.HeatingControlMode=='Cool' else 'Cooling Flow' if value_json.HeatingControlMode=='Cool Flow' else 'Dry Up' if value_json.HeatingControlMode=='Dry Up'}}"
 };
 
 const char MQTT_SENSOR_UNITS[][6] PROGMEM = {
@@ -688,6 +693,7 @@ const char MQTT_SENSOR_VALUE_TEMPLATE[][50] PROGMEM = {
   "{{ value_json.HotWaterEcoBoostActive }}",
   "{{ value_json.MixingStep }}",  //75
   "{{ value_json.CPUTemp }}",
+  "{{ value_json.Booster2 }}",
   "{{ value_json }}",
   "{{ value_json.Setpoint }}",
   "{{ value_json.FSP }}",
