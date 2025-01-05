@@ -39,6 +39,8 @@ String MQTT_COMMAND_HOTWATER_PROHIBIT = MQTT_COMMAND_HOTWATER + "/Prohibit";
 String MQTT_COMMAND_SYSTEM_HOLIDAYMODE = MQTT_COMMAND_SYSTEM + "/HolidayMode";
 String MQTT_COMMAND_SYSTEM_SVRMODE = MQTT_COMMAND_SYSTEM + "/SvrControlMode";
 String MQTT_COMMAND_SYSTEM_POWER = MQTT_COMMAND_SYSTEM + "/Power";
+String MQTT_COMMAND_SYSTEM_UNITSIZE = MQTT_COMMAND_SYSTEM + "/UnitSize";
+String MQTT_COMMAND_SYSTEM_GLYCOL = MQTT_COMMAND_SYSTEM + "/Glycol";
 
 String MQTTCommandZone1FlowSetpoint = MQTT_COMMAND_ZONE1_FLOW_SETPOINT;
 String MQTTCommandZone1NoModeSetpoint = MQTT_COMMAND_ZONE1_NOMODE_SETPOINT;
@@ -61,6 +63,8 @@ String MQTTCommandHotwaterProhibit = MQTT_COMMAND_HOTWATER_PROHIBIT;
 String MQTTCommandSystemHolidayMode = MQTT_COMMAND_SYSTEM_HOLIDAYMODE;
 String MQTTCommandSystemSvrMode = MQTT_COMMAND_SYSTEM_SVRMODE;
 String MQTTCommandSystemPower = MQTT_COMMAND_SYSTEM_POWER;
+String MQTTCommandSystemUnitSize = MQTT_COMMAND_SYSTEM_UNITSIZE;
+String MQTTCommandSystemGlycol = MQTT_COMMAND_SYSTEM_GLYCOL;
 
 
 String MQTT_2_BASETOPIC = "00000";
@@ -104,6 +108,8 @@ String MQTT_2_COMMAND_HOTWATER_PROHIBIT = MQTT_2_COMMAND_HOTWATER + "/Prohibit";
 String MQTT_2_COMMAND_SYSTEM_HOLIDAYMODE = MQTT_2_COMMAND_SYSTEM + "/HolidayMode";
 String MQTT_2_COMMAND_SYSTEM_SVRMODE = MQTT_2_COMMAND_SYSTEM + "/SvrControlMode";
 String MQTT_2_COMMAND_SYSTEM_POWER = MQTT_2_COMMAND_SYSTEM + "/Power";
+String MQTT_2_COMMAND_SYSTEM_UNITSIZE = MQTT_COMMAND_SYSTEM + "/UnitSize";
+String MQTT_2_COMMAND_SYSTEM_GLYCOL = MQTT_COMMAND_SYSTEM + "/Glycol";
 
 String MQTTCommand2Zone1FlowSetpoint = MQTT_2_COMMAND_ZONE1_FLOW_SETPOINT;
 String MQTTCommand2Zone1NoModeSetpoint = MQTT_2_COMMAND_ZONE1_NOMODE_SETPOINT;
@@ -126,6 +132,8 @@ String MQTTCommand2HotwaterProhibit = MQTT_2_COMMAND_HOTWATER_PROHIBIT;
 String MQTTCommand2SystemHolidayMode = MQTT_2_COMMAND_SYSTEM_HOLIDAYMODE;
 String MQTTCommand2SystemSvrMode = MQTT_2_COMMAND_SYSTEM_SVRMODE;
 String MQTTCommand2SystemPower = MQTT_2_COMMAND_SYSTEM_POWER;
+String MQTTCommand2SystemUnitSize = MQTT_2_COMMAND_SYSTEM_UNITSIZE;
+String MQTTCommand2SystemGlycol = MQTT_2_COMMAND_SYSTEM_GLYCOL;
 
 
 
@@ -256,6 +264,22 @@ void readSettingsFromConfig() {
               MQTT_2_BASETOPIC = mqttSettings.baseTopic2;
               shouldSaveConfig = true;  // Save config after exit to update the file
             }
+            // Unit Size
+            if (doc.containsKey(unitSettings.unitsize_identifier)) {
+              if (doc[unitSettings.unitsize_identifier] > 0) {
+                unitSettings.UnitSize = doc[unitSettings.unitsize_identifier];
+              }
+            } else {                    // For upgrading from <6.1.1, create the entry
+              shouldSaveConfig = true;  // Save config after exit to update the file
+            }
+            // Glycol Strength
+            if (doc.containsKey(unitSettings.glycol_identifier)) {
+              if (doc[unitSettings.glycol_identifier] > 0) {
+                unitSettings.GlycolStrength = doc[unitSettings.glycol_identifier];
+              }
+            } else {                    // For upgrading from <6.1.1, create the entry
+              shouldSaveConfig = true;  // Save config after exit to update the file
+            }
           }
         }
         configFile.close();
@@ -319,6 +343,8 @@ void readSettingsFromConfig() {
     MQTT_COMMAND_SYSTEM_HOLIDAYMODE = MQTT_COMMAND_SYSTEM + "/HolidayMode";
     MQTT_COMMAND_SYSTEM_SVRMODE = MQTT_COMMAND_SYSTEM + "/SvrControlMode";
     MQTT_COMMAND_SYSTEM_POWER = MQTT_COMMAND_SYSTEM + "/Power";
+    MQTT_COMMAND_SYSTEM_UNITSIZE = MQTT_COMMAND_SYSTEM + "/UnitSize";
+    MQTT_COMMAND_SYSTEM_GLYCOL = MQTT_COMMAND_SYSTEM + "/Glycol";
 
     MQTTCommandZone1FlowSetpoint = MQTT_COMMAND_ZONE1_FLOW_SETPOINT;
     MQTTCommandZone1NoModeSetpoint = MQTT_COMMAND_ZONE1_NOMODE_SETPOINT;
@@ -341,6 +367,8 @@ void readSettingsFromConfig() {
     MQTTCommandSystemHolidayMode = MQTT_COMMAND_SYSTEM_HOLIDAYMODE;
     MQTTCommandSystemSvrMode = MQTT_COMMAND_SYSTEM_SVRMODE;
     MQTTCommandSystemPower = MQTT_COMMAND_SYSTEM_POWER;
+    MQTTCommandSystemUnitSize = MQTT_COMMAND_SYSTEM_UNITSIZE;
+    MQTTCommandSystemGlycol = MQTT_COMMAND_SYSTEM_GLYCOL;
   }
 
 
@@ -378,6 +406,8 @@ void readSettingsFromConfig() {
       doc[mqttSettings.wm_mqtt2_user_identifier] = mqttSettings.user2;
       doc[mqttSettings.wm_mqtt2_password_identifier] = mqttSettings.password2;
       doc[mqttSettings.wm_mqtt2_basetopic_identifier] = mqttSettings.baseTopic2;
+      doc[unitSettings.unitsize_identifier] = unitSettings.UnitSize;
+      doc[unitSettings.glycol_identifier] = unitSettings.GlycolStrength;
 
       if (serializeJson(doc, configFile) == 0) {
         DEBUG_PRINTLN("[FAILED]");
@@ -570,23 +600,29 @@ void readSettingsFromConfig() {
 
 
       // Selects
-      if (i >= 93 && i < 96) {
+      if (i >= 93 && i < 98) {
         Config["name"] = String(MQTT_SENSOR_NAME[i]);
         Config["command_topic"] = BASETOPIC + String(MQTT_TOPIC[i - 68]);
         Config["state_topic"] = BASETOPIC + String(MQTT_TOPIC[i - 89]);
-        Config["value_template"] = String(MQTT_SELECT_VALUE_TOPIC[i - 93]);
+        Config["value_template"] = String(MQTT_SELECT_VALUE_TEMPLATE[i - 93]);
         if (i == 93) {
           Config["options"][0] = HotWaterControlModeString[0];
           Config["options"][1] = HotWaterControlModeString[1];
+        } else if (i == 96) {  //Unit Sizes
+          Config["state_topic"] = BASETOPIC + String(MQTT_TOPIC[1]);
+          for (int j = 0; j < 5; j++) {
+            Config["options"][j] = MQTT_UNIT_SIZE[j];
+          }
+        } else if (i == 97) {  // Glycol Strengths
+          Config["state_topic"] = BASETOPIC + String(MQTT_TOPIC[1]);
+          Config["options"][0] = "0%";
+          Config["options"][1] = "10%";
+          Config["options"][2] = "30%";
         } else {
-          Config["options"][0] = "Heating Temperature";
-          Config["options"][1] = "Heating Flow";
-          Config["options"][2] = "Heating Compensation";
-          Config["options"][3] = "Cooling Temperature";
-          Config["options"][4] = "Cooling Flow";
-          Config["options"][5] = "Dry Up";
+          for (int j = 0; j < 6; j++) {
+            Config["options"][j] = MQTT_OP_MODES[j];
+          }
         }
-
         MQTT_DISCOVERY_TOPIC = String(MQTT_DISCOVERY_TOPICS[4]);
       }
 
@@ -647,14 +683,16 @@ void readSettingsFromConfig() {
     MQTTClient1.subscribe(MQTTCommandZone2ProhibitHeating.c_str());
     MQTTClient1.subscribe(MQTTCommandZone2ProhibitCooling.c_str());
     MQTTClient1.subscribe(MQTTCommandZone2HeatingMode.c_str());
-    MQTTClient1.subscribe(MQTTCommandSystemHolidayMode.c_str());
     MQTTClient1.subscribe(MQTTCommandHotwaterMode.c_str());
     MQTTClient1.subscribe(MQTTCommandHotwaterSetpoint.c_str());
     MQTTClient1.subscribe(MQTTCommandHotwaterBoost.c_str());
     MQTTClient1.subscribe(MQTTCommandHotwaterNormalBoost.c_str());
     MQTTClient1.subscribe(MQTTCommandHotwaterProhibit.c_str());
+    MQTTClient1.subscribe(MQTTCommandSystemHolidayMode.c_str());
     MQTTClient1.subscribe(MQTTCommandSystemPower.c_str());
     MQTTClient1.subscribe(MQTTCommandSystemSvrMode.c_str());
+    MQTTClient1.subscribe(MQTTCommandSystemUnitSize.c_str());
+    MQTTClient1.subscribe(MQTTCommandSystemGlycol.c_str());
 
     delay(10);
     PublishDiscoveryTopics(1, MQTT_BASETOPIC);
@@ -796,6 +834,8 @@ void readSettingsFromConfig() {
     MQTT_2_COMMAND_SYSTEM_HOLIDAYMODE = MQTT_2_COMMAND_SYSTEM + "/HolidayMode";
     MQTT_2_COMMAND_SYSTEM_SVRMODE = MQTT_2_COMMAND_SYSTEM + "/SvrControlMode";
     MQTT_2_COMMAND_SYSTEM_POWER = MQTT_2_COMMAND_SYSTEM + "/Power";
+    MQTT_2_COMMAND_SYSTEM_UNITSIZE = MQTT_2_COMMAND_SYSTEM + "/UnitSize";
+    MQTT_2_COMMAND_SYSTEM_GLYCOL = MQTT_2_COMMAND_SYSTEM + "/Glycol";
 
     MQTTCommand2Zone1FlowSetpoint = MQTT_2_COMMAND_ZONE1_FLOW_SETPOINT;
     MQTTCommand2Zone1NoModeSetpoint = MQTT_2_COMMAND_ZONE1_NOMODE_SETPOINT;
@@ -818,6 +858,8 @@ void readSettingsFromConfig() {
     MQTTCommand2SystemHolidayMode = MQTT_2_COMMAND_SYSTEM_HOLIDAYMODE;
     MQTTCommand2SystemSvrMode = MQTT_2_COMMAND_SYSTEM_SVRMODE;
     MQTTCommand2SystemPower = MQTT_2_COMMAND_SYSTEM_POWER;
+    MQTTCommand2SystemUnitSize = MQTT_2_COMMAND_SYSTEM_UNITSIZE;
+    MQTTCommand2SystemGlycol = MQTT_2_COMMAND_SYSTEM_GLYCOL;
   }
 
 
@@ -857,6 +899,8 @@ void readSettingsFromConfig() {
     MQTTClient2.subscribe(MQTTCommand2HotwaterProhibit.c_str());
     MQTTClient2.subscribe(MQTTCommand2SystemPower.c_str());
     MQTTClient2.subscribe(MQTTCommand2SystemSvrMode.c_str());
+    MQTTClient2.subscribe(MQTTCommand2SystemUnitSize.c_str());
+    MQTTClient2.subscribe(MQTTCommand2SystemGlycol.c_str());
     delay(10);
     PublishDiscoveryTopics(2, MQTT_2_BASETOPIC);
   }

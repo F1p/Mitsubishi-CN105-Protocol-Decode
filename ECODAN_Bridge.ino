@@ -45,7 +45,7 @@
 #include "Ecodan.h"
 #include "Melcloud.h"
 
-String FirmwareVersion = "6.1.0";
+String FirmwareVersion = "6.1.1";
 
 
 #ifdef ESP8266  // Define the Witty ESP8266 Serial Pins
@@ -150,7 +150,15 @@ struct MqttSettings {
   char wm_mqtt2_basetopic_identifier[16] = "mqtt2_basetopic";
 };
 
+struct UnitSettings {
+  float UnitSize = 8.5;
+  float GlycolStrength = 3.9;
+  char unitsize_identifier[9] = "unitsize";
+  char glycol_identifier[7] = "glycol";
+};
+
 MqttSettings mqttSettings;
+UnitSettings unitSettings;
 ECODAN HeatPump;
 MELCLOUD MELCloud;
 #ifdef ESP8266
@@ -326,7 +334,7 @@ void loop() {
     } else {
       cmd_queue_position = 1;  // All commands written, reset
       cmd_queue_length = 0;
-    }                                                                 // Dequeue the last message that was written
+    }                                                                                                      // Dequeue the last message that was written
     if ((MQTTReconnect() || MQTT2Reconnect()) && (HeatPump.HeatPumpConnected())) { PublishAllReports(); }  // Publish update to the MQTT Topics
   }
 
@@ -492,7 +500,7 @@ void HeatPumpQueryStateEngine(void) {
   if (HeatPump.UpdateComplete()) {
     DEBUG_PRINTLN("Update Complete");
     FTCLoopSpeed = millis() - ftcpreviousMillis;  // Loop Speed End
-    if (MQTTReconnect() | MQTT2Reconnect()) { PublishAllReports(); }
+    if ((MQTTReconnect() || MQTT2Reconnect()) && (HeatPump.HeatPumpConnected())) { PublishAllReports(); }
     HeatPump.GetFTCVersion();
   }
 }
@@ -538,14 +546,14 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
 
   // Curve or Temp Independent Thermostat Setting
   // Heating & Cooling Zone 1 Commands
-  if (Topic == MQTTCommandZone1NoModeSetpoint) {
+  if ((Topic == MQTTCommandZone1NoModeSetpoint) || (Topic == MQTTCommand2Zone1NoModeSetpoint)) {
     MQTTWriteReceived("MQTT Set Zone1 Temperature Setpoint", 6);
     HeatPump.SetZoneTempSetpoint(Payload.toFloat(), HeatPump.Status.HeatingControlModeZ1, ZONE1);
     HeatPump.Status.Zone1TemperatureSetpoint = Payload.toFloat();
   }
   // Flow Setpoint Commands
   // Heating & Cooling Zone 1 Commands
-  if (Topic == MQTTCommandZone1FlowSetpoint) {
+  if ((Topic == MQTTCommandZone1FlowSetpoint) || (Topic == MQTTCommand2Zone1FlowSetpoint)) {
     MQTTWriteReceived("MQTT Set Zone1 Flow Setpoint", 6);
     HeatPump.SetFlowSetpoint(Payload.toFloat(), HeatPump.Status.HeatingControlModeZ1, ZONE1);
     HeatPump.Status.Zone1FlowTemperatureSetpoint = Payload.toFloat();
@@ -553,41 +561,41 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
 
   // Thermostat Setpoint
   // Heating & Cooling Zone 2 Commands
-  if (Topic == MQTTCommandZone2NoModeSetpoint) {
+  if ((Topic == MQTTCommandZone2NoModeSetpoint) || (Topic == MQTTCommand2Zone2NoModeSetpoint)) {
     MQTTWriteReceived("MQTT Set Zone2 Temperature Setpoint", 6);
     HeatPump.SetZoneTempSetpoint(Payload.toFloat(), HeatPump.Status.HeatingControlModeZ2, ZONE2);
     HeatPump.Status.Zone2TemperatureSetpoint = Payload.toFloat();
   }
   // Flow Setpoint Commands
   // Heating & Cooling Zone 2 Commands
-  if (Topic == MQTTCommandZone2FlowSetpoint) {
+  if ((Topic == MQTTCommandZone2FlowSetpoint) || (Topic == MQTTCommand2Zone2FlowSetpoint)) {
     MQTTWriteReceived("MQTT Set Zone2 Flow Setpoint", 6);
     HeatPump.SetFlowSetpoint(Payload.toFloat(), HeatPump.Status.HeatingControlModeZ2, ZONE2);
     HeatPump.Status.Zone2FlowTemperatureSetpoint = Payload.toFloat();
   }
 
   // Prohibits for Server Control Mode
-  if (Topic == MQTTCommandZone1ProhibitHeating) {
+  if ((Topic == MQTTCommandZone1ProhibitHeating) || (Topic == MQTTCommand2Zone1ProhibitHeating)) {
     MQTTWriteReceived("MQTT Zone 1 Prohibit Heating", 16);
     HeatPump.SetProhibits(TX_MESSAGE_SETTING_HEAT_Z1_INH_Flag, Payload.toInt());
     HeatPump.Status.ProhibitHeatingZ1 = Payload.toInt();
   }
-  if (Topic == MQTTCommandZone1ProhibitCooling) {
+  if ((Topic == MQTTCommandZone1ProhibitCooling) || (Topic == MQTTCommand2Zone1ProhibitCooling)) {
     MQTTWriteReceived("MQTT Zone 1 Prohibit Cooling", 16);
     HeatPump.SetProhibits(TX_MESSAGE_SETTING_COOL_Z1_INH_Flag, Payload.toInt());
     HeatPump.Status.ProhibitCoolingZ1 = Payload.toInt();
   }
-  if (Topic == MQTTCommandZone2ProhibitHeating) {
+  if ((Topic == MQTTCommandZone2ProhibitHeating) || (Topic == MQTTCommand2Zone2ProhibitHeating)) {
     MQTTWriteReceived("MQTT Zone 2 Prohibit Heating", 16);
     HeatPump.SetProhibits(TX_MESSAGE_SETTING_HEAT_Z2_INH_Flag, Payload.toInt());
     HeatPump.Status.ProhibitHeatingZ2 = Payload.toInt();
   }
-  if (Topic == MQTTCommandZone2ProhibitCooling) {
+  if ((Topic == MQTTCommandZone2ProhibitCooling) || (Topic == MQTTCommand2Zone2ProhibitCooling)) {
     MQTTWriteReceived("MQTT Zone 2 Prohibit Cooling", 16);
     HeatPump.SetProhibits(TX_MESSAGE_SETTING_COOL_Z2_INH_Flag, Payload.toInt());
     HeatPump.Status.ProhibitCoolingZ2 = Payload.toInt();
   }
-  if (Topic == MQTTCommandHotwaterProhibit) {
+  if ((Topic == MQTTCommandHotwaterProhibit) || (Topic == MQTTCommand2HotwaterProhibit)) {
     MQTTWriteReceived("MQTT DHW Prohibit", 16);
     HeatPump.SetProhibits(TX_MESSAGE_SETTING_DHW_INH_Flag, Payload.toInt());
     HeatPump.Status.ProhibitDHW = Payload.toInt();
@@ -595,16 +603,16 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
 
 
   // Other Commands
-  if (Topic == MQTTCommandHotwaterMode) {
+  if ((Topic == MQTTCommandHotwaterMode) || (Topic == MQTTCommand2HotwaterMode)) {
     MQTTWriteReceived("MQTT Set HW Mode", 15);
     HeatPump.SetDHWMode(&Payload);
   }
-  if (Topic == MQTTCommandHotwaterBoost) {
+  if ((Topic == MQTTCommandHotwaterBoost) || (Topic == MQTTCommand2HotwaterBoost)) {
     MQTTWriteReceived("MQTT Set HW Boost", 16);
     HeatPump.ForceDHW(Payload.toInt());
     HeatPump.Status.HotWaterBoostActive = Payload.toInt();
   }
-  if (Topic == MQTTCommandHotwaterNormalBoost) {
+  if ((Topic == MQTTCommandHotwaterNormalBoost) || (Topic == MQTTCommand2HotwaterNormalBoost)) {
     MQTTWriteReceived("MQTT Normal DHW Boost Run", 16);
     PreHWBoostSvrCtrlMode = HeatPump.Status.SvrControlMode;  // Take the Server Control Mode when Entering Boost
     HeatPump.SetSvrControlMode(Payload.toInt(), 1 - Payload.toInt(), HeatPump.Status.ProhibitHeatingZ1, HeatPump.Status.ProhibitCoolingZ1, HeatPump.Status.ProhibitHeatingZ2, HeatPump.Status.ProhibitCoolingZ2);
@@ -612,17 +620,17 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
     HeatPump.Status.ProhibitDHW = 1 - Payload.toInt();                                     // Hot Water Boost is Inverse
     NormalHWBoostOperating = Payload.toInt();
   }
-  if (Topic == MQTTCommandSystemHolidayMode) {
+  if ((Topic == MQTTCommandSystemHolidayMode) || (Topic == MQTTCommand2SystemHolidayMode)) {
     MQTTWriteReceived("MQTT Set Holiday Mode", 16);
     HeatPump.SetHolidayMode(Payload.toInt());
     HeatPump.Status.HolidayModeActive = Payload.toInt();
   }
-  if (Topic == MQTTCommandHotwaterSetpoint) {
+  if ((Topic == MQTTCommandHotwaterSetpoint) || (Topic == MQTTCommand2HotwaterSetpoint)) {
     MQTTWriteReceived("MQTT Set HW Setpoint", 6);
     HeatPump.SetHotWaterSetpoint(Payload.toInt());
     HeatPump.Status.HotWaterSetpoint = Payload.toInt();
   }
-  if (Topic == MQTTCommandZone1HeatingMode) {
+  if ((Topic == MQTTCommandZone1HeatingMode) || (Topic == MQTTCommand2Zone1HeatingMode)) {
     MQTTWriteReceived("MQTT Set Heating Mode Zone 1", 4);
     if (Payload == String("Heating Temperature")) {
       HeatPump.SetHeatingControlMode(HEATING_CONTROL_MODE_ZONE_TEMP, SET_HEATING_CONTROL_MODE_Z1);
@@ -644,7 +652,7 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
       HeatPump.Status.HeatingControlModeZ1 = HEATING_CONTROL_MODE_DRY_UP;
     }
   }
-  if (Topic == MQTTCommandZone2HeatingMode) {
+  if ((Topic == MQTTCommandZone2HeatingMode) || (Topic == MQTTCommand2Zone2HeatingMode)) {
     MQTTWriteReceived("MQTT Set Heating Mode Zone 2", 4);
     if (Payload == String("Heating Temperature")) {
       HeatPump.SetHeatingControlMode(HEATING_CONTROL_MODE_ZONE_TEMP, SET_HEATING_CONTROL_MODE_Z2);
@@ -666,12 +674,12 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
       HeatPump.Status.HeatingControlModeZ2 = HEATING_CONTROL_MODE_DRY_UP;
     }
   }
-  if (Topic == MQTTCommandSystemSvrMode) {
-    MQTTWriteReceived("MQTT Server Control Mode", 17);
-    HeatPump.SetSvrControlMode(Payload.toInt(), HeatPump.Status.ProhibitDHW, HeatPump.Status.ProhibitHeatingZ1, HeatPump.Status.ProhibitCoolingZ1, HeatPump.Status.ProhibitHeatingZ2, HeatPump.Status.ProhibitCoolingZ2);
-    HeatPump.Status.SvrControlMode = Payload.toInt();
-  }
-  if (Topic == MQTTCommandSystemPower) {
+  if ((Topic == MQTTCommandSystemSvrMode) || (Topic == MQTTCommand2SystemSvrMode)) {
+      MQTTWriteReceived("MQTT Server Control Mode", 17);
+      HeatPump.SetSvrControlMode(Payload.toInt(), HeatPump.Status.ProhibitDHW, HeatPump.Status.ProhibitHeatingZ1, HeatPump.Status.ProhibitCoolingZ1, HeatPump.Status.ProhibitHeatingZ2, HeatPump.Status.ProhibitCoolingZ2);
+      HeatPump.Status.SvrControlMode = Payload.toInt();
+    }
+  if ((Topic == MQTTCommandSystemPower) || (Topic == MQTTCommand2SystemPower)) {
     MQTTWriteReceived("MQTT Set System Power Mode", 15);
     if (Payload == String("On")) {
       HeatPump.SetSystemPowerMode(SYSTEM_POWER_MODE_ON);
@@ -681,7 +689,24 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
       HeatPump.Status.SystemPowerMode = SYSTEM_POWER_MODE_STANDBY;
     }
   }
+  if ((Topic == MQTTCommandSystemUnitSize) || (Topic == MQTTCommand2SystemUnitSize)) {
+    MQTTWriteReceived("MQTT Set Unit Size", 15);
+    unitSettings.UnitSize = Payload.toFloat();
+    shouldSaveConfig = true;  // Write the data to JSON file so if device reboots it is saved
+  }
+  if ((Topic == MQTTCommandSystemGlycol) || (Topic == MQTTCommand2SystemGlycol)) {
+    MQTTWriteReceived("MQTT Set Glycol Strength", 15);
+    if (Payload == String("0%")) {
+      unitSettings.GlycolStrength = 4.18;
+    } else if (Payload == String("10%")) {
+      unitSettings.GlycolStrength = 4.05;
+    } else if (Payload == String("30%")) {
+      unitSettings.GlycolStrength = 3.9;
+    }
+    shouldSaveConfig = true;  // Write the data to JSON file so if device reboots it is saved
+  }
 }
+
 
 
 void Zone1Report(void) {
@@ -755,11 +780,24 @@ void SystemReport(void) {
   JsonDocument doc;
   char Buffer[1024];
 
-  float HeatOutputPower, CoolOutputPower;
+  float HeatOutputPower, CoolOutputPower, UnitSizeFactor;
 
+  double OutputPower = (((float)HeatPump.Status.PrimaryFlowRate / 60) * (float)HeatPump.Status.HeaterDeltaT * unitSettings.GlycolStrength);  // Approx Heat Capacity of Fluid in Use
 
-  double OutputPower = (((float)HeatPump.Status.PrimaryFlowRate / 60) * (float)HeatPump.Status.HeaterDeltaT * 3.9);  // Approx Heat Capacity of Water & Glycol
-  double EstInputPower = ((((((float)HeatPump.Status.CompressorFrequency * 2) * ((float)HeatPump.Status.HeaterOutputFlowTemperature * 0.8)) / 1000) / 2) - HeatPump.Status.InputPower) * ((HeatPump.Status.InputPower + 1) - HeatPump.Status.InputPower) / ((HeatPump.Status.InputPower + 1) - HeatPump.Status.InputPower) + HeatPump.Status.InputPower;
+  // Unit Size Factoring
+  if (unitSettings.UnitSize == 5.0) {
+    UnitSizeFactor = 0.57;
+  } else if (unitSettings.UnitSize == 6.0) {
+    UnitSizeFactor = 0.7;
+  } else if (unitSettings.UnitSize == 8.5) {
+    UnitSizeFactor = 1;
+  } else if (unitSettings.UnitSize == 11.2) {
+    UnitSizeFactor = 1.5;
+  } else if (unitSettings.UnitSize == 14.0) {
+    UnitSizeFactor = 1.9;
+  }
+
+  double EstInputPower = (((((((float)HeatPump.Status.CompressorFrequency * 2) * ((float)HeatPump.Status.HeaterOutputFlowTemperature * 0.8)) / 1000) / 2) - HeatPump.Status.InputPower) * ((HeatPump.Status.InputPower + 1) - HeatPump.Status.InputPower) / ((HeatPump.Status.InputPower + 1) - HeatPump.Status.InputPower) + HeatPump.Status.InputPower) * UnitSizeFactor;
   if (EstInputPower == 0 && (HeatPump.Status.ImmersionActive == 1 || HeatPump.Status.Booster1Active == 1 || HeatPump.Status.Booster2Active == 1)) { EstInputPower = HeatPump.Status.InputPower; }  // Account for Immersion or Booster Instead of HP
 
   if (OutputPower < 0) {
@@ -933,7 +971,7 @@ void AdvancedTwoReport(void) {
 
 void StatusReport(void) {
   JsonDocument doc;
-  char Buffer[512];
+  char Buffer[1024];
   char TmBuffer[32];
 
   doc[F("SSID")] = WiFi.SSID();
@@ -954,6 +992,14 @@ void StatusReport(void) {
 
   strftime(TmBuffer, sizeof(TmBuffer), "%FT%TZ", &HeatPump.Status.DateTimeStamp);
   doc[F("FTCTime")] = TmBuffer;
+  doc[F("UnitSize")] = String(unitSettings.UnitSize, 1);
+  if (round2(unitSettings.GlycolStrength) == 4.18) {
+    doc[F("Glycol")] = "0%";
+  } else if (round2(unitSettings.GlycolStrength) == 4.05) {
+    doc[F("Glycol")] = "10%";
+  } else if (round2(unitSettings.GlycolStrength) == 3.90) {
+    doc[F("Glycol")] = "30%";
+  }
   doc[F("HB_ID")] = Heart_Value;
 
   serializeJson(doc, Buffer);

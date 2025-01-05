@@ -1,9 +1,9 @@
 //-- MQTT Home Assistant Auto Discovery --//
 
-const int discovery_topics PROGMEM = 96;
+const int discovery_topics PROGMEM = 98;
 
 // Build the sensor JSON structure
-const char MQTT_DISCOVERY_OBJ_ID[][3] PROGMEM = { "aa", "ab", "ac", "ad", "ae", "af", "ag", "ai", "aj", "ak", "al", "am", "an", "ao", "ap", "aq", "ar", "as", "au", "av", "aw", "ax", "ay", "az", "ba", "bb", "bc", "bd", "be", "bf", "bg", "bh", "bi", "bj", "bk", "bl", "bm", "bn", "bo", "bp", "bq", "br", "bs", "bt", "bu", "bv", "bw", "bx", "by", "bz", "ca", "cb", "cc", "cd", "cu", "cv", "cw", "cx", "cz", "da", "db", "dc", "de", "df", "dg", "dh", "di", "dj", "dk", "dl", "dm", "dn", "do", "dp", "dq", "ds", "dt", "dx", "ce", "cf", "cg", "dw", "du", "ch", "ci", "cj", "ck", "cl", "cm", "cn", "co", "cp", "dr", "cs", "ct", "dv" };
+const char MQTT_DISCOVERY_OBJ_ID[][3] PROGMEM = { "aa", "ab", "ac", "ad", "ae", "af", "ag", "ai", "aj", "ak", "al", "am", "an", "ao", "ap", "aq", "ar", "as", "au", "av", "aw", "ax", "ay", "az", "ba", "bb", "bc", "bd", "be", "bf", "bg", "bh", "bi", "bj", "bk", "bl", "bm", "bn", "bo", "bp", "bq", "br", "bs", "bt", "bu", "bv", "bw", "bx", "by", "bz", "ca", "cb", "cc", "cd", "cu", "cv", "cw", "cx", "cz", "da", "db", "dc", "de", "df", "dg", "dh", "di", "dj", "dk", "dl", "dm", "dn", "do", "dp", "dq", "ds", "dt", "dx", "ce", "cf", "cg", "dw", "du", "ch", "ci", "cj", "ck", "cl", "cm", "cn", "co", "cp", "dr", "cs", "ct", "dv", "dx", "dy" };
                                                 
 const char MQTT_SENSOR_UNIQUE_ID[][32] PROGMEM = {
   "ashp_bridge_lwt_",
@@ -105,6 +105,8 @@ const char MQTT_SENSOR_UNIQUE_ID[][32] PROGMEM = {
   "ashp_dhw_mode",  //79
   "ashp_heat_cool_mode",
   "ashp_heat_cool_mode_z2",
+  "ashp_unit_size_",
+  "ashp_glycol_",
 };
 
 
@@ -211,6 +213,8 @@ const char MQTT_MDI_ICONS[][30] PROGMEM = {
   "mdi:auto-mode",  //79
   "mdi:sun-snowflake-variant",
   "mdi:sun-snowflake-variant",
+  "mdi: resize",
+  "mdi: water-opacity"
 };
 
 
@@ -313,7 +317,9 @@ const char MQTT_SENSOR_NAME[][40] PROGMEM = {
 
   "DHW Mode",  //84
   "Heating/Cooling Operation Mode Zone 1",
-  "Heating/Cooling Operation Mode Zone 2"
+  "Heating/Cooling Operation Mode Zone 2",
+  "Outdoor Unit Size",
+  "Glycol Strength"
 };
 
 const char MQTT_TOPIC[][34] PROGMEM = {
@@ -344,7 +350,9 @@ const char MQTT_TOPIC[][34] PROGMEM = {
   "/Command/Zone2/FlowSetpoint",        //24
   "/Command/HotWater/Mode",             //25
   "/Command/Zone1/HeatingMode",         //26
-  "/Command/Zone2/HeatingMode"          //27
+  "/Command/Zone2/HeatingMode",         //27
+  "/Command/System/UnitSize",           //28
+  "/Command/System/Glycol"              //29
 };
 
 
@@ -592,10 +600,12 @@ const char MQTT_CLIMATE_MODE_STATE_TEMPLATE[][400] PROGMEM = {
   "{%set mode=value_json.SystemOperationMode|lower%}{%set h_prhbt=not(states('sensor.ecodan_ashp_zone_2_heating_prohibit')|bool)%}{%set c_prhbt=not(states('sensor.ecodan_ashp_zone_2_cooling_prohibit')|bool)%}{%set wrkg=states('sensor.ecodan_ashp_zone_2_working')|bool%}{%if mode in ['defrosting','frost protect']%}defrosting{%elif (h_prhbt or c_prhbt) and not(wrkg)%}idle{%else%}{{mode}}{%endif%}",
 };
 
-const char MQTT_SELECT_VALUE_TOPIC[][405] PROGMEM = {
+const char MQTT_SELECT_VALUE_TEMPLATE[][405] PROGMEM = {
   "{{'Normal' if value_json.HotWaterControlMode=='Normal' else 'Eco' if value_json.HotWaterControlMode=='Eco'}}",
   "{{'Heating Temperature' if value_json.HeatingControlMode=='Temp' else 'Heating Flow' if value_json.HeatingControlMode=='Flow' else 'Heating Compensation' if value_json.HeatingControlMode=='Compensation' else 'Cooling Temperature' if value_json.HeatingControlMode=='Cool' else 'Cooling Flow' if value_json.HeatingControlMode=='Cool Flow' else 'Dry Up' if value_json.HeatingControlMode=='Dry Up'}}",
-  "{{'Heating Temperature' if value_json.HeatingControlMode=='Temp' else 'Heating Flow' if value_json.HeatingControlMode=='Flow' else 'Heating Compensation' if value_json.HeatingControlMode=='Compensation' else 'Cooling Temperature' if value_json.HeatingControlMode=='Cool' else 'Cooling Flow' if value_json.HeatingControlMode=='Cool Flow' else 'Dry Up' if value_json.HeatingControlMode=='Dry Up'}}"
+  "{{'Heating Temperature' if value_json.HeatingControlMode=='Temp' else 'Heating Flow' if value_json.HeatingControlMode=='Flow' else 'Heating Compensation' if value_json.HeatingControlMode=='Compensation' else 'Cooling Temperature' if value_json.HeatingControlMode=='Cool' else 'Cooling Flow' if value_json.HeatingControlMode=='Cool Flow' else 'Dry Up' if value_json.HeatingControlMode=='Dry Up'}}",
+  "{{value_json.UnitSize}}",
+  "{{value_json.Glycol}}"
 };
 
 const char MQTT_SENSOR_UNITS[][6] PROGMEM = {
@@ -719,6 +729,23 @@ const char MQTT_DISCOVERY_TOPICS[][23] PROGMEM = {
   "/config"
 };
 
-const char MQTT_DEVICE_CLASS[][21] PROGMEM = {
+const char MQTT_DEVICE_CLASS[][7] PROGMEM = {
   "energy"
+};
+
+const char MQTT_UNIT_SIZE[][5] PROGMEM = {
+  "5.0",
+  "6.0",
+  "8.5",
+  "11.2",
+  "14.0"
+};
+
+const char MQTT_OP_MODES[][21] PROGMEM = {
+  "Heating Temperature",
+  "Heating Flow",
+  "Heating Compensation",
+  "Cooling Temperature",
+  "Cooling Flow",
+  "Dry Up"
 };
