@@ -675,10 +675,10 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
     }
   }
   if ((Topic == MQTTCommandSystemSvrMode) || (Topic == MQTTCommand2SystemSvrMode)) {
-      MQTTWriteReceived("MQTT Server Control Mode", 17);
-      HeatPump.SetSvrControlMode(Payload.toInt(), HeatPump.Status.ProhibitDHW, HeatPump.Status.ProhibitHeatingZ1, HeatPump.Status.ProhibitCoolingZ1, HeatPump.Status.ProhibitHeatingZ2, HeatPump.Status.ProhibitCoolingZ2);
-      HeatPump.Status.SvrControlMode = Payload.toInt();
-    }
+    MQTTWriteReceived("MQTT Server Control Mode", 17);
+    HeatPump.SetSvrControlMode(Payload.toInt(), HeatPump.Status.ProhibitDHW, HeatPump.Status.ProhibitHeatingZ1, HeatPump.Status.ProhibitCoolingZ1, HeatPump.Status.ProhibitHeatingZ2, HeatPump.Status.ProhibitCoolingZ2);
+    HeatPump.Status.SvrControlMode = Payload.toInt();
+  }
   if ((Topic == MQTTCommandSystemPower) || (Topic == MQTTCommand2SystemPower)) {
     MQTTWriteReceived("MQTT Set System Power Mode", 15);
     if (Payload == String("On")) {
@@ -699,9 +699,11 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
     if (Payload == String("0%")) {
       unitSettings.GlycolStrength = 4.18;
     } else if (Payload == String("10%")) {
-      unitSettings.GlycolStrength = 4.05;
+      unitSettings.GlycolStrength = 4.12;
+    } else if (Payload == String("20%")) {
+      unitSettings.GlycolStrength = 4.07;
     } else if (Payload == String("30%")) {
-      unitSettings.GlycolStrength = 3.9;
+      unitSettings.GlycolStrength = 3.95;
     }
     shouldSaveConfig = true;  // Write the data to JSON file so if device reboots it is saved
   }
@@ -780,19 +782,26 @@ void SystemReport(void) {
   JsonDocument doc;
   char Buffer[1024];
 
-  float HeatOutputPower, CoolOutputPower, UnitSizeFactor;
-
+  float HeatOutputPower, CoolOutputPower, UnitSizeFactor, Instant_CoP;
   double OutputPower = (((float)HeatPump.Status.PrimaryFlowRate / 60) * (float)HeatPump.Status.HeaterDeltaT * unitSettings.GlycolStrength);  // Approx Heat Capacity of Fluid in Use
 
   // Unit Size Factoring
   if (unitSettings.UnitSize == 5.0) {
-    UnitSizeFactor = 0.57;
+    UnitSizeFactor = 0.6;
   } else if (unitSettings.UnitSize == 6.0) {
     UnitSizeFactor = 0.7;
+  } else if (unitSettings.UnitSize == 7.5) {
+    UnitSizeFactor = 0.9;
+  } else if (unitSettings.UnitSize == 8.0) {
+    UnitSizeFactor = 1.0;
   } else if (unitSettings.UnitSize == 8.5) {
-    UnitSizeFactor = 1;
+    UnitSizeFactor = 1.1;
+  } else if (unitSettings.UnitSize == 10.0) {
+    UnitSizeFactor = 1.3;
   } else if (unitSettings.UnitSize == 11.2) {
     UnitSizeFactor = 1.5;
+  } else if (unitSettings.UnitSize == 12.0) {
+    UnitSizeFactor = 1.7;
   } else if (unitSettings.UnitSize == 14.0) {
     UnitSizeFactor = 1.9;
   }
@@ -811,6 +820,14 @@ void SystemReport(void) {
     CoolOutputPower = 0;
   }
 
+  // Instant CoP measurement from computed estimates
+  if (OutputPower > 0 && EstInputPower > 0) {
+    Instant_CoP = OutputPower / EstInputPower;
+  } else {
+    Instant_CoP = 0;
+  }
+
+
   doc[F("HeaterFlow")] = HeatPump.Status.HeaterOutputFlowTemperature;
   doc[F("HeaterReturn")] = HeatPump.Status.HeaterReturnFlowTemperature;
   doc[F("FlowReturnDeltaT")] = HeatPump.Status.HeaterDeltaT;
@@ -821,6 +838,7 @@ void SystemReport(void) {
   doc[F("EstInputPower")] = round2(EstInputPower);
   doc[F("EstHeatOutputPower")] = round2(HeatOutputPower);
   doc[F("EstCoolOutputPower")] = round2(CoolOutputPower);
+  doc[F("Instant_CoP")] = round2(Instant_CoP);
   doc[F("Compressor")] = HeatPump.Status.CompressorFrequency;
   doc[F("SystemPower")] = SystemPowerModeString[HeatPump.Status.SystemPowerMode];
   if (HeatPump.Status.Defrost == 2) {
@@ -995,9 +1013,11 @@ void StatusReport(void) {
   doc[F("UnitSize")] = String(unitSettings.UnitSize, 1);
   if (round2(unitSettings.GlycolStrength) == 4.18) {
     doc[F("Glycol")] = "0%";
-  } else if (round2(unitSettings.GlycolStrength) == 4.05) {
+  } else if (round2(unitSettings.GlycolStrength) == 4.12) {
     doc[F("Glycol")] = "10%";
-  } else if (round2(unitSettings.GlycolStrength) == 3.90) {
+  } else if (round2(unitSettings.GlycolStrength) == 4.07) {
+    doc[F("Glycol")] = "20%";
+  } else if (round2(unitSettings.GlycolStrength) == 3.95) {
     doc[F("Glycol")] = "30%";
   }
   doc[F("HB_ID")] = Heart_Value;
