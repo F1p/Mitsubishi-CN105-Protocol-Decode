@@ -703,7 +703,7 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
     } else if (Payload == String("20%")) {
       unitSettings.GlycolStrength = 4.07;
     } else if (Payload == String("30%")) {
-      unitSettings.GlycolStrength = 3.95;
+      unitSettings.GlycolStrength = 3.9;
     }
     shouldSaveConfig = true;  // Write the data to JSON file so if device reboots it is saved
   }
@@ -1017,7 +1017,7 @@ void StatusReport(void) {
     doc[F("Glycol")] = "10%";
   } else if (round2(unitSettings.GlycolStrength) == 4.07) {
     doc[F("Glycol")] = "20%";
-  } else if (round2(unitSettings.GlycolStrength) == 3.95) {
+  } else if (round2(unitSettings.GlycolStrength) == 3.9) {
     doc[F("Glycol")] = "30%";
   }
   doc[F("HB_ID")] = Heart_Value;
