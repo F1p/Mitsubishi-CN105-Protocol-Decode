@@ -335,7 +335,8 @@ void loop() {
       cmd_queue_position = 1;  // All commands written, reset
       cmd_queue_length = 0;
     }                                                                                                      // Dequeue the last message that was written
-    if ((MQTTReconnect() || MQTT2Reconnect()) && (HeatPump.HeatPumpConnected())) { PublishAllReports(); }  // Publish update to the MQTT Topics
+    //if ((MQTTReconnect() || MQTT2Reconnect()) && (HeatPump.HeatPumpConnected())) { PublishAllReports(); }  // Publish update to the MQTT Topics
+    if (MQTTReconnect() || MQTT2Reconnect()) { PublishAllReports(); }  // Publish update to the MQTT Topics
   }
 
   // -- WiFi Status Handler -- //
@@ -389,7 +390,7 @@ void loop() {
     WiFiConnectedLastLoop = false;
   } else if (WiFi.status() != WL_CONNECTED && wifiManager.getConfigPortalActive()) {
 #ifdef ESP8266                         // Define the Witty ESP8266 Ports
-    digitalWrite(Blue_RGB_LED, HIGH);  // Turn the Blue LED Off
+    digitalWrite(Blue_RGB_LED, HIGH);  // Turn the Blue LED On
     analogWrite(Green_RGB_LED, LOW);   // Green LED on, 25% brightness
     digitalWrite(Red_RGB_LED, LOW);    // Turn the Red LED Off
 #endif
@@ -500,7 +501,8 @@ void HeatPumpQueryStateEngine(void) {
   if (HeatPump.UpdateComplete()) {
     DEBUG_PRINTLN("Update Complete");
     FTCLoopSpeed = millis() - ftcpreviousMillis;  // Loop Speed End
-    if ((MQTTReconnect() || MQTT2Reconnect()) && (HeatPump.HeatPumpConnected())) { PublishAllReports(); }
+    //if ((MQTTReconnect() || MQTT2Reconnect()) && (HeatPump.HeatPumpConnected())) { PublishAllReports(); }
+    if (MQTTReconnect() || MQTT2Reconnect()) { PublishAllReports(); }
     HeatPump.GetFTCVersion();
   }
 }

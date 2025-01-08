@@ -489,6 +489,7 @@ void readSettingsFromConfig() {
 
     // Compile Topics
     String MQTT_DISCOVERY_TOPIC, Buffer_Topic;
+    int j;
 
 // -- Entities Configuration JSON -- //
 #ifdef ESP8266
@@ -502,7 +503,6 @@ void readSettingsFromConfig() {
 
     // JSON Formation
     JsonDocument Config;
-    char Buffer_Payload[2048];
 
     // Publish all the discovery topics
     for (int i = 0; i < discovery_topics; i++) {
@@ -601,28 +601,35 @@ void readSettingsFromConfig() {
 
       // Selects
       if (i >= 94 && i < 99) {
-        Config["name"] = String(MQTT_SENSOR_NAME[i]);
         Config["command_topic"] = BASETOPIC + String(MQTT_TOPIC[i - 69]);
         Config["state_topic"] = BASETOPIC + String(MQTT_TOPIC[i - 90]);
         Config["value_template"] = String(MQTT_SELECT_VALUE_TEMPLATE[i - 94]);
-        if (i == 94) {
+        if (i == 94) {  // DHW Modes
           Config["options"][0] = HotWaterControlModeString[0];
           Config["options"][1] = HotWaterControlModeString[1];
-        } else if (i == 97) {  //Unit Sizes
+        } else if (i == 97) {  // Unit Sizes - for some reason it doesn't like doing this from PROGMEM in a loop on the 8266
           Config["state_topic"] = BASETOPIC + String(MQTT_TOPIC[1]);
-          for (int j = 0; j < 9; j++) {
-            Config["options"][j] = MQTT_UNIT_SIZE[j];
-          }
+          Config["options"][0] = "5.0";
+          Config["options"][1] = "7.5";
+          Config["options"][2] = "8.0";
+          Config["options"][3] = "8.5";
+          Config["options"][4] = "10.0";
+          Config["options"][5] = "11.2";
+          Config["options"][6] = "12.0";
+          Config["options"][7] = "14.0";
         } else if (i == 98) {  // Glycol Strengths
           Config["state_topic"] = BASETOPIC + String(MQTT_TOPIC[1]);
           Config["options"][0] = "0%";
           Config["options"][1] = "10%";
           Config["options"][2] = "20%";
           Config["options"][3] = "30%";
-        } else {
-          for (int j = 0; j < 6; j++) {
-            Config["options"][j] = MQTT_OP_MODES[j];
-          }
+        } else {              // Zone Options
+          Config["options"][0] = "Heating Temperature";
+          Config["options"][1] = "Heating Flow";
+          Config["options"][2] = "Heating Compensation";
+          Config["options"][3] = "Cooling Temperature";
+          Config["options"][4] = "Cooling Flow";
+          Config["options"][5] = "Dry Up";
         }
         MQTT_DISCOVERY_TOPIC = String(MQTT_DISCOVERY_TOPICS[4]);
       }
@@ -643,13 +650,14 @@ void readSettingsFromConfig() {
         }
       }
 
-      serializeJson(Config, Buffer_Payload);
+      char Buffer_Payload[2048];
+      size_t buf_size = serializeJson(Config, Buffer_Payload);
       Buffer_Topic = MQTT_DISCOVERY_TOPIC + ChipID + String(MQTT_DISCOVERY_OBJ_ID[i]) + String(MQTT_DISCOVERY_TOPICS[5]);
 
       if (MQTTStream == 1) {
-        MQTTClient1.publish(Buffer_Topic.c_str(), Buffer_Payload, true);
+        MQTTClient1.publish(Buffer_Topic.c_str(), (uint8_t*)&Buffer_Payload, buf_size, true);
       } else if (MQTTStream == 2) {
-        MQTTClient2.publish(Buffer_Topic.c_str(), Buffer_Payload, true);
+        MQTTClient2.publish(Buffer_Topic.c_str(), (uint8_t*)&Buffer_Payload, buf_size, true);
       }
 
       MQTT_DISCOVERY_TOPIC = "";  // Clear everything ready for next loop to save RAM

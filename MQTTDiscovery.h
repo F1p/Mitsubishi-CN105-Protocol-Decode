@@ -121,102 +121,99 @@ const char MQTT_MDI_ICONS[][30] PROGMEM = {
   "mdi:waves-arrow-right",
   "mdi:sun-thermometer-outline",
   "mdi:car-defrost-front",
-  "mdi:heat-pump",  //10
-  "mdi:sine-wave",
+  "mdi:heat-pump",
+  "mdi:sine-wave",  //10
   "mdi:waves-arrow-right",
   "mdi:clock-digital",
   "mdi:thermometer-chevron-up",
-  "mdi:thermometer-chevron-down",  //15
-  "mdi:water-boiler",
+  "mdi:thermometer-chevron-down",
+  "mdi:water-boiler",  //15
   "mdi:water-boiler",
   "mdi:storage-tank",
-  "mdi:coolant-temperature",  //20
+  "mdi:coolant-temperature",
   "mdi:water-pump",
-  "mdi:thermometer-plus",
+  "mdi:thermometer-plus",  //20
   "mdi:heat-pump-outline",
   "mdi:heat-pump-outline",
-  "mdi:valve",  //25
   "mdi:valve",
-  "mdi:hand-water",
+  "mdi:valve",
+  "mdi:hand-water",  //25
   "mdi:hand-water",
   "mdi:cancel",
-  "mdi:water-thermometer",  //30
+  "mdi:water-thermometer",
   "mdi:auto-mode",
-  "mdi:thermometer-auto",
+  "mdi:thermometer-auto",  //30
   "mdi:thermometer-auto",
   "mdi:auto-mode",
+  "mdi:heating-coil",
+  "mdi:heating-coil",
   "mdi:heating-coil",  //35
   "mdi:heating-coil",
   "mdi:heating-coil",
   "mdi:heating-coil",
-  "mdi:heating-coil",
-  "mdi:heating-coil",  //40
+  "mdi:transmission-tower-import",
+  "mdi:radiator",  //40
   "mdi:transmission-tower-import",
   "mdi:radiator",
   "mdi:transmission-tower-import",
   "mdi:radiator",
   "mdi:transmission-tower-import",  //45
   "mdi:radiator",
-  "mdi:transmission-tower-import",
-  "mdi:radiator",
+  "mdi:calculator",
+  "mdi:calculator",
   "mdi:calculator",
   "mdi:calculator",  //50
-  "mdi:calculator",
-  "mdi:calculator",
   "mdi:fridge-industrial-alert",
   "mdi:home-alert",
-  "mdi:home-alert",  //55
+  "mdi:home-alert",
   "mdi:delta",
-  "mdi:export",
+  "mdi:export",  //55
   "mdi:export",
   "mdi:radiator",
-  "mdi:snowflake",  //60
+  "mdi:snowflake",
+  "mdi:radiator-off",
+  "mdi:snowflake-off",  //60
   "mdi:radiator-off",
   "mdi:snowflake-off",
-  "mdi:radiator-off",
-  "mdi:snowflake-off",
-  "mdi:waves-arrow-right",  //65
   "mdi:waves-arrow-right",
-  "mdi:thermostat",
+  "mdi:waves-arrow-right",
+  "mdi:thermostat",  //65
   "mdi:thermostat",
   "mdi:thermostat",
   "mdi:heat-pump-outline",
   "mdi:heat-pump-outline",
-  "mdi:heat-pump-outline",
+  "mdi:heat-pump-outline",  //70
   "mdi:transmission-tower-import",
   "mdi:transmission-tower-import",
   "mdi:alpha-v-circle-outline",
   "mdi:hand-water",
-  "mdi:valve",
+  "mdi:valve",  //75
   "mdi:chip",
   "mdi:thermometer-plus",
   "mdi:calculator",
 
-  "mdi:thermostat",  //65
   "mdi:thermostat",
-  "mdi:thermostat",  //67
+  "mdi:thermostat",  //80
   "mdi:thermostat",
-  "mdi:thermostat",  //67
+  "mdi:thermostat",
+  "mdi:thermostat",
 
-  "mdi:thermometer-plus",  //68
-  "mdi:power",
+  "mdi:thermometer-plus",
+  "mdi:power",  //85
   "mdi:bag-suitcase",
   "mdi:server-network-outline",
   "mdi:cancel",
   "mdi:cancel",
+  "mdi:cancel",  //90
   "mdi:cancel",
   "mdi:cancel",
-  "mdi:cancel",            // 76
-  "mdi:thermometer-plus",  //68
+  "mdi:thermometer-plus",
 
-  "mdi:ray-vertex",  //77
-  "mdi:ray-vertex",  //78
-
-  "mdi:auto-mode",  //79
+  "mdi:auto-mode",
   "mdi:sun-snowflake-variant",
   "mdi:sun-snowflake-variant",
-  "mdi: resize",
-  "mdi: water-opacity"
+  "mdi:resize",
+  "mdi:water-opacity"  //100
 };
 
 
@@ -230,96 +227,96 @@ const char MQTT_SENSOR_NAME[][40] PROGMEM = {
   "Heater Flow Temperature",
   "Outside Temperature",
   "Defrost",
-  "Heat Pump Output Power",  //10
-  "Compressor Frequency",
+  "Heat Pump Output Power",
+  "Compressor Frequency",  // 10
   "Flow Rate",
   "Run Hours",
   "Max Flow Temperature",
-  "Min Flow Temperature",  //15
-  "Boiler Flow Temperature",
+  "Min Flow Temperature",
+  "Boiler Flow Temperature",  //15
   "Boiler Return Temperature",
   "Mixing Tank Temperature",
-  "Refrigerant Temperature",  //20
+  "Refrigerant Temperature",
   "Immersion Heater",
-  "Booster Heater 1",
+  "Booster Heater 1",  //20
   "Primary Water Pump",
   "Water Pump 2",
-  "Three Way Valve 1",  //25
+  "Three Way Valve 1",
   "Three Way Valve 2",
-  "DHW Temperature",
+  "DHW Temperature",  //25
   "DHW Temperature Upper",
   "Prohibit DHW",
-  "DHW Running",  //30
+  "DHW Running",
   "DHW Control Mode",
-  "Legionella Setpoint",
+  "Legionella Setpoint",  //30
   "DHW Max Temperature Drop",
   "DHW Heating Phase",
-  "Zone 1 Flow Temperature",  //35
+  "Zone 1 Flow Temperature",
   "Zone 1 Return Temperature",
-  "Zone 2 Flow Temperature",
+  "Zone 2 Flow Temperature",  //35
   "Zone 2 Return Temperature",
   "Zone 1 Working",
-  "Zone 2 Working",  //40
+  "Zone 2 Working",
   "Consumed Heating Yesterday",
-  "Delivered Heating Yesterday",
+  "Delivered Heating Yesterday",  //40
   "Consumed Cooling Yesterday",
   "Delivered Cooling Yesterday",
-  "Consumed DHW Yesterday",  //45
+  "Consumed DHW Yesterday",
   "Delivered DHW Yesterday",
-  "Total Consumed Energy Yesterday",
+  "Total Consumed Energy Yesterday",  //45
   "Total Delivered Energy Yesterday",
   "Heating CoP Yesterday",
-  "Cooling CoP Yesterday",  //50
+  "Cooling CoP Yesterday",
   "DHW CoP Yesterday",
-  "Total CoP Yesterday",
+  "Total CoP Yesterday",  //50
   "Refrigerant Fault Code",
   "Error Code",
-  "Fault Code",  //55
+  "Fault Code",
   "Flow Return DeltaT",
-  "Computed Heat Output Power",
+  "Computed Heat Output Power",  //55
   "Computed Cool Output Power",
   "Heating Running",
-  "Cooling Running",  //60
+  "Cooling Running",
   "Zone 1 Heating Prohibit",
-  "Zone 1 Cooling Prohibit",
+  "Zone 1 Cooling Prohibit",  //60
   "Zone 2 Heating Prohibit",
   "Zone 2 Cooling Prohibit",
-  "Zone 1 Flow Setpoint",  //65
+  "Zone 1 Flow Setpoint",
   "Zone 2 Flow Setpoint",
-  "Zone 1 Ext Thermostat Demand",
+  "Zone 1 Ext Thermostat Demand",  //65
   "Zone 2 Ext Thermostat Demand",
   "Outside Ext Thermostat Demand",
   "Water Pump 4",
   "Water Pump 3",
-  "Water Pump 13",
+  "Water Pump 13",  // 70
   "Heat Pump Input Power",
   "Computed Input Power",
   "FTC Software Version",
   "DHW Boost",
-  "Mixing Valve Step",
+  "Mixing Valve Step",  //75
   "Bridge CPU Temperature",
   "Booster Heater 2",
   "Instant CoP",
 
-  "DHW Thermostat",  //70
-  "Zone 1 Thermostat",
-  "Zone 2 Thermostat",  //72
+  "DHW Thermostat",
+  "Zone 1 Thermostat",  //80
+  "Zone 2 Thermostat",
   "Zone 1 Flow Thermostat",
   "Zone 2 Flow Thermostat",
 
-  "Fast DHW Boost",  //73
-  "System Power",
+  "Fast DHW Boost",
+  "System Power",  //85
   "Holiday Mode",
   "Server Control Mode",
   "Prohibit DHW",
   "Prohibit Zone 1 Heating",
-  "Prohibit Zone 1 Cooling",
-  "Prohibit Zone 2 Heating",  //80
+  "Prohibit Zone 1 Cooling",  //90
+  "Prohibit Zone 2 Heating",
   "Prohibit Zone 2 Cooling",
   "DHW Boost",
 
-  "DHW Mode",  //84
-  "Heating/Cooling Operation Mode Zone 1",
+  "DHW Mode",
+  "Heating/Cooling Operation Mode Zone 1",  //95
   "Heating/Cooling Operation Mode Zone 2",
   "Outdoor Unit Size (kW)",
   "Glycol Strength"
@@ -711,19 +708,19 @@ const char MQTT_SENSOR_VALUE_TEMPLATE[][50] PROGMEM = {
   "{{ value_json.Booster2 }}",
   "{{ value_json.Instant_CoP }}",
   "{{ value_json }}",
-  "{{ value_json.Setpoint }}",
+  "{{ value_json.Setpoint }}",  //80
   "{{ value_json.FSP }}",
-  "{{ value_json.HotWaterBoostActive }}",  //80
+  "{{ value_json.HotWaterBoostActive }}",
   "{{ value_json.SystemPower }}",
   "{{ value_json.HolidayMode }}",
-  "{{ value_json.SvrControlMode }}",
+  "{{ value_json.SvrControlMode }}",  //85
   "{{ value_json.ProhibitDHW }}",
-  "{{ value_json.ProhibitHeating }}",  //85
-  "{{ value_json.ProhibitCooling }}",
   "{{ value_json.ProhibitHeating }}",
   "{{ value_json.ProhibitCooling }}",
+  "{{ value_json.ProhibitHeating }}",
+  "{{ value_json.ProhibitCooling }}",  //90
   "{{ value_json.HotWaterEcoBoostActive }}",
-  "{{ value_json.HeatingControlMode }}"  //90
+  "{{ value_json.HeatingControlMode }}"
 };
 
 const char MQTT_DISCOVERY_TOPICS[][23] PROGMEM = {
@@ -737,25 +734,4 @@ const char MQTT_DISCOVERY_TOPICS[][23] PROGMEM = {
 
 const char MQTT_DEVICE_CLASS[][7] PROGMEM = {
   "energy"
-};
-
-const char MQTT_UNIT_SIZE[][5] PROGMEM = {
-  "5.0",
-  "6.0",
-  "7.5",
-  "8.0",
-  "8.5",
-  "10.0",
-  "11.2",
-  "12.0",
-  "14.0"
-};
-
-const char MQTT_OP_MODES[][21] PROGMEM = {
-  "Heating Temperature",
-  "Heating Flow",
-  "Heating Compensation",
-  "Cooling Temperature",
-  "Cooling Flow",
-  "Dry Up"
 };
