@@ -24,7 +24,7 @@ You can bring your own, compile in Arduino or flash the hardware above with pre-
 
 To learn all about the Home Assistant controls & sensors, please read [HA Parameters.md](https://github.com/F1p/Mitsubishi-CN105-Protocol-Decode/blob/master/documentation/HA%20Parameters.md)
 
-![home assistant](https://private-user-images.githubusercontent.com/16503382/394476060-00674c50-8db7-4020-b2a7-3c3a069b35a3.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MzYxNzEzNDYsIm5iZiI6MTczNjE3MTA0NiwicGF0aCI6Ii8xNjUwMzM4Mi8zOTQ0NzYwNjAtMDA2NzRjNTAtOGRiNy00MDIwLWIyYTctM2MzYTA2OWIzNWEzLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTAxMDYlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUwMTA2VDEzNDQwNlomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTE5OWI4ZGUyMTk4MWUwNzU0NTFhMjA3Zjg3NjRkN2RlYTRkN2YzNWMzMzg1M2Y4MDlhMDEzODhiNDE2NGU4ZWEmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.0NiEGDzoPez8TZ3SJBk9x6VPMJHlOqc54Z0tk5-Z-Ok)
+![home assistant](https://github.com/F1p/Mitsubishi-CN105-Protocol-Decode/blob/master/documentation/images/dashboard.png)
 
 
 # Proxy (Onward Forward)
