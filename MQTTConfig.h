@@ -610,13 +610,14 @@ void readSettingsFromConfig() {
         } else if (i == 97) {  // Unit Sizes - for some reason it doesn't like doing this from PROGMEM in a loop on the 8266
           Config["state_topic"] = BASETOPIC + String(MQTT_TOPIC[1]);
           Config["options"][0] = "5.0";
-          Config["options"][1] = "7.5";
-          Config["options"][2] = "8.0";
-          Config["options"][3] = "8.5";
-          Config["options"][4] = "10.0";
-          Config["options"][5] = "11.2";
-          Config["options"][6] = "12.0";
-          Config["options"][7] = "14.0";
+          Config["options"][1] = "6.0";
+          Config["options"][2] = "7.5";
+          Config["options"][3] = "8.0";
+          Config["options"][4] = "8.5";
+          Config["options"][5] = "10.0";
+          Config["options"][6] = "11.2";
+          Config["options"][7] = "12.0";
+          Config["options"][8] = "14.0";
         } else if (i == 98) {  // Glycol Strengths
           Config["state_topic"] = BASETOPIC + String(MQTT_TOPIC[1]);
           Config["options"][0] = "0%";
