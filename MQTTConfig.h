@@ -513,7 +513,11 @@ void readSettingsFromConfig() {
         Config["device"]["model"] = ChipModel;
         Config["device"]["serial_number"] = ChipID;
         Config["device"]["name"] = "Ecodan ASHP";
+#ifdef ARDUINO_WT32_ETH01
+        Config["device"]["configuration_url"] = "http://" + ETH.localIP().toString() + ":80";
+#else
         Config["device"]["configuration_url"] = "http://" + WiFi.localIP().toString() + ":80";
+#endif
         Config["device"]["sw_version"] = FirmwareVersion;
       } else {  // Otherwise post just identifier
         Config["device"]["identifiers"] = WiFiHostname;

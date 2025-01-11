@@ -45,7 +45,7 @@
 #include "Ecodan.h"
 #include "Melcloud.h"
 
-String FirmwareVersion = "6.1.1";
+String FirmwareVersion = "6.1.2";
 
 
 #ifdef ESP8266  // Define the Witty ESP8266 Serial Pins
@@ -208,13 +208,14 @@ void AdvancedReport(void);
 void AdvancedTwoReport(void);
 void EnergyReport(void);
 void StatusReport(void);
-
+void FastPublish(void);
 
 TimerCallBack HeatPumpQuery1(400, HeatPumpQueryStateEngine);  // Set to 400ms (Safe), 320-350ms best time between messages
-TimerCallBack HeatPumpQuery2(20000, HeatPumpKeepAlive);       // Set to 20-30s for heat pump query frequency
+TimerCallBack HeatPumpQuery2(30000, HeatPumpKeepAlive);       // Set to 20-30s for heat pump query frequency
 TimerCallBack HeatPumpQuery3(30000, handleMQTTState);         // Re-connect attempt timer if MQTT is not online
 TimerCallBack HeatPumpQuery4(30000, handleMQTT2State);        // Re-connect attempt timer if MQTT Stream 2 is not online
 TimerCallBack HeatPumpQuery5(500, HeatPumpWriteStateEngine);  // Set to 500ms (Safe), 320-350ms best time between messages
+TimerCallBack HeatPumpQuery6(1000, FastPublish);             // Publish the System Report at a Faster rate
 
 
 unsigned long looppreviousMicros = 0;    // variable for comparing millis counter
@@ -311,6 +312,7 @@ void loop() {
   HeatPumpQuery3.Process();
   HeatPumpQuery4.Process();
   HeatPumpQuery5.Process();
+  HeatPumpQuery6.Process();
 
   MELCloudQueryReplyEngine();
   MQTTClient1.loop();
@@ -335,8 +337,8 @@ void loop() {
       cmd_queue_position = 1;  // All commands written, reset
       cmd_queue_length = 0;
     }                                                                                                      // Dequeue the last message that was written
-    //if ((MQTTReconnect() || MQTT2Reconnect()) && (HeatPump.HeatPumpConnected())) { PublishAllReports(); }  // Publish update to the MQTT Topics
-    if (MQTTReconnect() || MQTT2Reconnect()) { PublishAllReports(); }  // Publish update to the MQTT Topics
+    if ((MQTTReconnect() || MQTT2Reconnect()) && (HeatPump.Status.FTCVersion != 0)) { PublishAllReports(); }  // Publish update to the MQTT Topics
+    //if (MQTTReconnect() || MQTT2Reconnect()) { PublishAllReports(); }  // Publish update to the MQTT Topics
   }
 
   // -- WiFi Status Handler -- //
@@ -501,8 +503,8 @@ void HeatPumpQueryStateEngine(void) {
   if (HeatPump.UpdateComplete()) {
     DEBUG_PRINTLN("Update Complete");
     FTCLoopSpeed = millis() - ftcpreviousMillis;  // Loop Speed End
-    //if ((MQTTReconnect() || MQTT2Reconnect()) && (HeatPump.HeatPumpConnected())) { PublishAllReports(); }
-    if (MQTTReconnect() || MQTT2Reconnect()) { PublishAllReports(); }
+    if ((MQTTReconnect() || MQTT2Reconnect()) && (HeatPump.Status.FTCVersion != 0)) { PublishAllReports(); }
+    //if (MQTTReconnect() || MQTT2Reconnect()) { PublishAllReports(); }
     HeatPump.GetFTCVersion();
   }
 }
@@ -1049,6 +1051,10 @@ void PublishAllReports(void) {
 
   FlashGreenLED();
   DEBUG_PRINTLN("MQTT Published!");
+}
+
+void FastPublish(void){
+  if(HeatPump.Status.FTCVersion != 0){ SystemReport(); } // Don't fast publish until at least whole data set gathering is complete
 }
 
 
