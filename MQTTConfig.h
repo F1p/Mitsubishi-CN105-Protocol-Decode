@@ -8,6 +8,7 @@ String MQTT_STATUS_ZONE1 = MQTT_STATUS + "/Zone1";
 String MQTT_STATUS_ZONE2 = MQTT_STATUS + "/Zone2";
 String MQTT_STATUS_HOTWATER = MQTT_STATUS + "/HotWater";
 String MQTT_STATUS_SYSTEM = MQTT_STATUS + "/System";
+String MQTT_STATUS_CONFIGURATION = MQTT_STATUS + "/Configuration";
 String MQTT_STATUS_ADVANCED = MQTT_STATUS + "/Advanced";
 String MQTT_STATUS_ADVANCED_TWO = MQTT_STATUS + "/AdvancedTwo";
 String MQTT_STATUS_ENERGY = MQTT_STATUS + "/Energy";
@@ -77,6 +78,7 @@ String MQTT_2_STATUS_ZONE1 = MQTT_2_STATUS + "/Zone1";
 String MQTT_2_STATUS_ZONE2 = MQTT_2_STATUS + "/Zone2";
 String MQTT_2_STATUS_HOTWATER = MQTT_2_STATUS + "/HotWater";
 String MQTT_2_STATUS_SYSTEM = MQTT_2_STATUS + "/System";
+String MQTT_2_STATUS_CONFIGURATION = MQTT_2_STATUS + "/Configuration";
 String MQTT_2_STATUS_ADVANCED = MQTT_2_STATUS + "/Advanced";
 String MQTT_2_STATUS_ADVANCED_TWO = MQTT_2_STATUS + "/AdvancedTwo";
 String MQTT_2_STATUS_ENERGY = MQTT_2_STATUS + "/Energy";
@@ -312,6 +314,7 @@ void readSettingsFromConfig() {
     MQTT_STATUS_ZONE2 = MQTT_STATUS + "/Zone2";
     MQTT_STATUS_HOTWATER = MQTT_STATUS + "/HotWater";
     MQTT_STATUS_SYSTEM = MQTT_STATUS + "/System";
+    MQTT_STATUS_CONFIGURATION = MQTT_STATUS + "/Configuration";
     MQTT_STATUS_ADVANCED = MQTT_STATUS + "/Advanced";
     MQTT_STATUS_ADVANCED_TWO = MQTT_STATUS + "/AdvancedTwo";
     MQTT_STATUS_ENERGY = MQTT_STATUS + "/Energy";
@@ -466,7 +469,7 @@ void readSettingsFromConfig() {
     snprintf(WiFiHostname, 26, "%s%s", ClientPrefix, mqttSettings.deviceId);
     WiFi.hostname(WiFiHostname);
 #ifdef ESP8266                         // Define the Witty ESP8266 Ports
-    digitalWrite(Blue_RGB_LED, HIGH);  // Turn the Blue LED Off
+    digitalWrite(Blue_RGB_LED, HIGH);  // Turn the Blue LED On
 #endif
     wifiManager.setConfigPortalBlocking(false);             // Non-Blocking portal
     wifiManager.setBreakAfterConfig(true);                  // Saves settings, even if WiFi Fails
@@ -613,15 +616,16 @@ void readSettingsFromConfig() {
           Config["options"][1] = HotWaterControlModeString[1];
         } else if (i == 97) {  // Unit Sizes - for some reason it doesn't like doing this from PROGMEM in a loop on the 8266
           Config["state_topic"] = BASETOPIC + String(MQTT_TOPIC[1]);
-          Config["options"][0] = "5.0";
-          Config["options"][1] = "6.0";
-          Config["options"][2] = "7.5";
-          Config["options"][3] = "8.0";
-          Config["options"][4] = "8.5";
-          Config["options"][5] = "10.0";
-          Config["options"][6] = "11.2";
-          Config["options"][7] = "12.0";
-          Config["options"][8] = "14.0";
+          Config["options"][0] = "4.0";
+          Config["options"][1] = "5.0";
+          Config["options"][2] = "6.0";
+          Config["options"][3] = "7.5";
+          Config["options"][4] = "8.0";
+          Config["options"][5] = "8.5";
+          Config["options"][6] = "10.0";
+          Config["options"][7] = "11.2";
+          Config["options"][8] = "12.0";
+          Config["options"][9] = "14.0";
         } else if (i == 98) {  // Glycol Strengths
           Config["state_topic"] = BASETOPIC + String(MQTT_TOPIC[1]);
           Config["options"][0] = "0%";
@@ -817,6 +821,7 @@ void readSettingsFromConfig() {
     MQTT_2_STATUS_ZONE2 = MQTT_2_STATUS + "/Zone2";
     MQTT_2_STATUS_HOTWATER = MQTT_2_STATUS + "/HotWater";
     MQTT_2_STATUS_SYSTEM = MQTT_2_STATUS + "/System";
+    MQTT_2_STATUS_CONFIGURATION = MQTT_2_STATUS + "/Configuration";
     MQTT_2_STATUS_ADVANCED = MQTT_2_STATUS + "/Advanced";
     MQTT_2_STATUS_ADVANCED_TWO = MQTT_2_STATUS + "/AdvancedTwo";
     MQTT_2_STATUS_ENERGY = MQTT_2_STATUS + "/Energy";

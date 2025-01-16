@@ -204,6 +204,7 @@ void Zone1Report(void);
 void Zone2Report(void);
 void HotWaterReport(void);
 void SystemReport(void);
+void ConfigurationReport(void);
 void AdvancedReport(void);
 void AdvancedTwoReport(void);
 void EnergyReport(void);
@@ -215,7 +216,7 @@ TimerCallBack HeatPumpQuery2(30000, HeatPumpKeepAlive);       // Set to 20-30s f
 TimerCallBack HeatPumpQuery3(30000, handleMQTTState);         // Re-connect attempt timer if MQTT is not online
 TimerCallBack HeatPumpQuery4(30000, handleMQTT2State);        // Re-connect attempt timer if MQTT Stream 2 is not online
 TimerCallBack HeatPumpQuery5(500, HeatPumpWriteStateEngine);  // Set to 500ms (Safe), 320-350ms best time between messages
-TimerCallBack HeatPumpQuery6(1000, FastPublish);             // Publish the System Report at a Faster rate
+TimerCallBack HeatPumpQuery6(2000, FastPublish);              // Publish some reports at a faster rate
 
 
 unsigned long looppreviousMicros = 0;    // variable for comparing millis counter
@@ -224,7 +225,6 @@ unsigned long wifipreviousMillis = 0;    // variable for comparing millis counte
 unsigned long ftcconpreviousMillis = 0;  // variable for comparing millis counter
 int FTCLoopSpeed, CPULoopSpeed;          // variable for holding loop time in ms
 bool WiFiOneShot = true;
-bool FTCOneShot = true;
 bool CableConnected = true;
 bool WiFiConnectedLastLoop = false;
 
@@ -299,6 +299,8 @@ void setup() {
   wifiManager.startWebPortal();
 
   HeatPump.Status.Write_To_Ecodan_OK = false;
+
+  HeatPumpKeepAlive();
 }
 
 
@@ -336,9 +338,8 @@ void loop() {
     } else {
       cmd_queue_position = 1;  // All commands written, reset
       cmd_queue_length = 0;
-    }                                                                                                      // Dequeue the last message that was written
-    if ((MQTTReconnect() || MQTT2Reconnect()) && (HeatPump.Status.FTCVersion != 0)) { PublishAllReports(); }  // Publish update to the MQTT Topics
-    //if (MQTTReconnect() || MQTT2Reconnect()) { PublishAllReports(); }  // Publish update to the MQTT Topics
+    }                                                                  // Dequeue the last message that was written
+    if (MQTTReconnect() || MQTT2Reconnect()) { PublishAllReports(); }  // Publish update to the MQTT Topics
   }
 
   // -- WiFi Status Handler -- //
@@ -472,23 +473,17 @@ void HeatPumpKeepAlive(void) {
   if (!HeatPump.HeatPumpConnected()) {
     DEBUG_PRINTLN("Heat Pump Disconnected");
 #ifdef ARDUINO_M5STACK_ATOMS3
-    if (FTCOneShot) {
-      ftcconpreviousMillis = millis();
-      FTCOneShot = false;
-    }
-    if (millis() - ftcconpreviousMillis >= 30000) {
-      // Swap to the other pins and test the connection
-      if (CableConnected) {
-        DEBUG_PRINTLN("Trying to connect via Proxy Circuit Board");
-        HEATPUMP_STREAM.begin(SERIAL_BAUD, SERIAL_CONFIG, FTCProxy_RxPin, FTCProxy_TxPin);  // Rx, Tx
-        HeatPump.SetStream(&HEATPUMP_STREAM);
-        CableConnected = false;
-      } else {
-        DEBUG_PRINTLN("Trying to connect via Cable");
-        HEATPUMP_STREAM.begin(SERIAL_BAUD, SERIAL_CONFIG, FTCCable_RxPin, FTCCable_TxPin);  // Rx, Tx
-        HeatPump.SetStream(&HEATPUMP_STREAM);
-        CableConnected = true;
-      }
+    // Swap to the other pins and test the connection
+    if (CableConnected) {
+      DEBUG_PRINTLN("Trying to connect via Proxy Circuit Board");
+      HEATPUMP_STREAM.begin(SERIAL_BAUD, SERIAL_CONFIG, FTCProxy_RxPin, FTCProxy_TxPin);  // Rx, Tx
+      HeatPump.SetStream(&HEATPUMP_STREAM);
+      CableConnected = false;
+    } else {
+      DEBUG_PRINTLN("Trying to connect via Cable");
+      HEATPUMP_STREAM.begin(SERIAL_BAUD, SERIAL_CONFIG, FTCCable_RxPin, FTCCable_TxPin);  // Rx, Tx
+      HeatPump.SetStream(&HEATPUMP_STREAM);
+      CableConnected = true;
     }
 #endif
   }
@@ -503,9 +498,8 @@ void HeatPumpQueryStateEngine(void) {
   if (HeatPump.UpdateComplete()) {
     DEBUG_PRINTLN("Update Complete");
     FTCLoopSpeed = millis() - ftcpreviousMillis;  // Loop Speed End
+    if (HeatPump.Status.FTCVersion == 0) { HeatPump.GetFTCVersion(); }
     if ((MQTTReconnect() || MQTT2Reconnect()) && (HeatPump.Status.FTCVersion != 0)) { PublishAllReports(); }
-    //if (MQTTReconnect() || MQTT2Reconnect()) { PublishAllReports(); }
-    HeatPump.GetFTCVersion();
   }
 }
 
@@ -519,7 +513,7 @@ void MELCloudQueryReplyEngine(void) {
   if (MELCloud.Status.ReplyNow) {
     MELCloud.ReplyStatus(MELCloud.Status.ActiveMessage);
     MELCloud.Status.ReplyNow = false;
-    if (MELCloud.Status.ActiveMessage == 0x32 | MELCloud.Status.ActiveMessage == 0x33 | MELCloud.Status.ActiveMessage == 0x34 | MELCloud.Status.ActiveMessage == 0x35) {  // The writes
+    if (MELCloud.Status.ActiveMessage == 0x32 || MELCloud.Status.ActiveMessage == 0x33 || MELCloud.Status.ActiveMessage == 0x34 || MELCloud.Status.ActiveMessage == 0x35) {  // The writes
       HeatPump.WriteMELCloudCMD(MELCloud.Status.ActiveMessage);
     }
   } else if ((MELCloud.Status.ConnectRequest) && (HeatPump.Status.FTCVersion != 0)) {
@@ -790,24 +784,22 @@ void SystemReport(void) {
   double OutputPower = (((float)HeatPump.Status.PrimaryFlowRate / 60) * (float)HeatPump.Status.HeaterDeltaT * unitSettings.GlycolStrength);  // Approx Heat Capacity of Fluid in Use
 
   // Unit Size Factoring
-  if (unitSettings.UnitSize == 5.0) {
+  if (unitSettings.UnitSize == 4.0) {
+    UnitSizeFactor = 0.4;
+  } else if (unitSettings.UnitSize == 5.0) {
     UnitSizeFactor = 0.6;
-  } else if (unitSettings.UnitSize == 6.0) {
-    UnitSizeFactor = 0.7;
   } else if (unitSettings.UnitSize == 7.5) {
-    UnitSizeFactor = 0.9;
+    UnitSizeFactor = 0.95;
   } else if (unitSettings.UnitSize == 8.0) {
     UnitSizeFactor = 1.0;
-  } else if (unitSettings.UnitSize == 8.5) {
+  } else if ((unitSettings.UnitSize == 6.0) || (unitSettings.UnitSize == 8.5)) {  // 6kW is limited 8.5 unit, only maximum power is capped
     UnitSizeFactor = 1.1;
   } else if (unitSettings.UnitSize == 10.0) {
     UnitSizeFactor = 1.3;
-  } else if (unitSettings.UnitSize == 11.2) {
-    UnitSizeFactor = 1.5;
+  } else if ((unitSettings.UnitSize == 11.2) || (unitSettings.UnitSize == 14.0)) {  // 11.2kW is limited 14kW unit, only maximum power is capped
+    UnitSizeFactor = 1.6;
   } else if (unitSettings.UnitSize == 12.0) {
     UnitSizeFactor = 1.7;
-  } else if (unitSettings.UnitSize == 14.0) {
-    UnitSizeFactor = 1.9;
   }
 
   double EstInputPower = (((((((float)HeatPump.Status.CompressorFrequency * 2) * ((float)HeatPump.Status.HeaterOutputFlowTemperature * 0.8)) / 1000) / 2) - HeatPump.Status.InputPower) * ((HeatPump.Status.InputPower + 1) - HeatPump.Status.InputPower) / ((HeatPump.Status.InputPower + 1) - HeatPump.Status.InputPower) + HeatPump.Status.InputPower) * UnitSizeFactor;
@@ -962,7 +954,11 @@ void AdvancedTwoReport(void) {
   doc[F("SvrControlMode")] = HeatPump.Status.SvrControlMode;
   doc[F("WaterPump2")] = OFF_ON_String[HeatPump.Status.WaterPump2];
   doc[F("WaterPump4")] = OFF_ON_String[HeatPump.Status.WaterPump4];
-  doc[F("WaterPump3")] = OFF_ON_String[HeatPump.Status.WaterPump3];
+  if (!HeatPump.Status.Simple2Zone) {
+    doc[F("WaterPump3")] = OFF_ON_String[HeatPump.Status.WaterPump3a];
+  } else {
+    doc[F("WaterPump3")] = OFF_ON_String[HeatPump.Status.WaterPump3b];
+  }
   doc[F("WaterPump13")] = OFF_ON_String[HeatPump.Status.WaterPump13];
   doc[F("ThreeWayValve2")] = HeatPump.Status.ThreeWayValve2;
   doc[F("RefrigeFltCode")] = RefrigeFltCodeString[HeatPump.Status.RefrigeFltCode];
@@ -1033,6 +1029,26 @@ void StatusReport(void) {
   MQTTClient2.publish(MQTT_2_LWT.c_str(), "online");
 }
 
+void ConfigurationReport(void) {
+  JsonDocument doc;
+  char Buffer[1024];
+
+  doc[F("DipSw1")] = decimalToBinary(HeatPump.Status.DipSwitch1);
+  doc[F("DipSw2")] = decimalToBinary(HeatPump.Status.DipSwitch2);
+  doc[F("DipSw3")] = decimalToBinary(HeatPump.Status.DipSwitch3);
+  doc[F("DipSw4")] = decimalToBinary(HeatPump.Status.DipSwitch4);
+  doc[F("DipSw5")] = decimalToBinary(HeatPump.Status.DipSwitch5);
+  doc[F("DipSw6")] = decimalToBinary(HeatPump.Status.DipSwitch6);
+  doc[F("HasCooling")] = HeatPump.Status.HasCooling;
+  doc[F("Has2Zone")] = HeatPump.Status.Has2Zone;
+  doc[F("HasSimple2Zone")] = HeatPump.Status.Simple2Zone;
+  doc[F("HB_ID")] = Heart_Value;
+
+  serializeJson(doc, Buffer);
+  MQTTClient1.publish(MQTT_STATUS_CONFIGURATION.c_str(), Buffer, false);
+  MQTTClient2.publish(MQTT_2_STATUS_CONFIGURATION.c_str(), Buffer, false);
+}
+
 void PublishAllReports(void) {
   // Increment the Heatbeat ID Counter
   ++Heart_Value;
@@ -1044,6 +1060,7 @@ void PublishAllReports(void) {
   Zone2Report();
   HotWaterReport();
   SystemReport();
+  ConfigurationReport();
   AdvancedReport();
   AdvancedTwoReport();
   EnergyReport();
@@ -1053,8 +1070,11 @@ void PublishAllReports(void) {
   DEBUG_PRINTLN("MQTT Published!");
 }
 
-void FastPublish(void){
-  if(HeatPump.Status.FTCVersion != 0){ SystemReport(); } // Don't fast publish until at least whole data set gathering is complete
+void FastPublish(void) {
+  if (HeatPump.Status.FTCVersion != 0) {
+    SystemReport();
+    HotWaterReport();
+  }  // Don't fast publish until at least whole data set gathering is complete
 }
 
 
@@ -1129,6 +1149,16 @@ void onTelnetConnectionAttempt(String ip) {
 
 double round2(double value) {
   return (int)(value * 100 + 0.5) / 100.0;
+}
+
+String decimalToBinary(int decimal) {
+  String binary = "";
+
+  for (int i = 0; i < 8; i++) {  // 8 bits for a byte
+    binary += (decimal >> i) & 1 ? '1' : '0';
+  }
+
+  return binary;
 }
 
 void MQTTWriteReceived(String message, int MsgNumber) {

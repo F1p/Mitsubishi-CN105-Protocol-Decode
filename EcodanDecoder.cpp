@@ -581,15 +581,44 @@ void ECODANDECODER::Process0x10(uint8_t *Buffer, EcodanStatus *Status) {
 
 
 void ECODANDECODER::Process0x11(uint8_t *Buffer, EcodanStatus *Status) {
+  uint8_t DipSwitch1, DipSwitch2, DipSwitch3, DipSwitch4, DipSwitch5, DipSwitch6;
+  bool HasCooling, Has2Zone, Simple2Zone;
 
   for (int i = 1; i < 16; i++) {
     Array0x11[i] = Buffer[i];
   }
 
-  //Unknown2 = Buffer[1];  // 206 or 0, unknown what it is
-  //Unknown3 = Buffer[3];  // 128 or 1 when unknown 2 is 0
-  //Unknown4 = Buffer[5];  // 112 or 0 when unknown 2 is 0
-  //Unknown5 = Buffer[9];  // 2 or 0 when unknown 2 is 0
+  DipSwitch1 = Buffer[1];
+  DipSwitch2 = Buffer[3];
+  DipSwitch3 = Buffer[5];
+  DipSwitch4 = Buffer[7];
+  DipSwitch5 = Buffer[9];
+  DipSwitch6 = Buffer[11];
+
+  // Bitmask Translation
+  if (DipSwitch2 & 0x08) {  // SW2-4
+    HasCooling = true;
+  } else {
+    HasCooling = false;
+  }
+
+  if ((DipSwitch3 & 0x20) && !(DipSwitch2 & 0x40)) {  // SW3-6 True, SW2-7 False
+    Has2Zone = true;
+    Simple2Zone = true;
+  } else if (DipSwitch2 & 0x40) {  // SW2-7 True
+    Has2Zone = true;
+    Simple2Zone = false;
+  }
+
+  Status->DipSwitch1 = DipSwitch1;
+  Status->DipSwitch2 = DipSwitch2;
+  Status->DipSwitch3 = DipSwitch3;
+  Status->DipSwitch4 = DipSwitch4;
+  Status->DipSwitch5 = DipSwitch5;
+  Status->DipSwitch6 = DipSwitch6;
+  Status->Has2Zone = Has2Zone;
+  Status->Simple2Zone = Simple2Zone;
+  Status->HasCooling = HasCooling;
 }
 
 void ECODANDECODER::Process0x12(uint8_t *Buffer, EcodanStatus *Status) {
@@ -639,7 +668,7 @@ void ECODANDECODER::Process0x14(uint8_t *Buffer, EcodanStatus *Status) {
 
 
 void ECODANDECODER::Process0x15(uint8_t *Buffer, EcodanStatus *Status) {
-  uint8_t PrimaryWaterPump, WaterPump2, ThreeWayValve, ThreeWayValve2, MixingStep;
+  uint8_t PrimaryWaterPump, WaterPump2, WaterPump3a, ThreeWayValve, ThreeWayValve2, MixingStep;
 
   for (int i = 1; i < 16; i++) {
     Array0x15[i] = Buffer[i];
@@ -647,12 +676,14 @@ void ECODANDECODER::Process0x15(uint8_t *Buffer, EcodanStatus *Status) {
 
   PrimaryWaterPump = Buffer[1];  // 01 when running (Primary Water Pump)
   WaterPump2 = Buffer[4];        // Water Pump 2 Active
+  WaterPump3a = Buffer[5];       // Complex Zone2 Water Pump OUT3
   ThreeWayValve = Buffer[6];     // 3 Way Valve Position
   ThreeWayValve2 = Buffer[7];    // 3 Way Valve 2 Position
   MixingStep = Buffer[10];       // Mixing Valve Step
 
   Status->PrimaryWaterPump = PrimaryWaterPump;
   Status->WaterPump2 = WaterPump2;
+  Status->WaterPump3a = WaterPump3a;
   Status->ThreeWayValve = ThreeWayValve;
   Status->ThreeWayValve2 = ThreeWayValve2;
   Status->MixingStep = MixingStep;
@@ -660,7 +691,7 @@ void ECODANDECODER::Process0x15(uint8_t *Buffer, EcodanStatus *Status) {
 
 
 void ECODANDECODER::Process0x16(uint8_t *Buffer, EcodanStatus *Status) {
-  uint8_t WaterPump4, WaterPump3, WaterPump13;
+  uint8_t WaterPump4, WaterPump3b, WaterPump13;
 
   for (int i = 1; i < 16; i++) {
     Array0x16[i] = Buffer[i];
@@ -668,10 +699,10 @@ void ECODANDECODER::Process0x16(uint8_t *Buffer, EcodanStatus *Status) {
 
   WaterPump4 = Buffer[1];   // DHW Pump connected to CPN4
   WaterPump13 = Buffer[2];  // Zone Pump connected to OUT13
-  WaterPump3 = Buffer[3];   // Zone Pump connected to OUT3
+  WaterPump3b = Buffer[3];  // Zone Pump connected to OUT3
 
   Status->WaterPump4 = WaterPump4;
-  Status->WaterPump3 = WaterPump3;
+  Status->WaterPump3b = WaterPump3b;
   Status->WaterPump13 = WaterPump13;
 }
 

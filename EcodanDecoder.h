@@ -213,7 +213,8 @@ typedef struct _EcodanStatus {
   uint8_t Zone1ThermostatDemand, Zone2ThermostatDemand, OutdoorThermostatDemand;
 
   //From Message 0x11
-  // Unknowns
+  uint8_t DipSwitch1, DipSwitch2, DipSwitch3, DipSwitch4, DipSwitch5, DipSwitch6;
+  bool HasCooling, Has2Zone, Simple2Zone;
 
   //From Message 0x13
   uint32_t RunHours;
@@ -223,10 +224,10 @@ typedef struct _EcodanStatus {
   uint8_t Booster1Active, Booster2Active, ImmersionActive;
 
   //From Message 0x15
-  uint8_t PrimaryWaterPump, WaterPump2, ThreeWayValve, ThreeWayValve2, MixingStep;
+  uint8_t PrimaryWaterPump, WaterPump2, WaterPump3a, ThreeWayValve, ThreeWayValve2, MixingStep;
 
   //From Message 0x16
-  uint8_t WaterPump4, WaterPump3, WaterPump13;
+  uint8_t WaterPump4, WaterPump3b, WaterPump13;
 
   //From Message 0x26
   uint8_t SystemPowerMode, SystemOperationMode, LastSystemOperationMode, HotWaterControlMode;
