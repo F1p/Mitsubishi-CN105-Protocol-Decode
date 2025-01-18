@@ -459,9 +459,10 @@ void loop() {
   }
 #endif
 
-  // -- Normal DHW Boost Handler (Enter SCM > Remove DHW Prohibit > Exit SCM) -- //
-  if (HeatPump.Status.LastSystemOperationMode == 1 && HeatPump.Status.SystemOperationMode != 1 && NormalHWBoostOperating == 1) {
+  // -- Normal DHW Boost Handler (Enter SCM > Remove DHW Prohibit > Remain or Exit SCM) -- //
+  if ((HeatPump.Status.LastSystemOperationMode == 1 || HeatPump.Status.LastSystemOperationMode == 6) && HeatPump.Status.SystemOperationMode != 1 && NormalHWBoostOperating == 1) {
     HeatPump.SetSvrControlMode(PreHWBoostSvrCtrlMode, 1, HeatPump.Status.ProhibitHeatingZ1, HeatPump.Status.ProhibitCoolingZ1, HeatPump.Status.ProhibitHeatingZ2, HeatPump.Status.ProhibitCoolingZ2);  // Enable the Prohibit and Return Server Control Mode to the previous state when the System Operation Mode changes from Hot Water to anything else
+    WriteInProgress = true;                                                                                                                                                                            // Wait For OK
     NormalHWBoostOperating = 0;                                                                                                                                                                        // Don't enter again
   }
 
@@ -616,7 +617,7 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
     HeatPump.SetSvrControlMode(Payload.toInt(), 1 - Payload.toInt(), HeatPump.Status.ProhibitHeatingZ1, HeatPump.Status.ProhibitCoolingZ1, HeatPump.Status.ProhibitHeatingZ2, HeatPump.Status.ProhibitCoolingZ2);
     if (PreHWBoostSvrCtrlMode == 0) { HeatPump.Status.SvrControlMode = Payload.toInt(); }  // Show Server Control Mode is now On
     HeatPump.Status.ProhibitDHW = 1 - Payload.toInt();                                     // Hot Water Boost is Inverse
-    NormalHWBoostOperating = Payload.toInt();
+    NormalHWBoostOperating = Payload.toInt();                                              // Hot Water Boost Operating is Active
   }
   if ((Topic == MQTTCommandSystemHolidayMode) || (Topic == MQTTCommand2SystemHolidayMode)) {
     MQTTWriteReceived("MQTT Set Holiday Mode", 16);
@@ -994,7 +995,11 @@ void StatusReport(void) {
 
   doc[F("SSID")] = WiFi.SSID();
   doc[F("RSSI")] = WiFi.RSSI();
+#ifdef ARDUINO_WT32_ETH01
+  doc[F("IP")] = ETH.localIP().toString();
+#else
   doc[F("IP")] = WiFi.localIP().toString();
+#endif
   doc[F("Firmware")] = FirmwareVersion;
 #ifdef ESP32  // Define the M5Stack LED
   doc[F("CPUTemp")] = round2(temperatureRead());
