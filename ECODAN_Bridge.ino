@@ -1047,6 +1047,7 @@ void ConfigurationReport(void) {
   doc[F("HasCooling")] = HeatPump.Status.HasCooling;
   doc[F("Has2Zone")] = HeatPump.Status.Has2Zone;
   doc[F("HasSimple2Zone")] = HeatPump.Status.Simple2Zone;
+  doc[F("LiquidTemp")] = HeatPump.Status.LiquidTemp;
   doc[F("HB_ID")] = Heart_Value;
 
   serializeJson(doc, Buffer);

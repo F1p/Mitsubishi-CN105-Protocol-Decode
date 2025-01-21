@@ -471,7 +471,7 @@ void ECODANDECODER::Process0x09(uint8_t *Buffer, EcodanStatus *Status) {
 
 void ECODANDECODER::Process0x0B(uint8_t *Buffer, EcodanStatus *Status) {
   float fZone1, fZone2, fOutside;
-  float RefrigeTemp;
+  float RefrigeTemp, LiquidTemp;
 
   for (int i = 1; i < 16; i++) {
     Array0x0b[i] = Buffer[i];
@@ -486,12 +486,13 @@ void ECODANDECODER::Process0x0B(uint8_t *Buffer, EcodanStatus *Status) {
 
   //Unknown = ((float)ExtractUInt16(Buffer, 5) / 100);
   RefrigeTemp = ((float)ExtractUInt16_Signed(Buffer, 8) / 100);
-  //Unknown = ExtractUInt8_v1(Buffer, 10);
+  LiquidTemp = ExtractUInt8_v1(Buffer, 10);
   fOutside = ExtractUInt8_v1(Buffer, 11);
 
   Status->Zone1Temperature = fZone1;
   Status->Zone2Temperature = fZone2;
   Status->OutsideTemperature = fOutside;  // TH7
+  Status->LiquidTemp = LiquidTemp;        // TH2
   Status->RefrigeTemp = RefrigeTemp;      //
 }
 
@@ -557,6 +558,7 @@ void ECODANDECODER::Process0x0F(uint8_t *Buffer, EcodanStatus *Status) {  // FTC
 
   MixingTemperature = ((float)ExtractUInt16(Buffer, 1) / 100);  // Mixing Tank Temperature (THW10)
   CondensingTemp = ((float)ExtractUInt16(Buffer, 4) / 100);     // Condensing Temperature
+  //Unknown = ExtractUInt8_v1(Buffer, 6);
 
   Status->MixingTemperature = MixingTemperature;
   Status->CondensingTemp = CondensingTemp;

@@ -193,7 +193,7 @@ typedef struct _EcodanStatus {
 
   //From Message 0x0B
   float Zone1Temperature, Zone2Temperature, OutsideTemperature;
-  float RefrigeTemp;
+  float RefrigeTemp, LiquidTemp;
 
   //From Message 0x0C
   float HeaterOutputFlowTemperature, HeaterReturnFlowTemperature, HeaterDeltaT;
