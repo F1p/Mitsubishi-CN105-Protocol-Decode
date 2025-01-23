@@ -944,12 +944,12 @@ uint16_t ECODANDECODER::ExtractUInt16(uint8_t *Buffer, uint8_t Index) {
 
 // Used for most single-byte floating point values
 float ECODANDECODER::ExtractUInt8_v1(uint8_t *Buffer, uint8_t Index) {
-  float Value = (Buffer[Index] / 2) - 40;
+  float Value = (Buffer[Index] / 2) - 40.0f;
   return Value;
 }
 
 float ECODANDECODER::ExtractUInt8_v2(uint8_t *Buffer, uint8_t Index) {
-  float Value = (Buffer[Index] - 40) / 2;
+  float Value = (Buffer[Index] - 40.0f) / 2;
   return Value;
 }
 
