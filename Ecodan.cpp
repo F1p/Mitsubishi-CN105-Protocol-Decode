@@ -56,17 +56,17 @@ void ECODAN::Process(void) {
 
   while (DeviceStream->available()) {
     if (!ProcessFlag) {
-      DEBUG_PRINT("[FTC > Bridge] ");
+      DEBUG_PRINT(F("[FTC > Bridge] "));
       ProcessFlag = true;
     }
     c = DeviceStream->read();
 
     if (c == 0)
-      DEBUG_PRINT("__, ");
+      DEBUG_PRINT(F("__, "));
     else {
-      if (c < 0x10) DEBUG_PRINT("0");
+      if (c < 0x10) DEBUG_PRINT(F("0"));
       DEBUG_PRINT(String(c, HEX));
-      DEBUG_PRINT(", ");
+      DEBUG_PRINT(F(", "));
     }
 
     if (ECODANDECODER::Process(c)) {
@@ -95,7 +95,7 @@ void ECODAN::TriggerStatusStateMachine(void) {
 
 void ECODAN::StopStateMachine(void) {
   if (CurrentMessage != 0) {
-    DEBUG_PRINTLN("Stopping Heat Pump Read Operation to FTC");
+    DEBUG_PRINTLN(F("Stopping Heat Pump Read Operation to FTC"));
     CurrentMessage = 0;
   }
 }
@@ -108,7 +108,7 @@ void ECODAN::StatusStateMachine(void) {
   uint8_t i;
 
   if (CurrentMessage != 0) {
-    DEBUG_PRINT("[Bridge > FTC] ");
+    DEBUG_PRINT(F("[Bridge > FTC] "));
     ECODANDECODER::CreateBlankTxMessage(GET_REQUEST, 0x10);
 
     if (Status.FTCVersion == 0) {
@@ -123,9 +123,9 @@ void ECODAN::StatusStateMachine(void) {
     DeviceStream->flush();
 
     for (i = 0; i < CommandSize; i++) {
-      if (Buffer[i] < 0x10) DEBUG_PRINT("0");
+      if (Buffer[i] < 0x10) DEBUG_PRINT(F("0"));
       DEBUG_PRINT(String(Buffer[i], HEX));
-      DEBUG_PRINT(", ");
+      DEBUG_PRINT(F(", "));
     }
     DEBUG_PRINTLN();
 
@@ -154,9 +154,9 @@ void ECODAN::WriteStateMachine(void) {
 
   if (cmd_queue_length > 0 && cmd_queue_length < 10) {
     StopStateMachine();
-    DEBUG_PRINT("Writing msg at position: ");
+    DEBUG_PRINT(F("Writing msg at position: "));
     DEBUG_PRINTLN(cmd_queue_position);
-    DEBUG_PRINT("[Bridge > FTC] ");
+    DEBUG_PRINT(F("[Bridge > FTC] "));
     ECODANDECODER::CreateBlankTxMessage(SET_REQUEST, 0x10);
     ECODANDECODER::EncodeNextCommand(cmd_queue_position);
     CommandSize = ECODANDECODER::PrepareTxCommand(Buffer);
@@ -165,9 +165,9 @@ void ECODAN::WriteStateMachine(void) {
     DeviceStream->flush();
 
     for (i = 0; i < CommandSize; i++) {
-      if (Buffer[i] < 0x10) DEBUG_PRINT("0");
+      if (Buffer[i] < 0x10) DEBUG_PRINT(F("0"));
       DEBUG_PRINT(String(Buffer[i], HEX));
-      DEBUG_PRINT(", ");
+      DEBUG_PRINT(F(", "));
     }
     DEBUG_PRINTLN();
 
@@ -178,7 +178,7 @@ void ECODAN::WriteStateMachine(void) {
 
 
 void ECODAN::Connect(void) {
-  DEBUG_PRINTLN("Connecting to Heat Pump...");
+  DEBUG_PRINTLN(F("Connecting to Heat Pump..."));
   DeviceStream->write(Init3, 8);
   DeviceStream->flush();
   Process();
@@ -207,7 +207,7 @@ void ECODAN::SetZoneTempSetpoint(float Setpoint, uint8_t Mode, uint8_t Zone) {
   ECODANDECODER::EncodeRoomThermostat(Setpoint, Mode, Zone);  // Can OR the write with the mode but removed as different MQTT topic:      SET_ZONE_SETPOINT | SET_HEATING_CONTROL_MODE
   cmd_queue_length++;
   ECODANDECODER::TransfertoBuffer(cmd_queue_length);
-  DEBUG_PRINT("Transferred msg to position: ");
+  DEBUG_PRINT(F("Transferred msg to position: "));
   DEBUG_PRINTLN(cmd_queue_length);
 }
 
@@ -217,7 +217,7 @@ void ECODAN::SetFlowSetpoint(float Setpoint, uint8_t Mode, uint8_t Zone) {
   ECODANDECODER::EncodeFlowTemperature(Setpoint, Mode, Zone);  // Can OR the write with the mode but removed as different MQTT topic:      SET_ZONE_SETPOINT | SET_HEATING_CONTROL_MODE
   cmd_queue_length++;
   ECODANDECODER::TransfertoBuffer(cmd_queue_length);
-  DEBUG_PRINT("Transferred msg to position: ");
+  DEBUG_PRINT(F("Transferred msg to position: "));
   DEBUG_PRINTLN(cmd_queue_length);
 }
 
@@ -231,7 +231,7 @@ void ECODAN::SetDHWMode(String *Mode) {
   }
   cmd_queue_length++;
   ECODANDECODER::TransfertoBuffer(cmd_queue_length);
-  DEBUG_PRINT("Transferred msg to position: ");
+  DEBUG_PRINT(F("Transferred msg to position: "));
   DEBUG_PRINTLN(cmd_queue_length);
 }
 
@@ -262,7 +262,7 @@ void ECODAN::SetProhibits(uint8_t Flags, uint8_t OnOff) {
   ECODANDECODER::EncodeProhibit(Flags, OnOff);
   cmd_queue_length++;
   ECODANDECODER::TransfertoBuffer(cmd_queue_length);
-  DEBUG_PRINT("Transferred msg to position: ");
+  DEBUG_PRINT(F("Transferred msg to position: "));
   DEBUG_PRINTLN(cmd_queue_length);
 }
 
@@ -272,7 +272,7 @@ void ECODAN::SetSvrControlMode(uint8_t OnOff, uint8_t DHW, uint8_t Z1H, uint8_t 
   ECODANDECODER::EncodeServerControlMode(OnOff, DHW, Z1H, Z1C, Z2H, Z2C);
   cmd_queue_length++;
   ECODANDECODER::TransfertoBuffer(cmd_queue_length);
-  DEBUG_PRINT("Transferred msg to position: ");
+  DEBUG_PRINT(F("Transferred msg to position: "));
   DEBUG_PRINTLN(cmd_queue_length);
 }
 
@@ -282,7 +282,7 @@ void ECODAN::SetHotWaterSetpoint(uint8_t Target) {
   ECODANDECODER::EncodeDHWSetpoint(Target);
   cmd_queue_length++;
   ECODANDECODER::TransfertoBuffer(cmd_queue_length);
-  DEBUG_PRINT("Transferred msg to position: ");
+  DEBUG_PRINT(F("Transferred msg to position: "));
   DEBUG_PRINTLN(cmd_queue_length);
 }
 
@@ -292,7 +292,7 @@ void ECODAN::SetHeatingControlMode(uint8_t Mode, uint8_t Zone) {
   ECODANDECODER::EncodeControlMode(Mode, Zone);
   cmd_queue_length++;
   ECODANDECODER::TransfertoBuffer(cmd_queue_length);
-  DEBUG_PRINT("Transferred msg to position: ");
+  DEBUG_PRINT(F("Transferred msg to position: "));
   DEBUG_PRINTLN(cmd_queue_length);
 }
 
@@ -302,7 +302,7 @@ void ECODAN::SetSystemPowerMode(uint8_t OnOff) {
   ECODANDECODER::EncodePower(OnOff);
   cmd_queue_length++;
   ECODANDECODER::TransfertoBuffer(cmd_queue_length);
-  DEBUG_PRINT("Transferred msg to position: ");
+  DEBUG_PRINT(F("Transferred msg to position: "));
   DEBUG_PRINTLN(cmd_queue_length);
 }
 
@@ -312,7 +312,7 @@ void ECODAN::GetFTCVersion() {
   uint8_t CommandSize = 0;
   uint8_t i;
 
-  DEBUG_PRINT("[Bridge > FTC] ");
+  DEBUG_PRINT(F("[Bridge > FTC] "));
   StopStateMachine();
   ECODANDECODER::CreateBlankTxMessage(0x5B, 0x01);
   ECODANDECODER::EncodeFTCVersion();
@@ -322,9 +322,9 @@ void ECODAN::GetFTCVersion() {
   DeviceStream->flush();
 
   for (i = 0; i < CommandSize; i++) {
-    if (Buffer[i] < 0x10) DEBUG_PRINT("0");
+    if (Buffer[i] < 0x10) DEBUG_PRINT(F("0"));
     DEBUG_PRINT(String(Buffer[i], HEX));
-    DEBUG_PRINT(", ");
+    DEBUG_PRINT(F(", "));
   }
   DEBUG_PRINTLN();
 }
@@ -336,6 +336,6 @@ void ECODAN::WriteMELCloudCMD(uint8_t cmd) {
   ECODANDECODER::EncodeMELCloud(cmd);
   cmd_queue_length++;
   ECODANDECODER::TransfertoBuffer(cmd_queue_length);
-  DEBUG_PRINT("Transferred msg to position: ");
+  DEBUG_PRINT(F("Transferred msg to position: "));
   DEBUG_PRINTLN(cmd_queue_length);
 }

@@ -154,27 +154,27 @@ void readSettingsFromConfig() {
   //LittleFS.format();
 
   // Read configuration from LittleFS JSON
-  DEBUG_PRINTLN("Mounting File System...");
+  DEBUG_PRINTLN(F("Mounting File System..."));
 #ifdef ESP8266
   if (LittleFS.begin()) {
 #endif
 #ifdef ESP32
     if (LittleFS.begin("/storage")) {
 #endif
-      DEBUG_PRINTLN("Mounted File System");
+      DEBUG_PRINTLN(F("Mounted File System"));
       if (LittleFS.exists("/config.json")) {
         //file exists, reading and loading
-        DEBUG_PRINTLN("Reading config file");
+        DEBUG_PRINTLN(F("Reading config file"));
         File configFile = LittleFS.open("/config.json", "r");
         if (configFile) {
-          DEBUG_PRINTLN("Opened config file");
+          DEBUG_PRINTLN(F("Opened config file"));
           JsonDocument doc;
           DeserializationError error = deserializeJson(doc, configFile);
           if (error) {
-            DEBUG_PRINT("Failed to read file: ");
+            DEBUG_PRINT(F("Failed to read file: "));
             DEBUG_PRINTLN(error.c_str());
           } else {
-            DEBUG_PRINTLN("Parsed JSON: ");
+            DEBUG_PRINTLN(F("Parsed JSON: "));
             serializeJson(doc, TelnetServer);
             DEBUG_PRINTLN();
 
@@ -286,7 +286,7 @@ void readSettingsFromConfig() {
         }
         configFile.close();
       } else {
-        DEBUG_PRINTLN("No config file exists, using placeholder values");
+        DEBUG_PRINTLN(F("No config file exists, using placeholder values"));
         // Populate the Dynamic Variables (Device ID)
 #ifdef ESP8266
         snprintf(DeviceID, deviceId_max_length, (String(ESP.getChipId(), HEX)).c_str());
@@ -298,7 +298,7 @@ void readSettingsFromConfig() {
         strcpy(mqttSettings.baseTopic2, DeviceID);  // Base topic 2 defaults to deviceID
       }
     } else {
-      DEBUG_PRINTLN("Failed to mount File System");
+      DEBUG_PRINTLN(F("Failed to mount File System"));
     }
   }
 
@@ -379,7 +379,7 @@ void readSettingsFromConfig() {
 
   void saveConfig() {
     // Read MQTT Portal Values for save to file system
-    DEBUG_PRINTLN("Copying Portal Values...");
+    DEBUG_PRINTLN(F("Copying Portal Values..."));
     strcpy(mqttSettings.deviceId, custom_device_id.getValue());
     strcpy(mqttSettings.hostname, custom_mqtt_server.getValue());
     strcpy(mqttSettings.port, custom_mqtt_port.getValue());
@@ -392,10 +392,10 @@ void readSettingsFromConfig() {
     strcpy(mqttSettings.password2, custom_mqtt2_pass.getValue());
     strcpy(mqttSettings.baseTopic2, custom_mqtt2_basetopic.getValue());
 
-    DEBUG_PRINT("Saving config... ");
+    DEBUG_PRINT(F("Saving config... "));
     File configFile = LittleFS.open("/config.json", "w");
     if (!configFile) {
-      DEBUG_PRINTLN("[FAILED] Unable to open config file for writing");
+      DEBUG_PRINTLN(F("[FAILED] Unable to open config file for writing"));
     } else {
       JsonDocument doc;
       doc[mqttSettings.wm_device_id_identifier] = mqttSettings.deviceId;
@@ -413,9 +413,9 @@ void readSettingsFromConfig() {
       doc[unitSettings.glycol_identifier] = unitSettings.GlycolStrength;
 
       if (serializeJson(doc, configFile) == 0) {
-        DEBUG_PRINTLN("[FAILED]");
+        DEBUG_PRINTLN(F("[FAILED]"));
       } else {
-        DEBUG_PRINTLN("[DONE]");
+        DEBUG_PRINTLN(F("[DONE]"));
         serializeJson(doc, TelnetServer);
         DEBUG_PRINTLN();
       }
@@ -430,7 +430,7 @@ void readSettingsFromConfig() {
   }
 
   void initializeWifiManager() {
-    DEBUG_PRINTLN("Starting WiFi Manager");
+    DEBUG_PRINTLN(F("Starting WiFi Manager"));
     // Reset Wifi settings for testing
     //wifiManager.resetSettings();
     //wifiManager.setDebugOutput(true);
@@ -479,9 +479,9 @@ void readSettingsFromConfig() {
 #ifndef ARDUINO_WT32_ETH01
     wifiManager.setConfigPortalTimeout(120);  // Timeout before launching the config portal (WiFi Only)
     if (!wifiManager.autoConnect("Ecodan Bridge AP")) {
-      DEBUG_PRINTLN("Failed to connect and hit timeout");
+      DEBUG_PRINTLN(F("Failed to connect and hit timeout"));
     } else {
-      DEBUG_PRINTLN("WiFi Connected!");
+      DEBUG_PRINTLN(F("WiFi Connected!"));
     }
 #endif
   }
@@ -675,19 +675,19 @@ void readSettingsFromConfig() {
     }
 
     // Generate Publish Message
-    DEBUG_PRINTLN("Published Discovery Topics!");
+    DEBUG_PRINTLN(F("Published Discovery Topics!"));
   }
 
   void initializeMQTTClient1() {
-    DEBUG_PRINT("Attempting MQTT connection to: ");
+    DEBUG_PRINT(F("Attempting MQTT connection to: "));
     DEBUG_PRINT(mqttSettings.hostname);
-    DEBUG_PRINT(":");
+    DEBUG_PRINT(F(":"));
     DEBUG_PRINTLN(mqttSettings.port);
     MQTTClient1.setServer(mqttSettings.hostname, atoi(mqttSettings.port));
   }
 
   void MQTTonConnect(void) {
-    DEBUG_PRINTLN("MQTT ON CONNECT");
+    DEBUG_PRINTLN(F("MQTT ON CONNECT"));
     MQTTClient1.publish(MQTT_LWT.c_str(), "online");
     delay(10);
 
@@ -731,15 +731,15 @@ void readSettingsFromConfig() {
       return 1;
     } else if (strcmp(mqttSettings.hostname, "IPorDNS") != 0 && strcmp(mqttSettings.hostname, "") != 0) {
       initializeMQTTClient1();
-      DEBUG_PRINT("With Client ID: ");
+      DEBUG_PRINT(F("With Client ID: "));
       DEBUG_PRINT(mqttSettings.deviceId);
-      DEBUG_PRINT(", Username: ");
+      DEBUG_PRINT(F(", Username: "));
       DEBUG_PRINT(mqttSettings.user);
-      DEBUG_PRINT(" and Password: ");
+      DEBUG_PRINT(F(" and Password: "));
       DEBUG_PRINTLN(mqttSettings.password);
 
       if (MQTTClient1.connect(mqttSettings.deviceId, mqttSettings.user, mqttSettings.password, MQTT_LWT.c_str(), 0, true, "offline")) {
-        DEBUG_PRINTLN("MQTT Server Connected");
+        DEBUG_PRINTLN(F("MQTT Server Connected"));
         MQTTonConnect();
 #ifdef ESP8266                              // Define the Witty ESP8266 Ports
         digitalWrite(Red_RGB_LED, LOW);     // Turn off the Red LED
@@ -756,41 +756,41 @@ void readSettingsFromConfig() {
 #endif
         switch (MQTTClient1.state()) {
           case -4:
-            DEBUG_PRINTLN("MQTT_CONNECTION_TIMEOUT");
+            DEBUG_PRINTLN(F("MQTT_CONNECTION_TIMEOUT"));
             break;
           case -3:
-            DEBUG_PRINTLN("MQTT_CONNECTION_LOST");
+            DEBUG_PRINTLN(F("MQTT_CONNECTION_LOST"));
             break;
           case -2:
-            DEBUG_PRINTLN("MQTT_CONNECT_FAILED");
+            DEBUG_PRINTLN(F("MQTT_CONNECT_FAILED"));
             break;
           case -1:
-            DEBUG_PRINTLN("MQTT_DISCONNECTED");
+            DEBUG_PRINTLN(F("MQTT_DISCONNECTED"));
             break;
           case 0:
-            DEBUG_PRINTLN("MQTT_CONNECTED");
+            DEBUG_PRINTLN(F("MQTT_CONNECTED"));
             break;
           case 1:
-            DEBUG_PRINTLN("MQTT_CONNECT_BAD_PROTOCOL");
+            DEBUG_PRINTLN(F("MQTT_CONNECT_BAD_PROTOCOL"));
             break;
           case 2:
-            DEBUG_PRINTLN("MQTT_CONNECT_BAD_CLIENT_ID");
+            DEBUG_PRINTLN(F("MQTT_CONNECT_BAD_CLIENT_ID"));
             break;
           case 3:
-            DEBUG_PRINTLN("MQTT_CONNECT_UNAVAILABLE");
+            DEBUG_PRINTLN(F("MQTT_CONNECT_UNAVAILABLE"));
             break;
           case 4:
-            DEBUG_PRINTLN("MQTT_CONNECT_BAD_CREDENTIALS");
+            DEBUG_PRINTLN(F("MQTT_CONNECT_BAD_CREDENTIALS"));
             break;
           case 5:
-            DEBUG_PRINTLN("MQTT_CONNECT_UNAUTHORIZED");
+            DEBUG_PRINTLN(F("MQTT_CONNECT_UNAUTHORIZED"));
             break;
         }
         return 0;
       }
       return 0;
     } else {
-      DEBUG_PRINTLN("Primary MQTT Not Set");
+      DEBUG_PRINTLN(F("Primary MQTT Not Set"));
       return 0;
     }
   }
@@ -886,9 +886,9 @@ void readSettingsFromConfig() {
 
 
   void initializeMQTTClient2() {
-    DEBUG_PRINT("Attempting MQTT connection to: ");
+    DEBUG_PRINT(F("Attempting MQTT connection to: "));
     DEBUG_PRINT(mqttSettings.hostname2);
-    DEBUG_PRINT(":");
+    DEBUG_PRINT(F(":"));
     DEBUG_PRINTLN(mqttSettings.port2);
     MQTTClient2.setServer(mqttSettings.hostname2, atoi(mqttSettings.port2));
   }
@@ -896,7 +896,7 @@ void readSettingsFromConfig() {
 
 
   void MQTT2onConnect(void) {
-    DEBUG_PRINTLN("MQTT 2 ON CONNECT");
+    DEBUG_PRINTLN(F("MQTT 2 ON CONNECT"));
     MQTTClient2.publish(MQTT_2_LWT.c_str(), "online");
     delay(10);
 
@@ -930,55 +930,55 @@ void readSettingsFromConfig() {
       return 1;
     } else if (strcmp(mqttSettings.hostname2, "IPorDNS") != 0 && strcmp(mqttSettings.hostname2, "") != 0) {
       initializeMQTTClient2();
-      DEBUG_PRINT("With Client ID: ");
+      DEBUG_PRINT(F("With Client ID: "));
       DEBUG_PRINT(mqttSettings.deviceId);
-      DEBUG_PRINT(", Username: ");
+      DEBUG_PRINT(F(", Username: "));
       DEBUG_PRINT(mqttSettings.user2);
-      DEBUG_PRINT(" and Password: ");
+      DEBUG_PRINT(F(" and Password: "));
       DEBUG_PRINTLN(mqttSettings.password2);
 
       if (MQTTClient2.connect(mqttSettings.deviceId, mqttSettings.user2, mqttSettings.password2, MQTT_2_LWT.c_str(), 0, true, "offline")) {
-        DEBUG_PRINTLN("MQTT Server 2 Connected");
+        DEBUG_PRINTLN(F("MQTT Server 2 Connected"));
         MQTT2onConnect();
         return 1;
       } else {
         switch (MQTTClient2.state()) {
           case -4:
-            DEBUG_PRINTLN("MQTT_2_CONNECTION_TIMEOUT");
+            DEBUG_PRINTLN(F("MQTT_2_CONNECTION_TIMEOUT"));
             break;
           case -3:
-            DEBUG_PRINTLN("MQTT_2_CONNECTION_LOST");
+            DEBUG_PRINTLN(F("MQTT_2_CONNECTION_LOST"));
             break;
           case -2:
-            DEBUG_PRINTLN("MQTT_2_CONNECT_FAILED");
+            DEBUG_PRINTLN(F("MQTT_2_CONNECT_FAILED"));
             break;
           case -1:
-            DEBUG_PRINTLN("MQTT_2_DISCONNECTED");
+            DEBUG_PRINTLN(F("MQTT_2_DISCONNECTED"));
             break;
           case 0:
-            DEBUG_PRINTLN("MQTT_2_CONNECTED");
+            DEBUG_PRINTLN(F("MQTT_2_CONNECTED"));
             break;
           case 1:
-            DEBUG_PRINTLN("MQTT_2_CONNECT_BAD_PROTOCOL");
+            DEBUG_PRINTLN(F("MQTT_2_CONNECT_BAD_PROTOCOL"));
             break;
           case 2:
-            DEBUG_PRINTLN("MQTT_2_CONNECT_BAD_CLIENT_ID");
+            DEBUG_PRINTLN(F("MQTT_2_CONNECT_BAD_CLIENT_ID"));
             break;
           case 3:
-            DEBUG_PRINTLN("MQTT_2_CONNECT_UNAVAILABLE");
+            DEBUG_PRINTLN(F("MQTT_2_CONNECT_UNAVAILABLE"));
             break;
           case 4:
-            DEBUG_PRINTLN("MQTT_2_CONNECT_BAD_CREDENTIALS");
+            DEBUG_PRINTLN(F("MQTT_2_CONNECT_BAD_CREDENTIALS"));
             break;
           case 5:
-            DEBUG_PRINTLN("MQTT_2_CONNECT_UNAUTHORIZED");
+            DEBUG_PRINTLN(F("MQTT_2_CONNECT_UNAUTHORIZED"));
             break;
         }
         return 0;
       }
       return 0;
     } else {
-      DEBUG_PRINTLN("Secondary MQTT Not Set");
+      DEBUG_PRINTLN(F("Secondary MQTT Not Set"));
       return 0;
     }
   }

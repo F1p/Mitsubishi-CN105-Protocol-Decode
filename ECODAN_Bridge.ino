@@ -25,20 +25,21 @@
 
 #ifdef ESP8266
 #include <ESP8266WiFi.h>
+#include <ESP8266mDNS.h>
 #include <ESP8266WebServer.h>
 #include <SoftwareSerial.h>
 #endif
 #ifdef ESP32
 #include <WiFi.h>
 #include <WebServer.h>
+#include <ESPmDNS.h>
 #endif
 #ifdef ARDUINO_WT32_ETH01
 #include <ETH.h>
 #include <Arduino.h>
 #endif
 
-#include <ESPmDNS.h>
-//#include <DNSServer.h>
+
 #include <WiFiManager.h>
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
@@ -334,7 +335,7 @@ void loop() {
 
   // -- Heat Pump Write Command Handler -- //
   if (HeatPump.Status.Write_To_Ecodan_OK && WriteInProgress) {  // A write command is executing
-    DEBUG_PRINTLN("Write OK!");                                 // Pause normal processsing until complete
+    DEBUG_PRINTLN(F("Write OK!"));                                 // Pause normal processsing until complete
     HeatPump.Status.Write_To_Ecodan_OK = false;                 // Set back to false
     WriteInProgress = false;                                    // Set back to false
     if (cmd_queue_length > cmd_queue_position) {
@@ -476,16 +477,16 @@ void loop() {
 
 void HeatPumpKeepAlive(void) {
   if (!HeatPump.HeatPumpConnected()) {
-    DEBUG_PRINTLN("Heat Pump Disconnected");
+    DEBUG_PRINTLN(F("Heat Pump Disconnected"));
 #ifdef ARDUINO_M5STACK_ATOMS3
     // Swap to the other pins and test the connection
     if (CableConnected) {
-      DEBUG_PRINTLN("Trying to connect via Proxy Circuit Board");
+      DEBUG_PRINTLN(F("Trying to connect via Proxy Circuit Board"));
       HEATPUMP_STREAM.begin(SERIAL_BAUD, SERIAL_CONFIG, FTCProxy_RxPin, FTCProxy_TxPin);  // Rx, Tx
       HeatPump.SetStream(&HEATPUMP_STREAM);
       CableConnected = false;
     } else {
-      DEBUG_PRINTLN("Trying to connect via Cable");
+      DEBUG_PRINTLN(F("Trying to connect via Cable"));
       HEATPUMP_STREAM.begin(SERIAL_BAUD, SERIAL_CONFIG, FTCCable_RxPin, FTCCable_TxPin);  // Rx, Tx
       HeatPump.SetStream(&HEATPUMP_STREAM);
       CableConnected = true;
@@ -501,7 +502,7 @@ void HeatPumpQueryStateEngine(void) {
 
   // Call Once Full Update is complete
   if (HeatPump.UpdateComplete()) {
-    DEBUG_PRINTLN("Update Complete");
+    DEBUG_PRINTLN(F("Update Complete"));
     FTCLoopSpeed = millis() - ftcpreviousMillis;  // Loop Speed End
     if (HeatPump.Status.FTCVersion == 0) { HeatPump.GetFTCVersion(); }
     if ((MQTTReconnect() || MQTT2Reconnect()) && (HeatPump.Status.FTCVersion != 0)) { PublishAllReports(); }
@@ -534,7 +535,7 @@ void MELCloudQueryReplyEngine(void) {
 }
 
 void MQTTonDisconnect(void* response) {
-  DEBUG_PRINTLN("MQTT Disconnect");
+  DEBUG_PRINTLN(F("MQTT Disconnect"));
 }
 
 void MQTTonData(char* topic, byte* payload, unsigned int length) {
@@ -542,9 +543,9 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
   String Topic = topic;
   String Payload = (char*)payload;
 
-  DEBUG_PRINT("\nReceived MQTT Message on topic ");
+  DEBUG_PRINT(F("\nReceived MQTT Message on topic "));
   DEBUG_PRINT(Topic.c_str());
-  DEBUG_PRINT(" with Payload ");
+  DEBUG_PRINT(F(" with Payload "));
   DEBUG_PRINTLN(Payload.c_str());
 
   // Curve or Temp Independent Thermostat Setting
@@ -1077,7 +1078,7 @@ void PublishAllReports(void) {
   StatusReport();
 
   FlashGreenLED();
-  DEBUG_PRINTLN("MQTT Published!");
+  DEBUG_PRINTLN(F("MQTT Published!"));
 }
 
 void FastPublish(void) {
@@ -1114,47 +1115,47 @@ void setupTelnet() {
 }
 
 void startTelnet() {
-  DEBUG_PRINT("Telnet: ");
+  DEBUG_PRINT(F("Telnet: "));
 #ifdef ARDUINO_WT32_ETH01
   if (TelnetServer.begin(23, false)) {
 #else
   if (TelnetServer.begin()) {
 #endif
-    DEBUG_PRINTLN("Running");
+    DEBUG_PRINTLN(F("Telnet Running"));
   } else {
-    DEBUG_PRINTLN("error.");
+    DEBUG_PRINTLN(F("Telnet Error"));
   }
 }
 
 void stopTelnet() {
-  DEBUG_PRINTLN("Stopping Telnet");
+  DEBUG_PRINTLN(F("Stopping Telnet"));
   TelnetServer.stop();
 }
 
 void onTelnetConnect(String ip) {
-  DEBUG_PRINT("Telnet: ");
+  DEBUG_PRINT(F("Telnet: "));
   DEBUG_PRINT(ip);
-  DEBUG_PRINTLN(" connected");
+  DEBUG_PRINTLN(F(" connected"));
   TelnetServer.println("\nWelcome " + TelnetServer.getIP());
-  TelnetServer.println("(Use ^] + q  to disconnect.)");
+  TelnetServer.println(F("(Use ^] + q  to disconnect.)"));
 }
 
 void onTelnetDisconnect(String ip) {
-  DEBUG_PRINT("Telnet: ");
+  DEBUG_PRINT(F("Telnet: "));
   DEBUG_PRINT(ip);
-  DEBUG_PRINTLN(" disconnected");
+  DEBUG_PRINTLN(F(" disconnected"));
 }
 
 void onTelnetReconnect(String ip) {
-  DEBUG_PRINT("Telnet: ");
+  DEBUG_PRINT(F("Telnet: "));
   DEBUG_PRINT(ip);
-  DEBUG_PRINTLN(" reconnected");
+  DEBUG_PRINTLN(F(" reconnected"));
 }
 
 void onTelnetConnectionAttempt(String ip) {
-  DEBUG_PRINT("Telnet: ");
+  DEBUG_PRINT(F("Telnet: "));
   DEBUG_PRINT(ip);
-  DEBUG_PRINTLN(" tried to connected");
+  DEBUG_PRINTLN(F(" tried to connected"));
 }
 
 double round2(double value) {
@@ -1181,29 +1182,29 @@ void MQTTWriteReceived(String message, int MsgNumber) {
 void onEvent(arduino_event_id_t event) {
   switch (event) {
     case ARDUINO_EVENT_ETH_START:
-      DEBUG_PRINTLN("ETH Started");
+      DEBUG_PRINTLN(F("ETH Started"));
       // The hostname must be set after the interface is started, but needs
       // to be set before DHCP, so set it from the event handler thread.
       ETH.setHostname("Ecodan-Bridge");
       break;
     case ARDUINO_EVENT_ETH_CONNECTED:
-      DEBUG_PRINTLN("ETH Connected");
+      DEBUG_PRINTLN(F("ETH Connected"));
       break;
     case ARDUINO_EVENT_ETH_GOT_IP:
-      DEBUG_PRINTLN("ETH Got IP");
+      DEBUG_PRINTLN(F("ETH Got IP"));
       DEBUG_PRINTLN(ETH);
       eth_connected = true;
       break;
     case ARDUINO_EVENT_ETH_LOST_IP:
-      DEBUG_PRINTLN("ETH Lost IP");
+      DEBUG_PRINTLN(F("ETH Lost IP"));
       eth_connected = false;
       break;
     case ARDUINO_EVENT_ETH_DISCONNECTED:
-      DEBUG_PRINTLN("ETH Disconnected");
+      DEBUG_PRINTLN(F("ETH Disconnected"));
       eth_connected = false;
       break;
     case ARDUINO_EVENT_ETH_STOP:
-      DEBUG_PRINTLN("ETH Stopped");
+      DEBUG_PRINTLN(F("ETH Stopped"));
       eth_connected = false;
       break;
     default: break;
