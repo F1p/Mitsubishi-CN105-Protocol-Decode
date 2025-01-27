@@ -37,7 +37,8 @@
 #include <Arduino.h>
 #endif
 
-#include <DNSServer.h>
+#include <ESPmDNS.h>
+//#include <DNSServer.h>
 #include <WiFiManager.h>
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
@@ -297,6 +298,9 @@ void setup() {
 
 
   wifiManager.startWebPortal();
+  
+  MDNS.begin("heatpump");
+  MDNS.addService("http", "tcp", 80);
 
   HeatPump.Status.Write_To_Ecodan_OK = false;
 

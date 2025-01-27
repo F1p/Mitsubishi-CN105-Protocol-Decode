@@ -299,7 +299,7 @@ const char MQTT_SENSOR_NAME[][40] PROGMEM = {
   "Bridge CPU Temperature",
   "Booster Heater 2",
   "Instant CoP",
-  "Liquid Temperature",
+  "Refrigerant Liquid Temperature",
 
   "DHW Thermostat",
   "Zone 1 Thermostat",  //80
