@@ -128,7 +128,7 @@ struct MqttSettings {
   char wm_device_id_identifier[10] = "device_id";
 
   // Client 1
-  char hostname[hostname_max_length] = "IPorDNS";
+  char hostname[hostname_max_length] = "homeassistant.local";
   char user[user_max_length] = "Username";
   char password[password_max_length] = "Password";
   char port[port_max_length] = "1883";
@@ -179,7 +179,7 @@ WiFiManager wifiManager;
 
 
 // Delcare Global Scope for Non-Blocking, always active Portal with "TEMP" placeholder, real values populated later from filesystem
-WiFiManagerParameter custom_mqtt_server("server", "<b>Required</b> Primary MQTT Server", "TEMP", hostname_max_length);
+WiFiManagerParameter custom_mqtt_server("server", "<b>Required</b> Primary MQTT Server (IP Address or DNS)", "TEMP", hostname_max_length);
 WiFiManagerParameter custom_mqtt_user("user", "Primary MQTT Username", "TEMP", user_max_length);
 WiFiManagerParameter custom_mqtt_pass("pass", "Primary MQTT Password", "TEMP", password_max_length);
 WiFiManagerParameter custom_mqtt_port("port", "Primary MQTT Server Port (Default: 1883)", "TEMP", port_max_length);
@@ -459,6 +459,29 @@ void loop() {
     FastLED.setBrightness(255);
     FastLED.show();
     delay(500);
+    ESP.restart();  // No button on ETH
+#endif
+
+    if (digitalRead(Reset_Button) == LOW) {  // If still pressed after flashing seq - reset
+#ifdef ESP8266
+      digitalWrite(Red_RGB_LED, LOW);
+      digitalWrite(Blue_RGB_LED, HIGH);
+      delay(500);
+#endif
+#ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack LED
+      leds[0] = CRGB::Blue;
+      FastLED.show();
+      FastLED.setBrightness(255);
+      FastLED.show();
+#endif
+      delay(500);
+      wifiManager.resetSettings();  // Clear settings
+    }
+    
+#ifdef ESP8266
+    ESP.reset();  // Define the Witty ESP8266 Ports
+#endif
+#ifdef ESP32        // ESP32 Action
     ESP.restart();  // No button on ETH
 #endif
   }
