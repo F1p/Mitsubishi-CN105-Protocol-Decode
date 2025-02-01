@@ -74,7 +74,7 @@ void MELCLOUD::ReplyStatus(uint8_t TargetMessage) {
 
   DEBUG_PRINT("[Bridge > MEL] ");
 
-  if ((TargetMessage == 0x32) | (TargetMessage == 0x33) | (TargetMessage == 0x34) | (TargetMessage == 0x35)) {
+  if ((TargetMessage == 0x32) || (TargetMessage == 0x33) || (TargetMessage == 0x34) || (TargetMessage == 0x35)) {
     MELCLOUDDECODER::CreateBlankTxMessage(SET_RESPONSE, 0x10);
   } else if (TargetMessage == 0xC9) {
     MELCLOUDDECODER::CreateBlankTxMessage(EXCONNECT_RESPONSE, 0x10);

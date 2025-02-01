@@ -812,6 +812,8 @@ void ECODANDECODER::Process0x28(uint8_t *Buffer, EcodanStatus *Status) {
   uint8_t SvrControlMode;
 
   for (int i = 1; i < 16; i++) {
+    //if (i == 10) { Array0x28[i] = 0; }
+    //else { Array0x28[i] = Buffer[i]; }
     Array0x28[i] = Buffer[i];
   }
 
@@ -1133,6 +1135,7 @@ void ECODANDECODER::EncodeHolidayMode(uint8_t OnOff) {
   TxMessage.Payload[0] = TX_MESSAGE_CONTROLLER;
   TxMessage.Payload[1] = TX_MESSAGE_SETTING_HOL_Flag;
   TxMessage.Payload[4] = OnOff;
+  TxMessage.Payload[5] = OnOff;
 }
 
 void ECODANDECODER::EncodeFTCVersion() {
@@ -1185,6 +1188,7 @@ void ECODANDECODER::EncodeMELCloud(uint8_t cmd) {
     } else if (cmd == 0x33) {
       TxMessage.Payload[i] = Array0x33[i];
     } else if (cmd == 0x34) {
+      //if (i == 1) { Array0x34[i] = Array0x34[i] & 0x74; }
       TxMessage.Payload[i] = Array0x34[i];
     } else if (cmd == 0x35) {
       TxMessage.Payload[i] = Array0x35[i];

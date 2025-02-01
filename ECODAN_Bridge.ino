@@ -552,6 +552,7 @@ void MELCloudQueryReplyEngine(void) {
     MELCloud.MELNegotiate1();  // Reply to the connect request
     MELCloud.Status.MELRequest1 = false;
   } else if (MELCloud.Status.MELRequest2) {
+    // Only MELCloud performs this second negotiation, it could be used to detect for features
     MELCloud.MELNegotiate2();  // Reply to the connect request
     MELCloud.Status.MELRequest2 = false;
   }
@@ -654,8 +655,8 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
   }
   if ((Topic == MQTTCommandHotwaterSetpoint) || (Topic == MQTTCommand2HotwaterSetpoint)) {
     MQTTWriteReceived("MQTT Set HW Setpoint", 6);
-    HeatPump.SetHotWaterSetpoint(Payload.toInt());
-    HeatPump.Status.HotWaterSetpoint = Payload.toInt();
+    HeatPump.SetHotWaterSetpoint(Payload.toFloat());
+    HeatPump.Status.HotWaterSetpoint = Payload.toFloat();
   }
   if ((Topic == MQTTCommandZone1HeatingMode) || (Topic == MQTTCommand2Zone1HeatingMode)) {
     MQTTWriteReceived("MQTT Set Heating Mode Zone 1", 4);
