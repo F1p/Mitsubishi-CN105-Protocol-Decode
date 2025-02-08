@@ -547,6 +547,7 @@ const char MQTT_OBJECT_ID[][19] PROGMEM = {
   "zone2_flow_climate"
 };
 
+
 int MQTT_CLIMATE_MAX[] PROGMEM = {
   60,
   30,

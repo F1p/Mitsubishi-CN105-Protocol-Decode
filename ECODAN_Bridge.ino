@@ -14,8 +14,8 @@
 
 // -- Supported Hardware -- //
 /* As sold Witty ESP8266 based               / Core 3.1.2 / Flash 4MB (1MB FS / 1MB OTA - 16KB Cache/48KB IRAM not shared)  */
-/* ESP32 AtomS3 Lite (ESP32S3 Dev Module)    / Core 3.0.7 / Flash 4M with SPIFFS (1.2MB APP / 1.5MB SPIFFS)                 */
-/* ESP32 Ethernet WT32-ETH01                 / Core 3.0.7 / Flash 4MB (1.2MB APP / 1.5MB SPIFFS)                            */
+/* ESP32 AtomS3 Lite (ESP32S3 Dev Module)    / Core 3.1.1 / Flash 4M with SPIFFS (1.2MB APP / 1.5MB SPIFFS)                 */
+/* ESP32 Ethernet WT32-ETH01                 / Core 3.1.1 / Flash 4MB (1.2MB APP / 1.5MB SPIFFS)                            */
 
 
 #if defined(ESP8266) || defined(ESP32)  // ESP32 or ESP8266 Compatiability

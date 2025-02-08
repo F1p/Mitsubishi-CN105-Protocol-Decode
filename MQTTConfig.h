@@ -375,8 +375,6 @@ void readSettingsFromConfig() {
   }
 
 
-
-
   void saveConfig() {
     // Read MQTT Portal Values for save to file system
     DEBUG_PRINTLN(F("Copying Portal Values..."));
@@ -466,7 +464,7 @@ void readSettingsFromConfig() {
     //defaults to 8%
     //wifiManager.setMinimumSignalQuality();
 
-    snprintf(WiFiHostname, 26, "%s%s", ClientPrefix, mqttSettings.deviceId);
+    snprintf(WiFiHostname, 40, "%s%s", ClientPrefix, mqttSettings.deviceId);
     WiFi.hostname(WiFiHostname);
 #ifdef ESP8266                         // Define the Witty ESP8266 Ports
     digitalWrite(Blue_RGB_LED, HIGH);  // Turn the Blue LED On
@@ -519,7 +517,7 @@ void readSettingsFromConfig() {
 #ifdef ARDUINO_WT32_ETH01
         Config["device"]["configuration_url"] = "http://" + ETH.localIP().toString() + ":80";
 #else
-        Config["device"]["configuration_url"] = "http://" + WiFi.localIP().toString() + ":80";
+      Config["device"]["configuration_url"] = "http://" + WiFi.localIP().toString() + ":80";
 #endif
         Config["device"]["sw_version"] = FirmwareVersion;
       } else {  // Otherwise post just identifier
@@ -632,7 +630,7 @@ void readSettingsFromConfig() {
           Config["options"][1] = "10%";
           Config["options"][2] = "20%";
           Config["options"][3] = "30%";
-        } else {              // Zone Options
+        } else {  // Zone Options
           Config["options"][0] = "Heating Temperature";
           Config["options"][1] = "Heating Flow";
           Config["options"][2] = "Heating Compensation";
@@ -751,7 +749,9 @@ void readSettingsFromConfig() {
       } else {
 #ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack LED
         //FastLED.setBrightness(255);  // LED on, reduced brightness
-        leds[0] = CRGB::Orange;
+        if (!wifiManager.getConfigPortalActive()) {  // Not got config portal open, change to orange:
+          leds[0] = CRGB::Orange;
+        }
         //
 #endif
         switch (MQTTClient1.state()) {
@@ -798,8 +798,10 @@ void readSettingsFromConfig() {
 
   void handleMQTTState() {
     if (!MQTTClient1.connected()) {
-#ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack LED
-      leds[0] = CRGB::Orange;  // Turn the LED Orange
+#ifdef ARDUINO_M5STACK_ATOMS3                      // Define the M5Stack LED
+      if (!wifiManager.getConfigPortalActive()) {  // Not got config portal open, change to orange:
+        leds[0] = CRGB::Orange;
+      }
       FastLED.show();
 #endif
 #ifdef ESP8266                          // Define the Witty ESP8266 Ports
