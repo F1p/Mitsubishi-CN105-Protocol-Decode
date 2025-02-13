@@ -6,14 +6,14 @@ M5Stack Atom S3 Lite
 
 1. Download the files from the [/build]([https://github.com/F1p/Mitsubishi-Ecodan-Bridge-CN105/tree/master/build/esp32.esp32.m5stack-atoms3](https://github.com/F1p/Mitsubishi-CN105-Protocol-Decode/tree/master/build/esp32.esp32.m5stack_atoms3/v5.3.0%20Beta)) folder.
 
-2. Download [esptool.exe](https://github.com/espressif/esptool/releases) from Espressif.
+2. Download [esptool.exe](https://github.com/espressif/esptool/releases) from Espressif (4.9.dev3).
 
 3. Place all the files in the same folder, press and hold the side button of the M5Stack, locate the COM port your M5Stack is on
 
 4. Open CMD prompt in the folder with the files saved and run:
 
     ```
-    esptool.exe --chip esp32s3 --port "COM12" --baud 921600  --before default_reset --after hard_reset write_flash -e -z --flash_mode dio --flash_freq 80m --flash_size 4MB 0x0 "ECODAN_Bridge_v5.3.0-Beta.bootloader.bin" 0x8000 "ECODAN_Bridge_v5.3.0-Beta.partitions.bin" 0xe000 "boot_app0.bin" 0x10000 "ECODAN_Bridge_v5.3.0-Beta.bin"
+    esptool.exe --chip esp32s3 --port "COM63" --baud 921600  --before default_reset --after hard_reset write_flash -e -z --flash_mode keep --flash_freq keep --flash_size keep 0x0 "ECODAN_Bridge_Gen2_v6.1.2.bootloader.bin" 0x8000 "ECODAN_Bridge_Gen2_v6.1.2.partitions.bin" 0xe000 "boot_app0.bin" 0x10000 "ECODAN_Bridge_Gen2_v6.1.2.bin" 
     ```
 
 5. The Pins on the M5Stack are: 1 = Tx, 2 = Rx
