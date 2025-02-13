@@ -54,13 +54,14 @@ uint8_t Array0x28[] = {};
 uint8_t Array0x29[] = {};
 uint8_t Array0xa1[] = {};
 uint8_t Array0xa2[] = {};
+uint8_t Array0xa3[] = {};
 uint8_t Array0xc9[] = {};
 uint8_t Array0x32[] = {};
 uint8_t Array0x33[] = {};
 uint8_t Array0x34[] = {};
 uint8_t Array0x35[] = {};
 
-uint8_t BufferArray[][16] = { {}, {}, {}, {}, {} };
+uint8_t BufferArray[][17] = { {}, {}, {}, {}, {}, {}, {}, {}, {}, {} };
 
 
 ECODANDECODER::ECODANDECODER(void) {
@@ -189,6 +190,9 @@ uint8_t ECODANDECODER::Process(uint8_t c) {
           break;
         case 0xa2:
           Process0xA2(RxMessage.Payload, &Status);
+          break;
+        case 0xa3:
+          Process0xA3(RxMessage.Payload, &Status);
           break;
       }
     } else if (RxMessage.PacketType == GET_ABOUT_RESPONSE) {
@@ -323,15 +327,18 @@ void ECODANDECODER::Process0x01(uint8_t *Buffer, EcodanStatus *Status) {
 }
 
 void ECODANDECODER::Process0x02(uint8_t *Buffer, EcodanStatus *Status) {
-  uint8_t Defrost;
+  uint8_t Defrost, ThermostatZ1, ThermostatZ2;
 
   for (int i = 1; i < 16; i++) {
     Array0x02[i] = Buffer[i];
   }
-  //Unknown = Buffer[1];  // Value 01
-  //Unknown = Buffer[2];  // Value 02
+
+  ThermostatZ1 = Buffer[1];
+  ThermostatZ2 = Buffer[2];
   Defrost = Buffer[3];
 
+  Status->ThermostatZ1 = ThermostatZ1;
+  Status->ThermostatZ2 = ThermostatZ2;
   Status->Defrost = Defrost;
 }
 
@@ -486,14 +493,14 @@ void ECODANDECODER::Process0x0B(uint8_t *Buffer, EcodanStatus *Status) {
 
   //Unknown = ((float)ExtractUInt16(Buffer, 5) / 100);
   RefrigeTemp = ((float)ExtractUInt16_Signed(Buffer, 8) / 100);
-  LiquidTemp = ExtractUInt8_v1(Buffer, 10);
+  //LiquidTemp = ExtractUInt8_v1(Buffer, 10);
   fOutside = ExtractUInt8_v1(Buffer, 11);
 
   Status->Zone1Temperature = fZone1;
   Status->Zone2Temperature = fZone2;
   Status->OutsideTemperature = fOutside;  // TH7
-  Status->LiquidTemp = LiquidTemp;        // TH2
-  Status->RefrigeTemp = RefrigeTemp;      //
+  //Status->LiquidTemp = LiquidTemp;        // TH2
+  Status->RefrigeTemp = RefrigeTemp;  //
 }
 
 void ECODANDECODER::Process0x0C(uint8_t *Buffer, EcodanStatus *Status) {
@@ -904,6 +911,45 @@ void ECODANDECODER::Process0xA2(uint8_t *Buffer, EcodanStatus *Status) {
 }
 
 
+
+void ECODANDECODER::Process0xA3(uint8_t *Buffer, EcodanStatus *Status) {
+  uint8_t ServiceCode;
+  bool Write_To_Ecodan_OK;
+
+  for (int i = 1; i < 16; i++) {
+    Array0xa3[i] = Buffer[i];
+  }
+  if (Buffer[3] != 0) {         // Valid Reply is not 0
+    Write_To_Ecodan_OK = true;  // For de-queue
+    Status->Write_To_Ecodan_OK = Write_To_Ecodan_OK;
+
+    // Data Packets
+    ServiceCode = ExtractUInt16(Buffer, 1);  // Decode the reply to Update the correct Value
+
+    // Process into the correct locations
+    if (ServiceCode == 3) {
+      Status->CompOpTimes = ExtractInt16_v2_Signed(Buffer, 4)*100;
+    } else if (ServiceCode == 4) {
+      Status->TH4Discharge = ExtractInt16_v2_Signed(Buffer, 4); // TBC
+    } else if (ServiceCode == 5) {
+      Status->LiquidTemp = ExtractInt16_v2_Signed(Buffer, 4); //TH3
+    } else if (ServiceCode == 7) {
+      Status->TH6Pipe = ExtractInt16_v2_Signed(Buffer, 4);
+    } else if (ServiceCode == 10) {
+      Status->TH8HeatSink = ExtractInt16_v2_Signed(Buffer, 4);
+    } else if (ServiceCode == 13) {
+      Status->Subcool = ExtractInt16_v2_Signed(Buffer, 4);
+    } else if (ServiceCode == 19) {
+      Status->Fan1RPM = ExtractInt16_v2_Signed(Buffer, 4);  //Little endian
+    } else if (ServiceCode == 20) {
+      Status->Fan2RPM = ExtractInt16_v2_Signed(Buffer, 4);  //Little endian
+    } else if (ServiceCode == 22) {
+      Status->LEVA = Buffer[4];
+    }
+  }
+}
+
+
 void ECODANDECODER::Process0xC9(uint8_t *Buffer, EcodanStatus *Status) {
   uint8_t FTCVersion;
 
@@ -934,6 +980,11 @@ float ECODANDECODER::ExtractEnergy(uint8_t *Buffer, uint8_t index) {
   return Energy;
 }
 
+int16_t ECODANDECODER::ExtractInt16_v2_Signed(uint8_t *Buffer, uint8_t Index) {
+  int16_t Value = (Buffer[Index + 1] << 8) + Buffer[Index];
+  return Value;
+}
+
 float ECODANDECODER::ExtractUInt16_Signed(uint8_t *Buffer, uint8_t Index) {
   float Value = int16_t(Buffer[Index] << 8) + Buffer[Index + 1];
   return Value;
@@ -941,6 +992,11 @@ float ECODANDECODER::ExtractUInt16_Signed(uint8_t *Buffer, uint8_t Index) {
 
 uint16_t ECODANDECODER::ExtractUInt16(uint8_t *Buffer, uint8_t Index) {
   uint16_t Value = (Buffer[Index] << 8) + Buffer[Index + 1];
+  return Value;
+}
+
+uint16_t ECODANDECODER::ExtractUInt16_v2(uint8_t *Buffer, uint8_t Index) {  // Little Endian
+  uint16_t Value = (Buffer[Index + 1] << 8) + Buffer[Index];
   return Value;
 }
 
@@ -954,7 +1010,6 @@ float ECODANDECODER::ExtractUInt8_v2(uint8_t *Buffer, uint8_t Index) {
   float Value = (Buffer[Index] - 40.0f) / 2;
   return Value;
 }
-
 
 void ECODANDECODER::CreateBlankTxMessage(uint8_t PacketType, uint8_t PayloadSize) {
   CreateBlankMessageTemplate(&TxMessage, PacketType, PayloadSize);
@@ -988,10 +1043,8 @@ uint8_t ECODANDECODER::PrepareCommand(MessageStruct *Message, uint8_t *Buffer) {
 
   Buffer[0] = Message->SyncByte;
   Buffer[1] = Message->PacketType;
-
   Buffer[2] = Message->Preamble[0];
   Buffer[3] = Message->Preamble[1];
-
   Buffer[4] = Message->PayloadSize;
 
   memcpy(&Buffer[5], Message->Payload, Message->PayloadSize);
@@ -1197,14 +1250,19 @@ void ECODANDECODER::EncodeMELCloud(uint8_t cmd) {
 }
 
 
-void ECODANDECODER::TransfertoBuffer(uint8_t bufferposition) {
-  for (int i = 0; i < 16; i++) {
-    BufferArray[bufferposition][i] = TxMessage.Payload[i];
+void ECODANDECODER::TransfertoBuffer(uint8_t msgtype, uint8_t bufferposition) {
+  BufferArray[bufferposition][0] = msgtype;
+  for (int i = 1; i < 17; i++) {
+    BufferArray[bufferposition][i] = TxMessage.Payload[i - 1];
   }
 }
 
+uint8_t ECODANDECODER::ReturnNextCommandType(uint8_t bufferposition) {
+  return BufferArray[bufferposition][0];
+}
+
 void ECODANDECODER::EncodeNextCommand(uint8_t bufferposition) {
-  for (int i = 0; i < 16; i++) {
-    TxMessage.Payload[i] = BufferArray[bufferposition][i];
+  for (int i = 1; i < 17; i++) {
+    TxMessage.Payload[i - 1] = BufferArray[bufferposition][i];
   }
 }

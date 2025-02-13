@@ -30,6 +30,9 @@ public:
   void TriggerStatusStateMachine(void);
   void StopStateMachine(void);
   void StatusStateMachine(void);
+  void StatusSVCMachine(void);
+  void TriggerSVCStateMachine(void);
+  void StopSVCStateMachine(void);
   void WriteStateMachine(void);
   uint8_t UpdateComplete(void);
   uint8_t HeatPumpConnected(void);
@@ -47,11 +50,12 @@ public:
   void SetHeatingControlMode(uint8_t Mode, uint8_t Zone);
   void SetSystemPowerMode(uint8_t OnOff);
   void WriteMELCloudCMD(uint8_t cmd);
+  void WriteServiceCodeCMD(int cmd);
 
 protected:
 
 private:
-  uint8_t CurrentMessage;
+  uint8_t CurrentMessage, CurrentSVCMessage;
   uint8_t CurrentCommand;
 
   uint8_t UpdateFlag;

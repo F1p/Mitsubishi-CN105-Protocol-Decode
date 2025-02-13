@@ -102,6 +102,7 @@ const char HPControlModeString[2][5] = { "Heat", "Cool" };
 #define HEATING_CONTROL_MODE_COOL_FLOW_TEMP 0x04
 #define HEATING_CONTROL_MODE_DRY_UP 0x05
 const char HeatingControlModeString[6][13] = { "Temp", "Flow", "Compensation", "Cool", "Cool Flow", "Dry Up" };
+const char ThermostatString[16][4] = { "MRC", "RC1", "RC2", "RC3", "RC4", "RC5", "RC6", "RC7", "RC8", "", "", "", "", "", "", "TH1" };
 
 #define HOLIDAY_MODE_OFF 0
 #define HOLIDAY_MODE_ON 1
@@ -165,7 +166,7 @@ typedef struct _EcodanStatus {
   char FTCSoftware[6];
 
   //From Message 0x02
-  uint8_t Defrost;
+  uint8_t Defrost, ThermostatZ1, ThermostatZ2;
 
   //From Message 0x03
   uint8_t RefrigeFltCode, ErrCode1, ErrCode2, FltCode1, FltCode2;
@@ -193,7 +194,7 @@ typedef struct _EcodanStatus {
 
   //From Message 0x0B
   float Zone1Temperature, Zone2Temperature, OutsideTemperature;
-  float RefrigeTemp, LiquidTemp;
+  float RefrigeTemp;
 
   //From Message 0x0C
   float HeaterOutputFlowTemperature, HeaterReturnFlowTemperature, HeaterDeltaT;
@@ -257,6 +258,9 @@ typedef struct _EcodanStatus {
   float DeliveredCoolingEnergy;
   float DeliveredHotWaterEnergy;
 
+  //From Message 0xa3
+  int16_t Fan1RPM, Fan2RPM, LEVA, LiquidTemp, TH4Discharge, CompOpTimes, Subcool, TH8HeatSink, TH6Pipe;
+
   //From Message 0xc9
   uint8_t FTCVersion;
 
@@ -287,7 +291,8 @@ public:
   void EncodeServerControlMode(uint8_t OnOff, uint8_t DHW, uint8_t Z1H, uint8_t Z1C, uint8_t Z2H, uint8_t Z2C);
   void EncodeProhibit(uint8_t Flags, uint8_t OnOff);
   void EncodeMELCloud(uint8_t cmd);
-  void TransfertoBuffer(uint8_t bufferposition);
+  void TransfertoBuffer(uint8_t msgtype, uint8_t bufferposition);
+  uint8_t ReturnNextCommandType(uint8_t bufferposition);
   void EncodeNextCommand(uint8_t bufferposition);
 
   EcodanStatus Status;
@@ -308,6 +313,8 @@ private:
 
 
   uint16_t ExtractUInt16(uint8_t *Buffer, uint8_t Index);
+  uint16_t ExtractUInt16_v2(uint8_t *Buffer, uint8_t Index);
+  int16_t ExtractInt16_v2_Signed(uint8_t *Buffer, uint8_t Index);
   float Extract_Float_24(uint8_t *Buffer, uint8_t Index);
   float ExtractUInt16_Signed(uint8_t *Buffer, uint8_t Index);
   float ExtractUInt8_v1(uint8_t *Buffer, uint8_t Index);
@@ -354,6 +361,7 @@ private:
   void Process0x29(uint8_t *Payload, EcodanStatus *Status);
   void Process0xA1(uint8_t *Payload, EcodanStatus *Status);
   void Process0xA2(uint8_t *Payload, EcodanStatus *Status);
+  void Process0xA3(uint8_t *Payload, EcodanStatus *Status);
   void Process0xC9(uint8_t *Payload, EcodanStatus *Status);
 
   void WriteOK(uint8_t *Payload, EcodanStatus *Status);

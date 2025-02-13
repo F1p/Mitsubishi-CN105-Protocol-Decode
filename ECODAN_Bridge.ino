@@ -47,7 +47,7 @@
 #include "Ecodan.h"
 #include "Melcloud.h"
 
-String FirmwareVersion = "6.1.2";
+String FirmwareVersion = "6.2.0 Beta";
 
 
 #ifdef ESP8266  // Define the Witty ESP8266 Serial Pins
@@ -201,6 +201,7 @@ WiFiManagerParameter custom_device_id("device_id", "<hr>Device ID<br><font size=
 void HeatPumpQueryStateEngine(void);
 void HeatPumpWriteStateEngine(void);
 void MELCloudQueryReplyEngine(void);
+void HeatPumpQuerySVCEngine(void);
 void HeatPumpKeepAlive(void);
 void Zone1Report(void);
 void Zone2Report(void);
@@ -212,6 +213,7 @@ void AdvancedTwoReport(void);
 void EnergyReport(void);
 void StatusReport(void);
 void FastPublish(void);
+void HeatPumpQuerySVCEngine(void);
 
 TimerCallBack HeatPumpQuery1(400, HeatPumpQueryStateEngine);  // Set to 400ms (Safe), 320-350ms best time between messages
 TimerCallBack HeatPumpQuery2(30000, HeatPumpKeepAlive);       // Set to 20-30s for heat pump query frequency
@@ -225,10 +227,12 @@ unsigned long looppreviousMicros = 0;    // variable for comparing millis counte
 unsigned long ftcpreviousMillis = 0;     // variable for comparing millis counter
 unsigned long wifipreviousMillis = 0;    // variable for comparing millis counter
 unsigned long ftcconpreviousMillis = 0;  // variable for comparing millis counter
+unsigned long postwrpreviousMillis = 0;  // variable for comparing millis counter
 int FTCLoopSpeed, CPULoopSpeed;          // variable for holding loop time in ms
 bool WiFiOneShot = true;
 bool CableConnected = true;
 bool WiFiConnectedLastLoop = false;
+bool PostWriteTrigger = false;
 
 extern int cmd_queue_length;
 extern int cmd_queue_position;
@@ -299,7 +303,7 @@ void setup() {
 
 
   wifiManager.startWebPortal();
-  
+
   MDNS.begin("heatpump");
   MDNS.addService("http", "tcp", 80);
 
@@ -335,7 +339,7 @@ void loop() {
 
   // -- Heat Pump Write Command Handler -- //
   if (HeatPump.Status.Write_To_Ecodan_OK && WriteInProgress) {  // A write command is executing
-    DEBUG_PRINTLN(F("Write OK!"));                                 // Pause normal processsing until complete
+    DEBUG_PRINTLN(F("Write OK!"));                              // Pause normal processsing until complete
     HeatPump.Status.Write_To_Ecodan_OK = false;                 // Set back to false
     WriteInProgress = false;                                    // Set back to false
     if (cmd_queue_length > cmd_queue_position) {
@@ -343,8 +347,16 @@ void loop() {
     } else {
       cmd_queue_position = 1;  // All commands written, reset
       cmd_queue_length = 0;
+      PostWriteTrigger = true;  // Allows 6s to pass, then restarts read operation
+      postwrpreviousMillis = millis();
     }                                                                  // Dequeue the last message that was written
     if (MQTTReconnect() || MQTT2Reconnect()) { PublishAllReports(); }  // Publish update to the MQTT Topics
+  }
+
+  if ((PostWriteTrigger) && (millis() - postwrpreviousMillis >= 6000)) {
+    DEBUG_PRINTLN(F("Restarting Read Operations"));
+    HeatPumpKeepAlive();
+    PostWriteTrigger = false;
   }
 
   // -- WiFi Status Handler -- //
@@ -477,7 +489,7 @@ void loop() {
       delay(500);
       wifiManager.resetSettings();  // Clear settings
     }
-    
+
 #ifdef ESP8266
     ESP.reset();  // Define the Witty ESP8266 Ports
 #endif
@@ -527,14 +539,20 @@ void HeatPumpQueryStateEngine(void) {
   if (HeatPump.UpdateComplete()) {
     DEBUG_PRINTLN(F("Update Complete"));
     FTCLoopSpeed = millis() - ftcpreviousMillis;  // Loop Speed End
-    if (HeatPump.Status.FTCVersion == 0) { HeatPump.GetFTCVersion(); }
+    if (HeatPump.Status.FTCVersion == 0) {
+      HeatPump.GetFTCVersion();
+    }
     if ((MQTTReconnect() || MQTT2Reconnect()) && (HeatPump.Status.FTCVersion != 0)) { PublishAllReports(); }
+    HeatPump.StatusSVCMachine(); // Injected at the end of loop for testing
   }
 }
 
+void HeatPumpQuerySVCEngine(void){
+  HeatPump.StatusSVCMachine();
+}
 
 void HeatPumpWriteStateEngine(void) {
-  HeatPump.WriteStateMachine();  // Full Read trigged by CurrentMessage
+  HeatPump.WriteStateMachine();
 }
 
 
@@ -571,6 +589,11 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
   DEBUG_PRINT(Topic.c_str());
   DEBUG_PRINT(F(" with Payload "));
   DEBUG_PRINTLN(Payload.c_str());
+
+  // Service Codes
+  if (Topic == MQTTCommandSystemService) {
+    HeatPump.WriteServiceCodeCMD(Payload.toInt());
+  }
 
   // Curve or Temp Independent Thermostat Setting
   // Heating & Cooling Zone 1 Commands
@@ -756,6 +779,7 @@ void Zone1Report(void) {
   doc[F("ProhibitCooling")] = HeatPump.Status.ProhibitCoolingZ1;
   doc[F("FlowTemp")] = HeatPump.Status.Zone1FlowTemperature;
   doc[F("ReturnTemp")] = HeatPump.Status.Zone1ReturnTemperature;
+  doc[F("InputType")] = ThermostatString[HeatPump.Status.ThermostatZ1];
   doc[F("HB_ID")] = Heart_Value;
 
   serializeJson(doc, Buffer);
@@ -777,6 +801,7 @@ void Zone2Report(void) {
   doc[F("ProhibitCooling")] = HeatPump.Status.ProhibitCoolingZ2;
   doc[F("FlowTemp")] = HeatPump.Status.Zone2FlowTemperature;
   doc[F("ReturnTemp")] = HeatPump.Status.Zone2ReturnTemperature;
+  doc[F("InputType")] = ThermostatString[HeatPump.Status.ThermostatZ2];
   doc[F("HB_ID")] = Heart_Value;
 
   serializeJson(doc, Buffer);
@@ -1065,7 +1090,7 @@ void StatusReport(void) {
 
 void ConfigurationReport(void) {
   JsonDocument doc;
-  char Buffer[1024];
+  char Buffer[2048];
 
   doc[F("DipSw1")] = decimalToBinary(HeatPump.Status.DipSwitch1);
   doc[F("DipSw2")] = decimalToBinary(HeatPump.Status.DipSwitch2);
@@ -1076,7 +1101,15 @@ void ConfigurationReport(void) {
   doc[F("HasCooling")] = HeatPump.Status.HasCooling;
   doc[F("Has2Zone")] = HeatPump.Status.Has2Zone;
   doc[F("HasSimple2Zone")] = HeatPump.Status.Simple2Zone;
+  doc[F("CompOpTimes")] = HeatPump.Status.CompOpTimes;
   doc[F("LiquidTemp")] = HeatPump.Status.LiquidTemp;
+  doc[F("TH4Discharge")] = HeatPump.Status.TH4Discharge;
+  doc[F("Subcool")] = HeatPump.Status.Subcool;
+  doc[F("TH8HeatSink")] = HeatPump.Status.TH8HeatSink;
+  doc[F("TH6Pipe")] = HeatPump.Status.TH6Pipe;
+  doc[F("Fan1RPM")] = HeatPump.Status.Fan1RPM;
+  doc[F("Fan2RPM")] = HeatPump.Status.Fan2RPM;
+  doc[F("LEVA")] = HeatPump.Status.LEVA;
   doc[F("HB_ID")] = Heart_Value;
 
   serializeJson(doc, Buffer);
@@ -1109,6 +1142,7 @@ void FastPublish(void) {
   if (HeatPump.Status.FTCVersion != 0) {
     SystemReport();
     HotWaterReport();
+    ConfigurationReport();
   }  // Don't fast publish until at least whole data set gathering is complete
 }
 

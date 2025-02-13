@@ -35,10 +35,11 @@ extern uint8_t Array0x28[16];
 extern uint8_t Array0x29[16];
 extern uint8_t Array0xa1[16];
 extern uint8_t Array0xa2[16];
+extern uint8_t Array0xa3[16];
 extern uint8_t Array0xc9[16];
 extern uint8_t Array0x32[16];
 extern uint8_t Array0x33[16];
 extern uint8_t Array0x34[16];
 extern uint8_t Array0x35[16];
 
-extern uint8_t BufferArray[10][16];
+extern uint8_t BufferArray[10][17];

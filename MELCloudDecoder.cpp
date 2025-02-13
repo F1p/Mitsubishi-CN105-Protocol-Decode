@@ -123,6 +123,9 @@ uint8_t MELCLOUDDECODER::Process(uint8_t c) {
         case 0xa2:
           Process0xA2(RxMessage.Payload, &Status);
           break;
+        case 0xa3:
+          Process0xA3(RxMessage.Payload, &Status);
+          break;
       }
     } else if (RxMessage.PacketType == EXCONNECT_REQUEST) {
       switch (RxMessage.Payload[0]) {
@@ -479,6 +482,10 @@ void MELCLOUDDECODER::Process0xA1(uint8_t *Buffer, MelCloudStatus *Status) {
 void MELCLOUDDECODER::Process0xA2(uint8_t *Buffer, MelCloudStatus *Status) {
   Status->ReplyNow = true;
   Status->ActiveMessage = 0xA2;
+}
+void MELCLOUDDECODER::Process0xA3(uint8_t *Buffer, MelCloudStatus *Status) {
+  Status->ReplyNow = true;
+  Status->ActiveMessage = 0xA3;
 }
 void MELCLOUDDECODER::Process0xC9(uint8_t *Buffer, MelCloudStatus *Status) {
   Status->ReplyNow = true;

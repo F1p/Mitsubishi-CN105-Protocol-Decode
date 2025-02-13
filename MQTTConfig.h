@@ -42,6 +42,7 @@ String MQTT_COMMAND_SYSTEM_SVRMODE = MQTT_COMMAND_SYSTEM + "/SvrControlMode";
 String MQTT_COMMAND_SYSTEM_POWER = MQTT_COMMAND_SYSTEM + "/Power";
 String MQTT_COMMAND_SYSTEM_UNITSIZE = MQTT_COMMAND_SYSTEM + "/UnitSize";
 String MQTT_COMMAND_SYSTEM_GLYCOL = MQTT_COMMAND_SYSTEM + "/Glycol";
+String MQTT_COMMAND_SYSTEM_SERVICE = MQTT_COMMAND_SYSTEM + "/Svc";
 
 String MQTTCommandZone1FlowSetpoint = MQTT_COMMAND_ZONE1_FLOW_SETPOINT;
 String MQTTCommandZone1NoModeSetpoint = MQTT_COMMAND_ZONE1_NOMODE_SETPOINT;
@@ -66,6 +67,7 @@ String MQTTCommandSystemSvrMode = MQTT_COMMAND_SYSTEM_SVRMODE;
 String MQTTCommandSystemPower = MQTT_COMMAND_SYSTEM_POWER;
 String MQTTCommandSystemUnitSize = MQTT_COMMAND_SYSTEM_UNITSIZE;
 String MQTTCommandSystemGlycol = MQTT_COMMAND_SYSTEM_GLYCOL;
+String MQTTCommandSystemService = MQTT_COMMAND_SYSTEM_SERVICE;
 
 
 String MQTT_2_BASETOPIC = "00000";
@@ -372,6 +374,7 @@ void readSettingsFromConfig() {
     MQTTCommandSystemPower = MQTT_COMMAND_SYSTEM_POWER;
     MQTTCommandSystemUnitSize = MQTT_COMMAND_SYSTEM_UNITSIZE;
     MQTTCommandSystemGlycol = MQTT_COMMAND_SYSTEM_GLYCOL;
+    MQTTCommandSystemService = MQTT_COMMAND_SYSTEM_SERVICE;
   }
 
 
@@ -709,6 +712,7 @@ void readSettingsFromConfig() {
     MQTTClient1.subscribe(MQTTCommandSystemSvrMode.c_str());
     MQTTClient1.subscribe(MQTTCommandSystemUnitSize.c_str());
     MQTTClient1.subscribe(MQTTCommandSystemGlycol.c_str());
+    MQTTClient1.subscribe(MQTTCommandSystemService.c_str());
 
     delay(10);
     PublishDiscoveryTopics(1, MQTT_BASETOPIC);
