@@ -237,6 +237,7 @@ bool PostWriteTrigger = false;
 extern int cmd_queue_length;
 extern int cmd_queue_position;
 extern bool WriteInProgress;
+extern int CurrentWriteAttempt;
 byte NormalHWBoostOperating = 0;
 byte PreHWBoostSvrCtrlMode = 0;
 
@@ -344,13 +345,27 @@ void loop() {
     WriteInProgress = false;                                    // Set back to false
     if (cmd_queue_length > cmd_queue_position) {
       cmd_queue_position++;  // Increment the position
+      CurrentWriteAttempt = 0;
     } else {
       cmd_queue_position = 1;  // All commands written, reset
       cmd_queue_length = 0;
+      CurrentWriteAttempt = 0;
       PostWriteTrigger = true;  // Allows 6s to pass, then restarts read operation
       postwrpreviousMillis = millis();
     }                                                                  // Dequeue the last message that was written
     if (MQTTReconnect() || MQTT2Reconnect()) { PublishAllReports(); }  // Publish update to the MQTT Topics
+  } else if ((WriteInProgress) && (CurrentWriteAttempt > 9)) {
+    if (cmd_queue_length > cmd_queue_position) {
+      cmd_queue_position++;  // Skip this write + Increment the position
+      CurrentWriteAttempt = 0;
+    }
+    else{
+      cmd_queue_position = 1;  // All commands written, reset
+      cmd_queue_length = 0;
+      CurrentWriteAttempt = 0;
+      PostWriteTrigger = true;  // Allows 6s to pass, then restarts read operation
+      postwrpreviousMillis = millis();
+    }
   }
 
   if ((PostWriteTrigger) && (millis() - postwrpreviousMillis >= 6000)) {
@@ -543,11 +558,11 @@ void HeatPumpQueryStateEngine(void) {
       HeatPump.GetFTCVersion();
     }
     if ((MQTTReconnect() || MQTT2Reconnect()) && (HeatPump.Status.FTCVersion != 0)) { PublishAllReports(); }
-    HeatPump.StatusSVCMachine(); // Injected at the end of loop for testing
+    HeatPump.StatusSVCMachine();  // Injected at the end of loop for testing
   }
 }
 
-void HeatPumpQuerySVCEngine(void){
+void HeatPumpQuerySVCEngine(void) {
   HeatPump.StatusSVCMachine();
 }
 
@@ -864,8 +879,9 @@ void SystemReport(void) {
     HeatOutputPower = 0;
     CoolOutputPower = fabsf(OutputPower);
   } else {
-    if (OutputPower == 0 && (HeatPump.Status.ImmersionActive == 1 || HeatPump.Status.Booster1Active == 1 || HeatPump.Status.Booster2Active == 1)) { HeatOutputPower = HeatPump.Status.OutputPower; }  // Account for Immersion or Booster Instead of HP
-    else {
+    if (OutputPower == 0 && (HeatPump.Status.ImmersionActive == 1 || HeatPump.Status.Booster1Active == 1 || HeatPump.Status.Booster2Active == 1)) {
+      HeatOutputPower = OutputPower = HeatPump.Status.OutputPower;  // Account for Immersion or Booster Instead of HP
+    } else {
       HeatOutputPower = OutputPower;
     }
     CoolOutputPower = 0;

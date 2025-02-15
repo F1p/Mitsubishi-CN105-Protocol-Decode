@@ -42,6 +42,7 @@ int ActiveServiceCode[] = { 3, 4, 5, 7, 10, 13, 19, 20, 22 };
 unsigned long lastmsgdispatchedMillis = 0;  // variable for comparing millis counter
 int cmd_queue_length = 0;
 int cmd_queue_position = 1;
+int CurrentWriteAttempt = 0;
 bool WriteInProgress = false;
 
 ECODAN::ECODAN(void)
@@ -181,11 +182,14 @@ void ECODAN::WriteStateMachine(void) {
   uint8_t i;
 
   if (cmd_queue_length > 0 && cmd_queue_length < 10) {
+    CurrentWriteAttempt++;
     StopStateMachine();
     DEBUG_PRINT(F("Writing msg at position: "));
-    DEBUG_PRINTLN(cmd_queue_position);
-    DEBUG_PRINT(F("[Bridge > FTC] "));
+    DEBUG_PRINT(cmd_queue_position);
+    DEBUG_PRINT(F(", attempt: "));
+    DEBUG_PRINTLN(CurrentWriteAttempt);
 
+    DEBUG_PRINT(F("[Bridge > FTC] "));
     ECODANDECODER::CreateBlankTxMessage(ECODANDECODER::ReturnNextCommandType(cmd_queue_position), 0x10);
     ECODANDECODER::EncodeNextCommand(cmd_queue_position);
     CommandSize = ECODANDECODER::PrepareTxCommand(Buffer);
