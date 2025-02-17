@@ -47,7 +47,7 @@
 #include "Ecodan.h"
 #include "Melcloud.h"
 
-String FirmwareVersion = "6.2.0 Beta";
+String FirmwareVersion = "6.2.0";
 
 
 #ifdef ESP8266  // Define the Witty ESP8266 Serial Pins

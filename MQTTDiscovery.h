@@ -1,9 +1,9 @@
 //-- MQTT Home Assistant Auto Discovery --//
 
-const int discovery_topics PROGMEM = 100;
+const int discovery_topics PROGMEM = 108;
 
 // Build the sensor JSON structure
-const char MQTT_DISCOVERY_OBJ_ID[][3] PROGMEM = { "aa", "ab", "ac", "ad", "ae", "af", "ag", "ai", "aj", "ak", "al", "am", "an", "ao", "ap", "aq", "ar", "as", "au", "av", "aw", "ax", "ay", "az", "ba", "bb", "bc", "bd", "be", "bf", "bg", "bh", "bi", "bj", "bk", "bl", "bm", "bn", "bo", "bp", "bq", "br", "bs", "bt", "bu", "bv", "bw", "bx", "by", "bz", "ca", "cb", "cc", "cd", "cu", "cv", "cw", "cx", "cz", "da", "db", "dc", "de", "df", "dg", "dh", "di", "dj", "dk", "dl", "dm", "dn", "do", "dp", "dq", "ds", "dt", "dx", "dz", "ea", "ce", "cf", "cg", "dw", "du", "ch", "ci", "cj", "ck", "cl", "cm", "cn", "co", "cp", "dr", "cs", "ct", "dv", "dx", "dy" };
+const char MQTT_DISCOVERY_OBJ_ID[][3] PROGMEM = { "aa", "ab", "ac", "ad", "ae", "af", "ag", "ai", "aj", "ak", "al", "am", "an", "ao", "ap", "aq", "ar", "as", "au", "av", "aw", "ax", "ay", "az", "ba", "bb", "bc", "bd", "be", "bf", "bg", "bh", "bi", "bj", "bk", "bl", "bm", "bn", "bo", "bp", "bq", "br", "bs", "bt", "bu", "bv", "bw", "bx", "by", "bz", "ca", "cb", "cc", "cd", "cu", "cv", "cw", "cx", "cz", "da", "db", "dc", "de", "df", "dg", "dh", "di", "dj", "dk", "dl", "dm", "dn", "do", "dp", "dq", "ds", "dt", "dx", "dz", "ea", "eb", "ec", "ed", "ee", "ef", "eg", "eh", "ei", "ce", "cf", "cg", "dw", "du", "ch", "ci", "cj", "ck", "cl", "cm", "cn", "co", "cp", "dr", "cs", "ct", "dv", "dx", "dy" };
 
 const char MQTT_SENSOR_UNIQUE_ID[][32] PROGMEM = {
   "ashp_bridge_lwt_",
@@ -86,6 +86,15 @@ const char MQTT_SENSOR_UNIQUE_ID[][32] PROGMEM = {
   "ashp_booster2_active_",
   "ashp_instant_cop_",
   "ashp_liquid_temp_",
+  "ashp_comp_op_times",   //eb
+  "ashp_th4_discharge_",  //ec
+  "ashp_subcool_",        //ed
+  "ashp_th8_",            //ef
+  "ashp_th6_",            //eg
+  "ashp_fan1_rpm_",       //eh
+  "ashp_fan2_rpm_",       //ei
+  "ashp_LEVA_",           //ej
+
 
   "ashp_dhw_climate_",  //65
   "ashp_Zone1_climate_",
@@ -193,6 +202,14 @@ const char MQTT_MDI_ICONS[][30] PROGMEM = {
   "mdi:thermometer-plus",
   "mdi:calculator",
   "mdi:water-thermometer",
+  "mdi:heat-pump-outline",
+  "mdi:water-thermometer",
+  "mdi:water-thermometer",
+  "mdi:water-thermometer",
+  "mdi:water-thermometer",
+  "mdi:fan",
+  "mdi:fan",
+  "mdi:valve",
 
   "mdi:thermostat",
   "mdi:thermostat",  //80
@@ -299,7 +316,15 @@ const char MQTT_SENSOR_NAME[][40] PROGMEM = {
   "Bridge CPU Temperature",
   "Booster Heater 2",
   "Instant CoP",
-  "Refrigerant Liquid Temperature",
+  "Refrigerant Liquid Temperature TH3",
+  "Compressor Start Quantity",
+  "Discharge Temperature TH4",
+  "Subcool Temperature",
+  "Heatsink Temperature TH8",
+  "2 Phase Temperature TH6",
+  "Fan 1 Speed",
+  "Fan 2 Speed",
+  "Valve LEV A",
 
   "DHW Thermostat",
   "Zone 1 Thermostat",  //80
@@ -453,6 +478,14 @@ int MQTT_TOPIC_POS[] PROGMEM = {
   1,
   3,
   2,
+  9,
+  9,
+  9,
+  9,
+  9,
+  9,
+  9,
+  9,
   9
 };
 
@@ -536,7 +569,15 @@ int MQTT_UNITS_POS[] PROGMEM = {
   2,
   0,
   8,
-  2
+  2,
+  0,
+  2,
+  2,
+  2,
+  2,
+  10,
+  10,
+  0
 };
 
 const char MQTT_OBJECT_ID[][19] PROGMEM = {
@@ -627,7 +668,8 @@ const char MQTT_SENSOR_UNITS[][6] PROGMEM = {
   "hrs",
   "kWh",
   "CoP",
-  "C"
+  "C",
+  "rpm"
 };
 
 const char MQTT_NUMBER_AVAIL_TEMPLATE[][90] PROGMEM = {
@@ -715,6 +757,15 @@ const char MQTT_SENSOR_VALUE_TEMPLATE[][50] PROGMEM = {
   "{{ value_json.Booster2 }}",
   "{{ value_json.Instant_CoP }}",
   "{{ value_json.LiquidTemp }}",
+  "{{ value_json.CompOpTimes }}",
+  "{{ value_json.TH4Discharge }}",
+  "{{ value_json.Subcool }}",
+  "{{ value_json.TH8HeatSink }}",
+  "{{ value_json.TH6Pipe }}",
+  "{{ value_json.Fan1RPM }}",
+  "{{ value_json.Fan2RPM }}",
+  "{{ value_json.LEVA }}",
+
   "{{ value_json }}",
   "{{ value_json.Setpoint }}",  //80
   "{{ value_json.FSP }}",
