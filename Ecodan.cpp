@@ -35,9 +35,8 @@ uint8_t ActiveCommand[] = { 0x00, 0x01, 0x04, 0x02, 0x0C, 0x03, 0x04, 0x05, 0x0C
                             0x04, 0x17, 0x0C, 0x18, 0x04, 0x19, 0x0C, 0x1A, 0x04, 0x1B, 0x0C, 0x1C, 0x04, 0x1D, 0x0C, 0x1E, 0x04,
                             0x1F, 0x0C, 0x20, 0x04, 0x26, 0x0C, 0x27, 0x04, 0x28, 0x0C, 0x29, 0x04, 0xA1, 0x0C, 0xA2, 0x04, 0x00 };
 
-
-#define NUMBER_SVC_COMMANDS 9
-int ActiveServiceCode[] = { 3, 4, 5, 7, 10, 13, 19, 20, 22 };
+#define NUMBER_SVC_COMMANDS 19
+int ActiveServiceCode[] = { 5, 19, 5, 4, 5, 7, 5, 10, 5, 13, 5, 19, 5, 20, 5, 22, 5, 3, 5 };
 
 
 unsigned long lastmsgdispatchedMillis = 0;  // variable for comparing millis counter
@@ -91,11 +90,11 @@ void ECODAN::SetStream(Stream *HeatPumpStream) {
 }
 
 
-void ECODAN::TriggerSVCStateMachine(void){
+void ECODAN::TriggerSVCStateMachine(void) {
   CurrentSVCMessage = 1;  // This triggers the running
 }
 
-void ECODAN::StopSVCStateMachine(void){
+void ECODAN::StopSVCStateMachine(void) {
   CurrentSVCMessage = 0;  // This stops the running
 }
 
@@ -125,8 +124,7 @@ void ECODAN::StatusSVCMachine(void) {
     if (CurrentSVCMessage == 0) {
       CurrentSVCMessage = 1;
     }
-  }
-  else{
+  } else {
     CurrentSVCMessage = 1;
   }
 }

@@ -570,14 +570,14 @@ int MQTT_UNITS_POS[] PROGMEM = {
   0,
   8,
   2,
-  0,
+  12,
   2,
   2,
   2,
   2,
   10,
   10,
-  0
+  11
 };
 
 const char MQTT_OBJECT_ID[][19] PROGMEM = {
@@ -658,7 +658,7 @@ const char MQTT_SELECT_VALUE_TEMPLATE[][405] PROGMEM = {
   "{{value_json.Glycol}}"
 };
 
-const char MQTT_SENSOR_UNITS[][6] PROGMEM = {
+const char MQTT_SENSOR_UNITS[][7] PROGMEM = {
   "",
   "dBm",
   "°C",
@@ -669,7 +669,9 @@ const char MQTT_SENSOR_UNITS[][6] PROGMEM = {
   "kWh",
   "CoP",
   "C",
-  "rpm"
+  "rpm",
+  "Pulses",
+  "Times"
 };
 
 const char MQTT_NUMBER_AVAIL_TEMPLATE[][90] PROGMEM = {

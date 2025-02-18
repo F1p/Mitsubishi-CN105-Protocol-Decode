@@ -213,7 +213,6 @@ void AdvancedTwoReport(void);
 void EnergyReport(void);
 void StatusReport(void);
 void FastPublish(void);
-void HeatPumpQuerySVCEngine(void);
 
 TimerCallBack HeatPumpQuery1(400, HeatPumpQueryStateEngine);  // Set to 400ms (Safe), 320-350ms best time between messages
 TimerCallBack HeatPumpQuery2(30000, HeatPumpKeepAlive);       // Set to 20-30s for heat pump query frequency
@@ -354,7 +353,7 @@ void loop() {
       postwrpreviousMillis = millis();
     }                                                                  // Dequeue the last message that was written
     if (MQTTReconnect() || MQTT2Reconnect()) { PublishAllReports(); }  // Publish update to the MQTT Topics
-  } else if ((WriteInProgress) && (CurrentWriteAttempt > 9)) {
+  } else if ((WriteInProgress) && (CurrentWriteAttempt > 14)) {
     if (cmd_queue_length > cmd_queue_position) {
       cmd_queue_position++;  // Skip this write + Increment the position
       CurrentWriteAttempt = 0;
@@ -367,7 +366,7 @@ void loop() {
       postwrpreviousMillis = millis();
     }
   }
-
+  
   if ((PostWriteTrigger) && (millis() - postwrpreviousMillis >= 6000)) {
     DEBUG_PRINTLN(F("Restarting Read Operations"));
     HeatPumpKeepAlive();
@@ -554,11 +553,9 @@ void HeatPumpQueryStateEngine(void) {
   if (HeatPump.UpdateComplete()) {
     DEBUG_PRINTLN(F("Update Complete"));
     FTCLoopSpeed = millis() - ftcpreviousMillis;  // Loop Speed End
-    if (HeatPump.Status.FTCVersion == 0) {
-      HeatPump.GetFTCVersion();
-    }
+    if (HeatPump.Status.FTCVersion == 0) { HeatPump.GetFTCVersion(); }
     if ((MQTTReconnect() || MQTT2Reconnect()) && (HeatPump.Status.FTCVersion != 0)) { PublishAllReports(); }
-    HeatPump.StatusSVCMachine();  // Injected at the end of loop for testing
+    HeatPump.StatusSVCMachine();
   }
 }
 

@@ -472,7 +472,7 @@ void readSettingsFromConfig() {
 
     //set minimum quality of signal so it ignores AP's under that quality
     //defaults to 8%
-    wifiManager.setMinimumSignalQuality(20);
+    //wifiManager.setMinimumSignalQuality(20);
 
     snprintf(WiFiHostname, 40, "%s%s", ClientPrefix, mqttSettings.deviceId);
     WiFi.hostname(WiFiHostname);
