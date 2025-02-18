@@ -182,6 +182,9 @@ typedef struct _EcodanStatus {
   // From Message 0x07
   uint8_t InputPower, OutputPower;
 
+  // From Message 0x08 
+  
+
   //From Message 0x09
   float Zone1TemperatureSetpoint;
   float Zone2TemperatureSetpoint;

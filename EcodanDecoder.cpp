@@ -563,8 +563,8 @@ void ECODANDECODER::Process0x0F(uint8_t *Buffer, EcodanStatus *Status) {  // FTC
     Array0x0f[i] = Buffer[i];
   }
 
-  MixingTemperature = ((float)ExtractUInt16(Buffer, 1) / 100);  // Mixing Tank Temperature (THW10)
-  CondensingTemp = ((float)ExtractUInt16_Signed(Buffer, 4) / 100);     // Condensing Temperature
+  MixingTemperature = ((float)ExtractUInt16(Buffer, 1) / 100);      // Mixing Tank Temperature (THW10)
+  CondensingTemp = ((float)ExtractUInt16_Signed(Buffer, 4) / 100);  // Condensing Temperature
   //Unknown = ExtractUInt8_v1(Buffer, 6);
 
   Status->MixingTemperature = MixingTemperature;
@@ -616,6 +616,9 @@ void ECODANDECODER::Process0x11(uint8_t *Buffer, EcodanStatus *Status) {
     Simple2Zone = true;
   } else if (DipSwitch2 & 0x02) {  // SW2-7 True
     Has2Zone = true;
+    Simple2Zone = false;
+  } else {
+    Has2Zone = false;
     Simple2Zone = false;
   }
 
@@ -928,11 +931,11 @@ void ECODANDECODER::Process0xA3(uint8_t *Buffer, EcodanStatus *Status) {
 
     // Process into the correct locations
     if (ServiceCode == 3) {
-      Status->CompOpTimes = ExtractInt16_v2_Signed(Buffer, 4)*100;
+      Status->CompOpTimes = ExtractInt16_v2_Signed(Buffer, 4) * 100;
     } else if (ServiceCode == 4) {
-      Status->TH4Discharge = ExtractInt16_v2_Signed(Buffer, 4); // TH4
+      Status->TH4Discharge = ExtractInt16_v2_Signed(Buffer, 4);  // TH4
     } else if (ServiceCode == 5) {
-      Status->LiquidTemp = ExtractInt16_v2_Signed(Buffer, 4); //TH3
+      Status->LiquidTemp = ExtractInt16_v2_Signed(Buffer, 4);  //TH3
     } else if (ServiceCode == 7) {
       Status->TH6Pipe = ExtractInt16_v2_Signed(Buffer, 4);
     } else if (ServiceCode == 10) {

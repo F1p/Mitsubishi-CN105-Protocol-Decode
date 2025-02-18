@@ -1155,7 +1155,6 @@ void FastPublish(void) {
   if (HeatPump.Status.FTCVersion != 0) {
     SystemReport();
     HotWaterReport();
-    ConfigurationReport();
   }  // Don't fast publish until at least whole data set gathering is complete
 }
 

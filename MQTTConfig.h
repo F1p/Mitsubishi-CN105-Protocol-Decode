@@ -144,7 +144,7 @@ String MQTTCommand2SystemGlycol = MQTT_2_COMMAND_SYSTEM_GLYCOL;
 char snprintbuffer[41] = "";
 char DeviceID[15] = "";
 const char ClientPrefix[14] = "EcodanBridge-";
-char WiFiHostname[26] = "";
+char WiFiHostname[40] = "";
 
 
 
@@ -485,7 +485,7 @@ void readSettingsFromConfig() {
     wifiManager.setAPClientCheck(true);                     // Avoid timeout if client connected to softap
 
 #ifndef ARDUINO_WT32_ETH01
-    wifiManager.setConfigPortalTimeout(120);  // Timeout before launching the config portal (WiFi Only)
+    wifiManager.setConfigPortalTimeout(600);  // Timeout before launching the config portal (WiFi Only)
     if (!wifiManager.autoConnect("Ecodan Bridge AP")) {
       DEBUG_PRINTLN(F("Failed to connect and hit timeout"));
     } else {

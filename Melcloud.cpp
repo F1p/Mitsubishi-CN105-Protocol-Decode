@@ -236,6 +236,10 @@ void MELCLOUD::ReplyStatus(uint8_t TargetMessage) {
     for (int i = 1; i < 16; i++) {
       MELCLOUDDECODER::SetPayloadByte(Array0xa2[i], i);
     }
+  } else if (TargetMessage == 0xA3) {
+    for (int i = 1; i < 16; i++) {
+      MELCLOUDDECODER::SetPayloadByte(Array0xa3[i], i);
+    }
   } else if ((TargetMessage == 0x32) | (TargetMessage == 0x33) | (TargetMessage == 0x34) | (TargetMessage == 0x35)) {
     MELCLOUDDECODER::SetPayloadByte(0x00, 0);  // Ok Message reply to writes
   } else if (TargetMessage == 0xC9) {

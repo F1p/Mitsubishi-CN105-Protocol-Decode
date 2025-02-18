@@ -371,6 +371,10 @@ void MELCLOUDDECODER::Process0x07(uint8_t *Buffer, MelCloudStatus *Status) {
   Status->ReplyNow = true;
   Status->ActiveMessage = 0x07;
 }
+void MELCLOUDDECODER::Process0x08(uint8_t *Buffer, MelCloudStatus *Status) {
+  Status->ReplyNow = true;
+  Status->ActiveMessage = 0x08;
+}
 void MELCLOUDDECODER::Process0x09(uint8_t *Buffer, MelCloudStatus *Status) {
   Status->ReplyNow = true;
   Status->ActiveMessage = 0x09;
