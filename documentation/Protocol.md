@@ -222,25 +222,30 @@ Responses so far identified.
 ### 0x02 - Defrost
 |   0   | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
 |-------|---|---|---|---|---|---|---|---|---|----|----|----|----|----|----|----|
-| 0x02  |   | R | D | HR? |   |   |   |   |   |    |    |    |    |    |    |    |  
-* R: Own Refrigerant Address
+| 0x02  |T1 |T2 | D |R? | RH|   |   |   |   |    |    |    |    |    |    |    |
+* T1/T2: Thermostat 1 Input Type
+  * 0 : Main Remote Controller (MRC)
+  * 1-8 : Remote Thermostats 1 - 8
+  * 16 : External Thermistor TH1
 * D: Defrost
+* R: Own Refrigerant Address?
 * HR: Residual Heat Removal?
 ### 0x03 - Refrigerant and Zone Running Information
 |   0   |  1 | 2  |  3 |  4 |  5 | 6 | 7 |  8  | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
 |-------|----|----|----|----|----|---|---|-----|---|----|----|----|----|----|----|----|
-| 0x03  | RF | F1 | F2 | F3 | F4 |   |   |  M  | MF |    |    |    |    |    |    |    |  
+| 0x03  | RF | F1 | F2 | F3 | F4 |   |   |  M  |MF?|    |    |    |    |    |    |    |  
 * RF: Refrigerant Flt Code
 * F1: Fault Code * 100 + Flt Code (F2) (Numbers)
 * F3: Fault Code (Letter) 1
 * F4: Fault Code (Letter) 2
 * M: Multi Zone Running Parameter (3 = Z2 Working, 2 = Z1 Working, 1 = Both Zones working, 0 = Idle)
+* MF: Master Cascade Frequency?
 ### 0x04 - Various Flags
-|   0   | 1  | 2 | 3 | 4 | 5 | 6 |  7  | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
+|   0   | 1  | 2 | 3 | 4 | 5 | 6 |7  | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
 |-------|----|---|---|---|---|---|---|---|---|----|----|----|----|----|----|----|
-| 0x04  | CF |   |   |   |   |   |   |   |   |    |    |    |    |    |    |    |  
+| 0x04  | CF | S1| S2| S3| S4| S5|   |   |   |    |    |    |    |    |    |    |  
 * CF : Compressor Frequency
-* Slave Frequency in other bytes
+* S1 - X: Cascade Units Slave Unit Frequency
 ### 0x05 - Various Flags
 |   0  | 1 | 2 | 3 | 4 |  5 |  6  |  7  | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
 |------|---|---|---|---|----|-----|-----|---|---|----|----|----|----|----|----|----|
@@ -248,12 +253,20 @@ Responses so far identified.
 * DE : Value of 7 given in various running modes
 * HS : Heat Source (Suspected) 0 = H/P, 1 = IH, 2 = BH, 3 = IH + BH, 4 = Boiler
 * HW : Hot Water Running Mode (0 = Off, 1 = Heat Pump Phase, 2 = Heater Phase (e.g. Immersion or Booster))
+### 0x06 - 
+|   0   | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
+|-------|---|---|---|---|---|---|---|---|---|----|----|----|----|----|----|----|
+| 0x06  |   |   |   |   |   |   |   |   |   |    |    |    |    |    |    |    |  
 ### 0x07 - Heater Power
 |   0   | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
 |-------|---|---|---|---|---|---|---|---|---|----|----|----|----|----|----|----|
 | 0x07  |   |   |   | I |   | P |   |   |   |    |    |    |    |    |    |    |  
 * I : Input Power (kW) - 0 = 0-1kW, 1 = 1-2kW, 2 = 2-3kW etc.
 * P : Heater Power (to nearest kW)
+### 0x08 - 
+|   0   | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
+|-------|---|---|---|---|---|---|---|---|---|----|----|----|----|----|----|----|
+| 0x08  |   |   |   |   |   |   |   |   |   |    |    |    |    |    |    |    |  
 ### 0x09 - Zone 1 & 2 Temperatures and Setpoints, Hot Water Setpoint
 | 0    |   1  |   2  | 3    | 4    | 5    | 6    | 7    | 8    |  9  |  10 |  11 | 12 | 13 | 14 | 15 | 16 |
 |------|------|------|------|------|------|------|------|------|-----|-----|-----|----|----|----|----|----|
@@ -300,9 +313,17 @@ Responses so far identified.
 ### 0x0f - Thermistors 3 (FTC6+ Only)
 |  0   | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
 |------|---|---|---|---|---|---|---|---|---|----|----|----|----|----|----|----|
-| 0x0f | M | M |   | C | C |   |   |   |   |    |    |    |    |    |    |    |
+| 0x0f | M | M |   | C | C |   |TH4|TH3|TH6|TH32|TH8 |TH33| SH | SC |    |    |
 * M : Mixing Tank Temperature * 100        (Where THW10 is installed)
 * C : Condensing Temperature * 100
+* TH4: TH4 Discharge Temperature (FTC7+ Only)
+* TH3: TH3 Liquid Temperature (FTC7+ Only)
+* TH6: TH6 Liquid Temperature (FTC7+ Only)
+* TH32: TH32 Temperature (FTC7+ Only)
+* TH8: TH8 Temperature (FTC7+ Only)
+* TH33: TH33 Temperature (FTC7+ Only)
+* SH: Superheat Temp (FTC7+ Only)
+* SC: Subcool Temp (FTC7+ Only)
 ### 0x10 - Hardwired Thermostats
 |   0   |  1  |  2  |  3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
 |-------|-----|-----|----|---|---|---|---|---|---|----|----|----|----|----|----|----|
@@ -314,11 +335,15 @@ Responses so far identified.
 |   0   |  1  |  2  |  3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
 |-------|-----|-----|----|---|---|---|---|---|---|----|----|----|----|----|----|----|
 | 0x10  | 1   |     | 3  |   | 4 |   | 5 |   | 6 |    |    |    |    |    |    |    |
-* Switch 1
-* Switch 3
-* Switch 4
-* Switch 5
-* Switch 6
+* Dip Switch 1
+* Dip Switch 3
+* Dip Switch 4
+* Dip Switch 5
+* Dip Switch 6
+* ### 0x12 - 
+|   0   | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
+|-------|---|---|---|---|---|---|---|---|---|----|----|----|----|----|----|----|
+| 0x12  |   |   |   |   |   |   |   |   |   |    |    |    |    |    |    |    |  
 ### 0x13 - Run Hours
 |   0   | 1  | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
 |-------|----|---|---|---|---|---|---|---|---|----|----|----|----|----|----|----|
@@ -328,8 +353,8 @@ Responses so far identified.
 ### 0x14 - Immerson/Booster and Primary Flow Rate
 |   0   | 1  | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
 |-------|----|---|---|---|---|---|---|---|---|----|----|----|----|----|----|----|
-| 0x14  |    | B |   |   | I |   |   |   |   |    | PF |    |    |    |    |    |  
-* B : Booster Heater Active
+| 0x14  |    | B1|B2 |   | I |   |   |   |   |    | PF |    |    |    |    |    |  
+* B1/2 : Booster Heater 1/2 Active
 * I : Immersion Heater Active
 * PF : Primary Flow Rate (l/min)
 ### 0x15 - Unknown
@@ -408,7 +433,20 @@ Responses so far identified.
 ### 0xA2 - Delivered Energy
 |   0   | 1 | 2 | 3 |  4   |  5  |  6  |  7   | 8 | 9 | 10  | 11 | 12 | 13 | 14 | 15 | 16 |
 |-------|---|---|---|------|-----|-----|------|---|---|-----|----|----|----|----|----|----|
-| 0xA2  | Y | M | D | Heat |     |     | Cool |   |   | DHW |    |    |    |    |    |    |  
+| 0xA2  |   |   | R | Ans1 | Ans2|     |      |   |   |     |    |    |    |    |    |    |  
+* R: Response Code:
+  * 0: Not Ready
+  * 1: Result
+  * 2: Result
+  * 3:
+  * 4:
+  * 6: Unknown
+  * 7: Done
+* Ans1/2: Reply Value
+### 0xA3 - Service Codes
+|   0   | 1 | 2 | 3 |  4   |  5  |  6  |  7   | 8 | 9 | 10  | 11 | 12 | 13 | 14 | 15 | 16 |
+|-------|---|---|---|------|-----|-----|------|---|---|-----|----|----|----|----|----|----|
+| 0xA3  | Y | M | D | Heat |     |     | Cool |   |   | DHW |    |    |    |    |    |    |  
 * Y: Year
 * M: Month
 * D: Day
