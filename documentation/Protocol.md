@@ -249,8 +249,8 @@ Responses so far identified.
 ### 0x05 - Various Flags
 |   0  | 1 | 2 | 3 | 4 |  5 |  6  |  7  | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
 |------|---|---|---|---|----|-----|-----|---|---|----|----|----|----|----|----|----|
-| 0x05 |   |   |   |   | DE | HS  | HW  |   |   |    |    |    |    |    |    |    |  
-* DE : Value of 7 given in various running modes
+| 0x05 |   |   |   |   |PCL | HS  | HW  |   |   |    |    |    |    |    |    |    |  
+* PCL : Primary Current Limit (Suspected)
 * HS : Heat Source (Suspected) 0 = H/P, 1 = IH, 2 = BH, 3 = IH + BH, 4 = Boiler
 * HW : Hot Water Running Mode (0 = Off, 1 = Heat Pump Phase, 2 = Heater Phase (e.g. Immersion or Booster))
 ### 0x06 - 
@@ -437,7 +437,7 @@ Responses so far identified.
 * Y: Year
 * M: Month
 * D: Day
-### 0xA3 - Delivered Energy
+### 0xA3 - Service Codes
 |   0   | 1 | 2 | 3 |  4   |  5  |  6  |  7   | 8 | 9 | 10  | 11 | 12 | 13 | 14 | 15 | 16 |
 |-------|---|---|---|------|-----|-----|------|---|---|-----|----|----|----|----|----|----|
 | 0xA3  |   |   | R | Ans1 | Ans2|     |      |   |   |     |    |    |    |    |    |    |  

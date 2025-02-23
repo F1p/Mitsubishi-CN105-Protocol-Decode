@@ -369,7 +369,7 @@ void ECODANDECODER::Process0x03(uint8_t *Buffer, EcodanStatus *Status) {
     TwoZone_Z2Working = 0;
   }
 
-  //MasterCascadeFreq = Buffer[9];  // Single Zone Running Parameter?
+  //MasterCascadeFreq = Buffer[9];
 
   Status->RefrigeFltCode = RefrigeFltCode;
   Status->ErrCode1 = ErrCode1;
@@ -556,7 +556,7 @@ void ECODANDECODER::Process0x0E(uint8_t *Buffer, EcodanStatus *Status) {
 }
 
 
-void ECODANDECODER::Process0x0F(uint8_t *Buffer, EcodanStatus *Status) {  // FTC6 Only Parameters
+void ECODANDECODER::Process0x0F(uint8_t *Buffer, EcodanStatus *Status) {  // FTC6 & 7 Only Parameters
   float MixingTemperature, CondensingTemp;
 
   for (int i = 1; i < 16; i++) {
@@ -565,12 +565,21 @@ void ECODANDECODER::Process0x0F(uint8_t *Buffer, EcodanStatus *Status) {  // FTC
 
   MixingTemperature = ((float)ExtractUInt16(Buffer, 1) / 100);      // Mixing Tank Temperature (THW10)
   CondensingTemp = ((float)ExtractUInt16_Signed(Buffer, 4) / 100);  // Condensing Temperature
-  //Unknown = ExtractUInt8_v1(Buffer, 6);
-
   Status->MixingTemperature = MixingTemperature;
   Status->CondensingTemp = CondensingTemp;
-}
 
+  //Unknown = ExtractUInt8_v1(Buffer, 6);
+  if (Status->FTCVersion == FTC7) {                     // FTC7 Only Parameters
+    Status->TH4Discharge = ExtractUInt8_v4(Buffer, 7);  // FTC7 Only Parameters
+    Status->LiquidTemp = ExtractUInt8_v3(Buffer, 8);    // FTC7 Only Parameters
+    Status->TH6Pipe = ExtractUInt8_v3(Buffer, 9);       // FTC7 Only Parameters
+    Status->TH32Pipe = ExtractUInt8_v3(Buffer, 10);    // FTC7 Only Parameters
+    Status->TH8HeatSink = ExtractUInt8_v5(Buffer, 11);  // FTC7 Only Parameters
+    //Status->TH33 = ExtractUInt8_v5(Buffer, 12);           // FTC7 Only Parameters
+    //Status->Superheat = ExtractUInt8_v4(Buffer, 13);      // FTC7 Only Parameters
+    Status->Subcool = ExtractUInt8_v3(Buffer, 14);  // FTC7 Only Parameters
+  }
+}
 
 void ECODANDECODER::Process0x10(uint8_t *Buffer, EcodanStatus *Status) {
   uint8_t Zone1ThermostatDemand, Zone2ThermostatDemand, OutdoorThermostatDemand;
@@ -778,8 +787,6 @@ void ECODANDECODER::Process0x20(uint8_t *Buffer, EcodanStatus *Status) {
   }
 }
 
-
-
 void ECODANDECODER::Process0x26(uint8_t *Buffer, EcodanStatus *Status) {
   float DHWSetpoint;
   uint8_t SystemPowerMode, SystemOperationMode, HotWaterPowerMode;
@@ -931,13 +938,15 @@ void ECODANDECODER::Process0xA3(uint8_t *Buffer, EcodanStatus *Status) {
 
     // Process into the correct locations
     if (ServiceCode == 3) {
-      Status->CompOpTimes = ExtractInt16_v2_Signed(Buffer, 4) * 100;
+      Status->CompOpTimes = ExtractInt16_v2_Signed(Buffer, 4);   // Safe to parse as ExtractUInt16_v2 or *100 outside ESP
     } else if (ServiceCode == 4) {
       Status->TH4Discharge = ExtractInt16_v2_Signed(Buffer, 4);  // TH4
     } else if (ServiceCode == 5) {
       Status->LiquidTemp = ExtractInt16_v2_Signed(Buffer, 4);  //TH3
     } else if (ServiceCode == 7) {
       Status->TH6Pipe = ExtractInt16_v2_Signed(Buffer, 4);
+    } else if (ServiceCode == 8) {
+      Status->TH32Pipe = ExtractInt16_v2_Signed(Buffer, 4);
     } else if (ServiceCode == 10) {
       Status->TH8HeatSink = ExtractInt16_v2_Signed(Buffer, 4);
     } else if (ServiceCode == 13) {
@@ -948,6 +957,8 @@ void ECODANDECODER::Process0xA3(uint8_t *Buffer, EcodanStatus *Status) {
       Status->Fan2RPM = ExtractInt16_v2_Signed(Buffer, 4);  //Little endian
     } else if (ServiceCode == 22) {
       Status->LEVA = Buffer[4];
+    } else if (ServiceCode == 23) {
+      Status->LEVB = Buffer[4];
     }
   }
 }
@@ -1011,6 +1022,21 @@ float ECODANDECODER::ExtractUInt8_v1(uint8_t *Buffer, uint8_t Index) {
 
 float ECODANDECODER::ExtractUInt8_v2(uint8_t *Buffer, uint8_t Index) {
   float Value = (Buffer[Index] - 40.0f) / 2;
+  return Value;
+}
+
+float ECODANDECODER::ExtractUInt8_v3(uint8_t *Buffer, uint8_t Index) {
+  float Value = (Buffer[Index] / 2) - 39.0f;
+  return Value;
+}
+
+float ECODANDECODER::ExtractUInt8_v4(uint8_t *Buffer, uint8_t Index) {
+  float Value = Buffer[Index];
+  return Value;
+}
+
+float ECODANDECODER::ExtractUInt8_v5(uint8_t *Buffer, uint8_t Index) {
+  float Value = Buffer[Index] - 40.0f;
   return Value;
 }
 

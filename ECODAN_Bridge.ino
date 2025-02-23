@@ -47,7 +47,7 @@
 #include "Ecodan.h"
 #include "Melcloud.h"
 
-String FirmwareVersion = "6.2.0";
+String FirmwareVersion = "6.2.1";
 
 
 #ifdef ESP8266  // Define the Witty ESP8266 Serial Pins
@@ -555,7 +555,7 @@ void HeatPumpQueryStateEngine(void) {
     FTCLoopSpeed = millis() - ftcpreviousMillis;  // Loop Speed End
     if (HeatPump.Status.FTCVersion == 0) { HeatPump.GetFTCVersion(); }
     if ((MQTTReconnect() || MQTT2Reconnect()) && (HeatPump.Status.FTCVersion != 0)) { PublishAllReports(); }
-    HeatPump.StatusSVCMachine();
+    if (HeatPump.Status.FTCVersion != FTC7){ HeatPump.StatusSVCMachine(); }
   }
 }
 
@@ -1120,9 +1120,11 @@ void ConfigurationReport(void) {
   doc[F("Subcool")] = HeatPump.Status.Subcool;
   doc[F("TH8HeatSink")] = HeatPump.Status.TH8HeatSink;
   doc[F("TH6Pipe")] = HeatPump.Status.TH6Pipe;
+  doc[F("TH32Pipe")] = HeatPump.Status.TH32Pipe;
   doc[F("Fan1RPM")] = HeatPump.Status.Fan1RPM;
   doc[F("Fan2RPM")] = HeatPump.Status.Fan2RPM;
   doc[F("LEVA")] = HeatPump.Status.LEVA;
+  doc[F("LEVB")] = HeatPump.Status.LEVB;
   doc[F("HB_ID")] = Heart_Value;
 
   serializeJson(doc, Buffer);

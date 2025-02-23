@@ -126,7 +126,7 @@ const char FltCodeLetterTwo[22][2] = { "0", "1", "2", "3", "4", "5", "6", "7", "
 #define FTC4 1
 #define FTC5 2
 #define FTC6 3
-#define FTC7 4
+#define FTC7 5
 const char FTCString[6][6] = { "FTC2B", "FTC4", "FTC5", "FTC6", "", "FTC7" };
 
 
@@ -262,7 +262,7 @@ typedef struct _EcodanStatus {
   float DeliveredHotWaterEnergy;
 
   //From Message 0xa3
-  int16_t Fan1RPM, Fan2RPM, LEVA, LiquidTemp, TH4Discharge, CompOpTimes, Subcool, TH8HeatSink, TH6Pipe;
+  int16_t Fan1RPM, Fan2RPM, LEVA, LEVB, LiquidTemp, TH4Discharge, CompOpTimes, Subcool, TH8HeatSink, TH6Pipe, TH32Pipe;
 
   //From Message 0xc9
   uint8_t FTCVersion;
@@ -322,6 +322,9 @@ private:
   float ExtractUInt16_Signed(uint8_t *Buffer, uint8_t Index);
   float ExtractUInt8_v1(uint8_t *Buffer, uint8_t Index);
   float ExtractUInt8_v2(uint8_t *Buffer, uint8_t Index);
+  float ExtractUInt8_v3(uint8_t *Buffer, uint8_t Index);
+  float ExtractUInt8_v4(uint8_t *Buffer, uint8_t Index);
+  float ExtractUInt8_v5(uint8_t *Buffer, uint8_t Index);
   float ExtractEnergy(uint8_t *Buffer, uint8_t index);
 
 

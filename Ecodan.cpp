@@ -29,15 +29,17 @@ uint8_t FirstReadActiveCommand[] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0
                                      0x10, 0x11, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F,
                                      0x20, 0x26, 0x27, 0x28, 0x29, 0xA1, 0xA2, 0x00 };
 
-#define NUMBER_COMMANDS 68
-uint8_t ActiveCommand[] = { 0x00, 0x01, 0x04, 0x02, 0x0C, 0x03, 0x04, 0x05, 0x0C, 0x06, 0x04, 0x07, 0x08, 0x09, 0x04, 0x0B, 0x0C,
-                            0x0D, 0x04, 0x0E, 0x0C, 0x0F, 0x04, 0x10, 0x0C, 0x11, 0x04, 0x13, 0x0C, 0x14, 0x04, 0x15, 0x0C, 0x16,
-                            0x04, 0x17, 0x0C, 0x18, 0x04, 0x19, 0x0C, 0x1A, 0x04, 0x1B, 0x0C, 0x1C, 0x04, 0x1D, 0x0C, 0x1E, 0x04,
-                            0x1F, 0x0C, 0x20, 0x04, 0x26, 0x0C, 0x27, 0x04, 0x28, 0x0C, 0x29, 0x04, 0xA1, 0x0C, 0xA2, 0x04, 0x00 };
+#define NUMBER_COMMANDS 51
+uint8_t ActiveCommand[] = { 0x00, 0x01, 0x02, 0x03, 0x0C, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x04, 0x0B, 0x0C,
+                            0x0D, 0x0E, 0x0F, 0x0C, 0x04, 0x10, 0x13, 0x14, 0x04, 0x15, 0x0C, 0x16, 0x17, 0x18,
+                            0x04, 0x0C, 0x19, 0x1A, 0x1B, 0x1C, 0x04, 0x1D, 0x0C, 0x1E, 0x1F, 0x20, 0x04, 0x26,
+                            0x0C, 0x27, 0x28, 0x29, 0x04, 0xA1, 0x0C, 0xA2, 0x00 };
 
-#define NUMBER_SVC_COMMANDS 19
-int ActiveServiceCode[] = { 5, 19, 5, 4, 5, 7, 5, 10, 5, 13, 5, 19, 5, 20, 5, 22, 5, 3, 5 };
+#define NUMBER_SVC_COMMANDS 30
+int ActiveServiceCode[] = { 3, 4, 5, 13, 7, 4, 5, 13, 10, 4, 5, 13, 8, 4, 5, 13, 19, 4, 5, 13, 20, 4, 5, 13, 22, 4, 5, 13, 23, 5 };
 
+#define NUMBER_SVC_COMMANDS_FTC7 6
+int ActiveServiceCodeFTC7[] = { 3, 19, 20, 22, 23, 5 };
 
 unsigned long lastmsgdispatchedMillis = 0;  // variable for comparing millis counter
 int cmd_queue_length = 0;
@@ -118,9 +120,19 @@ void ECODAN::StopStateMachine(void) {
 
 void ECODAN::StatusSVCMachine(void) {
   if (CurrentSVCMessage > 0) {
-    WriteServiceCodeCMD(ActiveServiceCode[CurrentSVCMessage - 1]);
+    if (Status.FTCVersion == FTC7) {
+      WriteServiceCodeCMD(ActiveServiceCodeFTC7[CurrentSVCMessage - 1]);
+    } else {
+      WriteServiceCodeCMD(ActiveServiceCode[CurrentSVCMessage - 1]);
+    }
+
     CurrentSVCMessage++;
-    CurrentSVCMessage %= NUMBER_SVC_COMMANDS;
+    if (Status.FTCVersion == FTC7) {
+      CurrentSVCMessage %= NUMBER_SVC_COMMANDS_FTC7;  // Once none left
+    } else {
+      CurrentSVCMessage %= NUMBER_SVC_COMMANDS;  // Once none left
+    }
+
     if (CurrentSVCMessage == 0) {
       CurrentSVCMessage = 1;
     }
@@ -273,7 +285,8 @@ void ECODAN::ForceDHW(uint8_t OnOff) {
   ECODANDECODER::EncodeForcedDHW(OnOff);
   cmd_queue_length++;
   ECODANDECODER::TransfertoBuffer(SET_REQUEST, cmd_queue_length);
-  cmd_queue_length++;
+  DEBUG_PRINT(F("Transferred msg to position: "));
+  DEBUG_PRINTLN(cmd_queue_length);
 }
 
 
@@ -281,7 +294,8 @@ void ECODAN::SetHolidayMode(uint8_t OnOff) {
   ECODANDECODER::EncodeHolidayMode(OnOff);
   cmd_queue_length++;
   ECODANDECODER::TransfertoBuffer(SET_REQUEST, cmd_queue_length);
-  cmd_queue_length++;
+  DEBUG_PRINT(F("Transferred msg to position: "));
+  DEBUG_PRINTLN(cmd_queue_length);
 }
 
 
