@@ -357,8 +357,7 @@ void loop() {
     if (cmd_queue_length > cmd_queue_position) {
       cmd_queue_position++;  // Skip this write + Increment the position
       CurrentWriteAttempt = 0;
-    }
-    else{
+    } else {
       cmd_queue_position = 1;  // All commands written, reset
       cmd_queue_length = 0;
       CurrentWriteAttempt = 0;
@@ -366,7 +365,7 @@ void loop() {
       postwrpreviousMillis = millis();
     }
   }
-  
+
   if ((PostWriteTrigger) && (millis() - postwrpreviousMillis >= 6000)) {
     DEBUG_PRINTLN(F("Restarting Read Operations"));
     HeatPumpKeepAlive();
@@ -555,7 +554,7 @@ void HeatPumpQueryStateEngine(void) {
     FTCLoopSpeed = millis() - ftcpreviousMillis;  // Loop Speed End
     if (HeatPump.Status.FTCVersion == 0) { HeatPump.GetFTCVersion(); }
     if ((MQTTReconnect() || MQTT2Reconnect()) && (HeatPump.Status.FTCVersion != 0)) { PublishAllReports(); }
-    if (HeatPump.Status.FTCVersion != FTC7){ HeatPump.StatusSVCMachine(); }
+    HeatPump.StatusSVCMachine();
   }
 }
 
