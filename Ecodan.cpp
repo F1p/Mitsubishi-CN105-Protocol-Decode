@@ -120,18 +120,10 @@ void ECODAN::StopStateMachine(void) {
 
 void ECODAN::StatusSVCMachine(void) {
   if (CurrentSVCMessage > 0) {
-    if (Status.FTCVersion == FTC7) {
-      WriteServiceCodeCMD(ActiveServiceCodeFTC7[CurrentSVCMessage - 1]);
-    } else {
-      WriteServiceCodeCMD(ActiveServiceCode[CurrentSVCMessage - 1]);
-    }
+    WriteServiceCodeCMD(ActiveServiceCode[CurrentSVCMessage - 1]);
 
     CurrentSVCMessage++;
-    if (Status.FTCVersion == FTC7) {
-      CurrentSVCMessage %= NUMBER_SVC_COMMANDS_FTC7;  // Once none left
-    } else {
-      CurrentSVCMessage %= NUMBER_SVC_COMMANDS;  // Once none left
-    }
+    CurrentSVCMessage %= NUMBER_SVC_COMMANDS;  // Once none left
 
     if (CurrentSVCMessage == 0) {
       CurrentSVCMessage = 1;
@@ -386,4 +378,6 @@ void ECODAN::WriteServiceCodeCMD(int cmd) {
   ECODANDECODER::SetPayloadByte(LowerByte, 2);
   cmd_queue_length++;
   ECODANDECODER::TransfertoBuffer(GET_REQUEST, cmd_queue_length);
+  DEBUG_PRINT(F("Transferred msg to position: "));
+  DEBUG_PRINTLN(cmd_queue_length);
 }

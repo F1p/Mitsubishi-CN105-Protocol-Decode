@@ -569,7 +569,7 @@ void ECODANDECODER::Process0x0F(uint8_t *Buffer, EcodanStatus *Status) {  // FTC
   Status->CondensingTemp = CondensingTemp;
 
   //Unknown = ExtractUInt8_v1(Buffer, 6);
-  if (Status->FTCVersion == FTC7) {                     // FTC7 Only Parameters
+  /*if (Status->FTCVersion == FTC7) {                     // FTC7 Only Parameters
     Status->TH4Discharge = ExtractUInt8_v4(Buffer, 7);  // FTC7 Only Parameters
     Status->LiquidTemp = ExtractUInt8_v3(Buffer, 8);    // FTC7 Only Parameters
     Status->TH6Pipe = ExtractUInt8_v3(Buffer, 9);       // FTC7 Only Parameters
@@ -578,7 +578,7 @@ void ECODANDECODER::Process0x0F(uint8_t *Buffer, EcodanStatus *Status) {  // FTC
     //Status->TH33 = ExtractUInt8_v5(Buffer, 12);           // FTC7 Only Parameters
     //Status->Superheat = ExtractUInt8_v4(Buffer, 13);      // FTC7 Only Parameters
     Status->Subcool = ExtractUInt8_v3(Buffer, 14);  // FTC7 Only Parameters
-  }
+  }*/
 }
 
 void ECODANDECODER::Process0x10(uint8_t *Buffer, EcodanStatus *Status) {
@@ -1281,7 +1281,7 @@ void ECODANDECODER::EncodeMELCloud(uint8_t cmd) {
 
 void ECODANDECODER::TransfertoBuffer(uint8_t msgtype, uint8_t bufferposition) {
   BufferArray[bufferposition][0] = msgtype;
-  for (int i = 1; i < 17; i++) {
+  for (int i = 1; i < 16; i++) {
     BufferArray[bufferposition][i] = TxMessage.Payload[i - 1];
   }
 }
@@ -1291,7 +1291,7 @@ uint8_t ECODANDECODER::ReturnNextCommandType(uint8_t bufferposition) {
 }
 
 void ECODANDECODER::EncodeNextCommand(uint8_t bufferposition) {
-  for (int i = 1; i < 17; i++) {
+  for (int i = 1; i < 16; i++) {
     TxMessage.Payload[i - 1] = BufferArray[bufferposition][i];
   }
 }

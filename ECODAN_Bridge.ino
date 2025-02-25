@@ -353,7 +353,7 @@ void loop() {
       postwrpreviousMillis = millis();
     }                                                                  // Dequeue the last message that was written
     if (MQTTReconnect() || MQTT2Reconnect()) { PublishAllReports(); }  // Publish update to the MQTT Topics
-  } else if ((WriteInProgress) && (CurrentWriteAttempt > 14)) {
+  } else if ((WriteInProgress) && (CurrentWriteAttempt > 14)) {        // After 14 attempts to write
     if (cmd_queue_length > cmd_queue_position) {
       cmd_queue_position++;  // Skip this write + Increment the position
       CurrentWriteAttempt = 0;
@@ -366,7 +366,7 @@ void loop() {
     }
   }
 
-  if ((PostWriteTrigger) && (millis() - postwrpreviousMillis >= 6000)) {
+  if ((PostWriteTrigger) && (millis() - postwrpreviousMillis >= 10000)) {
     DEBUG_PRINTLN(F("Restarting Read Operations"));
     HeatPumpKeepAlive();
     PostWriteTrigger = false;
