@@ -120,11 +120,19 @@ void ECODAN::StopStateMachine(void) {
 
 void ECODAN::StatusSVCMachine(void) {
   if (CurrentSVCMessage > 0) {
-    WriteServiceCodeCMD(ActiveServiceCode[CurrentSVCMessage - 1]);
+    if (Status.FTCVersion == FTC7 && Status.OutdoorExtendedSensors) {
+      WriteServiceCodeCMD(ActiveServiceCodeFTC7[CurrentSVCMessage - 1]);
+    } else {
+      WriteServiceCodeCMD(ActiveServiceCode[CurrentSVCMessage - 1]);
+    }
 
     CurrentSVCMessage++;
-    CurrentSVCMessage %= NUMBER_SVC_COMMANDS;  // Once none left
-
+    if (Status.FTCVersion == FTC7 && Status.OutdoorExtendedSensors) {
+      CurrentSVCMessage %= NUMBER_SVC_COMMANDS_FTC7;  // Once none left
+    } else {
+      CurrentSVCMessage %= NUMBER_SVC_COMMANDS;  // Once none left
+    }
+    
     if (CurrentSVCMessage == 0) {
       CurrentSVCMessage = 1;
     }

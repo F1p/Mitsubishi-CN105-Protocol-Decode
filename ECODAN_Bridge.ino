@@ -361,12 +361,13 @@ void loop() {
       cmd_queue_position = 1;  // All commands written, reset
       cmd_queue_length = 0;
       CurrentWriteAttempt = 0;
-      PostWriteTrigger = true;  // Allows 6s to pass, then restarts read operation
+      PostWriteTrigger = true;  // Allows 15s to pass, then restarts read operation
       postwrpreviousMillis = millis();
     }
   }
 
-  if ((PostWriteTrigger) && (millis() - postwrpreviousMillis >= 10000)) {
+  // -- Read Operation Restart -- //
+  if ((PostWriteTrigger) && (millis() - postwrpreviousMillis >= 15000)) {   // Allow 15s to pass before re-starting reads for FTC to process
     DEBUG_PRINTLN(F("Restarting Read Operations"));
     HeatPumpKeepAlive();
     PostWriteTrigger = false;
@@ -500,7 +501,8 @@ void loop() {
       FastLED.show();
 #endif
       delay(500);
-      wifiManager.resetSettings();  // Clear settings
+      wifiManager.resetSettings();  // Clear settings      
+      LittleFS.format();            // Wipe Filesystem
     }
 
 #ifdef ESP8266

@@ -212,6 +212,7 @@ typedef struct _EcodanStatus {
 
   //From Message 0x0F
   float MixingTemperature, CondensingTemp;
+  bool OutdoorExtendedSensors;
 
   //From Message 0x10
   uint8_t Zone1ThermostatDemand, Zone2ThermostatDemand, OutdoorThermostatDemand;

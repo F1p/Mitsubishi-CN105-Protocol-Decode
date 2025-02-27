@@ -444,6 +444,8 @@ void ECODANDECODER::Process0x08(uint8_t *Buffer, EcodanStatus *Status) {
   for (int i = 1; i < 16; i++) {
     Array0x08[i] = Buffer[i];
   }
+
+  // To be confirmed - LEVA & LEVB for FTC7
 }
 
 
@@ -558,6 +560,7 @@ void ECODANDECODER::Process0x0E(uint8_t *Buffer, EcodanStatus *Status) {
 
 void ECODANDECODER::Process0x0F(uint8_t *Buffer, EcodanStatus *Status) {  // FTC6 & 7 Only Parameters
   float MixingTemperature, CondensingTemp;
+  bool OutdoorExtendedSensors = false;
 
   for (int i = 1; i < 16; i++) {
     Array0x0f[i] = Buffer[i];
@@ -565,20 +568,24 @@ void ECODANDECODER::Process0x0F(uint8_t *Buffer, EcodanStatus *Status) {  // FTC
 
   MixingTemperature = ((float)ExtractUInt16(Buffer, 1) / 100);      // Mixing Tank Temperature (THW10)
   CondensingTemp = ((float)ExtractUInt16_Signed(Buffer, 4) / 100);  // Condensing Temperature
+  //Unknown = ExtractUInt8_v1(Buffer, 6);
+
   Status->MixingTemperature = MixingTemperature;
   Status->CondensingTemp = CondensingTemp;
 
-  //Unknown = ExtractUInt8_v1(Buffer, 6);
-  /*if (Status->FTCVersion == FTC7) {                     // FTC7 Only Parameters
-    Status->TH4Discharge = ExtractUInt8_v4(Buffer, 7);  // FTC7 Only Parameters
-    Status->LiquidTemp = ExtractUInt8_v3(Buffer, 8);    // FTC7 Only Parameters
-    Status->TH6Pipe = ExtractUInt8_v3(Buffer, 9);       // FTC7 Only Parameters
-    Status->TH32Pipe = ExtractUInt8_v3(Buffer, 10);    // FTC7 Only Parameters
-    Status->TH8HeatSink = ExtractUInt8_v5(Buffer, 11);  // FTC7 Only Parameters
-    //Status->TH33 = ExtractUInt8_v5(Buffer, 12);           // FTC7 Only Parameters
-    //Status->Superheat = ExtractUInt8_v4(Buffer, 13);      // FTC7 Only Parameters
-    Status->Subcool = ExtractUInt8_v3(Buffer, 14);  // FTC7 Only Parameters
-  }*/
+  for (int j = 7; j < 15; j++) {
+    if (Buffer[j] != 0x00) { OutdoorExtendedSensors = true; Status->OutdoorExtendedSensors = OutdoorExtendedSensors; }
+  }
+  if (Status->FTCVersion == FTC7 && OutdoorExtendedSensors) {  // FTC7 with Extended Outdoor Unit Sensors Parameters
+    Status->TH4Discharge = ExtractUInt8_v4(Buffer, 7);         // FTC7 Only Parameters
+    Status->LiquidTemp = ExtractUInt8_v3(Buffer, 8);           // FTC7 Only Parameters
+    Status->TH6Pipe = ExtractUInt8_v3(Buffer, 9);              // FTC7 Only Parameters
+    Status->TH32Pipe = ExtractUInt8_v3(Buffer, 10);            // FTC7 Only Parameters
+    Status->TH8HeatSink = ExtractUInt8_v5(Buffer, 11);         // FTC7 Only Parameters
+    //Status->TH33 = ExtractUInt8_v5(Buffer, 12);              // FTC7 Only Parameters
+    //Status->Superheat = ExtractUInt8_v4(Buffer, 13);         // FTC7 Only Parameters
+    Status->Subcool = ExtractUInt8_v3(Buffer, 14);             // FTC7 Only Parameters
+  }
 }
 
 void ECODANDECODER::Process0x10(uint8_t *Buffer, EcodanStatus *Status) {
@@ -938,7 +945,7 @@ void ECODANDECODER::Process0xA3(uint8_t *Buffer, EcodanStatus *Status) {
 
     // Process into the correct locations
     if (ServiceCode == 3) {
-      Status->CompOpTimes = ExtractInt16_v2_Signed(Buffer, 4);   // Safe to parse as ExtractUInt16_v2 or *100 outside ESP
+      Status->CompOpTimes = ExtractInt16_v2_Signed(Buffer, 4);  // Safe to parse as ExtractUInt16_v2 or *100 outside ESP
     } else if (ServiceCode == 4) {
       Status->TH4Discharge = ExtractInt16_v2_Signed(Buffer, 4);  // TH4
     } else if (ServiceCode == 5) {
