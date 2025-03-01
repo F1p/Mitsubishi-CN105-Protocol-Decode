@@ -1114,6 +1114,7 @@ void ConfigurationReport(void) {
   doc[F("CompOpTimes")] = HeatPump.Status.CompOpTimes;
   doc[F("LiquidTemp")] = HeatPump.Status.LiquidTemp;
   doc[F("TH4Discharge")] = HeatPump.Status.TH4Discharge;
+  doc[F("Superheat")] = HeatPump.Status.Superheat;
   doc[F("Subcool")] = HeatPump.Status.Subcool;
   doc[F("TH8HeatSink")] = HeatPump.Status.TH8HeatSink;
   doc[F("TH6Pipe")] = HeatPump.Status.TH6Pipe;
@@ -1122,6 +1123,7 @@ void ConfigurationReport(void) {
   doc[F("Fan2RPM")] = HeatPump.Status.Fan2RPM;
   doc[F("LEVA")] = HeatPump.Status.LEVA;
   doc[F("LEVB")] = HeatPump.Status.LEVB;
+  doc[F("TH33")] = HeatPump.Status.TH33;
   doc[F("HB_ID")] = Heart_Value;
 
   serializeJson(doc, Buffer);

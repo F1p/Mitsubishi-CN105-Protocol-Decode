@@ -582,8 +582,8 @@ void ECODANDECODER::Process0x0F(uint8_t *Buffer, EcodanStatus *Status) {  // FTC
     Status->TH6Pipe = ExtractUInt8_v3(Buffer, 9);              // FTC7 Only Parameters
     Status->TH32Pipe = ExtractUInt8_v3(Buffer, 10);            // FTC7 Only Parameters
     Status->TH8HeatSink = ExtractUInt8_v5(Buffer, 11);         // FTC7 Only Parameters
-    //Status->TH33 = ExtractUInt8_v5(Buffer, 12);              // FTC7 Only Parameters
-    //Status->Superheat = ExtractUInt8_v4(Buffer, 13);         // FTC7 Only Parameters
+    Status->TH33 = ExtractUInt8_v5(Buffer, 12);                // FTC7 Only Parameters
+    Status->Superheat = ExtractUInt8_v4(Buffer, 13);           // FTC7 Only Parameters
     Status->Subcool = ExtractUInt8_v3(Buffer, 14);             // FTC7 Only Parameters
   }
 }
@@ -928,7 +928,6 @@ void ECODANDECODER::Process0xA2(uint8_t *Buffer, EcodanStatus *Status) {
 }
 
 
-
 void ECODANDECODER::Process0xA3(uint8_t *Buffer, EcodanStatus *Status) {
   uint8_t ServiceCode;
   bool Write_To_Ecodan_OK;
@@ -950,14 +949,20 @@ void ECODANDECODER::Process0xA3(uint8_t *Buffer, EcodanStatus *Status) {
       Status->TH4Discharge = ExtractInt16_v2_Signed(Buffer, 4);  // TH4
     } else if (ServiceCode == 5) {
       Status->LiquidTemp = ExtractInt16_v2_Signed(Buffer, 4);  //TH3
+    } else if (ServiceCode == 6) {
+      Status->TH32Pipe = ExtractInt16_v2_Signed(Buffer, 4);
     } else if (ServiceCode == 7) {
       Status->TH6Pipe = ExtractInt16_v2_Signed(Buffer, 4);
     } else if (ServiceCode == 8) {
-      Status->TH32Pipe = ExtractInt16_v2_Signed(Buffer, 4);
+      Status->TH33 = ExtractInt16_v2_Signed(Buffer, 4);
     } else if (ServiceCode == 10) {
       Status->TH8HeatSink = ExtractInt16_v2_Signed(Buffer, 4);
+    } else if (ServiceCode == 12) {
+      Status->Superheat = ExtractInt16_v2_Signed(Buffer, 4);
     } else if (ServiceCode == 13) {
       Status->Subcool = ExtractInt16_v2_Signed(Buffer, 4);
+    } else if (ServiceCode == 14) {
+      Status->CondensingTemp = ExtractInt16_v2_Signed(Buffer, 4);
     } else if (ServiceCode == 19) {
       Status->Fan1RPM = ExtractInt16_v2_Signed(Buffer, 4);  //Little endian
     } else if (ServiceCode == 20) {

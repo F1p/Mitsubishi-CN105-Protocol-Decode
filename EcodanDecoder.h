@@ -263,7 +263,7 @@ typedef struct _EcodanStatus {
   float DeliveredHotWaterEnergy;
 
   //From Message 0xa3
-  int16_t Fan1RPM, Fan2RPM, LEVA, LEVB, LiquidTemp, TH4Discharge, CompOpTimes, Subcool, TH8HeatSink, TH6Pipe, TH32Pipe;
+  int16_t Fan1RPM, Fan2RPM, LEVA, LEVB, LiquidTemp, TH4Discharge, CompOpTimes, Subcool, TH8HeatSink, TH6Pipe, TH32Pipe, TH33, Superheat;
 
   //From Message 0xc9
   uint8_t FTCVersion;
