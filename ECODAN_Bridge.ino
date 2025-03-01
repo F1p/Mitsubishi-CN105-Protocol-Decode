@@ -858,15 +858,11 @@ void SystemReport(void) {
     UnitSizeFactor = 0.6;
   } else if (unitSettings.UnitSize == 7.5) {
     UnitSizeFactor = 0.95;
-  } else if (unitSettings.UnitSize == 8.0) {
-    UnitSizeFactor = 1.0;
-  } else if ((unitSettings.UnitSize == 6.0) || (unitSettings.UnitSize == 8.5)) {  // 6kW is limited 8.5 unit, only maximum power is capped
+  } else if ((unitSettings.UnitSize == 6.0) || (unitSettings.UnitSize == 8.0) || (unitSettings.UnitSize == 8.5)) {  // 6kW is limited 8.5 unit, only maximum power is capped
     UnitSizeFactor = 1.1;
   } else if (unitSettings.UnitSize == 10.0) {
-    UnitSizeFactor = 1.3;
-  } else if ((unitSettings.UnitSize == 11.2) || (unitSettings.UnitSize == 14.0)) {  // 11.2kW is limited 14kW unit, only maximum power is capped
-    UnitSizeFactor = 1.6;
-  } else if (unitSettings.UnitSize == 12.0) {
+    UnitSizeFactor = 1.5;
+  } else if ((unitSettings.UnitSize == 11.2) || (unitSettings.UnitSize == 12.0) || (unitSettings.UnitSize == 14.0)) {  // 11.2kW is limited 14kW unit, only maximum power is capped
     UnitSizeFactor = 1.7;
   }
 
