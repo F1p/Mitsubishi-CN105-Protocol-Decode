@@ -941,6 +941,7 @@ void ECODANDECODER::Process0xA3(uint8_t *Buffer, EcodanStatus *Status) {
 
     // Data Packets
     ServiceCode = ExtractUInt16(Buffer, 1);  // Decode the reply to Update the correct Value
+    Status->LastServiceCodeNumber = ServiceCode;
 
     // Process into the correct locations
     if (ServiceCode == 3) {
@@ -972,6 +973,7 @@ void ECODANDECODER::Process0xA3(uint8_t *Buffer, EcodanStatus *Status) {
     } else if (ServiceCode == 23) {
       Status->LEVB = Buffer[4];
     }
+    Status->ServiceCodeReply = ExtractInt16_v2_Signed(Buffer, 4);
   }
 }
 

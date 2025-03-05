@@ -21,3 +21,22 @@
 |   Heat Pump Computed Cool Output Power | kW       | The estimated Cooling power output calculated by the bridge controller, based on the glycol strngth set in the control section  |
 |   Instant CoP | n/a       | The estimated Instant CoP computed by the bridge, based on Computed Input & Output Power  |
 |   "Yesterday" figures | n/a       | The energy consumed/delivered & CoP, estimated by the FTC and matching the stats on the Main Controller |
+
+# Service Codes
+| Request Code | Name | Unit      | Description of Function      |
+|-------|------------------|----------------|----|
+| 3 |   Compressor-Number of operation times      | 100 Times  |  |
+| 4 | Discharge temperature (TH4) | degC      |     |
+| 5 | Outdoor unit -Liquid pipe 1 temperature (TH3) | degC      |     |
+| 6 | Water inlet temperature (TH32) - ONLY AVAILABLE IN MQTT Explorer | degC      |     |
+| 7 | Outdoor unit-Plate HEX pipe temperature (TH6)  | degC      |     |
+| 8 | Outdoor unit-Suction pipe temperature (TH33) | degC      |     |
+| 9 | Outdoor unit-Ambient temperature (TH7) | degC      |     |
+| 10 | Outdoor unit-Heatsink temperature (TH8) | degC      |     |
+| 12 | Discharge superheat (SHd) - ONLY AVAILABLE IN MQTT Explorer | degC      |     |
+| 13 | Sub-cool (SC) | degC      |     |
+| 14 | Condensing temperature (T63HS) | degC      |     |
+| 19 | Outdoor unit-Fan 1 speed | rpm      |     |
+| 20 | Outdoor unit-Fan 2 speed | rpm      |     |
+| 22 | LEV (A) opening | Pulses  |     |
+| 23 | LEV (B) opening | Pulses      |     |

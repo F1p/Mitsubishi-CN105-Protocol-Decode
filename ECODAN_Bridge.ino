@@ -47,7 +47,7 @@
 #include "Ecodan.h"
 #include "Melcloud.h"
 
-String FirmwareVersion = "6.2.1";
+String FirmwareVersion = "6.2.2";
 
 
 #ifdef ESP8266  // Define the Witty ESP8266 Serial Pins
@@ -1028,7 +1028,7 @@ void AdvancedTwoReport(void) {
   doc[F("ThreeWayValve2")] = HeatPump.Status.ThreeWayValve2;
   doc[F("RefrigeFltCode")] = RefrigeFltCodeString[HeatPump.Status.RefrigeFltCode];
 
-  if (ErrorCode == 8000) {
+  if (ErrorCode == 8000 || ErrorCode == 0) {
     doc[F("ErrCode")] = String("Normal");
   } else {
     doc[F("ErrCode")] = ErrorCode;
@@ -1044,7 +1044,9 @@ void AdvancedTwoReport(void) {
   doc[F("Z1TstatDemand")] = OFF_ON_String[HeatPump.Status.Zone1ThermostatDemand];
   doc[F("Z2TstatDemand")] = OFF_ON_String[HeatPump.Status.Zone2ThermostatDemand];
   doc[F("OTstatDemand")] = OFF_ON_String[HeatPump.Status.OutdoorThermostatDemand];
-  doc[F("OpMode")] = HPControlModeString[HeatPump.Status.HeatCool];
+  doc[F("OpMode")] = HPControlModeString[HeatPump.Status.HeatCool];  
+  doc[F("LastSvc")] = HeatPump.Status.LastServiceCodeNumber;
+  doc[F("LastSvcReply")] = HeatPump.Status.ServiceCodeReply;
   doc[F("HB_ID")] = Heart_Value;
 
   serializeJson(doc, Buffer);
