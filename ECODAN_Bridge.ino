@@ -31,6 +31,7 @@
 #endif
 #ifdef ESP32
 #include <WiFi.h>
+#include <AsyncTCP.h>
 #include <WebServer.h>
 #include <ESPmDNS.h>
 #endif
@@ -39,15 +40,16 @@
 #include <Arduino.h>
 #endif
 
-
+#define WEBSERVER_H "fix confict"
 #include <WiFiManager.h>
+#include <ESPAsyncWebServer.h>
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
 #include <ESPTelnet.h>
 #include "Ecodan.h"
 #include "Melcloud.h"
 
-String FirmwareVersion = "6.2.2";
+String FirmwareVersion = "6.2.3 Beta";
 
 
 #ifdef ESP8266  // Define the Witty ESP8266 Serial Pins
@@ -367,7 +369,7 @@ void loop() {
   }
 
   // -- Read Operation Restart -- //
-  if ((PostWriteTrigger) && (millis() - postwrpreviousMillis >= 15000)) {   // Allow 15s to pass before re-starting reads for FTC to process
+  if ((PostWriteTrigger) && (millis() - postwrpreviousMillis >= 22500)) {   // Allow 22.5s to pass before re-starting reads for FTC to process
     DEBUG_PRINTLN(F("Restarting Read Operations"));
     HeatPumpKeepAlive();
     PostWriteTrigger = false;
@@ -465,7 +467,6 @@ void loop() {
     delay(500);
     digitalWrite(Red_RGB_LED, HIGH);
     delay(500);
-    ESP.reset();
 #endif
 #ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack LED
     leds[0] = CRGB::Red;       // Flash the Red LED
@@ -485,7 +486,6 @@ void loop() {
     FastLED.setBrightness(255);
     FastLED.show();
     delay(500);
-    ESP.restart();  // No button on ETH
 #endif
 
     if (digitalRead(Reset_Button) == LOW) {  // If still pressed after flashing seq - reset
