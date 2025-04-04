@@ -184,9 +184,8 @@ void readSettingsFromConfig() {
 
             // Build in safety check, otherwise ESP will crash out and you can't get back in
             if (doc.containsKey(mqttSettings.wm_device_id_identifier)) {
-              if ((sizeof(doc[mqttSettings.wm_device_id_identifier]) > 0) && ((sizeof(doc[mqttSettings.wm_device_id_identifier]) + 1) <= deviceId_max_length)) {
-                strcpy(mqttSettings.deviceId, doc[mqttSettings.wm_device_id_identifier]);
-              }
+              //Investigate why second check removed - not meeting condition on ESP 3.2.0 - Length 16?
+              strcpy(mqttSettings.deviceId, doc[mqttSettings.wm_device_id_identifier]);
             } else {  // For upgrading from <5.3.1, create the entry
 #ifdef ESP8266
               snprintf(snprintbuffer, deviceId_max_length, (String(ESP.getChipId(), HEX)).c_str());
@@ -226,7 +225,7 @@ void readSettingsFromConfig() {
                 DEBUG_PRINT(F("Loaded: "));
                 DEBUG_PRINTLN(mqttSettings.baseTopic);
                 MQTT_BASETOPIC = mqttSettings.baseTopic;
-                DEBUG_PRINT(F("Loaded: "));                
+                DEBUG_PRINT(F("Loaded: "));
                 DEBUG_PRINTLN(MQTT_BASETOPIC);
               }
             }
@@ -550,7 +549,10 @@ void readSettingsFromConfig() {
         Config["icon"] = String(MQTT_MDI_ICONS[i]);
         if (i >= 39 && i < 47) {
           Config["device_class"] = String(MQTT_DEVICE_CLASS[0]);
+        } else if ((i == 9) || (i >= 55 && i < 57) || (i >= 71 && i < 73)) {
+          Config["device_class"] = String(MQTT_DEVICE_CLASS[1]);
         }
+
 
         MQTT_DISCOVERY_TOPIC = String(MQTT_DISCOVERY_TOPICS[0]);
       }

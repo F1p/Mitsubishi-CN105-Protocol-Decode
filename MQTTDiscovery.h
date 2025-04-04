@@ -805,5 +805,6 @@ const char MQTT_DISCOVERY_TOPICS[][23] PROGMEM = {
 };
 
 const char MQTT_DEVICE_CLASS[][7] PROGMEM = {
-  "energy"
+  "energy",
+  "power"
 };

@@ -49,7 +49,7 @@
 #include "Ecodan.h"
 #include "Melcloud.h"
 
-String FirmwareVersion = "6.2.3 Beta";
+String FirmwareVersion = "6.2.3";
 
 
 #ifdef ESP8266  // Define the Witty ESP8266 Serial Pins
@@ -369,7 +369,7 @@ void loop() {
   }
 
   // -- Read Operation Restart -- //
-  if ((PostWriteTrigger) && (millis() - postwrpreviousMillis >= 22500)) {   // Allow 22.5s to pass before re-starting reads for FTC to process
+  if ((PostWriteTrigger) && (millis() - postwrpreviousMillis >= 15000)) {   // Allow 15s to pass before re-starting reads for FTC to process
     DEBUG_PRINTLN(F("Restarting Read Operations"));
     HeatPumpKeepAlive();
     PostWriteTrigger = false;
