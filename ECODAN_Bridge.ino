@@ -14,8 +14,8 @@
 
 // -- Supported Hardware -- //
 /* As sold Witty ESP8266 based               / Core 3.1.2 / Flash 4MB (1MB FS / 1MB OTA - 16KB Cache/48KB IRAM not shared)  */
-/* ESP32 AtomS3 Lite (ESP32S3 Dev Module)    / Core 3.1.1 / Flash 4M with SPIFFS (1.2MB APP / 1.5MB SPIFFS)                 */
-/* ESP32 Ethernet WT32-ETH01                 / Core 3.1.1 / Flash 4MB (1.2MB APP / 1.5MB SPIFFS)                            */
+/* ESP32 AtomS3 Lite (ESP32S3 Dev Module)    / Core 3.2.0 / Flash 4M with SPIFFS (1.2MB APP / 1.5MB SPIFFS)                 */
+/* ESP32 Ethernet WT32-ETH01                 / Core 3.2.0 / Flash 4MB (1.2MB APP / 1.5MB SPIFFS)                            */
 
 
 #if defined(ESP8266) || defined(ESP32)  // ESP32 or ESP8266 Compatiability
@@ -216,12 +216,12 @@ void EnergyReport(void);
 void StatusReport(void);
 void FastPublish(void);
 
-TimerCallBack HeatPumpQuery1(400, HeatPumpQueryStateEngine);  // Set to 400ms (Safe), 320-350ms best time between messages
-TimerCallBack HeatPumpQuery2(30000, HeatPumpKeepAlive);       // Set to 20-30s for heat pump query frequency
-TimerCallBack HeatPumpQuery3(30000, handleMQTTState);         // Re-connect attempt timer if MQTT is not online
-TimerCallBack HeatPumpQuery4(30000, handleMQTT2State);        // Re-connect attempt timer if MQTT Stream 2 is not online
-TimerCallBack HeatPumpQuery5(500, HeatPumpWriteStateEngine);  // Set to 500ms (Safe), 320-350ms best time between messages
-TimerCallBack HeatPumpQuery6(2000, FastPublish);              // Publish some reports at a faster rate
+TimerCallBack HeatPumpQuery1(400, HeatPumpQueryStateEngine);   // Set to 400ms (Safe), 320-350ms best time between messages
+TimerCallBack HeatPumpQuery2(30000, HeatPumpKeepAlive);        // Set to 20-30s for heat pump query frequency
+TimerCallBack HeatPumpQuery3(30000, handleMQTTState);          // Re-connect attempt timer if MQTT is not online
+TimerCallBack HeatPumpQuery4(30000, handleMQTT2State);         // Re-connect attempt timer if MQTT Stream 2 is not online
+TimerCallBack HeatPumpQuery5(1000, HeatPumpWriteStateEngine);  // Set to 1000ms (Safe), 320-350ms best time between messages
+TimerCallBack HeatPumpQuery6(2000, FastPublish);               // Publish some reports at a faster rate
 
 
 unsigned long looppreviousMicros = 0;    // variable for comparing millis counter
@@ -351,11 +351,11 @@ void loop() {
       cmd_queue_position = 1;  // All commands written, reset
       cmd_queue_length = 0;
       CurrentWriteAttempt = 0;
-      PostWriteTrigger = true;  // Allows 6s to pass, then restarts read operation
+      PostWriteTrigger = true;  // Allows 1s to pass, then restarts read operation
       postwrpreviousMillis = millis();
     }                                                                  // Dequeue the last message that was written
     if (MQTTReconnect() || MQTT2Reconnect()) { PublishAllReports(); }  // Publish update to the MQTT Topics
-  } else if ((WriteInProgress) && (CurrentWriteAttempt > 14)) {        // After 14 attempts to write
+  } else if ((WriteInProgress) && (CurrentWriteAttempt > 10)) {        // After 10 attempts to write
     if (cmd_queue_length > cmd_queue_position) {
       cmd_queue_position++;  // Skip this write + Increment the position
       CurrentWriteAttempt = 0;
@@ -363,13 +363,13 @@ void loop() {
       cmd_queue_position = 1;  // All commands written, reset
       cmd_queue_length = 0;
       CurrentWriteAttempt = 0;
-      PostWriteTrigger = true;  // Allows 15s to pass, then restarts read operation
+      PostWriteTrigger = true;  // Allows 1s to pass, then restarts read operation
       postwrpreviousMillis = millis();
     }
   }
 
   // -- Read Operation Restart -- //
-  if ((PostWriteTrigger) && (millis() - postwrpreviousMillis >= 15000)) {   // Allow 15s to pass before re-starting reads for FTC to process
+  if ((PostWriteTrigger) && (millis() - postwrpreviousMillis >= 1000)) {  // Allow 1s to pass before re-starting reads for FTC to process
     DEBUG_PRINTLN(F("Restarting Read Operations"));
     HeatPumpKeepAlive();
     PostWriteTrigger = false;
@@ -501,7 +501,7 @@ void loop() {
       FastLED.show();
 #endif
       delay(500);
-      wifiManager.resetSettings();  // Clear settings      
+      wifiManager.resetSettings();  // Clear settings
       LittleFS.format();            // Wipe Filesystem
     }
 
@@ -548,15 +548,27 @@ void HeatPumpKeepAlive(void) {
 }
 
 void HeatPumpQueryStateEngine(void) {
-  HeatPump.StatusStateMachine();  // Full Read trigged by CurrentMessage
+
+  if (cmd_queue_length == 0) {      // If there is no commands awaiting written
+    HeatPump.StatusStateMachine();  // Full Read trigged by CurrentMessage
+  }
 
   // Call Once Full Update is complete
   if (HeatPump.UpdateComplete()) {
     DEBUG_PRINTLN(F("Update Complete"));
     FTCLoopSpeed = millis() - ftcpreviousMillis;  // Loop Speed End
-    if (HeatPump.Status.FTCVersion == 0) { HeatPump.GetFTCVersion(); }
-    if ((MQTTReconnect() || MQTT2Reconnect()) && (HeatPump.Status.FTCVersion != 0)) { PublishAllReports(); }
-    HeatPump.StatusSVCMachine();
+
+    if (HeatPump.Status.FTCVersion == 0) {
+      HeatPump.GetFTCVersion();
+      if (MQTTReconnect() || MQTT2Reconnect()) {
+        StatusReport();
+      }
+    } else {
+      HeatPump.StatusSVCMachine();  // Call service codes
+      if (MQTTReconnect() || MQTT2Reconnect()) {
+        PublishAllReports();
+      }
+    }
   }
 }
 
@@ -605,7 +617,20 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
 
   // Service Codes
   if (Topic == MQTTCommandSystemService) {
-    HeatPump.WriteServiceCodeCMD(Payload.toInt());
+    if (Payload.toInt() == 999) {
+      DEBUG_PRINTLN(F("FTC Bridge Restart Request"));
+#ifdef ESP8266
+      ESP.reset();
+#endif
+#ifdef ESP32
+      ESP.restart();
+#endif
+    } else if (Payload.toInt() == 998) {
+      DEBUG_PRINTLN(F("Disconnecting from FTC"));
+      HeatPump.Disconnect();
+    } else {
+      HeatPump.WriteServiceCodeCMD(Payload.toInt());
+    }
   }
 
   // Curve or Temp Independent Thermostat Setting
@@ -1044,7 +1069,7 @@ void AdvancedTwoReport(void) {
   doc[F("Z1TstatDemand")] = OFF_ON_String[HeatPump.Status.Zone1ThermostatDemand];
   doc[F("Z2TstatDemand")] = OFF_ON_String[HeatPump.Status.Zone2ThermostatDemand];
   doc[F("OTstatDemand")] = OFF_ON_String[HeatPump.Status.OutdoorThermostatDemand];
-  doc[F("OpMode")] = HPControlModeString[HeatPump.Status.HeatCool];  
+  doc[F("OpMode")] = HPControlModeString[HeatPump.Status.HeatCool];
   doc[F("LastSvc")] = HeatPump.Status.LastServiceCodeNumber;
   doc[F("LastSvcReply")] = HeatPump.Status.ServiceCodeReply;
   doc[F("HB_ID")] = Heart_Value;

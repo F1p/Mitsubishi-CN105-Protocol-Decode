@@ -26,6 +26,7 @@ class ECODAN : public ECODANDECODER {
 public:
   ECODAN(void);
   void Process(void);
+  void Disconnect(void);
   void SetStream(Stream *HeatPumpStream);
   void TriggerStatusStateMachine(void);
   void StopStateMachine(void);

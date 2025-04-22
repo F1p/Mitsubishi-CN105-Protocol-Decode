@@ -122,7 +122,7 @@ const char RefrigeFltCodeString[4][12] = { "Normal", "System", "Startup", "Maint
 const char FltCodeLetterOne[8][2] = { "A", "b", "E", "F", "J", "L", "P", "U" };
 const char FltCodeLetterTwo[22][2] = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F", "0", "H", "J", "L", "P", "U" };
 
-#define FTC2 0
+#define FTC2B 0
 #define FTC4 1
 #define FTC5 2
 #define FTC6 3

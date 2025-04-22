@@ -22,6 +22,7 @@ extern ESPTelnet TelnetServer;
 
 // Initialisation Commands
 uint8_t Init3[] = { 0xfc, 0x5a, 0x02, 0x7a, 0x02, 0xca, 0x01, 0x5d };  // Air to Water Connect
+uint8_t Init4[] = { 0xfc, 0x5a, 0x02, 0x7a, 0x02, 0xca, 0x02, 0x5c };  // Air to Water Disconnect
 
 
 #define FIRST_READ_NUMBER_COMMANDS 38
@@ -228,9 +229,21 @@ void ECODAN::Connect(void) {
   Process();
 }
 
+
+void ECODAN::Disconnect(void) {
+  StopStateMachine();
+  DEBUG_PRINTLN(F("Disconnecting from Heat Pump..."));
+  DeviceStream->write(Init4, 8);
+  DeviceStream->flush();
+  Process();
+  Connected = false;
+}
+
+
 uint8_t ECODAN::HeatPumpConnected(void) {
   return Connected;
 }
+
 
 uint8_t ECODAN::UpdateComplete(void) {
   if (UpdateFlag) {
@@ -240,6 +253,7 @@ uint8_t ECODAN::UpdateComplete(void) {
     return 0;
   }
 }
+
 
 uint8_t ECODAN::Lastmsbetweenmsg(void) {
   return msbetweenmsg;

@@ -630,7 +630,7 @@ void ECODANDECODER::Process0x11(uint8_t *Buffer, EcodanStatus *Status) {
   if ((DipSwitch3 & 0x20) && !(DipSwitch2 & 0x40)) {  // SW3-6 True, SW2-7 False
     Has2Zone = true;
     Simple2Zone = true;
-  } else if (DipSwitch2 & 0x02) {  // SW2-7 True
+  } else if ((DipSwitch2 & 0x02) || (DipSwitch2 & 0x04)) {  // SW2-6 or SW2-7 True
     Has2Zone = true;
     Simple2Zone = false;
   } else {
