@@ -13,9 +13,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 // -- Supported Hardware -- //
-/* As sold Witty ESP8266 based               / Core 3.1.2 / Flash 4MB (1MB FS / 1MB OTA - 16KB Cache/48KB IRAM not shared)  */
-/* ESP32 AtomS3 Lite (ESP32S3 Dev Module)    / Core 3.2.0 / Flash 4M with SPIFFS (1.2MB APP / 1.5MB SPIFFS)                 */
-/* ESP32 Ethernet WT32-ETH01                 / Core 3.2.0 / Flash 4MB (1.2MB APP / 1.5MB SPIFFS)                            */
+/* As sold Witty ESP8266 based               / Core 3.1.2 / Flash 4MB (1MB FS / 1MB OTA - 16KB Cache/48KB IRAM not shared) */
+/* ESP32 AtomS3 Lite (ESP32S3 Dev Module)    / Core 3.2.0 / Flash 8M with SPIFFS (3MB APP / 1.5MB SPIFFS)                  */
+/* ESP32 Ethernet WT32-ETH01                 / Core 3.2.0 / Flash 4MB (1.9MB APP / 180MB SPIFFS)                           */
 
 
 #if defined(ESP8266) || defined(ESP32)  // ESP32 or ESP8266 Compatiability
@@ -369,7 +369,7 @@ void loop() {
   }
 
   // -- Read Operation Restart -- //
-  if ((PostWriteTrigger) && (millis() - postwrpreviousMillis >= 1000)) {  // Allow 1s to pass before re-starting reads for FTC to process
+  if ((PostWriteTrigger) && (millis() - postwrpreviousMillis >= 10000)) {  // Allow 1s to pass before re-starting reads for FTC to process
     DEBUG_PRINTLN(F("Restarting Read Operations"));
     HeatPumpKeepAlive();
     PostWriteTrigger = false;
