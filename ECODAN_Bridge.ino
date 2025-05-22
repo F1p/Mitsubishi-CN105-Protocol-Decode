@@ -31,7 +31,9 @@
 #endif
 #ifdef ESP32
 #include <WiFi.h>
-#include <AsyncTCP.h>
+#ifndef ARDUINO_WT32_ETH01
+#include <AsyncTCP.h>               // Disable for WT32
+#endif
 #include <WebServer.h>
 #include <ESPmDNS.h>
 #endif
@@ -40,16 +42,18 @@
 #include <Arduino.h>
 #endif
 
-#define WEBSERVER_H "fix confict"
+#ifndef ARDUINO_WT32_ETH01
+#define WEBSERVER_H "fix confict"   // Disable for WT32
+#include <ESPAsyncWebServer.h>      // Disable for WT32
+#endif
 #include <WiFiManager.h>
-#include <ESPAsyncWebServer.h>
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
 #include <ESPTelnet.h>
 #include "Ecodan.h"
 #include "Melcloud.h"
 
-String FirmwareVersion = "6.2.3-h1";
+String FirmwareVersion = "6.2.3-h4";
 
 
 #ifdef ESP8266  // Define the Witty ESP8266 Serial Pins

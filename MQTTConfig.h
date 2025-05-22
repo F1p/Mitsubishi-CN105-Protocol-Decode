@@ -185,6 +185,10 @@ void readSettingsFromConfig() {
             // Build in safety check, otherwise ESP will crash out and you can't get back in
             if (doc.containsKey(mqttSettings.wm_device_id_identifier)) {
               //Investigate why second check removed - not meeting condition on ESP 3.2.0 - Length 16?
+              DEBUG_PRINTLN(F("Current Document Size: "));
+              DEBUG_PRINTLN(sizeof(doc[mqttSettings.wm_device_id_identifier]));
+
+
               strcpy(mqttSettings.deviceId, doc[mqttSettings.wm_device_id_identifier]);
             } else {  // For upgrading from <5.3.1, create the entry
 #ifdef ESP8266
@@ -217,16 +221,9 @@ void readSettingsFromConfig() {
               }
             }
             if (doc.containsKey(mqttSettings.wm_mqtt_basetopic_identifier)) {
-              DEBUG_PRINTLN(F("Base Topic Found"));
               if ((sizeof(doc[mqttSettings.wm_mqtt_basetopic_identifier]) > 0) && ((sizeof(doc[mqttSettings.wm_mqtt_basetopic_identifier]) + 1) <= basetopic_max_length)) {
-                DEBUG_PRINT(F("Loaded: "));
-                DEBUG_PRINTLN(mqttSettings.baseTopic);
                 strcpy(mqttSettings.baseTopic, doc[mqttSettings.wm_mqtt_basetopic_identifier]);
-                DEBUG_PRINT(F("Loaded: "));
-                DEBUG_PRINTLN(mqttSettings.baseTopic);
                 MQTT_BASETOPIC = mqttSettings.baseTopic;
-                DEBUG_PRINT(F("Loaded: "));
-                DEBUG_PRINTLN(MQTT_BASETOPIC);
               }
             }
             // MQTT Stream 2
