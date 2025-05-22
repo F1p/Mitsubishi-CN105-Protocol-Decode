@@ -68,6 +68,7 @@ private:
   MessageStruct TXMessage;
   Stream *DeviceStream;
   void Connect(void);
+  void printCurrentTime(void);
 };
 
 #endif

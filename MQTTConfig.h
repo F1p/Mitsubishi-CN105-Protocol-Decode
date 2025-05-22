@@ -184,12 +184,9 @@ void readSettingsFromConfig() {
 
             // Build in safety check, otherwise ESP will crash out and you can't get back in
             if (doc.containsKey(mqttSettings.wm_device_id_identifier)) {
-              //Investigate why second check removed - not meeting condition on ESP 3.2.0 - Length 16?
-              DEBUG_PRINTLN(F("Current Document Size: "));
-              DEBUG_PRINTLN(sizeof(doc[mqttSettings.wm_device_id_identifier]));
-
-
-              strcpy(mqttSettings.deviceId, doc[mqttSettings.wm_device_id_identifier]);
+              if ((strlen(doc[mqttSettings.wm_device_id_identifier]) > 0) && ((strlen(doc[mqttSettings.wm_device_id_identifier]) + 1) <= deviceId_max_length)) {
+                strcpy(mqttSettings.deviceId, doc[mqttSettings.wm_device_id_identifier]);
+              }
             } else {  // For upgrading from <5.3.1, create the entry
 #ifdef ESP8266
               snprintf(snprintbuffer, deviceId_max_length, (String(ESP.getChipId(), HEX)).c_str());
@@ -201,34 +198,34 @@ void readSettingsFromConfig() {
               shouldSaveConfig = true;  // Save config after exit to update the file
             }
             if (doc.containsKey(mqttSettings.wm_mqtt_hostname_identifier)) {
-              if ((sizeof(doc[mqttSettings.wm_mqtt_hostname_identifier]) > 0) && ((sizeof(doc[mqttSettings.wm_mqtt_hostname_identifier]) + 1) <= hostname_max_length)) {
+              if ((strlen(doc[mqttSettings.wm_mqtt_hostname_identifier]) > 0) && ((strlen(doc[mqttSettings.wm_mqtt_hostname_identifier]) + 1) <= hostname_max_length)) {
                 strcpy(mqttSettings.hostname, doc[mqttSettings.wm_mqtt_hostname_identifier]);
               }
             }
             if (doc.containsKey(mqttSettings.wm_mqtt_port_identifier)) {
-              if ((sizeof(doc[mqttSettings.wm_mqtt_port_identifier]) > 0) && ((sizeof(doc[mqttSettings.wm_mqtt_port_identifier]) + 1) <= port_max_length)) {
+              if ((strlen(doc[mqttSettings.wm_mqtt_port_identifier]) > 0) && ((strlen(doc[mqttSettings.wm_mqtt_port_identifier]) + 1) <= port_max_length)) {
                 strcpy(mqttSettings.port, doc[mqttSettings.wm_mqtt_port_identifier]);
               }
             }
             if (doc.containsKey(mqttSettings.wm_mqtt_user_identifier)) {
-              if ((sizeof(doc[mqttSettings.wm_mqtt_user_identifier]) > 0) && ((sizeof(doc[mqttSettings.wm_mqtt_user_identifier]) + 1) <= user_max_length)) {
+              if ((strlen(doc[mqttSettings.wm_mqtt_user_identifier]) > 0) && ((strlen(doc[mqttSettings.wm_mqtt_user_identifier]) + 1) <= user_max_length)) {
                 strcpy(mqttSettings.user, doc[mqttSettings.wm_mqtt_user_identifier]);
               }
             }
             if (doc.containsKey(mqttSettings.wm_mqtt_password_identifier)) {
-              if ((sizeof(doc[mqttSettings.wm_mqtt_password_identifier]) > 0) && ((sizeof(doc[mqttSettings.wm_mqtt_password_identifier]) + 1) <= password_max_length)) {
+              if ((strlen(doc[mqttSettings.wm_mqtt_password_identifier]) > 0) && ((strlen(doc[mqttSettings.wm_mqtt_password_identifier]) + 1) <= password_max_length)) {
                 strcpy(mqttSettings.password, doc[mqttSettings.wm_mqtt_password_identifier]);
               }
             }
             if (doc.containsKey(mqttSettings.wm_mqtt_basetopic_identifier)) {
-              if ((sizeof(doc[mqttSettings.wm_mqtt_basetopic_identifier]) > 0) && ((sizeof(doc[mqttSettings.wm_mqtt_basetopic_identifier]) + 1) <= basetopic_max_length)) {
+              if ((strlen(doc[mqttSettings.wm_mqtt_basetopic_identifier]) > 0) && ((strlen(doc[mqttSettings.wm_mqtt_basetopic_identifier]) + 1) <= basetopic_max_length)) {
                 strcpy(mqttSettings.baseTopic, doc[mqttSettings.wm_mqtt_basetopic_identifier]);
                 MQTT_BASETOPIC = mqttSettings.baseTopic;
               }
             }
             // MQTT Stream 2
             if (doc.containsKey(mqttSettings.wm_mqtt2_hostname_identifier)) {
-              if ((sizeof(doc[mqttSettings.wm_mqtt2_hostname_identifier]) > 0) && ((sizeof(doc[mqttSettings.wm_mqtt2_hostname_identifier]) + 1) <= hostname_max_length)) {
+              if ((strlen(doc[mqttSettings.wm_mqtt2_hostname_identifier]) > 0) && ((strlen(doc[mqttSettings.wm_mqtt2_hostname_identifier]) + 1) <= hostname_max_length)) {
                 strcpy(mqttSettings.hostname2, doc[mqttSettings.wm_mqtt2_hostname_identifier]);
               }
             } else {  // For upgrading from <6.0.0, create the entry
@@ -237,7 +234,7 @@ void readSettingsFromConfig() {
               shouldSaveConfig = true;  // Save config after exit to update the file
             }
             if (doc.containsKey(mqttSettings.wm_mqtt2_port_identifier)) {
-              if ((sizeof(doc[mqttSettings.wm_mqtt2_port_identifier]) > 0) && ((sizeof(doc[mqttSettings.wm_mqtt2_port_identifier]) + 1) <= port_max_length)) {
+              if ((strlen(doc[mqttSettings.wm_mqtt2_port_identifier]) > 0) && ((strlen(doc[mqttSettings.wm_mqtt2_port_identifier]) + 1) <= port_max_length)) {
                 strcpy(mqttSettings.port2, doc[mqttSettings.wm_mqtt2_port_identifier]);
               }
             } else {  // For upgrading from <6.0.0, create the entry
@@ -246,7 +243,7 @@ void readSettingsFromConfig() {
               shouldSaveConfig = true;  // Save config after exit to update the file
             }
             if (doc.containsKey(mqttSettings.wm_mqtt2_user_identifier)) {
-              if ((sizeof(doc[mqttSettings.wm_mqtt2_user_identifier]) > 0) && ((sizeof(doc[mqttSettings.wm_mqtt2_user_identifier]) + 1) <= user_max_length)) {
+              if ((strlen(doc[mqttSettings.wm_mqtt2_user_identifier]) > 0) && ((strlen(doc[mqttSettings.wm_mqtt2_user_identifier]) + 1) <= user_max_length)) {
                 strcpy(mqttSettings.user2, doc[mqttSettings.wm_mqtt2_user_identifier]);
               }
             } else {  // For upgrading from <6.0.0, create the entry
@@ -255,7 +252,7 @@ void readSettingsFromConfig() {
               shouldSaveConfig = true;  // Save config after exit to update the file
             }
             if (doc.containsKey(mqttSettings.wm_mqtt2_password_identifier)) {
-              if ((sizeof(doc[mqttSettings.wm_mqtt2_password_identifier]) > 0) && ((sizeof(doc[mqttSettings.wm_mqtt2_password_identifier]) + 1) <= password_max_length)) {
+              if ((strlen(doc[mqttSettings.wm_mqtt2_password_identifier]) > 0) && ((strlen(doc[mqttSettings.wm_mqtt2_password_identifier]) + 1) <= password_max_length)) {
                 strcpy(mqttSettings.password2, doc[mqttSettings.wm_mqtt2_password_identifier]);
               }
             } else {  // For upgrading from <6.0.0, create the entry
@@ -264,7 +261,7 @@ void readSettingsFromConfig() {
               shouldSaveConfig = true;  // Save config after exit to update the file
             }
             if (doc.containsKey(mqttSettings.wm_mqtt2_basetopic_identifier)) {
-              if ((sizeof(doc[mqttSettings.wm_mqtt2_basetopic_identifier]) > 0) && ((sizeof(doc[mqttSettings.wm_mqtt2_basetopic_identifier]) + 1) <= basetopic_max_length)) {
+              if ((strlen(doc[mqttSettings.wm_mqtt2_basetopic_identifier]) > 0) && ((strlen(doc[mqttSettings.wm_mqtt2_basetopic_identifier]) + 1) <= basetopic_max_length)) {
                 strcpy(mqttSettings.baseTopic2, doc[mqttSettings.wm_mqtt2_basetopic_identifier]);
                 MQTT_2_BASETOPIC = mqttSettings.baseTopic2;
               }
@@ -539,7 +536,7 @@ void readSettingsFromConfig() {
 
 
       // Sensors
-      if (i >= 0 && i < 90) {
+      if (i >= 0 && i < 91) {
         Config["state_topic"] = BASETOPIC + String(MQTT_TOPIC[MQTT_TOPIC_POS[i]]);                                    // Needs a positioner
         if (MQTT_UNITS_POS[i] > 0) { Config["unit_of_measurement"] = String(MQTT_SENSOR_UNITS[MQTT_UNITS_POS[i]]); }  // Don't send nothing
         Config["value_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[i]);
@@ -555,32 +552,32 @@ void readSettingsFromConfig() {
       }
 
       // Climate
-      if (i >= 90 && i < 95) {
-        Config["object_id"] = String(MQTT_OBJECT_ID[i - 90]);
-        if (i >= 90 && i < 93) {
-          Config["current_temperature_topic"] = BASETOPIC + String(MQTT_TOPIC[i - 86]);
+      if (i >= 91 && i < 96) {
+        Config["object_id"] = String(MQTT_OBJECT_ID[i - 91]);
+        if (i >= 91 && i < 94) {
+          Config["current_temperature_topic"] = BASETOPIC + String(MQTT_TOPIC[i - 87]);
           Config["current_temperature_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[25]);
-          Config["temperature_command_topic"] = BASETOPIC + String(MQTT_TOPIC[i - 79]);
-          Config["temperature_state_topic"] = BASETOPIC + String(MQTT_TOPIC[i - 86]);
-          Config["temperature_state_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[91]);
-        } else if (i >= 93 && i < 95) {
+          Config["temperature_command_topic"] = BASETOPIC + String(MQTT_TOPIC[i - 80]);
+          Config["temperature_state_topic"] = BASETOPIC + String(MQTT_TOPIC[i - 87]);
+          Config["temperature_state_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[92]);
+        } else if (i >= 94 && i < 96) {
           Config["current_temperature_topic"] = BASETOPIC + String(MQTT_TOPIC[2]);
           Config["current_temperature_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[6]);
-          Config["temperature_command_topic"] = BASETOPIC + String(MQTT_TOPIC[i - 69]);
-          Config["temperature_state_topic"] = BASETOPIC + String(MQTT_TOPIC[i - 88]);
-          Config["temperature_state_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[92]);
+          Config["temperature_command_topic"] = BASETOPIC + String(MQTT_TOPIC[i - 70]);
+          Config["temperature_state_topic"] = BASETOPIC + String(MQTT_TOPIC[i - 89]);
+          Config["temperature_state_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[93]);
         }
         Config["temperature_unit"] = String(MQTT_SENSOR_UNITS[9]);
-        Config["max_temp"] = MQTT_CLIMATE_MAX[i - 90];
-        Config["min_temp"] = MQTT_CLIMATE_MIN[i - 90];
-        Config["temp_step"] = MQTT_CLIMATE_TEMP_STEP[i - 90];
-        Config["precision"] = MQTT_CLIMATE_PRECISION[i - 90];
-        Config["initial"] = MQTT_CLIMATE_INITAL[i - 90];
+        Config["max_temp"] = MQTT_CLIMATE_MAX[i - 91];
+        Config["min_temp"] = MQTT_CLIMATE_MIN[i - 91];
+        Config["temp_step"] = MQTT_CLIMATE_TEMP_STEP[i - 91];
+        Config["precision"] = MQTT_CLIMATE_PRECISION[i - 91];
+        Config["initial"] = MQTT_CLIMATE_INITAL[i - 91];
         Config["action_topic"] = BASETOPIC + String(MQTT_TOPIC[2]);
-        Config["action_template"] = String(MQTT_CLIMATE_MODE_STATE_TEMPLATE[i - 90]);
+        Config["action_template"] = String(MQTT_CLIMATE_MODE_STATE_TEMPLATE[i - 91]);
         Config["mode_state_topic"] = BASETOPIC + String(MQTT_TOPIC[8]);
-        Config["mode_state_template"] = String(MQTT_CLIMATE_STATE_TOPIC[i - 90]);
-        if (i == 90) {
+        Config["mode_state_template"] = String(MQTT_CLIMATE_STATE_TOPIC[i - 91]);
+        if (i == 91) {
           Config["modes"][0] = "heat";
           Config["modes"][1] = "off";
         } else {
@@ -595,11 +592,11 @@ void readSettingsFromConfig() {
       }
 
       // Switches
-      if (i >= 95 && i < 105) {
-        Config["state_topic"] = BASETOPIC + String(MQTT_TOPIC[MQTT_SWITCH_STATE_POS[i - 95]]);
+      if (i >= 96 && i < 106) {
+        Config["state_topic"] = BASETOPIC + String(MQTT_TOPIC[MQTT_SWITCH_STATE_POS[i - 96]]);
         Config["value_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[i - 2]);
-        Config["command_topic"] = BASETOPIC + String(MQTT_TOPIC[i - 81]);
-        if (i == 96) {
+        Config["command_topic"] = BASETOPIC + String(MQTT_TOPIC[i - 82]);
+        if (i == 97) {
           Config["state_on"] = "On";
           Config["state_off"] = "Standby";
           Config["payload_on"] = "On";
@@ -617,14 +614,14 @@ void readSettingsFromConfig() {
 
 
       // Selects
-      if (i >= 105 && i < 110) {
-        Config["command_topic"] = BASETOPIC + String(MQTT_TOPIC[i - 79]);
-        Config["state_topic"] = BASETOPIC + String(MQTT_TOPIC[i - 101]);
-        Config["value_template"] = String(MQTT_SELECT_VALUE_TEMPLATE[i - 105]);
-        if (i == 105) {  // DHW Modes
+      if (i >= 106 && i < 111) {
+        Config["command_topic"] = BASETOPIC + String(MQTT_TOPIC[i - 80]);
+        Config["state_topic"] = BASETOPIC + String(MQTT_TOPIC[i - 102]);
+        Config["value_template"] = String(MQTT_SELECT_VALUE_TEMPLATE[i - 106]);
+        if (i == 106) {  // DHW Modes
           Config["options"][0] = HotWaterControlModeString[0];
           Config["options"][1] = HotWaterControlModeString[1];
-        } else if (i == 108) {  // Unit Sizes - for some reason it doesn't like doing this from PROGMEM in a loop on the 8266
+        } else if (i == 109) {  // Unit Sizes - for some reason it doesn't like doing this from PROGMEM in a loop on the 8266
           Config["state_topic"] = BASETOPIC + String(MQTT_TOPIC[1]);
           Config["options"][0] = "4.0";
           Config["options"][1] = "5.0";
@@ -636,7 +633,7 @@ void readSettingsFromConfig() {
           Config["options"][7] = "11.2";
           Config["options"][8] = "12.0";
           Config["options"][9] = "14.0";
-        } else if (i == 109) {  // Glycol Strengths
+        } else if (i == 110) {  // Glycol Strengths
           Config["state_topic"] = BASETOPIC + String(MQTT_TOPIC[1]);
           Config["options"][0] = "0%";
           Config["options"][1] = "10%";
@@ -655,14 +652,14 @@ void readSettingsFromConfig() {
 
 
       // Add Availability Topics
-      if (i >= 91) {
-        if (i >= 99 && i < 104) {  // Server Control Mode Interlocks
+      if (i >= 92) {
+        if (i >= 100 && i < 105) {  // Server Control Mode Interlocks
           Config["availability"]["topic"] = BASETOPIC + String(MQTT_TOPIC[8]);
-          Config["availability"]["value_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[96]);
+          Config["availability"]["value_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[97]);
           Config["availability"]["payload_available"] = ITEM_ON;
           Config["availability"]["payload_not_available"] = ITEM_OFF;
-        } else if (i >= 93 && i < 95) {  // Flow Op Mode Interlocks on Climate & Number
-          Config["availability"]["topic"] = BASETOPIC + String(MQTT_TOPIC[i - 88]);
+        } else if (i >= 94 && i < 96) {  // Flow Op Mode Interlocks on Climate & Number
+          Config["availability"]["topic"] = BASETOPIC + String(MQTT_TOPIC[i - 89]);
           Config["availability"]["value_template"] = String(MQTT_NUMBER_AVAIL_TEMPLATE[0]);
         } else {  // Everything else LWT
           Config["availability"]["topic"] = BASETOPIC + String(MQTT_TOPIC[0]);

@@ -14,8 +14,8 @@
 
 // -- Supported Hardware -- //
 /* As sold Witty ESP8266 based               / Core 3.1.2 / Flash 4MB (1MB FS / 1MB OTA - 16KB Cache/48KB IRAM not shared) */
-/* ESP32 AtomS3 Lite (ESP32S3 Dev Module)    / Core 3.2.0 / Flash 8M with SPIFFS (3MB APP / 1.5MB SPIFFS)                  */
-/* ESP32 Ethernet WT32-ETH01                 / Core 3.2.0 / Flash 4MB (1.9MB APP / 180MB SPIFFS)                           */
+/* ESP32 AtomS3 Lite (ESP32S3 Dev Module)    / Core 3.1.1 / Flash 8M with SPIFFS (3MB APP / 1.5MB SPIFFS)                  */
+/* ESP32 Ethernet WT32-ETH01                 / Core 3.1.1 / Flash 4MB (1.9MB APP / 180MB SPIFFS)                           */
 
 
 #if defined(ESP8266) || defined(ESP32)  // ESP32 or ESP8266 Compatiability
@@ -28,6 +28,7 @@
 #include <ESP8266mDNS.h>
 #include <ESP8266WebServer.h>
 #include <SoftwareSerial.h>
+#include <sys/time.h>
 #endif
 #ifdef ESP32
 #include <WiFi.h>
@@ -53,7 +54,7 @@
 #include "Ecodan.h"
 #include "Melcloud.h"
 
-String FirmwareVersion = "6.2.3-h4";
+String FirmwareVersion = "6.2.4 Beta";
 
 
 #ifdef ESP8266  // Define the Witty ESP8266 Serial Pins
@@ -378,6 +379,9 @@ void loop() {
     HeatPumpKeepAlive();
     PostWriteTrigger = false;
   }
+
+  // -- Time Sync -- //
+  if (HeatPump.Status.SyncTime) { syncCurrentTime(); }
 
   // -- WiFi Status Handler -- //
   if (WiFi.status() != WL_CONNECTED && !wifiManager.getConfigPortalActive()) {
@@ -877,7 +881,8 @@ void SystemReport(void) {
   JsonDocument doc;
   char Buffer[1024];
 
-  float HeatOutputPower, CoolOutputPower, UnitSizeFactor, Instant_CoP;
+  float HeatOutputPower, HeatingOutputPower, DHWOutputPower, CoolOutputPower, UnitSizeFactor, Instant_CoP;
+  float EstCoolingInputPower, EstHeatingInputPower, EstDHWInputPower;
   double OutputPower = (((float)HeatPump.Status.PrimaryFlowRate / 60) * (float)HeatPump.Status.HeaterDeltaT * unitSettings.GlycolStrength);  // Approx Heat Capacity of Fluid in Use
 
   // Unit Size Factoring
@@ -899,15 +904,26 @@ void SystemReport(void) {
   if (EstInputPower == 0 && (HeatPump.Status.ImmersionActive == 1 || HeatPump.Status.Booster1Active == 1 || HeatPump.Status.Booster2Active == 1)) { EstInputPower = HeatPump.Status.InputPower; }  // Account for Immersion or Booster Instead of HP
 
   if (OutputPower < 0) {
-    HeatOutputPower = 0;
+    EstCoolingInputPower = EstInputPower;
     CoolOutputPower = fabsf(OutputPower);
-  } else {
+    EstDHWInputPower = EstHeatingInputPower = HeatOutputPower = 0;
+  } else {                                                                                         // In a Heating Mode
     if (OutputPower == 0 && (HeatPump.Status.ImmersionActive == 1 || HeatPump.Status.Booster1Active == 1 || HeatPump.Status.Booster2Active == 1)) {
-      HeatOutputPower = OutputPower = HeatPump.Status.OutputPower;  // Account for Immersion or Booster Instead of HP
-    } else {
-      HeatOutputPower = OutputPower;
+      HeatOutputPower = OutputPower = HeatPump.Status.OutputPower;                                 // Account for Immersion or Booster Instead of HP
+      if (HeatPump.Status.SystemOperationMode == 1 || HeatPump.Status.SystemOperationMode == 6) {  // DHW Operation Mode
+        EstDHWInputPower = EstInputPower;
+        DHWOutputPower = HeatOutputPower;
+        EstCoolingInputPower = EstHeatingInputPower = HeatingOutputPower = 0;
+      } else {
+        EstDHWInputPower = EstInputPower;
+        HeatingOutputPower = HeatOutputPower;
+        EstCoolingInputPower = EstHeatingInputPower = DHWOutputPower = 0;
+      }
+    } else {                                                                                       // In a Heating Mode
+      HeatOutputPower = HeatingOutputPower = OutputPower;
+      EstDHWInputPower = DHWOutputPower = 0;
     }
-    CoolOutputPower = 0;
+    CoolOutputPower = EstCoolingInputPower = 0;
   }
 
   // Instant CoP measurement from computed estimates
@@ -926,7 +942,12 @@ void SystemReport(void) {
   doc[F("InputPower")] = HeatPump.Status.InputPower;
   doc[F("HeaterPower")] = HeatPump.Status.OutputPower;
   doc[F("EstInputPower")] = round2(EstInputPower);
+  doc[F("EstCoolingInputPower")] = round2(EstCoolingInputPower);
+  doc[F("EstHeatingInputPower")] = round2(EstHeatingInputPower);
+  doc[F("EstDHWInputPower")] = round2(EstDHWInputPower);
   doc[F("EstHeatOutputPower")] = round2(HeatOutputPower);
+  doc[F("EstHeatingOutputPower")] = round2(HeatingOutputPower);
+  doc[F("EstDHWOutputPower")] = round2(DHWOutputPower);
   doc[F("EstCoolOutputPower")] = round2(CoolOutputPower);
   doc[F("Instant_CoP")] = round2(Instant_CoP);
   doc[F("Compressor")] = HeatPump.Status.CompressorFrequency;
@@ -975,7 +996,7 @@ void AdvancedReport(void) {
 
 void EnergyReport(void) {
   JsonDocument doc;
-  char Buffer[512];
+  char Buffer[1024];
 
   float heat_cop, cool_cop, dhw_cop, ctotal, dtotal, total_cop;
 
@@ -1110,6 +1131,7 @@ void StatusReport(void) {
 
   strftime(TmBuffer, sizeof(TmBuffer), "%FT%TZ", &HeatPump.Status.DateTimeStamp);
   doc[F("FTCTime")] = TmBuffer;
+
   doc[F("UnitSize")] = String(unitSettings.UnitSize, 1);
   if (round2(unitSettings.GlycolStrength) == 4.18) {
     doc[F("Glycol")] = "0%";
@@ -1187,6 +1209,8 @@ void FastPublish(void) {
   if (HeatPump.Status.FTCVersion != 0) {
     SystemReport();
     HotWaterReport();
+    AdvancedReport();
+    AdvancedTwoReport();
   }  // Don't fast publish until at least whole data set gathering is complete
 }
 
@@ -1272,6 +1296,39 @@ String decimalToBinary(int decimal) {
   }
 
   return binary;
+}
+
+void syncCurrentTime() {
+  // Update the ESP clock from the FTC
+  time_t epochTime = mktime(&HeatPump.Status.DateTimeStamp);  // Convert to epoch
+
+  if (epochTime != (time_t)(-1)) {
+    struct timeval tv;
+    tv.tv_sec = epochTime;
+    tv.tv_usec = 0;
+    if (settimeofday(&tv, nullptr) == 0) {
+      DEBUG_PRINTLN("Time set successfully from FTC");
+    } else {
+      DEBUG_PRINTLN("Error setting time from FTC");
+    }
+  } else {
+    DEBUG_PRINTLN("Error converting time from");
+  }
+
+  HeatPump.Status.SyncTime = false;
+  return;
+}
+
+void printCurrentTime() {
+  time_t now;
+  struct tm timeinfo;
+  char TimeBuffer[32];
+
+  time(&now);
+  localtime_r(&now, &timeinfo);
+
+  strftime(TimeBuffer, sizeof(TimeBuffer), "%F%T -> ", &timeinfo);
+  DEBUG_PRINT(TimeBuffer);
 }
 
 void MQTTWriteReceived(String message, int MsgNumber) {

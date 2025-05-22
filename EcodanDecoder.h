@@ -164,6 +164,7 @@ typedef struct _EcodanStatus {
   //From Message 0x01
   struct tm DateTimeStamp;
   char FTCSoftware[6];
+  bool SyncTime;
 
   //From Message 0x02
   uint8_t Defrost, ThermostatZ1, ThermostatZ2;

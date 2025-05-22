@@ -324,6 +324,8 @@ void ECODANDECODER::Process0x01(uint8_t *Buffer, EcodanStatus *Status) {
   Status->DateTimeStamp.tm_sec = Sec;
 
   snprintf(Status->FTCSoftware, 6, "%02X.%02X", Buffer[7], Buffer[8]);
+
+  Status->SyncTime = true;  // Allow Time to Sync with ESP
 }
 
 void ECODANDECODER::Process0x02(uint8_t *Buffer, EcodanStatus *Status) {
@@ -1164,8 +1166,8 @@ void ECODANDECODER::EncodeRoomThermostat(float Setpoint, uint8_t ControlMode, ui
 
   TxMessage.Payload[0] = TX_MESSAGE_ROOM_STAT;
 
-  if (ControlMode == HEATING_CONTROL_MODE_COOL_ZONE_TEMP) {
-    TxMessage.Payload[3] = ControlMode == HEATING_CONTROL_MODE_COOL_ZONE_TEMP ? 1 : 0;
+  if (ControlMode == HEATING_CONTROL_MODE_COOL_ZONE_TEMP || ControlMode == HEATING_CONTROL_MODE_COOL_FLOW_TEMP) {
+    TxMessage.Payload[3] = 1;
   }
 
   if (Zone == ZONE1) {

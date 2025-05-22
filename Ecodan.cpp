@@ -30,11 +30,11 @@ uint8_t FirstReadActiveCommand[] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0
                                      0x10, 0x11, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F,
                                      0x20, 0x26, 0x27, 0x28, 0x29, 0xA1, 0xA2, 0x00 };
 
-#define NUMBER_COMMANDS 51
-uint8_t ActiveCommand[] = { 0x00, 0x01, 0x02, 0x03, 0x0C, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x04, 0x0B, 0x0C,
-                            0x0D, 0x0E, 0x0F, 0x0C, 0x04, 0x10, 0x13, 0x14, 0x04, 0x15, 0x0C, 0x16, 0x17, 0x18,
-                            0x04, 0x0C, 0x19, 0x1A, 0x1B, 0x1C, 0x04, 0x1D, 0x0C, 0x1E, 0x1F, 0x20, 0x04, 0x26,
-                            0x0C, 0x27, 0x28, 0x29, 0x04, 0xA1, 0x0C, 0xA2, 0x00 };
+#define NUMBER_COMMANDS 56
+uint8_t ActiveCommand[] = { 0x00, 0x26, 0x14, 0x28, 0x03, 0x0C, 0x04, 0x05, 0x06, 0x15, 0x07, 0x08, 0x09, 0x04,
+                            0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x0C, 0x04, 0x10, 0x13, 0x14, 0x04, 0x15, 0x0C, 0x16,
+                            0x17, 0x18, 0x04, 0x0C, 0x19, 0x1A, 0x1B, 0x1C, 0x04, 0x15, 0x1D, 0x0C, 0x1E, 0x1F, 
+                            0x20, 0x04, 0x01, 0x0C, 0x27, 0x14, 0x02, 0x29, 0x04, 0xA1, 0x0C, 0xA2, 0x15, 0x00 };
 
 #define NUMBER_SVC_COMMANDS 30
 int ActiveServiceCode[] = { 3, 4, 5, 13, 7, 4, 5, 13, 10, 4, 5, 13, 8, 4, 5, 13, 19, 4, 5, 13, 20, 4, 5, 13, 22, 4, 5, 13, 23, 5 };
@@ -65,6 +65,7 @@ void ECODAN::Process(void) {
 
   while (DeviceStream->available()) {
     if (!ProcessFlag) {
+      printCurrentTime();
       DEBUG_PRINT(F("[FTC > Bridge] "));
       ProcessFlag = true;
     }
@@ -113,6 +114,7 @@ void ECODAN::TriggerStatusStateMachine(void) {
 
 void ECODAN::StopStateMachine(void) {
   if (CurrentMessage != 0) {
+    printCurrentTime();
     DEBUG_PRINTLN(F("Stopping Heat Pump Read Operation to FTC"));
     CurrentMessage = 0;
   }
@@ -133,7 +135,7 @@ void ECODAN::StatusSVCMachine(void) {
     } else {
       CurrentSVCMessage %= NUMBER_SVC_COMMANDS;  // Once none left
     }
-    
+
     if (CurrentSVCMessage == 0) {
       CurrentSVCMessage = 1;
     }
@@ -149,6 +151,7 @@ void ECODAN::StatusStateMachine(void) {
   uint8_t i;
 
   if (CurrentMessage != 0) {
+    printCurrentTime();
     DEBUG_PRINT(F("[Bridge > FTC] "));
     ECODANDECODER::CreateBlankTxMessage(GET_REQUEST, 0x10);
 
@@ -196,11 +199,13 @@ void ECODAN::WriteStateMachine(void) {
   if (cmd_queue_length > 0 && cmd_queue_length < 10) {
     CurrentWriteAttempt++;
     StopStateMachine();
+    printCurrentTime();
     DEBUG_PRINT(F("Writing msg at position: "));
     DEBUG_PRINT(cmd_queue_position);
     DEBUG_PRINT(F(", attempt: "));
     DEBUG_PRINTLN(CurrentWriteAttempt);
 
+    printCurrentTime();
     DEBUG_PRINT(F("[Bridge > FTC] "));
     ECODANDECODER::CreateBlankTxMessage(ECODANDECODER::ReturnNextCommandType(cmd_queue_position), 0x10);
     ECODANDECODER::EncodeNextCommand(cmd_queue_position);
@@ -402,4 +407,17 @@ void ECODAN::WriteServiceCodeCMD(int cmd) {
   ECODANDECODER::TransfertoBuffer(GET_REQUEST, cmd_queue_length);
   DEBUG_PRINT(F("Transferred msg to position: "));
   DEBUG_PRINTLN(cmd_queue_length);
+}
+
+
+void ECODAN::printCurrentTime(void) {
+  time_t now;
+  struct tm timeinfo;
+  char TimeBuffer[32];
+
+  time(&now);
+  localtime_r(&now, &timeinfo);
+
+  strftime(TimeBuffer, sizeof(TimeBuffer), "%F %T -> ", &timeinfo);
+  DEBUG_PRINT(TimeBuffer);
 }
