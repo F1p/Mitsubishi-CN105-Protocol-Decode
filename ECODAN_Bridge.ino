@@ -33,7 +33,7 @@
 #ifdef ESP32
 #include <WiFi.h>
 #ifndef ARDUINO_WT32_ETH01
-#include <AsyncTCP.h>               // Disable for WT32
+#include <AsyncTCP.h>  // Disable for WT32
 #endif
 #include <WebServer.h>
 #include <ESPmDNS.h>
@@ -44,8 +44,8 @@
 #endif
 
 #ifndef ARDUINO_WT32_ETH01
-#define WEBSERVER_H "fix confict"   // Disable for WT32
-#include <ESPAsyncWebServer.h>      // Disable for WT32
+#define WEBSERVER_H "fix confict"  // Disable for WT32
+#include <ESPAsyncWebServer.h>     // Disable for WT32
 #endif
 #include <WiFiManager.h>
 #include <PubSubClient.h>
@@ -705,15 +705,20 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
     HeatPump.SetDHWMode(&Payload);
   }
   if ((Topic == MQTTCommandHotwaterBoost) || (Topic == MQTTCommand2HotwaterBoost)) {
-    MQTTWriteReceived("MQTT Set HW Boost", 16);
+    MQTTWriteReceived("MQTT Set Forced DHW Boost", 16);
     HeatPump.ForceDHW(Payload.toInt());
     HeatPump.Status.HotWaterBoostActive = Payload.toInt();
   }
   if ((Topic == MQTTCommandHotwaterNormalBoost) || (Topic == MQTTCommand2HotwaterNormalBoost)) {
-    MQTTWriteReceived("MQTT Normal DHW Boost Run", 16);
-    PreHWBoostSvrCtrlMode = HeatPump.Status.SvrControlMode;  // Take the Server Control Mode when Entering Boost
+    MQTTWriteReceived("MQTT Set Normal DHW Boost", 16);
+    if (Payload.toInt() == 1) {
+      PreHWBoostSvrCtrlMode = HeatPump.Status.SvrControlMode;  // Record the Server Control Mode when Entering Boost Only
+      if (HeatPump.Status.ProhibitDHW == 0) {                  // To boost, must be at transition of On > Off, so if current Prohibit Status if off first Enter SCM with Prohibit On to shortly create a transition
+        HeatPump.SetSvrControlMode(Payload.toInt(), Payload.toInt(), HeatPump.Status.ProhibitHeatingZ1, HeatPump.Status.ProhibitCoolingZ1, HeatPump.Status.ProhibitHeatingZ2, HeatPump.Status.ProhibitCoolingZ2);
+      }
+    }
     HeatPump.SetSvrControlMode(Payload.toInt(), 1 - Payload.toInt(), HeatPump.Status.ProhibitHeatingZ1, HeatPump.Status.ProhibitCoolingZ1, HeatPump.Status.ProhibitHeatingZ2, HeatPump.Status.ProhibitCoolingZ2);
-    if (PreHWBoostSvrCtrlMode == 0) { HeatPump.Status.SvrControlMode = Payload.toInt(); }  // Show Server Control Mode is now On
+    if (PreHWBoostSvrCtrlMode == 0) { HeatPump.Status.SvrControlMode = Payload.toInt(); }  // Server Control Mode is now Set to Input
     HeatPump.Status.ProhibitDHW = 1 - Payload.toInt();                                     // Hot Water Boost is Inverse
     NormalHWBoostOperating = Payload.toInt();                                              // Hot Water Boost Operating is Active
   }
@@ -883,6 +888,7 @@ void SystemReport(void) {
 
   float HeatOutputPower, HeatingOutputPower, DHWOutputPower, CoolOutputPower, UnitSizeFactor, Instant_CoP;
   float EstCoolingInputPower, EstHeatingInputPower, EstDHWInputPower;
+  float Min_Input_Power, Max_Input_Power;
   double OutputPower = (((float)HeatPump.Status.PrimaryFlowRate / 60) * (float)HeatPump.Status.HeaterDeltaT * unitSettings.GlycolStrength);  // Approx Heat Capacity of Fluid in Use
 
   // Unit Size Factoring
@@ -892,25 +898,36 @@ void SystemReport(void) {
     UnitSizeFactor = 0.6;
   } else if (unitSettings.UnitSize == 7.5) {
     UnitSizeFactor = 0.95;
-  } else if ((unitSettings.UnitSize == 6.0) || (unitSettings.UnitSize == 8.0) || (unitSettings.UnitSize == 8.5)) {  // 6kW is limited 8.5 unit, only maximum power is capped
+  } else if ((unitSettings.UnitSize == 6.0) || (unitSettings.UnitSize == 8.5)) {  // 6kW is limited 8.5 unit, only maximum power is capped
     UnitSizeFactor = 1.1;
+  } else if (unitSettings.UnitSize == 8.0) {
+    UnitSizeFactor = 1.3;
   } else if (unitSettings.UnitSize == 10.0) {
     UnitSizeFactor = 1.5;
   } else if ((unitSettings.UnitSize == 11.2) || (unitSettings.UnitSize == 12.0) || (unitSettings.UnitSize == 14.0)) {  // 11.2kW is limited 14kW unit, only maximum power is capped
     UnitSizeFactor = 1.7;
   }
 
-  double EstInputPower = (((((((float)HeatPump.Status.CompressorFrequency * 2) * ((float)HeatPump.Status.HeaterOutputFlowTemperature * 0.8)) / 1000) / 2) - HeatPump.Status.InputPower) * ((HeatPump.Status.InputPower + 1) - HeatPump.Status.InputPower) / ((HeatPump.Status.InputPower + 1) - HeatPump.Status.InputPower) + HeatPump.Status.InputPower) * UnitSizeFactor;
+  if (HeatPump.Status.InputPower < 2) {     // To account for FTC's onboard estimation
+    Min_Input_Power = 0;
+    Max_Input_Power = 2;
+  } else {
+    Min_Input_Power = HeatPump.Status.InputPower;
+    Max_Input_Power = HeatPump.Status.InputPower + 1;
+  }
+  float x = ((((((float)HeatPump.Status.CompressorFrequency * 2) * ((float)HeatPump.Status.HeaterOutputFlowTemperature * 0.8)) / 1000) / 2) * UnitSizeFactor);
+  double EstInputPower = ((x - Min_Input_Power) * (Max_Input_Power - Min_Input_Power) / (Max_Input_Power - Min_Input_Power) + Min_Input_Power);               // Constrain Input Power to FTC Onboard Reading range
+  
   if (EstInputPower == 0 && (HeatPump.Status.ImmersionActive == 1 || HeatPump.Status.Booster1Active == 1 || HeatPump.Status.Booster2Active == 1)) { EstInputPower = HeatPump.Status.InputPower; }  // Account for Immersion or Booster Instead of HP
 
   if (OutputPower < 0) {
     EstCoolingInputPower = EstInputPower;
     CoolOutputPower = fabsf(OutputPower);
     EstDHWInputPower = EstHeatingInputPower = HeatOutputPower = 0;
-  } else {                                                                                         // In a Heating Mode
-    if (OutputPower == 0 && (HeatPump.Status.ImmersionActive == 1 || HeatPump.Status.Booster1Active == 1 || HeatPump.Status.Booster2Active == 1)) {
-      HeatOutputPower = OutputPower = HeatPump.Status.OutputPower;                                 // Account for Immersion or Booster Instead of HP
-      if (HeatPump.Status.SystemOperationMode == 1 || HeatPump.Status.SystemOperationMode == 6) {  // DHW Operation Mode
+  } else {                                                                                                                                           // In a Heating Mode
+    if (OutputPower == 0 && (HeatPump.Status.ImmersionActive == 1 || HeatPump.Status.Booster1Active == 1 || HeatPump.Status.Booster2Active == 1)) {  // Boosters or Immersion
+      HeatOutputPower = OutputPower = HeatPump.Status.OutputPower;                                                                                   // Account for Immersion or Booster Instead of HP
+      if (HeatPump.Status.ThreeWayValve == 1 || HeatPump.Status.SystemOperationMode == 1 || HeatPump.Status.SystemOperationMode == 6) {              // DHW Operation Mode
         EstDHWInputPower = EstInputPower;
         DHWOutputPower = HeatOutputPower;
         EstCoolingInputPower = EstHeatingInputPower = HeatingOutputPower = 0;
@@ -919,9 +936,15 @@ void SystemReport(void) {
         HeatingOutputPower = HeatOutputPower;
         EstCoolingInputPower = EstHeatingInputPower = DHWOutputPower = 0;
       }
-    } else {                                                                                       // In a Heating Mode
-      HeatOutputPower = HeatingOutputPower = OutputPower;
-      EstDHWInputPower = DHWOutputPower = 0;
+    } else {                                                                                                                             // Heat Pump Generating
+      if (HeatPump.Status.ThreeWayValve == 1 || HeatPump.Status.SystemOperationMode == 1 || HeatPump.Status.SystemOperationMode == 6) {  // DHW Operation Mode
+        EstDHWInputPower = EstInputPower;
+        DHWOutputPower = HeatOutputPower;
+        EstCoolingInputPower = EstHeatingInputPower = HeatingOutputPower = 0;
+      } else {
+        HeatOutputPower = HeatingOutputPower = OutputPower;
+        EstDHWInputPower = DHWOutputPower = 0;
+      }
     }
     CoolOutputPower = EstCoolingInputPower = 0;
   }

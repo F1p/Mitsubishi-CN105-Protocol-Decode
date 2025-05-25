@@ -1,9 +1,9 @@
 //-- MQTT Home Assistant Auto Discovery --//
 
-const int discovery_topics PROGMEM = 111;
+const int discovery_topics PROGMEM = 115;
 
 // Build the sensor JSON structure
-const char MQTT_DISCOVERY_OBJ_ID[][3] PROGMEM = { "aa", "ab", "ac", "ad", "ae", "af", "ag", "ai", "aj", "ak", "al", "am", "an", "ao", "ap", "aq", "ar", "as", "au", "av", "aw", "ax", "ay", "az", "ba", "bb", "bc", "bd", "be", "bf", "bg", "bh", "bi", "bj", "bk", "bl", "bm", "bn", "bo", "bp", "bq", "br", "bs", "bt", "bu", "bv", "bw", "bx", "by", "bz", "ca", "cb", "cc", "cd", "cu", "cv", "cw", "cx", "cz", "da", "db", "dc", "de", "df", "dg", "dh", "di", "dj", "dk", "dl", "dm", "dn", "do", "dp", "dq", "ds", "dt", "dx", "dz", "ea", "eb", "ec", "ed", "ee", "ef", "eg", "eh", "ei", "ej", "ek", "el", "ce", "cf", "cg", "dw", "du", "ch", "ci", "cj", "ck", "cl", "cm", "cn", "co", "cp", "dr", "cs", "ct", "dv", "dx", "dy" };
+const char MQTT_DISCOVERY_OBJ_ID[][3] PROGMEM = { "aa", "ab", "ac", "ad", "ae", "af", "ag", "ai", "aj", "ak", "al", "am", "an", "ao", "ap", "aq", "ar", "as", "au", "av", "aw", "ax", "ay", "az", "ba", "bb", "bc", "bd", "be", "bf", "bg", "bh", "bi", "bj", "bk", "bl", "bm", "bn", "bo", "bp", "bq", "br", "bs", "bt", "bu", "bv", "bw", "bx", "by", "bz", "ca", "cb", "cc", "cd", "cu", "cv", "cw", "cx", "cz", "da", "db", "dc", "de", "df", "dg", "dh", "di", "dj", "dk", "dl", "dm", "dn", "do", "dp", "dq", "ds", "dt", "dx", "dz", "ea", "eb", "ec", "ed", "ee", "ef", "eg", "eh", "ei", "ej", "ek", "el", "em", "en", "eo", "ep", "ce", "cf", "cg", "dw", "du", "ch", "ci", "cj", "ck", "cl", "cm", "cn", "co", "cp", "dr", "cs", "ct", "dv", "dx", "dy" };
 
 const char MQTT_SENSOR_UNIQUE_ID[][32] PROGMEM = {
   "ashp_bridge_lwt_",
@@ -97,11 +97,10 @@ const char MQTT_SENSOR_UNIQUE_ID[][32] PROGMEM = {
   "ashp_LEVB_",
   "ashp_th32_",
   "ashp_est_dhw_pwr_out_",  //el
-  //"ashp_est_dhw_pwr_in_",
-  //"ashp_est_heating_pwr_out_",
-  //"ashp_est_heating_pwr_in_",
-  //"ashp_est_cooling_pwr_out_",
-  //"ashp_est_cooling_pwr_in_",
+  "ashp_est_dhw_pwr_in_",
+  "ashp_est_heating_pwr_out_",
+  "ashp_est_heating_pwr_in_",
+  "ashp_est_cooling_pwr_in_",
 
   "ashp_dhw_climate_",  //65
   "ashp_Zone1_climate_",
@@ -220,6 +219,10 @@ const char MQTT_MDI_ICONS[][30] PROGMEM = {
   "mdi:valve",
   "mdi:water-thermometer",
   "mdi:export",
+  "mdi:transmission-tower-import",
+  "mdi:export",
+  "mdi:transmission-tower-import",
+  "mdi:transmission-tower-import",
 
   "mdi:thermostat",
   "mdi:thermostat",  //80
@@ -338,6 +341,10 @@ const char MQTT_SENSOR_NAME[][40] PROGMEM = {
   "Valve LEV B",
   "Suction Pipe Temperature TH32",
   "Computed DHW Output Power",
+  "Computed DHW Input Power",
+  "Computed Heating Output Power",
+  "Computed Heating Input Power",
+  "Computed Cooling Input Power",
 
   "DHW Thermostat",
   "Zone 1 Thermostat",  //80
@@ -502,6 +509,10 @@ int MQTT_TOPIC_POS[] PROGMEM = {
   9,
   9,
   9,
+  2,
+  2,
+  2,
+  2,
   2
 };
 
@@ -596,6 +607,10 @@ int MQTT_UNITS_POS[] PROGMEM = {
   11,
   11,
   2,
+  3,
+  3,
+  3,
+  3,
   3
 };
 
@@ -659,7 +674,6 @@ const char MQTT_CLIMATE_STATE_TOPIC[][360] PROGMEM = {
   "{{'heat' if (value_json.OpMode=='Heat' and states('sensor.ecodan_ashp_zone_2_heating_prohibit')=='0') else 'cool' if (value_json.OpMode=='Cool' and states('sensor.ecodan_ashp_zone_1_cooling_prohibit')=='0') else 'off'}}",
   "{{'heat' if (value_json.OpMode=='Heat' and state_attr('climate.zone2_climate','current_temperature')!=0 and states('sensor.ecodan_ashp_zone_2_heating_prohibit')=='0') else 'cool' if (value_json.OpMode=='Cool' and state_attr('climate.zone2_climate','current_temperature')!=0 and states('sensor.ecodan_ashp_zone_2_cooling_prohibit')=='0') else 'off'}}"
 };
-
 
 const char MQTT_CLIMATE_MODE_STATE_TEMPLATE[][435] PROGMEM = {
   "{{'heating' if value_json.SystemOperationMode in ['Hot Water','Legionella'] else 'defrosting' if value_json.SystemOperationMode in ['Defrosting','Frost Protect'] else 'idle' if states('sensor.ecodan_ashp_prohibit_dhw')!='1' else 'off'}}",
@@ -789,6 +803,10 @@ const char MQTT_SENSOR_VALUE_TEMPLATE[][50] PROGMEM = {
   "{{ value_json.LEVB }}",
   "{{ value_json.TH32Pipe }}",
   "{{ value_json.EstDHWOutputPower }}",
+  "{{ value_json.EstDHWInputPower }}",
+  "{{ value_json.EstHeatingOutputPower }}",
+  "{{ value_json.EstHeatingInputPower }}",
+  "{{ value_json.EstCoolingInputPower }}",
 
   "{{ value_json }}",
   "{{ value_json.Setpoint }}",  //80
