@@ -920,7 +920,7 @@ void SystemReport(void) {
   
   if (EstInputPower == 0 && (HeatPump.Status.ImmersionActive == 1 || HeatPump.Status.Booster1Active == 1 || HeatPump.Status.Booster2Active == 1)) { EstInputPower = HeatPump.Status.InputPower; }  // Account for Immersion or Booster Instead of HP
 
-  if (OutputPower < 0) {
+  if (OutputPower < 0) {                                                                                                                             // Cooling Mode
     EstCoolingInputPower = EstInputPower;
     CoolOutputPower = fabsf(OutputPower);
     EstDHWInputPower = EstHeatingInputPower = HeatOutputPower = 0;
@@ -932,16 +932,17 @@ void SystemReport(void) {
         DHWOutputPower = HeatOutputPower;
         EstCoolingInputPower = EstHeatingInputPower = HeatingOutputPower = 0;
       } else {
-        EstDHWInputPower = EstInputPower;
+        EstHeatingInputPower = EstInputPower;
         HeatingOutputPower = HeatOutputPower;
-        EstCoolingInputPower = EstHeatingInputPower = DHWOutputPower = 0;
+        EstCoolingInputPower = EstDHWInputPower = DHWOutputPower = 0;
       }
-    } else {                                                                                                                             // Heat Pump Generating
-      if (HeatPump.Status.ThreeWayValve == 1 || HeatPump.Status.SystemOperationMode == 1 || HeatPump.Status.SystemOperationMode == 6) {  // DHW Operation Mode
+    } else {                                                                                                                                          // Heating Modes
+      if (HeatPump.Status.ThreeWayValve == 1 || HeatPump.Status.SystemOperationMode == 1 || HeatPump.Status.SystemOperationMode == 6) {               // DHW Operation Mode
         EstDHWInputPower = EstInputPower;
         DHWOutputPower = HeatOutputPower;
         EstCoolingInputPower = EstHeatingInputPower = HeatingOutputPower = 0;
       } else {
+        EstHeatingInputPower = EstInputPower;
         HeatOutputPower = HeatingOutputPower = OutputPower;
         EstDHWInputPower = DHWOutputPower = 0;
       }
