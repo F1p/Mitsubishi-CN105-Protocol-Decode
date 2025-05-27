@@ -591,7 +591,7 @@ void readSettingsFromConfig() {
       }
 
       // Switches
-      if (i >= 100 && i < 0) {
+      if (i >= 100 && i < 110) {
         Config["state_topic"] = BASETOPIC + String(MQTT_TOPIC[MQTT_SWITCH_STATE_POS[i - 100]]);
         Config["value_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[i - 2]);
         Config["command_topic"] = BASETOPIC + String(MQTT_TOPIC[i - 86]);

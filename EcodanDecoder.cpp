@@ -324,7 +324,6 @@ void ECODANDECODER::Process0x01(uint8_t *Buffer, EcodanStatus *Status) {
   Status->DateTimeStamp.tm_sec = Sec;
 
   snprintf(Status->FTCSoftware, 6, "%02X.%02X", Buffer[7], Buffer[8]);
-
   Status->SyncTime = true;  // Allow Time to Sync with ESP
 }
 
@@ -576,7 +575,10 @@ void ECODANDECODER::Process0x0F(uint8_t *Buffer, EcodanStatus *Status) {  // FTC
   Status->CondensingTemp = CondensingTemp;
 
   for (int j = 7; j < 15; j++) {
-    if (Buffer[j] != 0x00) { OutdoorExtendedSensors = true; Status->OutdoorExtendedSensors = OutdoorExtendedSensors; }
+    if (Buffer[j] != 0x00) {
+      OutdoorExtendedSensors = true;
+      Status->OutdoorExtendedSensors = OutdoorExtendedSensors;
+    }
   }
   if (Status->FTCVersion == FTC7 && OutdoorExtendedSensors) {  // FTC7 with Extended Outdoor Unit Sensors Parameters
     Status->TH4Discharge = ExtractUInt8_v4(Buffer, 7);         // FTC7 Only Parameters
@@ -1165,10 +1167,7 @@ void ECODANDECODER::EncodeRoomThermostat(float Setpoint, uint8_t ControlMode, ui
   LowerByte = (uint8_t)(ScaledTarget & 0x00ff);
 
   TxMessage.Payload[0] = TX_MESSAGE_ROOM_STAT;
-
-  if (ControlMode == HEATING_CONTROL_MODE_COOL_ZONE_TEMP || ControlMode == HEATING_CONTROL_MODE_COOL_FLOW_TEMP) {
-    TxMessage.Payload[3] = 1;
-  }
+  TxMessage.Payload[3] = (ControlMode == HEATING_CONTROL_MODE_COOL_ZONE_TEMP || ControlMode == HEATING_CONTROL_MODE_COOL_FLOW_TEMP) ? 1 : 0;
 
   if (Zone == ZONE1) {
     TxMessage.Payload[1] = ZONE1_TSTAT;

@@ -54,7 +54,7 @@
 #include "Ecodan.h"
 #include "Melcloud.h"
 
-String FirmwareVersion = "6.2.4 Beta";
+String FirmwareVersion = "6.2.4";
 
 
 #ifdef ESP8266  // Define the Witty ESP8266 Serial Pins
@@ -235,6 +235,7 @@ unsigned long wifipreviousMillis = 0;    // variable for comparing millis counte
 unsigned long ftcconpreviousMillis = 0;  // variable for comparing millis counter
 unsigned long postwrpreviousMillis = 0;  // variable for comparing millis counter
 int FTCLoopSpeed, CPULoopSpeed;          // variable for holding loop time in ms
+int SvcRequested = 0;
 bool WiFiOneShot = true;
 bool CableConnected = true;
 bool WiFiConnectedLastLoop = false;
@@ -638,6 +639,7 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
       HeatPump.Disconnect();
     } else {
       HeatPump.WriteServiceCodeCMD(Payload.toInt());
+      SvcRequested = Payload.toInt();
     }
   }
 
