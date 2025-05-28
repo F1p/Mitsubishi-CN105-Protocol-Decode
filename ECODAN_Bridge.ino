@@ -235,7 +235,8 @@ unsigned long wifipreviousMillis = 0;    // variable for comparing millis counte
 unsigned long ftcconpreviousMillis = 0;  // variable for comparing millis counter
 unsigned long postwrpreviousMillis = 0;  // variable for comparing millis counter
 int FTCLoopSpeed, CPULoopSpeed;          // variable for holding loop time in ms
-int SvcRequested = 0;
+uint8_t SvcRequested = 0;
+int16_t SvcReply = 0;
 bool WiFiOneShot = true;
 bool CableConnected = true;
 bool WiFiConnectedLastLoop = false;
@@ -1121,8 +1122,13 @@ void AdvancedTwoReport(void) {
   doc[F("Z2TstatDemand")] = OFF_ON_String[HeatPump.Status.Zone2ThermostatDemand];
   doc[F("OTstatDemand")] = OFF_ON_String[HeatPump.Status.OutdoorThermostatDemand];
   doc[F("OpMode")] = HPControlModeString[HeatPump.Status.HeatCool];
-  doc[F("LastSvc")] = HeatPump.Status.LastServiceCodeNumber;
-  doc[F("LastSvcReply")] = HeatPump.Status.ServiceCodeReply;
+
+  if (SvcRequested == HeatPump.Status.LastServiceCodeNumber) {
+    SvcReply = HeatPump.Status.ServiceCodeReply;
+  }
+
+  doc[F("LastSvc")] = SvcRequested;
+  doc[F("LastSvcReply")] = SvcReply;
   doc[F("HB_ID")] = Heart_Value;
 
   serializeJson(doc, Buffer);

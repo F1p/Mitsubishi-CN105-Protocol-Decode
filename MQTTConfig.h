@@ -559,7 +559,7 @@ void readSettingsFromConfig() {
           Config["temperature_command_topic"] = BASETOPIC + String(MQTT_TOPIC[i - 84]);
           Config["temperature_state_topic"] = BASETOPIC + String(MQTT_TOPIC[i - 91]);
           Config["temperature_state_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[96]);
-        } else if (i >= 99 && i < 101) {
+        } else if (i >= 98 && i < 100) {
           Config["current_temperature_topic"] = BASETOPIC + String(MQTT_TOPIC[2]);
           Config["current_temperature_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[6]);
           Config["temperature_command_topic"] = BASETOPIC + String(MQTT_TOPIC[i - 74]);
