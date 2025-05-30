@@ -626,7 +626,7 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
   DEBUG_PRINTLN(Payload.c_str());
 
   // Service Codes
-  if (Topic == MQTTCommandSystemService) {
+  if ((Topic == MQTTCommandSystemService) || (Topic == MQTTCommand2SystemService)) {
     if (Payload.toInt() == 999) {
       DEBUG_PRINTLN(F("FTC Bridge Restart Request"));
 #ifdef ESP8266
