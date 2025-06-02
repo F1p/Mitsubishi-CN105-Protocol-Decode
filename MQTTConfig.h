@@ -652,7 +652,7 @@ void readSettingsFromConfig() {
 
       // Add Availability Topics
       if (i >= 96) {
-        if (i >= 104 && i < 110) {  // Server Control Mode Interlocks
+        if (i >= 104 && i < 109) {  // Server Control Mode Interlocks
           Config["availability"]["topic"] = BASETOPIC + String(MQTT_TOPIC[8]);
           Config["availability"]["value_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[101]);
           Config["availability"]["payload_available"] = ITEM_ON;
