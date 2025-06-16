@@ -54,7 +54,7 @@
 #include "Ecodan.h"
 #include "Melcloud.h"
 
-String FirmwareVersion = "6.2.4-h1";
+String FirmwareVersion = "6.2.4-h2";
 
 
 #ifdef ESP8266  // Define the Witty ESP8266 Serial Pins
@@ -255,6 +255,7 @@ static bool eth_connected = false;
 
 
 void setup() {
+  
   WiFi.mode(WIFI_STA);         // explicitly set mode, esp defaults to STA+AP
   DEBUGPORT.begin(DEBUGBAUD);  // Start Debug
 
@@ -954,8 +955,8 @@ void SystemReport(void) {
   }
 
   // Instant CoP measurement from computed estimates
-  if (OutputPower > 0 && EstInputPower > 0) {
-    Instant_CoP = OutputPower / EstInputPower;
+  if (fabsf(OutputPower) > 0 && EstInputPower > 0) {
+    Instant_CoP = fabsf(OutputPower) / EstInputPower;
   } else {
     Instant_CoP = 0;
   }
