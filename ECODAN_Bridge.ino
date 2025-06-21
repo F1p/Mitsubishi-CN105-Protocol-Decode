@@ -54,7 +54,7 @@
 #include "Ecodan.h"
 #include "Melcloud.h"
 
-String FirmwareVersion = "6.2.4-h2";
+String FirmwareVersion = "6.2.4-h3";
 
 
 #ifdef ESP8266  // Define the Witty ESP8266 Serial Pins
@@ -890,7 +890,7 @@ void SystemReport(void) {
   JsonDocument doc;
   char Buffer[1024];
 
-  float HeatOutputPower, HeatingOutputPower, DHWOutputPower, CoolOutputPower, UnitSizeFactor, Instant_CoP;
+  double HeatOutputPower, HeatingOutputPower, DHWOutputPower, CoolOutputPower, UnitSizeFactor, Instant_CoP;
   float EstCoolingInputPower, EstHeatingInputPower, EstDHWInputPower;
   float Min_Input_Power, Max_Input_Power;
   double OutputPower = (((float)HeatPump.Status.PrimaryFlowRate / 60) * (float)HeatPump.Status.HeaterDeltaT * unitSettings.GlycolStrength);  // Approx Heat Capacity of Fluid in Use
@@ -928,7 +928,7 @@ void SystemReport(void) {
     EstCoolingInputPower = EstInputPower;
     CoolOutputPower = fabsf(OutputPower);
     EstDHWInputPower = EstHeatingInputPower = HeatOutputPower = 0;
-  } else {                                                                                                                                           // In a Heating Mode
+  } else if (HeatPump.Status.SystemOperationMode != 0) {                                                                                             // If a Heating or Cooling Mode
     if (OutputPower == 0 && (HeatPump.Status.ImmersionActive == 1 || HeatPump.Status.Booster1Active == 1 || HeatPump.Status.Booster2Active == 1)) {  // Boosters or Immersion
       HeatOutputPower = OutputPower = HeatPump.Status.OutputPower;                                                                                   // Account for Immersion or Booster Instead of HP
       if (HeatPump.Status.ThreeWayValve == 1 || HeatPump.Status.SystemOperationMode == 1 || HeatPump.Status.SystemOperationMode == 6) {              // DHW Operation Mode
@@ -940,7 +940,7 @@ void SystemReport(void) {
         HeatingOutputPower = HeatOutputPower;
         EstCoolingInputPower = EstDHWInputPower = DHWOutputPower = 0;
       }
-    } else {                                                                                                                                          // Heating Modes
+    } else if (HeatPump.Status.SystemOperationMode != 0) {                                                                                            // Heating Modes
       if (HeatPump.Status.ThreeWayValve == 1 || HeatPump.Status.SystemOperationMode == 1 || HeatPump.Status.SystemOperationMode == 6) {               // DHW Operation Mode
         EstDHWInputPower = EstInputPower;
         DHWOutputPower = HeatOutputPower;
