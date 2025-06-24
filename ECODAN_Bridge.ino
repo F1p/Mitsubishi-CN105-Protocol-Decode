@@ -255,7 +255,7 @@ static bool eth_connected = false;
 
 
 void setup() {
-  
+
   WiFi.mode(WIFI_STA);         // explicitly set mode, esp defaults to STA+AP
   DEBUGPORT.begin(DEBUGBAUD);  // Start Debug
 
@@ -912,7 +912,7 @@ void SystemReport(void) {
     UnitSizeFactor = 1.7;
   }
 
-  if (HeatPump.Status.InputPower < 2) {     // To account for FTC's onboard estimation
+  if (HeatPump.Status.InputPower < 2) {  // To account for FTC's onboard estimation
     Min_Input_Power = 0;
     Max_Input_Power = 2;
   } else {
@@ -920,11 +920,11 @@ void SystemReport(void) {
     Max_Input_Power = HeatPump.Status.InputPower + 1;
   }
   float x = ((((((float)HeatPump.Status.CompressorFrequency * 2) * ((float)HeatPump.Status.HeaterOutputFlowTemperature * 0.8)) / 1000) / 2) * UnitSizeFactor);
-  double EstInputPower = ((x - Min_Input_Power) * (Max_Input_Power - Min_Input_Power) / (Max_Input_Power - Min_Input_Power) + Min_Input_Power);               // Constrain Input Power to FTC Onboard Reading range
-  
+  double EstInputPower = ((x - Min_Input_Power) * (Max_Input_Power - Min_Input_Power) / (Max_Input_Power - Min_Input_Power) + Min_Input_Power);  // Constrain Input Power to FTC Onboard Reading range
+
   if (EstInputPower == 0 && (HeatPump.Status.ImmersionActive == 1 || HeatPump.Status.Booster1Active == 1 || HeatPump.Status.Booster2Active == 1)) { EstInputPower = HeatPump.Status.InputPower; }  // Account for Immersion or Booster Instead of HP
 
-  if (OutputPower < 0) {                                                                                                                             // Cooling Mode
+  if (OutputPower < 0) {  // Cooling Mode
     EstCoolingInputPower = EstInputPower;
     CoolOutputPower = fabsf(OutputPower);
     EstDHWInputPower = EstHeatingInputPower = HeatOutputPower = 0;
@@ -940,8 +940,8 @@ void SystemReport(void) {
         HeatingOutputPower = HeatOutputPower;
         EstCoolingInputPower = EstDHWInputPower = DHWOutputPower = 0;
       }
-    } else if (HeatPump.Status.SystemOperationMode != 0) {                                                                                            // Heating Modes
-      if (HeatPump.Status.ThreeWayValve == 1 || HeatPump.Status.SystemOperationMode == 1 || HeatPump.Status.SystemOperationMode == 6) {               // DHW Operation Mode
+    } else if (HeatPump.Status.SystemOperationMode != 0) {                                                                               // Heating Modes
+      if (HeatPump.Status.ThreeWayValve == 1 || HeatPump.Status.SystemOperationMode == 1 || HeatPump.Status.SystemOperationMode == 6) {  // DHW Operation Mode
         EstDHWInputPower = EstInputPower;
         DHWOutputPower = HeatOutputPower;
         EstCoolingInputPower = EstHeatingInputPower = HeatingOutputPower = 0;
@@ -952,6 +952,8 @@ void SystemReport(void) {
       }
     }
     CoolOutputPower = EstCoolingInputPower = 0;
+  } else {  // Off
+    EstDHWInputPower = DHWOutputPower = EstHeatingInputPower = HeatOutputPower = HeatingOutputPower = CoolOutputPower = EstCoolingInputPower = 0;
   }
 
   // Instant CoP measurement from computed estimates
