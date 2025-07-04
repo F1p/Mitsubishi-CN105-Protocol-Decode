@@ -13,6 +13,7 @@ String MQTT_STATUS_ADVANCED = MQTT_STATUS + "/Advanced";
 String MQTT_STATUS_ADVANCED_TWO = MQTT_STATUS + "/AdvancedTwo";
 String MQTT_STATUS_ENERGY = MQTT_STATUS + "/Energy";
 String MQTT_STATUS_WIFISTATUS = MQTT_STATUS + "/WiFiStatus";
+String MQTT_STATUS_CURVE = MQTT_STATUS + "/CompCurve";
 
 String MQTT_COMMAND_ZONE1 = MQTT_COMMAND + "/Zone1";
 String MQTT_COMMAND_ZONE2 = MQTT_COMMAND + "/Zone2";
@@ -43,6 +44,7 @@ String MQTT_COMMAND_SYSTEM_POWER = MQTT_COMMAND_SYSTEM + "/Power";
 String MQTT_COMMAND_SYSTEM_UNITSIZE = MQTT_COMMAND_SYSTEM + "/UnitSize";
 String MQTT_COMMAND_SYSTEM_GLYCOL = MQTT_COMMAND_SYSTEM + "/Glycol";
 String MQTT_COMMAND_SYSTEM_SERVICE = MQTT_COMMAND_SYSTEM + "/Svc";
+String MQTT_COMMAND_SYSTEM_COMPCURVE = MQTT_COMMAND_SYSTEM + "/CompCurve";
 
 String MQTTCommandZone1FlowSetpoint = MQTT_COMMAND_ZONE1_FLOW_SETPOINT;
 String MQTTCommandZone1NoModeSetpoint = MQTT_COMMAND_ZONE1_NOMODE_SETPOINT;
@@ -68,6 +70,7 @@ String MQTTCommandSystemPower = MQTT_COMMAND_SYSTEM_POWER;
 String MQTTCommandSystemUnitSize = MQTT_COMMAND_SYSTEM_UNITSIZE;
 String MQTTCommandSystemGlycol = MQTT_COMMAND_SYSTEM_GLYCOL;
 String MQTTCommandSystemService = MQTT_COMMAND_SYSTEM_SERVICE;
+String MQTTCommandSystemCompCurve = MQTT_COMMAND_SYSTEM_COMPCURVE;
 
 
 String MQTT_2_BASETOPIC = "00000";
@@ -85,6 +88,7 @@ String MQTT_2_STATUS_ADVANCED = MQTT_2_STATUS + "/Advanced";
 String MQTT_2_STATUS_ADVANCED_TWO = MQTT_2_STATUS + "/AdvancedTwo";
 String MQTT_2_STATUS_ENERGY = MQTT_2_STATUS + "/Energy";
 String MQTT_2_STATUS_WIFISTATUS = MQTT_2_STATUS + "/WiFiStatus";
+String MQTT_2_STATUS_CURVE = MQTT_2_STATUS + "/CompCurve";
 
 String MQTT_2_COMMAND_ZONE1 = MQTT_2_COMMAND + "/Zone1";
 String MQTT_2_COMMAND_ZONE2 = MQTT_2_COMMAND + "/Zone2";
@@ -115,6 +119,7 @@ String MQTT_2_COMMAND_SYSTEM_POWER = MQTT_2_COMMAND_SYSTEM + "/Power";
 String MQTT_2_COMMAND_SYSTEM_UNITSIZE = MQTT_2_COMMAND_SYSTEM + "/UnitSize";
 String MQTT_2_COMMAND_SYSTEM_GLYCOL = MQTT_2_COMMAND_SYSTEM + "/Glycol";
 String MQTT_2_COMMAND_SYSTEM_SERVICE = MQTT_2_COMMAND_SYSTEM + "/Svc";
+String MQTT_2_COMMAND_SYSTEM_COMPCURVE = MQTT_2_COMMAND_SYSTEM + "/CompCurve";
 
 String MQTTCommand2Zone1FlowSetpoint = MQTT_2_COMMAND_ZONE1_FLOW_SETPOINT;
 String MQTTCommand2Zone1NoModeSetpoint = MQTT_2_COMMAND_ZONE1_NOMODE_SETPOINT;
@@ -140,6 +145,7 @@ String MQTTCommand2SystemPower = MQTT_2_COMMAND_SYSTEM_POWER;
 String MQTTCommand2SystemUnitSize = MQTT_2_COMMAND_SYSTEM_UNITSIZE;
 String MQTTCommand2SystemGlycol = MQTT_2_COMMAND_SYSTEM_GLYCOL;
 String MQTTCommand2SystemService = MQTT_2_COMMAND_SYSTEM_SERVICE;
+String MQTTCommand2SystemCompCurve = MQTT_2_COMMAND_SYSTEM_COMPCURVE;
 
 
 
@@ -286,6 +292,14 @@ void readSettingsFromConfig() {
             } else {                    // For upgrading from <6.1.1, create the entry
               shouldSaveConfig = true;  // Save config after exit to update the file
             }
+            // Compensation Curve
+            if (doc.containsKey(unitSettings.compcurve_identifier)) {
+              if (strlen(doc[unitSettings.compcurve_identifier]) > 0) {
+                unitSettings.CompCurve = doc[unitSettings.compcurve_identifier].as<String>();
+              }
+            } else {                    // For upgrading from <6.3.0, create the entry
+              shouldSaveConfig = true;  // Save config after exit to update the file
+            }
           }
         }
         configFile.close();
@@ -323,6 +337,7 @@ void readSettingsFromConfig() {
     MQTT_STATUS_ADVANCED_TWO = MQTT_STATUS + "/AdvancedTwo";
     MQTT_STATUS_ENERGY = MQTT_STATUS + "/Energy";
     MQTT_STATUS_WIFISTATUS = MQTT_STATUS + "/WiFiStatus";
+    MQTT_STATUS_CURVE = MQTT_STATUS + "/CompCurve";
 
     MQTT_COMMAND_ZONE1 = MQTT_COMMAND + "/Zone1";
     MQTT_COMMAND_ZONE2 = MQTT_COMMAND + "/Zone2";
@@ -353,6 +368,7 @@ void readSettingsFromConfig() {
     MQTT_COMMAND_SYSTEM_UNITSIZE = MQTT_COMMAND_SYSTEM + "/UnitSize";
     MQTT_COMMAND_SYSTEM_GLYCOL = MQTT_COMMAND_SYSTEM + "/Glycol";
     MQTT_COMMAND_SYSTEM_SERVICE = MQTT_COMMAND_SYSTEM + "/Svc";
+    MQTT_COMMAND_SYSTEM_COMPCURVE = MQTT_COMMAND_SYSTEM + "/CompCurve";
 
     MQTTCommandZone1FlowSetpoint = MQTT_COMMAND_ZONE1_FLOW_SETPOINT;
     MQTTCommandZone1NoModeSetpoint = MQTT_COMMAND_ZONE1_NOMODE_SETPOINT;
@@ -415,6 +431,7 @@ void readSettingsFromConfig() {
       doc[mqttSettings.wm_mqtt2_basetopic_identifier] = mqttSettings.baseTopic2;
       doc[unitSettings.unitsize_identifier] = unitSettings.UnitSize;
       doc[unitSettings.glycol_identifier] = unitSettings.GlycolStrength;
+      doc[unitSettings.compcurve_identifier] = unitSettings.CompCurve;
 
       if (serializeJson(doc, configFile) == 0) {
         DEBUG_PRINTLN(F("[FAILED]"));
@@ -718,6 +735,7 @@ void readSettingsFromConfig() {
     MQTTClient1.subscribe(MQTTCommandSystemUnitSize.c_str());
     MQTTClient1.subscribe(MQTTCommandSystemGlycol.c_str());
     MQTTClient1.subscribe(MQTTCommandSystemService.c_str());
+    MQTTClient1.subscribe(MQTTCommandSystemCompCurve.c_str());
 
     delay(10);
     PublishDiscoveryTopics(1, MQTT_BASETOPIC);
@@ -934,6 +952,7 @@ void readSettingsFromConfig() {
     MQTTClient2.subscribe(MQTTCommand2SystemUnitSize.c_str());
     MQTTClient2.subscribe(MQTTCommand2SystemGlycol.c_str());
     MQTTClient2.subscribe(MQTTCommand2SystemService.c_str());
+    MQTTClient2.subscribe(MQTTCommand2SystemCompCurve.c_str());
     delay(10);
     PublishDiscoveryTopics(2, MQTT_2_BASETOPIC);
   }
