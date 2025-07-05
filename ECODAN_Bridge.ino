@@ -166,7 +166,7 @@ struct UnitSettings {
   char unitsize_identifier[9] = "unitsize";
   char glycol_identifier[7] = "glycol";
   char compcurve_identifier[10] = "compcurve";
-  String CompCurve = "{\"base\":{\"zone1\":{\"curve\":[{\"flow\":60,\"outside\":-10},{\"flow\":35,\"outside\":0},{\"flow\":20,\"outside\":15}]},\"zone2\":{\"curve\":[{\"flow\":60,\"outside\":-10},{\"flow\":35,\"outside\":0},{\"flow\":20,\"outside\":15}]}}}";
+  String CompCurve = "{\"base\":{\"zone1\":{\"curve\":[{\"flow\":60,\"outside\":-10},{\"flow\":35,\"outside\":0},{\"flow\":20,\"outside\":15},{\"flow\":10,\"outside\":20}]},\"zone2\":{\"curve\":[{\"flow\":60,\"outside\":-10},{\"flow\":35,\"outside\":0},{\"flow\":20,\"outside\":15}]}},\"zone1\":{\"active\":false},\"zone2\":{\"active\":false}}";
 
   float z1_manual_offset, z1_wind_offset, z1_temp_offset, z2_manual_offset, z2_wind_offset, z2_temp_offset, cloud_outdoor = 0;
   bool use_local_outdoor = true;
@@ -479,6 +479,8 @@ void loop() {
 #ifndef ARDUINO_WT32_ETH01
   if (digitalRead(Reset_Button) == LOW) {                                                                                                                                                                    // Inverted (Button Pushed is LOW)
     HeatPump.SetSvrControlMode(0, HeatPump.Status.ProhibitDHW, HeatPump.Status.ProhibitHeatingZ1, HeatPump.Status.ProhibitCoolingZ1, HeatPump.Status.ProhibitHeatingZ2, HeatPump.Status.ProhibitCoolingZ2);  // Exit SCM leaving state
+    ModifyCompCurveState(1, false);                                                                                                                                                                          // Escape Local WC Mode
+    ModifyCompCurveState(2, false);                                                                                                                                                                          // Escape Local WC Mode
 #ifdef ESP8266                                                                                                                                                                                               // Define the Witty ESP8266 Ports
     digitalWrite(Red_RGB_LED, HIGH);                                                                                                                                                                         // Flash the Red LED
     delay(500);
@@ -840,12 +842,17 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
 
       // Base Curve (String)
       JsonVariant baseVariant = doc["base"];
-      if (!baseVariant.isNull()) {  // Check if the key exists AND if its value is not explicitly JSON 'null'
-        String newBaseCurve = baseVariant.as<String>();  // Only attempt conversion to String if it's not null/missing
-        // Now compare the new value with the current setting
-        if (newBaseCurve != unitSettings.CompCurve) {
-          unitSettings.CompCurve = newBaseCurve;
-          shouldSaveConfig = true;  // Write the data to onboard JSON file so if device reboots it is saved
+      if (!baseVariant.isNull()) {                                                               // Check if the key exists AND if its value is not explicitly 'null'
+        JsonDocument local_stored_doc;                                                           // Variable for the locally decoded JSON
+        DeserializationError error = deserializeJson(local_stored_doc, unitSettings.CompCurve);  // Unpack the local stored JSON document
+        if (error) {
+          DEBUG_PRINT("Failed to read: ");
+          DEBUG_PRINTLN(error.c_str());
+        } else {
+          local_stored_doc["base"] = baseVariant;  // Load the new Base into the correct area of the locally stored file
+          local_stored_doc.shrinkToFit();
+          serializeJson(local_stored_doc, unitSettings.CompCurve);  // Repack the JSON
+          shouldSaveConfig = true;                                  // Write the data to onboard JSON file so if device reboots it is saved
         }
       }
 
@@ -855,23 +862,23 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
       if (error) {
         bool wc_z1_active = doc["zone1"]["active"];
         if (!unitSettings.z1_active && wc_z1_active) {                                                    // On transition from Inactive > Active
-          unitSettings.z1_active = wc_z1_active;                                                          // Save the state
           if (HeatPump.Status.HeatingControlModeZ1 != 1) {                                                // Check if not already in Fixed Flow Mode
             HeatPump.SetHeatingControlMode(HEATING_CONTROL_MODE_FLOW_TEMP, SET_HEATING_CONTROL_MODE_Z1);  // Swap to Fixed Flow for Onboard WC to input the flow temperature
             HeatPump.Status.HeatingControlModeZ1 = HEATING_CONTROL_MODE_FLOW_TEMP;
           }
         }
+        ModifyCompCurveState(1, wc_z1_active);  // State Save
       }
       error = doc["zone2"]["active"];
       if (error) {
         bool wc_z2_active = doc["zone2"]["active"];
         if (!unitSettings.z2_active && wc_z2_active) {                                                    // On transition from Inactive > Active
-          unitSettings.z2_active = wc_z2_active;                                                          // Save the state
           if (HeatPump.Status.HeatingControlModeZ2 != 1) {                                                // Check if not already in Fixed Flow Mode
             HeatPump.SetHeatingControlMode(HEATING_CONTROL_MODE_FLOW_TEMP, SET_HEATING_CONTROL_MODE_Z2);  // Swap to Fixed Flow for Onboard WC to input the flow temperature
             HeatPump.Status.HeatingControlModeZ2 = HEATING_CONTROL_MODE_FLOW_TEMP;
           }
         }
+        ModifyCompCurveState(2, wc_z2_active);  // State Save
       }
 
 
@@ -898,9 +905,8 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
       float cloud_outdoor = doc["cloud_outdoor"];                                  //
       if (cloud_outdoor) unitSettings.cloud_outdoor = cloud_outdoor;               // Temperature Provided by a remote or cloud source when use_local_outdoor = False
     }
+    CalculateCompCurve();  // Recalculate after modification
   }
-
-  CalculateCompCurve();  // Recalculate after modification
 }
 
 
@@ -1456,15 +1462,19 @@ String decimalToBinary(int decimal) {
 }
 
 void CalculateCompCurve() {
-  //if (!unitSettings.z1_active && !unitSettings.z2_active) {    return;  } else
-  {
-    float OutsideAirTemperature;
-    JsonDocument doc;
-    DeserializationError error = deserializeJson(doc, unitSettings.CompCurve);
-    if (error) {
-      DEBUG_PRINT("Failed to read: ");
-      DEBUG_PRINTLN(error.c_str());
-    } else {
+  DEBUG_PRINTLN("Performing Compensation Curve Calculation");
+  JsonDocument doc;
+  DeserializationError error = deserializeJson(doc, unitSettings.CompCurve);
+  if (error) {
+    DEBUG_PRINT("Failed to read: ");
+    DEBUG_PRINTLN(error.c_str());
+  } else {
+    unitSettings.z1_active = doc["zone1"]["active"];  // Transfer JSON to Struct Bool
+    unitSettings.z2_active = doc["zone2"]["active"];
+    //if (!unitSettings.z1_active && !unitSettings.z2_active) { return; } else                        // Only calculates (saves time, if mode enabled)
+    {
+      float OutsideAirTemperature;
+
       if (!unitSettings.use_local_outdoor && (MQTTClient1.connected() || MQTTClient2.connected())) {  // Determine Outdoor Temperature Input
         OutsideAirTemperature = doc["cloud_outdoor"];
       } else {
@@ -1472,18 +1482,18 @@ void CalculateCompCurve() {
       }
 
 
-      int z1_points = doc["zone1"]["curve"].size() - 1;                                    // How many points are there specified on the curve
+      int z1_points = doc["base"]["zone1"]["curve"].size() - 1;                            // How many points are there specified on the curve
       for (int i = 0; i <= z1_points; i++) {                                               // Iterate through the points
-        float tmp_o_1 = doc["zone1"]["curve"][i]["outside"];                               // Outside Temperature
+        float tmp_o_1 = doc["base"]["zone1"]["curve"][i]["outside"];                       // Outside Temperature
         if ((i == 0) && (OutsideAirTemperature < tmp_o_1)) {                               // On the first point, this determines the Maximum Flow Temp
-          Z1_CurveFSP = doc["zone1"]["curve"][i]["flow"];                                  //
+          Z1_CurveFSP = doc["base"]["zone1"]["curve"][i]["flow"];                          //
         } else if ((i == z1_points) && (OutsideAirTemperature > tmp_o_1)) {                // The last point determines the Minimum Flow Temp
-          Z1_CurveFSP = doc["zone1"]["curve"][i]["flow"];                                  //
+          Z1_CurveFSP = doc["base"]["zone1"]["curve"][i]["flow"];                          //
         } else {                                                                           // Intermediate Flow Points
-          float tmp_o_2 = doc["zone1"]["curve"][i + 1]["outside"];                         // Outside Temperature
+          float tmp_o_2 = doc["base"]["zone1"]["curve"][i + 1]["outside"];                 // Outside Temperature
           if ((OutsideAirTemperature >= tmp_o_1) && (OutsideAirTemperature <= tmp_o_2)) {  // Validate the outside temp setpoint is in the correct range
-            float y2 = doc["zone1"]["curve"][i + 1]["flow"];                               // Calculate the slope using the formula: m = (y2 - y1) / (x2 - x1)
-            float y1 = doc["zone1"]["curve"][i]["flow"];                                   //
+            float y2 = doc["base"]["zone1"]["curve"][i + 1]["flow"];                       // Calculate the slope using the formula: m = (y2 - y1) / (x2 - x1)
+            float y1 = doc["base"]["zone1"]["curve"][i]["flow"];                           //
             float z1_delta_y = y2 - y1;                                                    // y2-y1
             float z1_delta_x = tmp_o_2 - tmp_o_1;                                          // x2-x1
             float z1_m = z1_delta_y / z1_delta_x;                                          // m = y2-y1 / x2-x1
@@ -1494,18 +1504,18 @@ void CalculateCompCurve() {
       }
 
 
-      int z2_points = doc["zone2"]["curve"].size() - 1;  // How many points are there specified on the curve
+      int z2_points = doc["base"]["zone2"]["curve"].size() - 1;  // How many points are there specified on the curve
       for (int i = 0; i <= z2_points; i++) {
-        float tmp_o_1 = doc["zone2"]["curve"][i]["outside"];
+        float tmp_o_1 = doc["base"]["zone2"]["curve"][i]["outside"];
         if ((i == 0) && (OutsideAirTemperature <= tmp_o_1)) {  // Max Flow Temp
-          Z2_CurveFSP = doc["zone2"]["curve"][i]["flow"];
+          Z2_CurveFSP = doc["base"]["zone2"]["curve"][i]["flow"];
         } else if ((i == z2_points) && (OutsideAirTemperature >= tmp_o_1)) {  // Min Flow Temp
-          Z2_CurveFSP = doc["zone2"]["curve"][i]["flow"];
+          Z2_CurveFSP = doc["base"]["zone2"]["curve"][i]["flow"];
         } else {
-          float tmp_o_2 = doc["zone2"]["curve"][i + 1]["outside"];
+          float tmp_o_2 = doc["base"]["zone2"]["curve"][i + 1]["outside"];
           if ((OutsideAirTemperature > tmp_o_1) && (OutsideAirTemperature < tmp_o_2)) {
-            float y2 = doc["zone2"]["curve"][i + 1]["flow"];  // Calculate the slope using the formula: m = (y2 - y1) / (x2 - x1)
-            float y1 = doc["zone2"]["curve"][i]["flow"];
+            float y2 = doc["base"]["zone2"]["curve"][i + 1]["flow"];  // Calculate the slope using the formula: m = (y2 - y1) / (x2 - x1)
+            float y1 = doc["base"]["zone2"]["curve"][i]["flow"];
             float z2_delta_y = y2 - y1;
             float z2_delta_x = tmp_o_2 - tmp_o_1;
             float z2_m = z2_delta_y / z2_delta_x;
@@ -1532,6 +1542,22 @@ void CalculateCompCurve() {
 
     return;
   }
+}
+
+void ModifyCompCurveState(int Zone, bool Active) {
+  // Save the state
+  JsonDocument local_stored_doc;                                                           // Variable for the locally decoded JSON
+  DeserializationError error = deserializeJson(local_stored_doc, unitSettings.CompCurve);  // Unpack the local stored JSON document
+  if (error) {
+    DEBUG_PRINT("Failed to read: ");
+    DEBUG_PRINTLN(error.c_str());
+  } else {
+    if (Zone == 1) { local_stored_doc["zone1"]["active"] = Active; }  // Load the new Base into the correct area of the locally stored file
+    if (Zone == 2) { local_stored_doc["zone2"]["active"] = Active; }  // Load the new Base into the correct area of the locally stored file
+  }
+  local_stored_doc.shrinkToFit();
+  serializeJson(local_stored_doc, unitSettings.CompCurve);  // Repack the JSON
+  shouldSaveConfig = true;                                  // Write the data to onboard JSON file so if device reboots it is saved
 }
 
 void syncCurrentTime() {
