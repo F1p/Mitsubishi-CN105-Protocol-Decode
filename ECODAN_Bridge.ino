@@ -54,7 +54,7 @@
 #include "Ecodan.h"
 #include "Melcloud.h"
 
-String FirmwareVersion = "6.3.0 Beta";
+String FirmwareVersion = "6.3.0";
 
 
 #ifdef ESP8266  // Define the Witty ESP8266 Serial Pins
@@ -609,6 +609,13 @@ void HeatPumpWriteStateEngine(void) {
 
 void MELCloudQueryReplyEngine(void) {
   if (MELCloud.Status.ReplyNow) {
+    if (MELCloud.Status.ActiveMessage == 0x28 && MELCloud.Status.MEL_Heartbeat) {  // Toggle the Heatbeat High for this request (MELCloud Only)
+      DEBUG_PRINTLN("Setting Heartbeat Byte");
+      Array0x28[11] = 1;
+      MELCloud.Status.MEL_Heartbeat = false;
+    } else if (MELCloud.Status.ActiveMessage == 0x28 && !MELCloud.Status.MEL_Heartbeat) {  // Toggle the Heartbeat Low for other requests
+      Array0x28[11] = 0;
+    }
     MELCloud.ReplyStatus(MELCloud.Status.ActiveMessage);
     MELCloud.Status.ReplyNow = false;
     if (MELCloud.Status.ActiveMessage == 0x32 || MELCloud.Status.ActiveMessage == 0x33 || MELCloud.Status.ActiveMessage == 0x34 || MELCloud.Status.ActiveMessage == 0x35) {  // The writes
@@ -621,9 +628,11 @@ void MELCloudQueryReplyEngine(void) {
     MELCloud.MELNegotiate1();  // Reply to the connect request
     MELCloud.Status.MELRequest1 = false;
   } else if (MELCloud.Status.MELRequest2) {
-    // Only MELCloud performs this second negotiation, it could be used to detect for features
-    MELCloud.MELNegotiate2();  // Reply to the connect request
+    MELCloud.MELNegotiate2();  // Reply to the connect request (MELCloud Only)
     MELCloud.Status.MELRequest2 = false;
+  } else if (MELCloud.Status.MEL_HB_Request) {  // Reply to the MELCloud Heartbeat
+    MELCloud.ReplyStatus(0x34);
+    MELCloud.Status.MEL_HB_Request = false;
   }
 }
 
