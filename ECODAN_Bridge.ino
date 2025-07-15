@@ -609,7 +609,7 @@ void HeatPumpWriteStateEngine(void) {
 
 void MELCloudQueryReplyEngine(void) {
   if (MELCloud.Status.ReplyNow) {
-    if (MELCloud.Status.ActiveMessage == 0x28 && MELCloud.Status.MEL_Heartbeat) {  // Toggle the Heatbeat High for this request (MELCloud Only)
+    if (MELCloud.Status.ActiveMessage == 0x28 && MELCloud.Status.MEL_Heartbeat) {  // Toggle the Heartbeat High for this request (MELCloud Only)
       DEBUG_PRINTLN("Setting Heartbeat Byte");
       Array0x28[11] = 1;
       MELCloud.Status.MEL_Heartbeat = false;
@@ -993,71 +993,70 @@ void SystemReport(void) {
   JsonDocument doc;
   char Buffer[1024];
 
-  double HeatOutputPower, HeatingOutputPower, DHWOutputPower, CoolOutputPower, UnitSizeFactor, Instant_CoP;
-  float EstCoolingInputPower, EstHeatingInputPower, EstDHWInputPower;
-  float Min_Input_Power, Max_Input_Power;
-  double OutputPower = (((float)HeatPump.Status.PrimaryFlowRate / 60) * (float)HeatPump.Status.HeaterDeltaT * unitSettings.GlycolStrength);  // Approx Heat Capacity of Fluid in Use
+  float HeatOutputPower, HeatingOutputPower, DHWOutputPower, CoolOutputPower, UnitSizeFactor, Instant_CoP, EstCoolingInputPower, EstHeatingInputPower, EstDHWInputPower, Min_Input_Power, Max_Input_Power = 0;
+  bool DHW_Mode, Non_HP_Mode = false;
 
   // Unit Size Factoring
   if (unitSettings.UnitSize == 4.0) {
     UnitSizeFactor = 0.4;
   } else if (unitSettings.UnitSize == 5.0) {
     UnitSizeFactor = 0.6;
-  } else if (unitSettings.UnitSize == 7.5) {
+  } else if (unitSettings.UnitSize == 7.5 || unitSettings.UnitSize == 6.0) {
     UnitSizeFactor = 0.95;
-  } else if ((unitSettings.UnitSize == 6.0) || (unitSettings.UnitSize == 8.5)) {  // 6kW is limited 8.5 unit, only maximum power is capped
+  } else if (unitSettings.UnitSize == 8.5 || unitSettings.UnitSize == 11.2) {
     UnitSizeFactor = 1.1;
   } else if (unitSettings.UnitSize == 8.0) {
     UnitSizeFactor = 1.3;
   } else if (unitSettings.UnitSize == 10.0) {
     UnitSizeFactor = 1.5;
-  } else if ((unitSettings.UnitSize == 11.2) || (unitSettings.UnitSize == 12.0) || (unitSettings.UnitSize == 14.0)) {  // 11.2kW is limited 14kW unit, only maximum power is capped
+  } else if ((unitSettings.UnitSize == 12.0) || (unitSettings.UnitSize == 14.0)) {
     UnitSizeFactor = 1.7;
   }
 
-  if (HeatPump.Status.InputPower < 2) {  // To account for FTC's onboard estimation
-    Min_Input_Power = 0;
+  if (HeatPump.Status.InputPower < 2) {  // To account for FTC's onboard estimation and limit the input power range
     Max_Input_Power = 2;
   } else {
     Min_Input_Power = HeatPump.Status.InputPower;
     Max_Input_Power = HeatPump.Status.InputPower + 1;
   }
+
+
+
   float x = ((((((float)HeatPump.Status.CompressorFrequency * 2) * ((float)HeatPump.Status.HeaterOutputFlowTemperature * 0.8)) / 1000) / 2) * UnitSizeFactor);
   double EstInputPower = ((x - Min_Input_Power) * (Max_Input_Power - Min_Input_Power) / (Max_Input_Power - Min_Input_Power) + Min_Input_Power);  // Constrain Input Power to FTC Onboard Reading range
+  double OutputPower = (((float)HeatPump.Status.PrimaryFlowRate / 60) * (float)HeatPump.Status.HeaterDeltaT * unitSettings.GlycolStrength);      // Approx Heat Capacity of Fluid in Use
 
-  if (EstInputPower == 0 && (HeatPump.Status.ImmersionActive == 1 || HeatPump.Status.Booster1Active == 1 || HeatPump.Status.Booster2Active == 1)) { EstInputPower = HeatPump.Status.InputPower; }  // Account for Immersion or Booster Instead of HP
 
-  if (HeatPump.Status.SystemOperationMode > 0) {  // Pump Operating
-    if (OutputPower < 0) {                        // Cooling or Defrosting Mode
-      EstCoolingInputPower = EstInputPower;
-      CoolOutputPower = fabsf(OutputPower);
-      EstDHWInputPower = EstHeatingInputPower = HeatOutputPower = 0;
-    } else {
-      HeatOutputPower = OutputPower = HeatPump.Status.OutputPower;                                                                                     // Account for Immersion or Booster Instead of HP
-      if (OutputPower == 0 && (HeatPump.Status.ImmersionActive == 1 || HeatPump.Status.Booster1Active == 1 || HeatPump.Status.Booster2Active == 1)) {  // Boosters or Immersion
-        if (HeatPump.Status.ThreeWayValve == 1 || HeatPump.Status.SystemOperationMode == 1 || HeatPump.Status.SystemOperationMode == 6) {              // DHW Operation Mode
-          EstDHWInputPower = EstInputPower;
-          DHWOutputPower = HeatOutputPower;
-          EstCoolingInputPower = EstHeatingInputPower = HeatingOutputPower = 0;
-        } else {
-          EstHeatingInputPower = EstInputPower;
-          HeatingOutputPower = HeatOutputPower;
-          EstCoolingInputPower = EstDHWInputPower = DHWOutputPower = 0;
-        }                                                                                                                                       // Heating Modes
-      } else if (HeatPump.Status.ThreeWayValve == 1 || HeatPump.Status.SystemOperationMode == 1 || HeatPump.Status.SystemOperationMode == 6) {  // DHW Operation Mode
-        EstDHWInputPower = EstInputPower;
-        DHWOutputPower = HeatOutputPower;
-        EstCoolingInputPower = EstHeatingInputPower = HeatingOutputPower = 0;
-      } else {
-        EstHeatingInputPower = EstInputPower;
-        HeatOutputPower = HeatingOutputPower = OutputPower;
-        EstDHWInputPower = DHWOutputPower = 0;
-      }
-    }
-    CoolOutputPower = EstCoolingInputPower = 0;
-  } else {  // Off
-    EstDHWInputPower = DHWOutputPower = EstHeatingInputPower = HeatOutputPower = HeatingOutputPower = CoolOutputPower = EstCoolingInputPower = 0;
+  if (HeatPump.Status.ThreeWayValve == 1 || HeatPump.Status.SystemOperationMode == 1 || HeatPump.Status.SystemOperationMode == 6) { DHW_Mode = true; }
+  if (HeatPump.Status.ImmersionActive == 1 || HeatPump.Status.Booster1Active == 1 || HeatPump.Status.Booster2Active == 1) {  // Account for Immersion or Booster Instead of HP
+    Non_HP_Mode = true;
+    if (EstInputPower == 0) { EstInputPower = HeatPump.Status.InputPower; }  // Uses Booster/Immersion Size in MRC
+    if (OutputPower == 0) { HeatOutputPower = HeatPump.Status.OutputPower; }
   }
+
+  if (HeatPump.Status.SystemOperationMode > 0) {                                                 // Pump Operating
+    if (OutputPower < 0) {                                                                       // Cooling or Defrosting Mode
+      EstCoolingInputPower = EstInputPower;                                                      //
+      CoolOutputPower = fabsf(OutputPower);                                                      // Make Positive
+    } else if (OutputPower > 0) {                                                                // Heating by HP
+      if (DHW_Mode) {                                                                            // DHW Operation Mode via HP
+        EstDHWInputPower = EstInputPower;                                                        //
+        DHWOutputPower = HeatOutputPower;                                                        //
+      } else {                                                                                   // Heating Operation Mode via HP
+        EstHeatingInputPower = EstInputPower;                                                    //
+        HeatingOutputPower = HeatOutputPower;                                                    //
+      }                                                                                          // Heating Modes
+    } else if (OutputPower == 0 && Non_HP_Mode) {                                                // Boosters or Immersion
+      if (DHW_Mode) {                                                                            // DHW Operation Mode
+        EstDHWInputPower = EstInputPower;                                                        //
+        DHWOutputPower = HeatOutputPower;                                                        //
+      } else {                                                                                   // Heating Modes
+        EstHeatingInputPower = EstInputPower;                                                    //
+        HeatingOutputPower = HeatOutputPower;                                                    //
+      }                                                                                          //
+    }                                                                                            //
+  }
+
 
   // Instant CoP measurement from computed estimates
   if (fabsf(OutputPower) > 0 && EstInputPower > 0) {

@@ -25,7 +25,7 @@ By activating the onboard compensation curve, if not already in Fixed Flow the s
 ### Designing a Curve
 
 Similar to the main controller screen, there is a flow temperature and an outside temperature:
-<IMG>
+![Comp Curve Graph](https://github.com/F1p/Mitsubishi-CN105-Protocol-Decode/blob/Onboard-Comp-Curve/documentation/images/Curve_Points.png)
 
 The corrosponding data points are:
 
@@ -99,7 +99,6 @@ The Curve is recorded and sent as JSON to be saved on the device, using the exam
 ```
 
 
-
 ### Programming or Modifying the Curve
 
 Using MQTT Explorer, we can send our design, in JSON to the topic: Ecodan/ASHP/Command/System/CompCurve
@@ -149,12 +148,14 @@ Using MQTT Explorer, we can send our design, in JSON to the topic: Ecodan/ASHP/C
 }
 ```
 
+![Publish Config](https://github.com/F1p/Mitsubishi-CN105-Protocol-Decode/blob/Onboard-Comp-Curve/documentation/images/Publish_Curve.png)
 
-<IMG>
+
 
 
 You can verify the curve has been saved, looking at the Ecodan/ASHP/Status/CompCurve topic:
-<IMG>
+![Config Readback](https://github.com/F1p/Mitsubishi-CN105-Protocol-Decode/blob/Onboard-Comp-Curve/documentation/images/Curve_Status.png)
+
 
 
 
@@ -191,6 +192,8 @@ Up to three Offsets exist, all act in the same way by adding or subtracting to t
 }
 ```
 
+![Publish Parameters](https://github.com/F1p/Mitsubishi-CN105-Protocol-Decode/blob/Onboard-Comp-Curve/documentation/images/Partial_Publish_Curve.png)
+
 
 
 The value of Outside Air Temperature (OAT) used in the curve calculation by default is from the sensor located on the unit itself, however you can choose to use your own value for Outdoor Air Temperature in the following way:
@@ -209,8 +212,37 @@ Provide a regularly updating Outdoor Air Temperature Value:
     "cloud_outdoor": 14.3
 }
 ```    
+![Publish Parameters](https://github.com/F1p/Mitsubishi-CN105-Protocol-Decode/blob/Onboard-Comp-Curve/documentation/images/CompCurve_Automation.png)
 
-<IMG>
+
+```yaml
+alias: Publish Temperature from HA Weather to Bridge
+description: ""
+triggers:
+  - trigger: state
+    entity_id:
+      - weather.forecast_home
+    attribute: temperature
+conditions: []
+actions:
+  - action: mqtt.publish
+    metadata: {}
+    data:
+      evaluate_payload: false
+      qos: "0"
+      topic: Ecodan/ASHP/Command/System/CompCurve
+      payload: >-
+        { "cloud_outdoor":{{ state_attr('weather.forecast_home','temperature')
+        }} }
+mode: single
+```
+
+
+![Publish Parameters](https://github.com/F1p/Mitsubishi-CN105-Protocol-Decode/blob/Onboard-Comp-Curve/documentation/images/Data_Transfer.png)
+
+
+
+
 
 If the MQTT connection is lost, the Bridge device will revert to using the local sensor.
 
