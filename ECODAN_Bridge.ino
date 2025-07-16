@@ -1034,27 +1034,27 @@ void SystemReport(void) {
     if (OutputPower == 0) { HeatOutputPower = HeatPump.Status.OutputPower; }
   }
 
-  if (HeatPump.Status.SystemOperationMode > 0) {                                                 // Pump Operating
-    if (OutputPower < 0) {                                                                       // Cooling or Defrosting Mode
-      EstCoolingInputPower = EstInputPower;                                                      //
-      CoolOutputPower = fabsf(OutputPower);                                                      // Make Positive
-    } else if (OutputPower > 0) {                                                                // Heating by HP
-      if (DHW_Mode) {                                                                            // DHW Operation Mode via HP
-        EstDHWInputPower = EstInputPower;                                                        //
-        DHWOutputPower = HeatOutputPower;                                                        //
-      } else {                                                                                   // Heating Operation Mode via HP
-        EstHeatingInputPower = EstInputPower;                                                    //
-        HeatingOutputPower = HeatOutputPower;                                                    //
-      }                                                                                          // Heating Modes
-    } else if (OutputPower == 0 && Non_HP_Mode) {                                                // Boosters or Immersion
-      if (DHW_Mode) {                                                                            // DHW Operation Mode
-        EstDHWInputPower = EstInputPower;                                                        //
-        DHWOutputPower = HeatOutputPower;                                                        //
-      } else {                                                                                   // Heating Modes
-        EstHeatingInputPower = EstInputPower;                                                    //
-        HeatingOutputPower = HeatOutputPower;                                                    //
-      }                                                                                          //
-    }                                                                                            //
+  if (HeatPump.Status.SystemOperationMode > 0) {             // Pump Operating
+    if (OutputPower < 0) {                                   // Cooling or Defrosting Mode
+      EstCoolingInputPower = EstInputPower;                  //
+      CoolOutputPower = fabsf(OutputPower);                  // Make Positive
+    } else if (OutputPower > 0) {                            // Heating by HP
+      if (DHW_Mode) {                                        // DHW Operation Mode via HP
+        EstDHWInputPower = EstInputPower;                    //
+        DHWOutputPower = HeatOutputPower = OutputPower;      //
+      } else {                                               // Heating Operation Mode via HP
+        EstHeatingInputPower = EstInputPower;                //
+        HeatingOutputPower = HeatOutputPower = OutputPower;  //
+      }                                                      // Heating Modes
+    } else if (OutputPower == 0 && Non_HP_Mode) {            // Boosters or Immersion
+      if (DHW_Mode) {                                        // DHW Operation Mode
+        EstDHWInputPower = EstInputPower;                    //
+        DHWOutputPower = HeatOutputPower = OutputPower;      //
+      } else {                                               // Heating Modes
+        EstHeatingInputPower = EstInputPower;                //
+        HeatingOutputPower = HeatOutputPower = OutputPower;  //
+      }                                                      //
+    }                                                        //
   }
 
 

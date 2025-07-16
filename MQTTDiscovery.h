@@ -614,6 +614,7 @@ int MQTT_UNITS_POS[] PROGMEM = {
   3
 };
 
+
 const char MQTT_OBJECT_ID[][19] PROGMEM = {
   "dhw_climate",
   "zone1_climate",
@@ -697,11 +698,11 @@ const char MQTT_SENSOR_UNITS[][7] PROGMEM = {
   "°C",
   "kW",
   "Hz",
-  "l/min",
-  "hrs",
+  "L/min",
+  "h",
   "kWh",
   "CoP",
-  "C",
+  "C",  //Unused
   "rpm",
   "Pulses",
   "Times"
@@ -833,7 +834,13 @@ const char MQTT_DISCOVERY_TOPICS[][23] PROGMEM = {
   "/config"
 };
 
-const char MQTT_DEVICE_CLASS[][7] PROGMEM = {
-  "energy",
-  "power"
+const char MQTT_DEVICE_CLASS[][17] PROGMEM = {  // Uses same structure as Units - but blank when no match
+  "",
+  "signal_strength",
+  "temperature",
+  "power",
+  "frequency",
+  "volume_flow_rate",
+  "duration",
+  "energy"
 };

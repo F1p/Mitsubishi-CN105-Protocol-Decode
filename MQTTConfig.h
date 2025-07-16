@@ -554,15 +554,14 @@ void readSettingsFromConfig() {
 
       // Sensors
       if (i >= 0 && i < 95) {
-        Config["state_topic"] = BASETOPIC + String(MQTT_TOPIC[MQTT_TOPIC_POS[i]]);                                    // Needs a positioner
-        if (MQTT_UNITS_POS[i] > 0) { Config["unit_of_measurement"] = String(MQTT_SENSOR_UNITS[MQTT_UNITS_POS[i]]); }  // Don't send nothing
-        Config["value_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[i]);
-        Config["icon"] = String(MQTT_MDI_ICONS[i]);
-        if (i >= 39 && i < 47) {
-          Config["device_class"] = String(MQTT_DEVICE_CLASS[0]);
-        } else if ((i == 9) || (i >= 55 && i < 57) || (i >= 71 && i < 73) || (i >= 90 && i < 95)) {
-          Config["device_class"] = String(MQTT_DEVICE_CLASS[1]);
+        Config["stat_t"] = BASETOPIC + String(MQTT_TOPIC[MQTT_TOPIC_POS[i]]);                               // Needs a positioner
+        if (MQTT_UNITS_POS[i] > 0) {                                                                        // If there is a unit
+          Config["unit_of_meas"] = String(MQTT_SENSOR_UNITS[MQTT_UNITS_POS[i]]);                            // Publish Units
+          if (MQTT_UNITS_POS[i] < 8) { Config["dev_cla"] = String(MQTT_DEVICE_CLASS[MQTT_UNITS_POS[i]]); }  // Device classes only exist for some units
+          Config["stat_cla"] = "measurement";
         }
+        Config["val_tpl"] = String(MQTT_SENSOR_VALUE_TEMPLATE[i]);
+        Config["icon"] = String(MQTT_MDI_ICONS[i]);
 
         MQTT_DISCOVERY_TOPIC = String(MQTT_DISCOVERY_TOPICS[0]);
       }
@@ -571,19 +570,19 @@ void readSettingsFromConfig() {
       if (i >= 95 && i < 100) {
         Config["object_id"] = String(MQTT_OBJECT_ID[i - 95]);
         if (i >= 95 && i < 98) {
-          Config["current_temperature_topic"] = BASETOPIC + String(MQTT_TOPIC[i - 91]);
-          Config["current_temperature_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[25]);
-          Config["temperature_command_topic"] = BASETOPIC + String(MQTT_TOPIC[i - 84]);
-          Config["temperature_state_topic"] = BASETOPIC + String(MQTT_TOPIC[i - 91]);
-          Config["temperature_state_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[96]);
+          Config["curr_temp_t"] = BASETOPIC + String(MQTT_TOPIC[i - 91]);
+          Config["curr_temp_tpl"] = String(MQTT_SENSOR_VALUE_TEMPLATE[25]);
+          Config["temp_cmd_t"] = BASETOPIC + String(MQTT_TOPIC[i - 84]);
+          Config["temp_stat_t"] = BASETOPIC + String(MQTT_TOPIC[i - 91]);
+          Config["temp_stat_tpl"] = String(MQTT_SENSOR_VALUE_TEMPLATE[96]);
         } else if (i >= 98 && i < 100) {
-          Config["current_temperature_topic"] = BASETOPIC + String(MQTT_TOPIC[2]);
-          Config["current_temperature_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[6]);
-          Config["temperature_command_topic"] = BASETOPIC + String(MQTT_TOPIC[i - 74]);
-          Config["temperature_state_topic"] = BASETOPIC + String(MQTT_TOPIC[i - 93]);
-          Config["temperature_state_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[97]);
+          Config["curr_temp_t"] = BASETOPIC + String(MQTT_TOPIC[2]);
+          Config["curr_temp_tpl"] = String(MQTT_SENSOR_VALUE_TEMPLATE[6]);
+          Config["temp_cmd_t"] = BASETOPIC + String(MQTT_TOPIC[i - 74]);
+          Config["temp_stat_t"] = BASETOPIC + String(MQTT_TOPIC[i - 93]);
+          Config["temp_stat_tpl"] = String(MQTT_SENSOR_VALUE_TEMPLATE[97]);
         }
-        Config["temperature_unit"] = String(MQTT_SENSOR_UNITS[9]);
+        Config["temp_unit"] = String(MQTT_SENSOR_UNITS[9]);
         Config["max_temp"] = MQTT_CLIMATE_MAX[i - 95];
         Config["min_temp"] = MQTT_CLIMATE_MIN[i - 95];
         Config["temp_step"] = MQTT_CLIMATE_TEMP_STEP[i - 95];
