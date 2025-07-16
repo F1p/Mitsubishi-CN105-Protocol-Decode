@@ -25,7 +25,7 @@ By activating the onboard compensation curve, if not already in Fixed Flow the s
 ### Designing a Curve
 
 Similar to the main controller screen, there is a flow temperature and an outside temperature:
-![Comp Curve Graph](https://github.com/F1p/Mitsubishi-CN105-Protocol-Decode/blob/Onboard-Comp-Curve/documentation/images/Curve_Points.png)
+![Comp Curve Graph](https://github.com/F1p/Mitsubishi-CN105-Protocol-Decode/blob/master/documentation/images/Curve_Points.png)
 
 The corrosponding data points are:
 
@@ -148,13 +148,13 @@ Using MQTT Explorer, we can send our design, in JSON to the topic: Ecodan/ASHP/C
 }
 ```
 
-![Publish Config](https://github.com/F1p/Mitsubishi-CN105-Protocol-Decode/blob/Onboard-Comp-Curve/documentation/images/Publish_Curve.png)
+![Publish Config](https://github.com/F1p/Mitsubishi-CN105-Protocol-Decode/blob/master/documentation/images/Publish_Curve.png)
 
 
 
 
 You can verify the curve has been saved, looking at the Ecodan/ASHP/Status/CompCurve topic:
-![Config Readback](https://github.com/F1p/Mitsubishi-CN105-Protocol-Decode/blob/Onboard-Comp-Curve/documentation/images/Curve_Status.png)
+![Config Readback](https://github.com/F1p/Mitsubishi-CN105-Protocol-Decode/blob/master/documentation/images/Curve_Status.png)
 
 
 
@@ -192,7 +192,7 @@ Up to three Offsets exist, all act in the same way by adding or subtracting to t
 }
 ```
 
-![Publish Parameters](https://github.com/F1p/Mitsubishi-CN105-Protocol-Decode/blob/Onboard-Comp-Curve/documentation/images/Partial_Publish_Curve.png)
+![Publish Parameters](https://github.com/F1p/Mitsubishi-CN105-Protocol-Decode/blob/master/documentation/images/Partial_Publish_Curve.png)
 
 
 
@@ -212,7 +212,7 @@ Provide a regularly updating Outdoor Air Temperature Value:
     "cloud_outdoor": 14.3
 }
 ```    
-![Publish Parameters](https://github.com/F1p/Mitsubishi-CN105-Protocol-Decode/blob/Onboard-Comp-Curve/documentation/images/CompCurve_Automation.png)
+![Publish Parameters](https://github.com/F1p/Mitsubishi-CN105-Protocol-Decode/blob/master/documentation/images/CompCurve_Automation.png)
 
 
 ```yaml
@@ -238,7 +238,7 @@ mode: single
 ```
 
 
-![Publish Parameters](https://github.com/F1p/Mitsubishi-CN105-Protocol-Decode/blob/Onboard-Comp-Curve/documentation/images/Data_Transfer.png)
+![Publish Parameters](https://github.com/F1p/Mitsubishi-CN105-Protocol-Decode/blob/master/documentation/images/Data_Transfer.png)
 
 
 
