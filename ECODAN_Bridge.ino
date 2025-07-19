@@ -239,7 +239,6 @@ TimerCallBack HeatPumpQuery5(1000, HeatPumpWriteStateEngine);  // Set to 1000ms 
 TimerCallBack HeatPumpQuery6(2000, FastPublish);               // Publish some reports at a faster rate
 TimerCallBack HeatPumpQuery7(300000, CalculateCompCurve);      // Calculate the Compensation Curve based on latest data   //300000 = 5min
 
-
 unsigned long looppreviousMicros = 0;    // variable for comparing millis counter
 unsigned long ftcpreviousMillis = 0;     // variable for comparing millis counter
 unsigned long wifipreviousMillis = 0;    // variable for comparing millis counter
@@ -645,9 +644,9 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
   String Topic = topic;
   String Payload = (char*)payload;
 
-  DEBUG_PRINT(F("\nReceived MQTT Message on topic "));
+  DEBUG_PRINT(F("\nReceived MQTT Message on topic: "));
   DEBUG_PRINT(Topic.c_str());
-  DEBUG_PRINT(F(" with Payload "));
+  DEBUG_PRINT(F(" with Payload: "));
   DEBUG_PRINTLN(Payload.c_str());
 
   // Service Codes
@@ -842,12 +841,16 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
     JsonDocument doc;
     DeserializationError error = deserializeJson(doc, Payload);
     if (error) {
-      DEBUG_PRINT("Failed to read: ");
+      DEBUG_PRINT("1 Failed to read: ");
       DEBUG_PRINTLN(error.c_str());
+      if (Payload == String("ERASE")) {
+        DEBUG_PRINTLN("Erasing Comp Curve");
+        unitSettings.CompCurve = "{}";
+        shouldSaveConfig = true;
+      }  // Method to erase the onboard document for recovery
     } else {
 
       // Method is to check if JSON key exists, then if not NULL then read it - this allows for some variables to be posted in JSON but not others depending on the request type
-
 
       // Base Curve (String)
       JsonVariant baseVariant = doc["base"];
@@ -855,7 +858,7 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
         JsonDocument local_stored_doc;                                                           // Variable for the locally decoded JSON
         DeserializationError error = deserializeJson(local_stored_doc, unitSettings.CompCurve);  // Unpack the local stored JSON document
         if (error) {
-          DEBUG_PRINT("Failed to read: ");
+          DEBUG_PRINT("2 Failed to read: ");
           DEBUG_PRINTLN(error.c_str());
         } else {
           local_stored_doc["base"] = baseVariant;  // Load the new Base into the correct area of the locally stored file
@@ -913,8 +916,9 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
       if (z2_wind_offset) unitSettings.z2_wind_offset = z2_wind_offset;            // Post Calcuation Zone2 Wind Factor +/- Offset
       float cloud_outdoor = doc["cloud_outdoor"];                                  //
       if (cloud_outdoor) unitSettings.cloud_outdoor = cloud_outdoor;               // Temperature Provided by a remote or cloud source when use_local_outdoor = False
+
+      CalculateCompCurve();  // Recalculate after modification
     }
-    CalculateCompCurve();  // Recalculate after modification
   }
 }
 
@@ -993,8 +997,22 @@ void SystemReport(void) {
   JsonDocument doc;
   char Buffer[1024];
 
-  float HeatOutputPower, HeatingOutputPower, DHWOutputPower, CoolOutputPower, UnitSizeFactor, Instant_CoP, EstCoolingInputPower, EstHeatingInputPower, EstDHWInputPower, Min_Input_Power, Max_Input_Power = 0;
+  double EstInputPower = 0;
+  double OutputPower = 0;
+  float HeatOutputPower = 0;
+  float HeatingOutputPower = 0;
+  float DHWOutputPower = 0;
+  float CoolOutputPower = 0;
+  float EstCoolingInputPower = 0;
+  float EstHeatingInputPower = 0;
+  float EstDHWInputPower = 0;
+  float Min_Input_Power = 0;
+  float Max_Input_Power = 0;
+
   bool DHW_Mode, Non_HP_Mode = false;
+  float UnitSizeFactor, Instant_CoP;
+
+
 
   // Unit Size Factoring
   if (unitSettings.UnitSize == 4.0) {
@@ -1023,8 +1041,8 @@ void SystemReport(void) {
 
 
   float x = ((((((float)HeatPump.Status.CompressorFrequency * 2) * ((float)HeatPump.Status.HeaterOutputFlowTemperature * 0.8)) / 1000) / 2) * UnitSizeFactor);
-  double EstInputPower = ((x - Min_Input_Power) * (Max_Input_Power - Min_Input_Power) / (Max_Input_Power - Min_Input_Power) + Min_Input_Power);  // Constrain Input Power to FTC Onboard Reading range
-  double OutputPower = (((float)HeatPump.Status.PrimaryFlowRate / 60) * (float)HeatPump.Status.HeaterDeltaT * unitSettings.GlycolStrength);      // Approx Heat Capacity of Fluid in Use
+  EstInputPower = ((x - Min_Input_Power) * (Max_Input_Power - Min_Input_Power) / (Max_Input_Power - Min_Input_Power) + Min_Input_Power);  // Constrain Input Power to FTC Onboard Reading range
+  OutputPower = (((float)HeatPump.Status.PrimaryFlowRate / 60) * (float)HeatPump.Status.HeaterDeltaT * unitSettings.GlycolStrength);      // Approx Heat Capacity of Fluid in Use
 
 
   if (HeatPump.Status.ThreeWayValve == 1 || HeatPump.Status.SystemOperationMode == 1 || HeatPump.Status.SystemOperationMode == 6) { DHW_Mode = true; }
@@ -1481,7 +1499,7 @@ void CalculateCompCurve() {
     unitSettings.z2_active = doc["zone2"]["active"];
     //if (!unitSettings.z1_active && !unitSettings.z2_active) { return; } else                        // Only calculates (saves time, if mode enabled)
     {
-      float OutsideAirTemperature;
+      float OutsideAirTemperature = 0;
 
       if (!unitSettings.use_local_outdoor && (MQTTClient1.connected() || MQTTClient2.connected())) {  // Determine Outdoor Temperature Input
         OutsideAirTemperature = doc["cloud_outdoor"];
@@ -1504,7 +1522,8 @@ void CalculateCompCurve() {
             float y1 = doc["base"]["zone1"]["curve"][i]["flow"];                           //
             float z1_delta_y = y2 - y1;                                                    // y2-y1
             float z1_delta_x = tmp_o_2 - tmp_o_1;                                          // x2-x1
-            float z1_m = z1_delta_y / z1_delta_x;                                          // m = y2-y1 / x2-x1
+            float z1_m = 0;                                                                //
+            if (z1_delta_x > 0) { z1_m = z1_delta_y / z1_delta_x; }                        // Prevent Div by 0          m = y2-y1 / x2-x1
             float z1_c = y1 - (z1_m * tmp_o_1);                                            // c = y-mx
             Z1_CurveFSP = z1_m * OutsideAirTemperature + z1_c;                             // y = mx+c
           }
@@ -1526,9 +1545,10 @@ void CalculateCompCurve() {
             float y1 = doc["base"]["zone2"]["curve"][i]["flow"];
             float z2_delta_y = y2 - y1;
             float z2_delta_x = tmp_o_2 - tmp_o_1;
-            float z2_m = z2_delta_y / z2_delta_x;
-            float z2_c = y1 - (z2_m * tmp_o_1);                 // c = y-mx
-            Z2_CurveFSP = z2_m * OutsideAirTemperature + z2_c;  // y = mx+c
+            float z2_m = 0;                                                //
+            if (z2_delta_x > 0) { float z2_m = z2_delta_y / z2_delta_x; }  // Prevent Div by 0          m = y2-y1 / x2-x1
+            float z2_c = y2 - (z2_m * tmp_o_1);                            // c = y-mx
+            Z2_CurveFSP = z2_m * OutsideAirTemperature + z2_c;             // y = mx+c
           }
         }
       }
@@ -1547,8 +1567,7 @@ void CalculateCompCurve() {
       HeatPump.SetFlowSetpoint(Z2_CurveFSP, HeatPump.Status.HeatingControlModeZ2, ZONE2);
       HeatPump.Status.Zone2FlowTemperatureSetpoint = Z2_CurveFSP;
     }
-
-    return;
+    CompCurveReport();
   }
 }
 
