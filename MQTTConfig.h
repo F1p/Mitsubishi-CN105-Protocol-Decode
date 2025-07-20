@@ -743,9 +743,8 @@ void readSettingsFromConfig() {
     digitalWrite(Red_RGB_LED, LOW);  // Turn the Red LED Off
 #endif
 #ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack LED
-    leds[0] = CRGB::Green;
-    FastLED.setBrightness(100);  // LED on, reduced brightness
-    FastLED.show();
+    myLED.setPixel( 0, L_GREEN, 1 );    // set the LED colour and show it
+    myLED.brightness( LED_BRIGHT, 1 );
 #endif
   }
 
@@ -774,9 +773,8 @@ void readSettingsFromConfig() {
         return 1;
       } else {
 #ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack LED
-        //FastLED.setBrightness(255);  // LED on, reduced brightness
         if (!wifiManager.getConfigPortalActive()) {  // Not got config portal open, change to orange:
-          leds[0] = CRGB::Orange;
+          myLED.setPixel( 0, L_ORANGE, 1 );    // set the LED colour and show it
         }
         //
 #endif
@@ -826,9 +824,8 @@ void readSettingsFromConfig() {
     if (!MQTTClient1.connected()) {
 #ifdef ARDUINO_M5STACK_ATOMS3                      // Define the M5Stack LED
       if (!wifiManager.getConfigPortalActive()) {  // Not got config portal open, change to orange:
-        leds[0] = CRGB::Orange;
+        myLED.setPixel( 0, L_ORANGE, 1 );    // set the LED colour and show it
       }
-      FastLED.show();
 #endif
 #ifdef ESP8266                          // Define the Witty ESP8266 Ports
       analogWrite(Green_RGB_LED, 30);   // Green LED on, 25% brightness

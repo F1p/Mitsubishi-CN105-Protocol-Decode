@@ -15,7 +15,7 @@
 // -- Supported Hardware -- //
 /* As sold Witty ESP8266 based               / Core 3.1.2 / Flash 4MB (1MB FS / 1MB OTA - 16KB Cache/48KB IRAM not shared) */
 /* ESP32 AtomS3 Lite (ESP32S3 Dev Module)    / Core 3.1.1 / Flash 8M with SPIFFS (3MB APP / 1.5MB SPIFFS)                  */
-/* ESP32 Ethernet WT32-ETH01                 / Core 3.1.1 / Flash 4MB (1.9MB APP / 180MB SPIFFS)                           */
+/* ESP32 Ethernet WT32-ETH01                 / Core 3.1.1 / Flash 4MB (1.9MB APP / 180KB SPIFFS)                           */
 
 
 #if defined(ESP8266) || defined(ESP32)  // ESP32 or ESP8266 Compatiability
@@ -79,12 +79,16 @@ int Red_RGB_LED = 15;
 #define SERIAL_CONFIG SERIAL_8E1
 
 #ifdef ARDUINO_M5STACK_ATOMS3
-#include <FastLED.h>
-#define FASTLED_FORCE_NAMESPACE
-#define FASTLED_INTERNAL
-#define NUM_LEDS 1
-#define DATA_PIN 35
-CRGB leds[NUM_LEDS];
+#include <LiteLED.h>
+#define LED_TYPE LED_STRIP_WS2812
+#define LED_TYPE_IS_RGBW 0
+#define LED_GPIO 35
+#define LED_BRIGHT 100
+static const crgb_t L_RED = 0xff0000;
+static const crgb_t L_GREEN = 0x00ff00;
+static const crgb_t L_BLUE = 0x0000ff;
+static const crgb_t L_ORANGE = 0xffa500;
+LiteLED myLED(LED_TYPE, LED_TYPE_IS_RGBW);
 int Reset_Button = 41;
 #define FTCCable_RxPin 2
 #define FTCCable_TxPin 1
@@ -167,10 +171,16 @@ struct UnitSettings {
   char glycol_identifier[7] = "glycol";
   char compcurve_identifier[10] = "compcurve";
   String CompCurve = "{\"base\":{\"zone1\":{\"curve\":[{\"flow\":60,\"outside\":-10},{\"flow\":35,\"outside\":0},{\"flow\":20,\"outside\":15},{\"flow\":10,\"outside\":20}]},\"zone2\":{\"curve\":[{\"flow\":60,\"outside\":-10},{\"flow\":35,\"outside\":0},{\"flow\":20,\"outside\":15}]}},\"zone1\":{\"active\":false},\"zone2\":{\"active\":false}}";
-
-  float z1_manual_offset, z1_wind_offset, z1_temp_offset, z2_manual_offset, z2_wind_offset, z2_temp_offset, cloud_outdoor = 0;
+  float z1_manual_offset = 0;
+  float z1_wind_offset = 0;
+  float z1_temp_offset = 0;
+  float z2_manual_offset = 0;
+  float z2_wind_offset = 0;
+  float z2_temp_offset = 0;
+  float cloud_outdoor = 0;
   bool use_local_outdoor = true;
-  bool z1_active, z2_active = false;
+  bool z1_active = false;
+  bool z2_active = false;
 };
 
 
@@ -285,8 +295,9 @@ void setup() {
 
 
 // -- Lights for ESP8266 and ESP32 -- //
-#ifdef ARDUINO_M5STACK_ATOMS3                              // Define the M5Stack LED
-  FastLED.addLeds<WS2812, DATA_PIN, GRB>(leds, NUM_LEDS);  // ESP32 M5 Stack Atom S3
+#ifdef ARDUINO_M5STACK_ATOMS3    // Define the M5Stack LED
+  myLED.begin(LED_GPIO, 1);      // initialze the myLED object. Here we have 1 LED attached to the LED_GPIO pin
+  myLED.brightness(LED_BRIGHT);  // set the LED photon intensity level
 #endif
 #ifdef ESP8266                     // Define the Witty ESP8266 Ports
   pinMode(Activity_LED, OUTPUT);   // ESP8266 Onboard LED
@@ -408,9 +419,7 @@ void loop() {
       digitalWrite(Red_RGB_LED, HIGH);   // Turn the Red LED On
 #endif
 #ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack LED
-      leds[0] = CRGB::Red;     // Turn the Red LED On
-      FastLED.setBrightness(255);
-      FastLED.show();
+      myLED.setPixel( 0, L_RED, 1 );
 #endif
     }  // Oneshot to start the timer
     if (millis() - wifipreviousMillis >= 300000) {
@@ -427,21 +436,16 @@ void loop() {
       ESP.reset();
 #endif
 #ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack LED
-      leds[0] = CRGB::Red;     // Flash the Red LED
-      FastLED.setBrightness(255);
-      FastLED.show();
+      myLED.setPixel( 0, L_RED, 1 );    // set the LED colour and show it     // Flash the Red LED
+      myLED.brightness( LED_BRIGHT, 1 );
       delay(500);
-      FastLED.setBrightness(0);
-      FastLED.show();
+      myLED.brightness( 0, 1 );
       delay(500);
-      FastLED.setBrightness(255);
-      FastLED.show();
+      myLED.brightness( LED_BRIGHT, 1 );
       delay(500);
-      FastLED.setBrightness(0);
-      FastLED.show();
+      myLED.brightness( 0, 1 );
       delay(500);
-      FastLED.setBrightness(255);
-      FastLED.show();
+      myLED.brightness( LED_BRIGHT, 1 );
       ESP.restart();
 #endif
     }  // Wait for 5 mins to try reconnects then force restart
@@ -453,9 +457,7 @@ void loop() {
     digitalWrite(Red_RGB_LED, LOW);    // Turn the Red LED Off
 #endif
 #ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack LED
-    leds[0] = CRGB::Blue;
-    FastLED.setBrightness(255);  // LED on, reduced brightness
-    FastLED.show();
+    myLED.setPixel( 0, L_BLUE, 1 );
 #endif
     WiFiConnectedLastLoop = false;
   } else {                              // WiFi is connected
@@ -466,9 +468,7 @@ void loop() {
       digitalWrite(Red_RGB_LED, LOW);   // Turn the Red LED Off
 #endif
 #ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack LED
-      leds[0] = CRGB::Green;
-      FastLED.setBrightness(100);  // LED on, reduced brightness
-      FastLED.show();
+      myLED.setPixel( 0, L_GREEN, 1 );
 #endif
     }
     WiFiConnectedLastLoop = true;
@@ -493,22 +493,15 @@ void loop() {
     delay(500);
 #endif
 #ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack LED
-    leds[0] = CRGB::Red;       // Flash the Red LED
-    FastLED.show();
-    FastLED.setBrightness(255);
-    FastLED.show();
+    myLED.setPixel( 0, L_RED, 1 );       // Flash the Red LED
     delay(500);
-    FastLED.setBrightness(0);
-    FastLED.show();
+    myLED.brightness( 0, 1 );
     delay(500);
-    FastLED.setBrightness(255);
-    FastLED.show();
+    myLED.brightness( LED_BRIGHT, 1 );
     delay(500);
-    FastLED.setBrightness(0);
-    FastLED.show();
+    myLED.brightness( 0, 1 );
     delay(500);
-    FastLED.setBrightness(255);
-    FastLED.show();
+    myLED.brightness( LED_BRIGHT, 1 );
     delay(500);
 #endif
 
@@ -519,10 +512,7 @@ void loop() {
       delay(500);
 #endif
 #ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack LED
-      leds[0] = CRGB::Blue;
-      FastLED.show();
-      FastLED.setBrightness(255);
-      FastLED.show();
+      myLED.setPixel( 0, L_BLUE, 1 );
 #endif
       delay(500);
       wifiManager.resetSettings();  // Clear settings
@@ -1402,8 +1392,8 @@ void FastPublish(void) {
 
 void FlashGreenLED(void) {
 #ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack LED
-  FastLED.setBrightness(255);
-  FastLED.show();
+  myLED.setPixel( 0, L_GREEN, 1 );
+  myLED.brightness( 255, 1 );
 #endif
 #ifdef ESP8266                        // Define the Witty ESP8266 Ports
   digitalWrite(Green_RGB_LED, HIGH);  // Flash the Green LED full brightness
@@ -1413,8 +1403,7 @@ void FlashGreenLED(void) {
   analogWrite(Green_RGB_LED, 30);  // Green LED on, 25% brightness
 #endif
 #ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack LED
-  FastLED.setBrightness(100);
-  FastLED.show();
+  myLED.brightness( LED_BRIGHT, 1 );
 #endif
 }
 
