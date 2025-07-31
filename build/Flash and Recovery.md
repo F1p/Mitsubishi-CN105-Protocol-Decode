@@ -27,7 +27,7 @@ Supported Hardware is ESP8266 ebay sold hardware: https://www.ebay.co.uk/itm/325
 
 1. Download the files from the [/build](https://github.com/F1p/Mitsubishi-Ecodan-Bridge-CN105/tree/master/build/esp32.esp32.m5stack-atoms3) folder.
 
-2. Visit [https://web.esphome.io/?dashboard_install](https://web.esphome.io/?dashboard_install) and connect to USB-C device and upload/install file.
+2. Visit [https://web.esphome.io/?dashboard_install](https://web.esphome.io/?dashboard_install) and connect to USB-C device and upload/install the *.merged.bin file.
    You can do WiFi setup via onboard Access Point, while setting MQTT server
 
 
