@@ -168,7 +168,7 @@ typedef struct _EcodanStatus {
   bool SyncTime;
 
   //From Message 0x02
-  uint8_t Defrost, ThermostatZ1, ThermostatZ2;
+  uint8_t Defrost, LastDefrost, ThermostatZ1, ThermostatZ2;
 
   //From Message 0x03
   uint8_t RefrigeFltCode, ErrCode1, ErrCode2, FltCode1, FltCode2;
@@ -184,8 +184,8 @@ typedef struct _EcodanStatus {
   // From Message 0x07
   uint8_t InputPower, OutputPower;
 
-  // From Message 0x08 
-  
+  // From Message 0x08
+
 
   //From Message 0x09
   float Zone1TemperatureSetpoint;

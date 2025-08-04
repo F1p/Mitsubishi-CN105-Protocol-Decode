@@ -54,7 +54,7 @@
 #include "Ecodan.h"
 #include "Melcloud.h"
 
-String FirmwareVersion = "6.3.0";
+String FirmwareVersion = "6.3.1";
 
 
 #ifdef ESP8266  // Define the Witty ESP8266 Serial Pins
@@ -62,15 +62,15 @@ String FirmwareVersion = "6.3.0";
 #define MEL_STREAM SwSerial2
 #define SERIAL_CONFIG SWSERIAL_8E1
 int LDR = A0;
+#define FTCCable_TxPin 16
+#define FTCCable_RxPin 14
+#define MEL_TxPin 1
 #define MEL_RxPin 3
 int Activity_LED = 2;
 int Reset_Button = 4;
-#define MEL_TxPin 1
 int Green_RGB_LED = 12;
 int Blue_RGB_LED = 13;
-#define FTCCable_RxPin 14
 int Red_RGB_LED = 15;
-#define FTCCable_TxPin 16
 #endif
 
 #ifdef ESP32  // Define the M5Stack Serial Pins
@@ -252,8 +252,8 @@ TimerCallBack HeatPumpQuery7(300000, CalculateCompCurve);      // Calculate the 
 unsigned long looppreviousMicros = 0;    // variable for comparing millis counter
 unsigned long ftcpreviousMillis = 0;     // variable for comparing millis counter
 unsigned long wifipreviousMillis = 0;    // variable for comparing millis counter
-unsigned long ftcconpreviousMillis = 0;  // variable for comparing millis counter
 unsigned long postwrpreviousMillis = 0;  // variable for comparing millis counter
+unsigned long postdfpreviousMillis = 0;  // variable for comparing millis counter
 int FTCLoopSpeed, CPULoopSpeed;          // variable for holding loop time in ms
 uint8_t SvcRequested = 0;
 int16_t SvcReply = 0;
@@ -261,6 +261,7 @@ bool WiFiOneShot = true;
 bool CableConnected = true;
 bool WiFiConnectedLastLoop = false;
 bool PostWriteTrigger = false;
+bool PostDefrostTimer = false;
 
 extern int cmd_queue_length;
 extern int cmd_queue_position;
@@ -419,7 +420,7 @@ void loop() {
       digitalWrite(Red_RGB_LED, HIGH);   // Turn the Red LED On
 #endif
 #ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack LED
-      myLED.setPixel( 0, L_RED, 1 );
+      myLED.setPixel(0, L_RED, 1);
 #endif
     }  // Oneshot to start the timer
     if (millis() - wifipreviousMillis >= 300000) {
@@ -435,17 +436,17 @@ void loop() {
       digitalWrite(Red_RGB_LED, HIGH);
       ESP.reset();
 #endif
-#ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack LED
-      myLED.setPixel( 0, L_RED, 1 );    // set the LED colour and show it     // Flash the Red LED
-      myLED.brightness( LED_BRIGHT, 1 );
+#ifdef ARDUINO_M5STACK_ATOMS3       // Define the M5Stack LED
+      myLED.setPixel(0, L_RED, 1);  // set the LED colour and show it     // Flash the Red LED
+      myLED.brightness(LED_BRIGHT, 1);
       delay(500);
-      myLED.brightness( 0, 1 );
+      myLED.brightness(0, 1);
       delay(500);
-      myLED.brightness( LED_BRIGHT, 1 );
+      myLED.brightness(LED_BRIGHT, 1);
       delay(500);
-      myLED.brightness( 0, 1 );
+      myLED.brightness(0, 1);
       delay(500);
-      myLED.brightness( LED_BRIGHT, 1 );
+      myLED.brightness(LED_BRIGHT, 1);
       ESP.restart();
 #endif
     }  // Wait for 5 mins to try reconnects then force restart
@@ -457,7 +458,7 @@ void loop() {
     digitalWrite(Red_RGB_LED, LOW);    // Turn the Red LED Off
 #endif
 #ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack LED
-    myLED.setPixel( 0, L_BLUE, 1 );
+    myLED.setPixel(0, L_BLUE, 1);
 #endif
     WiFiConnectedLastLoop = false;
   } else {                              // WiFi is connected
@@ -468,7 +469,7 @@ void loop() {
       digitalWrite(Red_RGB_LED, LOW);   // Turn the Red LED Off
 #endif
 #ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack LED
-      myLED.setPixel( 0, L_GREEN, 1 );
+      myLED.setPixel(0, L_GREEN, 1);
 #endif
     }
     WiFiConnectedLastLoop = true;
@@ -492,16 +493,16 @@ void loop() {
     digitalWrite(Red_RGB_LED, HIGH);
     delay(500);
 #endif
-#ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack LED
-    myLED.setPixel( 0, L_RED, 1 );       // Flash the Red LED
+#ifdef ARDUINO_M5STACK_ATOMS3     // Define the M5Stack LED
+    myLED.setPixel(0, L_RED, 1);  // Flash the Red LED
     delay(500);
-    myLED.brightness( 0, 1 );
+    myLED.brightness(0, 1);
     delay(500);
-    myLED.brightness( LED_BRIGHT, 1 );
+    myLED.brightness(LED_BRIGHT, 1);
     delay(500);
-    myLED.brightness( 0, 1 );
+    myLED.brightness(0, 1);
     delay(500);
-    myLED.brightness( LED_BRIGHT, 1 );
+    myLED.brightness(LED_BRIGHT, 1);
     delay(500);
 #endif
 
@@ -512,7 +513,7 @@ void loop() {
       delay(500);
 #endif
 #ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack LED
-      myLED.setPixel( 0, L_BLUE, 1 );
+      myLED.setPixel(0, L_BLUE, 1);
 #endif
       delay(500);
       wifiManager.resetSettings();  // Clear settings
@@ -533,6 +534,12 @@ void loop() {
     HeatPump.SetSvrControlMode(PreHWBoostSvrCtrlMode, 1, HeatPump.Status.ProhibitHeatingZ1, HeatPump.Status.ProhibitCoolingZ1, HeatPump.Status.ProhibitHeatingZ2, HeatPump.Status.ProhibitCoolingZ2);  // Enable the Prohibit and Return Server Control Mode to the previous state when the System Operation Mode changes from Hot Water to anything else
     WriteInProgress = true;                                                                                                                                                                            // Wait For OK
     NormalHWBoostOperating = 0;                                                                                                                                                                        // Don't enter again
+  }
+
+  // -- Defrost Handler -- //
+  if (unitSettings.use_local_outdoor && HeatPump.Status.LastDefrost != 0 && HeatPump.Status.Defrost == 0) {  // Transitioned from Defrosting Stage to Normal
+    postdfpreviousMillis = millis();                                                                         // Capture the current time it occured for Comp Curve
+    PostDefrostTimer = true;                                                                                 // Trigger post defrost block
   }
 
   // -- CPU Loop Time End -- //
@@ -1392,8 +1399,8 @@ void FastPublish(void) {
 
 void FlashGreenLED(void) {
 #ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack LED
-  myLED.setPixel( 0, L_GREEN, 1 );
-  myLED.brightness( 255, 1 );
+  myLED.setPixel(0, L_GREEN, 1);
+  myLED.brightness(255, 1);
 #endif
 #ifdef ESP8266                        // Define the Witty ESP8266 Ports
   digitalWrite(Green_RGB_LED, HIGH);  // Flash the Green LED full brightness
@@ -1403,7 +1410,7 @@ void FlashGreenLED(void) {
   analogWrite(Green_RGB_LED, 30);  // Green LED on, 25% brightness
 #endif
 #ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack LED
-  myLED.brightness( LED_BRIGHT, 1 );
+  myLED.brightness(LED_BRIGHT, 1);
 #endif
 }
 
@@ -1494,6 +1501,12 @@ void CalculateCompCurve() {
         OutsideAirTemperature = doc["cloud_outdoor"];
       } else {
         OutsideAirTemperature = HeatPump.Status.OutsideTemperature;
+
+        if (HeatPump.Status.Defrost != 0 || ((PostDefrostTimer) && (millis() - postdfpreviousMillis < 240000))) {  // To allow sensor to stabilise after influence from the defrost
+          return;                                                                                                  // If currently defrosting or less than 4 minutes post-defrost skip re-calculation
+        } else {
+          PostDefrostTimer = false;
+        }
       }
 
 
