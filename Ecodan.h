@@ -36,6 +36,7 @@ public:
   void StopSVCStateMachine(void);
   void WriteStateMachine(void);
   uint8_t UpdateComplete(void);
+  uint8_t SVCUpdateComplete(void);
   uint8_t HeatPumpConnected(void);
   uint8_t Lastmsbetweenmsg(void);
 
@@ -53,13 +54,15 @@ public:
   void WriteMELCloudCMD(uint8_t cmd);
   void WriteServiceCodeCMD(int cmd);
 
+  bool SVCPopulated;
+
 protected:
 
 private:
   uint8_t CurrentMessage, CurrentSVCMessage;
   uint8_t CurrentCommand;
 
-  uint8_t UpdateFlag;
+  uint8_t UpdateFlag, SVCUpdateFlag;
   bool ProcessFlag;
   uint8_t Connected;
 

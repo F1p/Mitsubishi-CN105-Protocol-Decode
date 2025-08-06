@@ -33,8 +33,11 @@ uint8_t FirstReadActiveCommand[] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0
 #define NUMBER_COMMANDS 56
 uint8_t ActiveCommand[] = { 0x00, 0x26, 0x14, 0x28, 0x03, 0x0C, 0x04, 0x05, 0x06, 0x15, 0x07, 0x08, 0x09, 0x04,
                             0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x0C, 0x04, 0x10, 0x13, 0x14, 0x04, 0x15, 0x0C, 0x16,
-                            0x17, 0x18, 0x04, 0x0C, 0x19, 0x1A, 0x1B, 0x1C, 0x04, 0x15, 0x1D, 0x0C, 0x1E, 0x1F, 
+                            0x17, 0x18, 0x04, 0x0C, 0x19, 0x1A, 0x1B, 0x1C, 0x04, 0x15, 0x1D, 0x0C, 0x1E, 0x1F,
                             0x20, 0x04, 0x01, 0x0C, 0x27, 0x14, 0x02, 0x29, 0x04, 0xA1, 0x0C, 0xA2, 0x15, 0x00 };
+
+#define FIRST_READ_NUMBER_SVC_COMMANDS 11
+int FirstReadActiveServiceCode[] = { 3, 4, 5, 7, 8, 10, 13, 19, 20, 22, 23 };
 
 #define NUMBER_SVC_COMMANDS 30
 int ActiveServiceCode[] = { 3, 4, 5, 13, 7, 4, 5, 13, 10, 4, 5, 13, 8, 4, 5, 13, 19, 4, 5, 13, 20, 4, 5, 13, 22, 4, 5, 13, 23, 5 };
@@ -54,6 +57,8 @@ ECODAN::ECODAN(void)
   CurrentCommand = 0;
   CurrentSVCMessage = 0;
   UpdateFlag = 0;
+  SVCUpdateFlag = 0;
+  SVCPopulated = false;
   ProcessFlag = false;
   Connected = false;
   msbetweenmsg = 0;
@@ -123,10 +128,15 @@ void ECODAN::StopStateMachine(void) {
 
 void ECODAN::StatusSVCMachine(void) {
   if (CurrentSVCMessage > 0) {
+
     if (Status.FTCVersion == FTC7 && Status.OutdoorExtendedSensors) {
       WriteServiceCodeCMD(ActiveServiceCodeFTC7[CurrentSVCMessage - 1]);
     } else {
-      WriteServiceCodeCMD(ActiveServiceCode[CurrentSVCMessage - 1]);
+      if (!SVCPopulated) {
+        WriteServiceCodeCMD(FirstReadActiveServiceCode[CurrentSVCMessage - 1]);
+      } else {
+        WriteServiceCodeCMD(ActiveServiceCode[CurrentSVCMessage - 1]);
+      }
     }
 
     CurrentSVCMessage++;
@@ -137,6 +147,7 @@ void ECODAN::StatusSVCMachine(void) {
     }
 
     if (CurrentSVCMessage == 0) {
+      SVCUpdateFlag = 1;
       CurrentSVCMessage = 1;
     }
   } else {
@@ -253,6 +264,17 @@ uint8_t ECODAN::HeatPumpConnected(void) {
 uint8_t ECODAN::UpdateComplete(void) {
   if (UpdateFlag) {
     UpdateFlag = 0;
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
+
+uint8_t ECODAN::SVCUpdateComplete(void) {
+  if (SVCUpdateFlag) {
+    SVCUpdateFlag = 0;
+    SVCPopulated = true;
     return 1;
   } else {
     return 0;

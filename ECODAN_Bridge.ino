@@ -120,7 +120,6 @@ int Heart_Value = 0;        // Heatbeat ID
 
 unsigned long SERIAL_BAUD = 2400;
 bool shouldSaveConfig = false;
-
 const int deviceId_max_length = 15;
 const int hostname_max_length = 200;
 const int port_max_length = 10;
@@ -375,11 +374,11 @@ void loop() {
     DEBUG_PRINTLN(F("Write OK!"));                              // Pause normal processsing until complete
     HeatPump.Status.Write_To_Ecodan_OK = false;                 // Set back to false
     WriteInProgress = false;                                    // Set back to false
-    if (cmd_queue_length > cmd_queue_position) {
-      cmd_queue_position++;  // Increment the position
-      CurrentWriteAttempt = 0;
-    } else {
-      cmd_queue_position = 1;  // All commands written, reset
+    if (cmd_queue_length > cmd_queue_position) {                // If the queue has items
+      cmd_queue_position++;                                     // Increment the position
+      CurrentWriteAttempt = 0;                                  //
+    } else {                                                    // All commands written, reset
+      cmd_queue_position = 1;
       cmd_queue_length = 0;
       CurrentWriteAttempt = 0;
       PostWriteTrigger = true;  // Allows 1s to pass, then restarts read operation
@@ -586,6 +585,7 @@ void HeatPumpQueryStateEngine(void) {
         CalculateCompCurve();
       }
     } else {
+      HeatPump.SVCUpdateComplete();
       HeatPump.StatusSVCMachine();  // Call service codes
       if (MQTTReconnect() || MQTT2Reconnect()) {
         PublishAllReports();
@@ -1316,19 +1316,21 @@ void ConfigurationReport(void) {
   doc[F("HasCooling")] = HeatPump.Status.HasCooling;
   doc[F("Has2Zone")] = HeatPump.Status.Has2Zone;
   doc[F("HasSimple2Zone")] = HeatPump.Status.Simple2Zone;
-  doc[F("CompOpTimes")] = HeatPump.Status.CompOpTimes;
-  doc[F("LiquidTemp")] = HeatPump.Status.LiquidTemp;
-  doc[F("TH4Discharge")] = HeatPump.Status.TH4Discharge;
-  doc[F("Superheat")] = HeatPump.Status.Superheat;
-  doc[F("Subcool")] = HeatPump.Status.Subcool;
-  doc[F("TH8HeatSink")] = HeatPump.Status.TH8HeatSink;
-  doc[F("TH6Pipe")] = HeatPump.Status.TH6Pipe;
-  doc[F("TH32Pipe")] = HeatPump.Status.TH32Pipe;
-  doc[F("Fan1RPM")] = HeatPump.Status.Fan1RPM;
-  doc[F("Fan2RPM")] = HeatPump.Status.Fan2RPM;
-  doc[F("LEVA")] = HeatPump.Status.LEVA;
-  doc[F("LEVB")] = HeatPump.Status.LEVB;
-  doc[F("TH33")] = HeatPump.Status.TH33;
+  // Publish only when available
+  if (HeatPump.SVCPopulated || HeatPump.Status.CompOpTimes != 0) { doc[F("CompOpTimes")] = HeatPump.Status.CompOpTimes; }
+  if (HeatPump.SVCPopulated || HeatPump.Status.LiquidTemp != 0) { doc[F("LiquidTemp")] = HeatPump.Status.LiquidTemp; }
+  if (HeatPump.SVCPopulated || HeatPump.Status.TH4Discharge != 0) { doc[F("TH4Discharge")] = HeatPump.Status.TH4Discharge; }
+  if (HeatPump.SVCPopulated || HeatPump.Status.Superheat != 0) { doc[F("Superheat")] = HeatPump.Status.Superheat; }
+  if (HeatPump.SVCPopulated || HeatPump.Status.Subcool != 0) { doc[F("Subcool")] = HeatPump.Status.Subcool; }
+  if (HeatPump.SVCPopulated || HeatPump.Status.TH8HeatSink != 0) { doc[F("TH8HeatSink")] = HeatPump.Status.TH8HeatSink; }
+  if (HeatPump.SVCPopulated || HeatPump.Status.TH6Pipe != 0) { doc[F("TH6Pipe")] = HeatPump.Status.TH6Pipe; }
+  if (HeatPump.SVCPopulated || HeatPump.Status.TH32Pipe != 0) { doc[F("TH32Pipe")] = HeatPump.Status.TH32Pipe; }
+  if (HeatPump.SVCPopulated || HeatPump.Status.Fan1RPM != 0) { doc[F("Fan1RPM")] = HeatPump.Status.Fan1RPM; }
+  if (HeatPump.SVCPopulated || HeatPump.Status.Fan2RPM != 0) { doc[F("Fan2RPM")] = HeatPump.Status.Fan2RPM; }
+  if (HeatPump.SVCPopulated || HeatPump.Status.LEVA != 0) { doc[F("LEVA")] = HeatPump.Status.LEVA; }
+  if (HeatPump.SVCPopulated || HeatPump.Status.LEVB != 0) { doc[F("LEVB")] = HeatPump.Status.LEVB; }
+  if (HeatPump.SVCPopulated || HeatPump.Status.TH33 != 0) { doc[F("TH33")] = HeatPump.Status.TH33; }
+
   doc[F("HB_ID")] = Heart_Value;
 
   serializeJson(doc, Buffer);

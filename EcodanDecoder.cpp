@@ -941,7 +941,7 @@ void ECODANDECODER::Process0xA3(uint8_t *Buffer, EcodanStatus *Status) {
   for (int i = 1; i < 16; i++) {
     Array0xa3[i] = Buffer[i];
   }
-  if (Buffer[3] != 0) {         // Valid Reply is not 0
+  if (Buffer[3] == 2) {         // Valid Reply is "2" (result)
     Write_To_Ecodan_OK = true;  // For de-queue
     Status->Write_To_Ecodan_OK = Write_To_Ecodan_OK;
 
