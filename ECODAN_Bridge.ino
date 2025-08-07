@@ -1006,7 +1006,8 @@ void SystemReport(void) {
   float Min_Input_Power = 0;
   float Max_Input_Power = 0;
 
-  bool DHW_Mode, Non_HP_Mode = false;
+  bool DHW_Mode = false;
+  bool Non_HP_Mode = false;
   float UnitSizeFactor, Instant_CoP;
 
 
