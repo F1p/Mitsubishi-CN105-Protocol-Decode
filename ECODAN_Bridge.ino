@@ -1065,10 +1065,10 @@ void SystemReport(void) {
     } else if (OutputPower == 0 && Non_HP_Mode) {            // Boosters or Immersion
       if (DHW_Mode) {                                        // DHW Operation Mode
         EstDHWInputPower = EstInputPower;                    //
-        DHWOutputPower = HeatOutputPower = OutputPower;      //
+        DHWOutputPower =  OutputPower = HeatOutputPower;      //
       } else {                                               // Heating Modes
         EstHeatingInputPower = EstInputPower;                //
-        HeatingOutputPower = HeatOutputPower = OutputPower;  //
+        HeatingOutputPower = OutputPower = HeatOutputPower;  //
       }                                                      //
     }                                                        //
   }
