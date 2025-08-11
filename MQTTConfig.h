@@ -738,13 +738,14 @@ void readSettingsFromConfig() {
 
     delay(10);
     PublishDiscoveryTopics(1, MQTT_BASETOPIC);
+
 #ifdef ESP8266                       // Define the Witty ESP8266 Ports
     analogWrite(Green_RGB_LED, 30);  // Green LED on, 25% brightness
     digitalWrite(Red_RGB_LED, LOW);  // Turn the Red LED Off
 #endif
-#ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack LED
-    myLED.setPixel( 0, L_GREEN, 1 );    // set the LED colour and show it
-    myLED.brightness( LED_BRIGHT, 1 );
+#ifdef ARDUINO_M5STACK_ATOMS3       // Define the M5Stack LED
+    myLED.setPixel(0, L_GREEN, 1);  // set the LED colour and show it
+    myLED.brightness(LED_BRIGHT, 1);
 #endif
   }
 
@@ -768,13 +769,13 @@ void readSettingsFromConfig() {
         digitalWrite(Red_RGB_LED, LOW);     // Turn off the Red LED
         digitalWrite(Green_RGB_LED, HIGH);  // Flash the Green LED
         delay(10);
-        digitalWrite(Green_RGB_LED, LOW);
+        analogWrite(Green_RGB_LED, 30);  // Green LED on, 25% brightness
 #endif
         return 1;
       } else {
-#ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack LED
+#ifdef ARDUINO_M5STACK_ATOMS3                        // Define the M5Stack LED
         if (!wifiManager.getConfigPortalActive()) {  // Not got config portal open, change to orange:
-          myLED.setPixel( 0, L_ORANGE, 1 );    // set the LED colour and show it
+          myLED.setPixel(0, L_ORANGE, 1);            // set the LED colour and show it
         }
         //
 #endif
@@ -824,7 +825,7 @@ void readSettingsFromConfig() {
     if (!MQTTClient1.connected()) {
 #ifdef ARDUINO_M5STACK_ATOMS3                      // Define the M5Stack LED
       if (!wifiManager.getConfigPortalActive()) {  // Not got config portal open, change to orange:
-        myLED.setPixel( 0, L_ORANGE, 1 );    // set the LED colour and show it
+        myLED.setPixel(0, L_ORANGE, 1);            // set the LED colour and show it
       }
 #endif
 #ifdef ESP8266                          // Define the Witty ESP8266 Ports
@@ -832,6 +833,8 @@ void readSettingsFromConfig() {
       digitalWrite(Red_RGB_LED, HIGH);  // Add the Red LED to the Green LED = Orange
 #endif
       MQTTReconnect();
+      DEBUG_PRINTLN("Returned to here 1");
+      delay(10);
     }
   }
 

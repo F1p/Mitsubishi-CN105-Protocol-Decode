@@ -1340,12 +1340,12 @@ void ConfigurationReport(void) {
 }
 
 void CompCurveReport(void) {
-  DynamicJsonDocument storeddoc(1024);
+  JsonDocument storeddoc;
   deserializeJson(storeddoc, unitSettings.CompCurve);
   JsonObject obj = storeddoc.as<JsonObject>();
 
   JsonDocument doc;
-  char Buffer[2048];
+  char Buffer[1024];
 
   doc = obj;
   doc[F("zone1")]["active"] = unitSettings.z1_active;
