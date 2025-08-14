@@ -629,7 +629,9 @@ int MQTT_CLIMATE_MAX[] PROGMEM = {
   30,
   30,
   60,
-  60
+  60,
+  65,
+  70
 };
 
 int MQTT_CLIMATE_MIN[] PROGMEM = {

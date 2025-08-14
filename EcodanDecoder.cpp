@@ -819,7 +819,8 @@ void ECODANDECODER::Process0x26(uint8_t *Buffer, EcodanStatus *Status) {
   DHWSetpoint = ((float)ExtractUInt16(Buffer, 8) / 100);
   //Zone1FlowSetpoint = ((float)ExtractUInt16(Buffer, 10) / 100);   // Duplicate of 0x09
   //Zone2FlowSetpoint = ((float)ExtractUInt16(Buffer, 12) / 100);   // Duplicate of 0x09
-
+  //ScheduleStatus = Buffer[14];
+  
   Status->SystemPowerMode = SystemPowerMode;
   Status->SystemOperationMode = SystemOperationMode;
   Status->HotWaterControlMode = HotWaterControlMode;
@@ -985,15 +986,17 @@ void ECODANDECODER::Process0xA3(uint8_t *Buffer, EcodanStatus *Status) {
 
 
 void ECODANDECODER::Process0xC9(uint8_t *Buffer, EcodanStatus *Status) {
-  uint8_t FTCVersion;
+  uint8_t FTCVersion, RefrigerantType;
 
   for (int i = 1; i < 16; i++) {
     Array0xc9[i] = Buffer[i];
   }
 
   FTCVersion = Buffer[6];
+  RefrigerantType = Buffer[10];
 
   Status->FTCVersion = FTCVersion;
+  Status->RefrigerantType = RefrigerantType;
 }
 
 

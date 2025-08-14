@@ -269,7 +269,7 @@ typedef struct _EcodanStatus {
   uint8_t LastServiceCodeNumber;
 
   //From Message 0xc9
-  uint8_t FTCVersion;
+  uint8_t FTCVersion, RefrigerantType;
 
   // From Message 0x61
   bool Write_To_Ecodan_OK;

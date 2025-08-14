@@ -54,7 +54,7 @@
 #include "Ecodan.h"
 #include "Melcloud.h"
 
-String FirmwareVersion = "6.3.1";
+String FirmwareVersion = "6.3.2";
 
 
 #ifdef ESP8266  // Define the Witty ESP8266 Serial Pins
@@ -268,6 +268,7 @@ extern bool WriteInProgress;
 extern int CurrentWriteAttempt;
 byte NormalHWBoostOperating = 0;
 byte PreHWBoostSvrCtrlMode = 0;
+uint8_t FTCVersionLastLoop = 0;
 
 #ifdef ARDUINO_WT32_ETH01
 static bool eth_connected = false;
@@ -540,6 +541,13 @@ void loop() {
     postdfpreviousMillis = millis();                                                                         // Capture the current time it occured for Comp Curve
     PostDefrostTimer = true;                                                                                 // Trigger post defrost block
   }
+
+  // -- FTC7 + R290 Outdoor Limit Adjustments -- //
+  if (FTCVersionLastLoop != HeatPump.Status.FTCVersion && HeatPump.Status.RefrigerantType == 2) {  // Dynamic Update HA limit for FTC7
+    if (MQTTReconnect()) { PublishDiscoveryTopics(1, MQTT_BASETOPIC); }
+    if (MQTT2Reconnect()) { PublishDiscoveryTopics(2, MQTT_BASETOPIC); }
+  }
+  FTCVersionLastLoop = HeatPump.Status.FTCVersion;  // On FTC version capture, if criteria met then change
 
   // -- CPU Loop Time End -- //
   CPULoopSpeed = micros() - looppreviousMicros;  // Loop Speed End Monitor
@@ -1065,7 +1073,7 @@ void SystemReport(void) {
     } else if (OutputPower == 0 && Non_HP_Mode) {            // Boosters or Immersion
       if (DHW_Mode) {                                        // DHW Operation Mode
         EstDHWInputPower = EstInputPower;                    //
-        DHWOutputPower =  OutputPower = HeatOutputPower;      //
+        DHWOutputPower = OutputPower = HeatOutputPower;      //
       } else {                                               // Heating Modes
         EstHeatingInputPower = EstInputPower;                //
         HeatingOutputPower = OutputPower = HeatOutputPower;  //
@@ -1317,6 +1325,7 @@ void ConfigurationReport(void) {
   doc[F("HasCooling")] = HeatPump.Status.HasCooling;
   doc[F("Has2Zone")] = HeatPump.Status.Has2Zone;
   doc[F("HasSimple2Zone")] = HeatPump.Status.Simple2Zone;
+  doc[F("RefrigerantType")] = HeatPump.Status.RefrigerantType;
   // Publish only when available
   if (HeatPump.SVCPopulated || HeatPump.Status.CompOpTimes != 0) { doc[F("CompOpTimes")] = HeatPump.Status.CompOpTimes; }
   if (HeatPump.SVCPopulated || HeatPump.Status.LiquidTemp != 0) { doc[F("LiquidTemp")] = HeatPump.Status.LiquidTemp; }

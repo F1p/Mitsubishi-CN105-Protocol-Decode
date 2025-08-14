@@ -583,7 +583,12 @@ void readSettingsFromConfig() {
           Config["temp_stat_tpl"] = String(MQTT_SENSOR_VALUE_TEMPLATE[97]);
         }
         Config["temp_unit"] = String(MQTT_SENSOR_UNITS[9]);
-        Config["max_temp"] = MQTT_CLIMATE_MAX[i - 95];
+        if (HeatPump.Status.RefrigerantType == 2 && i == 95) {  // If R290 then DHW Max can be 70C
+          Config["max_temp"] = MQTT_CLIMATE_MAX[6];
+        } else {
+          Config["max_temp"] = MQTT_CLIMATE_MAX[i - 95];
+        }
+
         Config["min_temp"] = MQTT_CLIMATE_MIN[i - 95];
         Config["temp_step"] = MQTT_CLIMATE_TEMP_STEP[i - 95];
         Config["precision"] = MQTT_CLIMATE_PRECISION[i - 95];
