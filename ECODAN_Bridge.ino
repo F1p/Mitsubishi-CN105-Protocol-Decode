@@ -54,7 +54,7 @@
 #include "Ecodan.h"
 #include "Melcloud.h"
 
-String FirmwareVersion = "6.3.2";
+String FirmwareVersion = "6.3.3";
 
 
 #ifdef ESP8266  // Define the Witty ESP8266 Serial Pins
@@ -1058,33 +1058,31 @@ void SystemReport(void) {
     if (OutputPower == 0) { HeatOutputPower = HeatPump.Status.OutputPower; }
   }
 
-  if (HeatPump.Status.SystemOperationMode > 0) {                      // Pump Operating
-    if (OutputPower < 0) {                                            // Cooling or Defrosting Mode
-      if (HeatPump.Status.Defrost != 0) {                             // If Defrosting Mode
-        EstHeatingInputPower = EstCoolingInputPower = EstInputPower;  // Input Power attributed to Heating & Cooling
-        HeatingOutputPower = HeatOutputPower = OutputPower;           // Heating is Negative (Extracting heat to defrost)
-        CoolOutputPower = fabsf(OutputPower);                         // Make Positive Cooling
-      } else {                                                        // If Cooling Mode
-        EstCoolingInputPower = EstInputPower;                         //
-        CoolOutputPower = fabsf(OutputPower);                         // Make Positive
-      }                                                               //
-    } else if (OutputPower > 0) {                                     // Heating by HP
-      if (DHW_Mode) {                                                 // DHW Operation Mode via HP
-        EstDHWInputPower = EstInputPower;                             //
-        DHWOutputPower = HeatOutputPower = OutputPower;               //
-      } else {                                                        // Heating Operation Mode via HP
-        EstHeatingInputPower = EstInputPower;                         //
-        HeatingOutputPower = HeatOutputPower = OutputPower;           //
-      }                                                               // Heating Modes
-    } else if (OutputPower == 0 && Non_HP_Mode) {                     // Boosters or Immersion
-      if (DHW_Mode) {                                                 // DHW Operation Mode
-        EstDHWInputPower = EstInputPower;                             //
-        DHWOutputPower = OutputPower = HeatOutputPower;               //
-      } else {                                                        // Heating Modes
-        EstHeatingInputPower = EstInputPower;                         //
-        HeatingOutputPower = OutputPower = HeatOutputPower;           //
-      }                                                               //
-    }                                                                 //
+  if (HeatPump.Status.SystemOperationMode > 0) {             // Pump Operating
+    if (OutputPower < 0) {                                   // Cooling or Defrosting Mode
+      if (HeatPump.Status.Defrost != 0) {                    // If Defrosting Mode
+        EstHeatingInputPower = EstInputPower;                // Input Power attributed to Heating & Cooling
+        HeatingOutputPower = HeatOutputPower = OutputPower;  // Heating is Negative (Extracting heat to defrost)
+      }                                                      //
+      EstCoolingInputPower = EstInputPower;                  //
+      CoolOutputPower = fabsf(OutputPower);                  // Make Positive Cooling
+    } else if (OutputPower > 0) {                            // Heating by HP
+      if (DHW_Mode) {                                        // DHW Operation Mode via HP
+        EstDHWInputPower = EstInputPower;                    //
+        DHWOutputPower = HeatOutputPower = OutputPower;      //
+      } else {                                               // Heating Operation Mode via HP
+        EstHeatingInputPower = EstInputPower;                //
+        HeatingOutputPower = HeatOutputPower = OutputPower;  //
+      }                                                      // Heating Modes
+    } else if (OutputPower == 0 && Non_HP_Mode) {            // Boosters or Immersion
+      if (DHW_Mode) {                                        // DHW Operation Mode
+        EstDHWInputPower = EstInputPower;                    //
+        DHWOutputPower = OutputPower = HeatOutputPower;      //
+      } else {                                               // Heating Modes
+        EstHeatingInputPower = EstInputPower;                //
+        HeatingOutputPower = OutputPower = HeatOutputPower;  //
+      }                                                      //
+    }                                                        //
   }
 
 

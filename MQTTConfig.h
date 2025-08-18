@@ -558,7 +558,7 @@ void readSettingsFromConfig() {
         if (MQTT_UNITS_POS[i] > 0) {                                                                        // If there is a unit
           Config["unit_of_meas"] = String(MQTT_SENSOR_UNITS[MQTT_UNITS_POS[i]]);                            // Publish Units
           if (MQTT_UNITS_POS[i] < 8) { Config["dev_cla"] = String(MQTT_DEVICE_CLASS[MQTT_UNITS_POS[i]]); }  // Device classes only exist for some units
-          Config["stat_cla"] = "measurement";
+          if (MQTT_UNITS_POS[i] != 7) { Config["stat_cla"] = "measurement"; }                               // Only some can be measurement
         }
         Config["val_tpl"] = String(MQTT_SENSOR_VALUE_TEMPLATE[i]);
         Config["icon"] = String(MQTT_MDI_ICONS[i]);
