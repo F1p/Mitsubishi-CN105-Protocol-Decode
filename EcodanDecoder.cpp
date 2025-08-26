@@ -331,7 +331,7 @@ void ECODANDECODER::Process0x02(uint8_t *Buffer, EcodanStatus *Status) {
   uint8_t Defrost, LastDefrost, ThermostatZ1, ThermostatZ2;
 
   LastDefrost = Defrost;
-  
+
   for (int i = 1; i < 16; i++) {
     Array0x02[i] = Buffer[i];
   }
@@ -820,7 +820,7 @@ void ECODANDECODER::Process0x26(uint8_t *Buffer, EcodanStatus *Status) {
   //Zone1FlowSetpoint = ((float)ExtractUInt16(Buffer, 10) / 100);   // Duplicate of 0x09
   //Zone2FlowSetpoint = ((float)ExtractUInt16(Buffer, 12) / 100);   // Duplicate of 0x09
   //ScheduleStatus = Buffer[14];
-  
+
   Status->SystemPowerMode = SystemPowerMode;
   Status->SystemOperationMode = SystemOperationMode;
   Status->HotWaterControlMode = HotWaterControlMode;
@@ -843,9 +843,11 @@ void ECODANDECODER::Process0x28(uint8_t *Buffer, EcodanStatus *Status) {
   uint8_t SvrControlMode;
 
   for (int i = 1; i < 16; i++) {
-    //if (i == 10) { Array0x28[i] = 0; }
-    //else { Array0x28[i] = Buffer[i]; }
-    Array0x28[i] = Buffer[i];
+    if (i == 10) {
+      Array0x28[i] = 0;
+    } else {
+      Array0x28[i] = Buffer[i];
+    }
   }
 
   HotWaterBoostActive = Buffer[3];  //Forced DHW Mode (Booster)
