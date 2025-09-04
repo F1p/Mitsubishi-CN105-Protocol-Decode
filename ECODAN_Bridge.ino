@@ -54,7 +54,7 @@
 #include "Ecodan.h"
 #include "Melcloud.h"
 
-String FirmwareVersion = "6.3.3";
+String FirmwareVersion = "6.3.4";
 
 
 #ifdef ESP8266  // Define the Witty ESP8266 Serial Pins
@@ -126,7 +126,7 @@ const int port_max_length = 10;
 const int user_max_length = 30;
 const int password_max_length = 50;
 const int basetopic_max_length = 30;
-
+bool BlockWriteFromMELCloud = false;
 float Z1_CurveFSP, Z2_CurveFSP;
 
 // The extra parameters to be configured (can be either global or just in the setup)
@@ -620,10 +620,10 @@ void MELCloudQueryReplyEngine(void) {
     } else if (MELCloud.Status.ActiveMessage == 0x28 && !MELCloud.Status.MEL_Heartbeat) {  // Toggle the Heartbeat Low for other requests
       Array0x28[11] = 0;
     }
-    MELCloud.ReplyStatus(MELCloud.Status.ActiveMessage);
+    MELCloud.ReplyStatus(MELCloud.Status.ActiveMessage);  // Reply with the OK Message to MELCloud
     MELCloud.Status.ReplyNow = false;
-    if (MELCloud.Status.ActiveMessage == 0x32 || MELCloud.Status.ActiveMessage == 0x33 || MELCloud.Status.ActiveMessage == 0x34 || MELCloud.Status.ActiveMessage == 0x35) {  // The writes
-      HeatPump.WriteMELCloudCMD(MELCloud.Status.ActiveMessage);
+    if (MELCloud.Status.ActiveMessage == 0x32 || MELCloud.Status.ActiveMessage == 0x33 || MELCloud.Status.ActiveMessage == 0x34 || MELCloud.Status.ActiveMessage == 0x35) {  // The write commands
+      if (!BlockWriteFromMELCloud) { HeatPump.WriteMELCloudCMD(MELCloud.Status.ActiveMessage); }                                                                             // Passes the MELCloud Interface Write Message to the Ecodan Interface Command Queue
     }
   } else if ((MELCloud.Status.ConnectRequest) && (HeatPump.Status.FTCVersion != 0)) {
     MELCloud.Connect();  // Reply to the connect request
@@ -667,6 +667,12 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
     } else if (Payload.toInt() == 998) {
       DEBUG_PRINTLN(F("Disconnecting from FTC"));
       HeatPump.Disconnect();
+    } else if (Payload.toInt() == 997) {
+      DEBUG_PRINTLN(F("Ignoring Write Requests from MELCloud"));
+      BlockWriteFromMELCloud = true;
+    } else if (Payload.toInt() == 996) {
+      DEBUG_PRINTLN(F("Allowing Write Requests from MELCloud"));
+      BlockWriteFromMELCloud = false;
     } else {
       HeatPump.WriteServiceCodeCMD(Payload.toInt());
       SvcRequested = Payload.toInt();
@@ -1354,29 +1360,26 @@ void ConfigurationReport(void) {
 
 void CompCurveReport(void) {
   JsonDocument storeddoc;
-  deserializeJson(storeddoc, unitSettings.CompCurve);
-  JsonObject obj = storeddoc.as<JsonObject>();
-
-  JsonDocument doc;
+  deserializeJson(storeddoc, unitSettings.CompCurve);  // Extract Saved to Flash Settings
   char Buffer[1024];
 
-  doc = obj;
-  doc[F("zone1")]["active"] = unitSettings.z1_active;
-  doc[F("zone1")]["manual_offset"] = unitSettings.z1_manual_offset;
-  doc[F("zone1")]["temp_offset"] = unitSettings.z1_temp_offset;
-  doc[F("zone1")]["wind_offset"] = unitSettings.z1_wind_offset;
-  doc[F("zone1")]["calculated_FSP"] = Z1_CurveFSP;
-  doc[F("zone2")]["active"] = unitSettings.z2_active;
-  doc[F("zone2")]["manual_offset"] = unitSettings.z2_manual_offset;
-  doc[F("zone2")]["temp_offset"] = unitSettings.z2_temp_offset;
-  doc[F("zone2")]["wind_offset"] = unitSettings.z2_wind_offset;
-  doc[F("zone2")]["calculated_FSP"] = Z2_CurveFSP;
-  doc[F("use_local_outdoor")] = unitSettings.use_local_outdoor;
-  doc[F("cloud_outdoor")] = unitSettings.cloud_outdoor;
+  // Add to saved settings with live
+  storeddoc[F("zone1")]["active"] = unitSettings.z1_active;
+  storeddoc[F("zone1")]["manual_offset"] = unitSettings.z1_manual_offset;
+  storeddoc[F("zone1")]["temp_offset"] = unitSettings.z1_temp_offset;
+  storeddoc[F("zone1")]["wind_offset"] = unitSettings.z1_wind_offset;
+  storeddoc[F("zone1")]["calculated_FSP"] = Z1_CurveFSP;
+  storeddoc[F("zone2")]["active"] = unitSettings.z2_active;
+  storeddoc[F("zone2")]["manual_offset"] = unitSettings.z2_manual_offset;
+  storeddoc[F("zone2")]["temp_offset"] = unitSettings.z2_temp_offset;
+  storeddoc[F("zone2")]["wind_offset"] = unitSettings.z2_wind_offset;
+  storeddoc[F("zone2")]["calculated_FSP"] = Z2_CurveFSP;
+  storeddoc[F("use_local_outdoor")] = unitSettings.use_local_outdoor;
+  storeddoc[F("cloud_outdoor")] = unitSettings.cloud_outdoor;
 
-  doc[F("HB_ID")] = Heart_Value;
+  storeddoc[F("HB_ID")] = Heart_Value;
 
-  serializeJson(doc, Buffer);
+  serializeJson(storeddoc, Buffer);
   MQTTClient1.publish(MQTT_STATUS_CURVE.c_str(), Buffer, false);
   MQTTClient2.publish(MQTT_2_STATUS_CURVE.c_str(), Buffer, false);
 }
@@ -1509,7 +1512,8 @@ void CalculateCompCurve() {
   } else {
     unitSettings.z1_active = doc["zone1"]["active"];  // Transfer JSON to Struct Bool
     unitSettings.z2_active = doc["zone2"]["active"];
-    //if (!unitSettings.z1_active && !unitSettings.z2_active) { return; } else                        // Only calculates (saves time, if mode enabled)
+    //if (!unitSettings.z1_active && !unitSettings.z2_active) { return; }  // Only calculates (saves time, if mode enabled)
+    //else
     {
       float OutsideAirTemperature = 0;
 

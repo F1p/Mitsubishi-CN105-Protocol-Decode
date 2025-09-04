@@ -983,6 +983,9 @@ void ECODANDECODER::Process0xA3(uint8_t *Buffer, EcodanStatus *Status) {
       Status->LEVB = Buffer[4];
     }
     Status->ServiceCodeReply = ExtractInt16_v2_Signed(Buffer, 4);
+  } else if (Buffer[3] != 0) {  // FTC side done but response is Done (7) or Unknown (6)
+    Write_To_Ecodan_OK = true;  // For de-queue
+    Status->Write_To_Ecodan_OK = Write_To_Ecodan_OK;
   }
 }
 
