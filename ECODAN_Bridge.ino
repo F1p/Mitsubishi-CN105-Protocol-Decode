@@ -881,8 +881,7 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
 
 
       // Activation Of Mode per Zone (Bool)
-      const char* error = doc["zone1"]["active"];
-      if (error) {
+      if (doc["zone1"]["active"].is<bool>()) {
         bool wc_z1_active = doc["zone1"]["active"];
         if (!unitSettings.z1_active && wc_z1_active) {                                                    // On transition from Inactive > Active
           if (HeatPump.Status.HeatingControlModeZ1 != 1) {                                                // Check if not already in Fixed Flow Mode
@@ -892,8 +891,7 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
         }
         ModifyCompCurveState(1, wc_z1_active);  // State Save
       }
-      error = doc["zone2"]["active"];
-      if (error) {
+      if (doc["zone2"]["active"].is<bool>()) {
         bool wc_z2_active = doc["zone2"]["active"];
         if (!unitSettings.z2_active && wc_z2_active) {                                                    // On transition from Inactive > Active
           if (HeatPump.Status.HeatingControlModeZ2 != 1) {                                                // Check if not already in Fixed Flow Mode
@@ -906,8 +904,7 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
 
 
       // Local or Remote Outdoor Temperature Measurement (Bool)
-      error = doc["use_local_outdoor"];
-      if (error) {
+      if (doc["use_local_outdoor"].is<bool>()) {
         unitSettings.use_local_outdoor = doc["use_local_outdoor"];
       }
 
@@ -1601,8 +1598,14 @@ void ModifyCompCurveState(int Zone, bool Active) {
     DEBUG_PRINT("Failed to read: ");
     DEBUG_PRINTLN(error.c_str());
   } else {
-    if (Zone == 1) { local_stored_doc["zone1"]["active"] = Active; }  // Load the new Base into the correct area of the locally stored file
-    if (Zone == 2) { local_stored_doc["zone2"]["active"] = Active; }  // Load the new Base into the correct area of the locally stored file
+    if (Zone == 1) {
+      local_stored_doc["zone1"]["active"] = Active;
+      DEBUG_PRINTLN("Activated Comp Curve Zone 1");
+    }  // Load the new Base into the correct area of the locally stored file
+    if (Zone == 2) {
+      local_stored_doc["zone2"]["active"] = Active;
+      DEBUG_PRINTLN("Activated Comp Curve Zone 2");
+    }  // Load the new Base into the correct area of the locally stored file
   }
   local_stored_doc.shrinkToFit();
   serializeJson(local_stored_doc, unitSettings.CompCurve);  // Repack the JSON
