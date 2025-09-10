@@ -358,7 +358,7 @@ void ECODAN::SetSvrControlMode(uint8_t OnOff, uint8_t DHW, uint8_t Z1H, uint8_t 
 }
 
 
-void ECODAN::SetHotWaterSetpoint(uint8_t Target) {
+void ECODAN::SetHotWaterSetpoint(float Target) {
   ECODANDECODER::EncodeDHWSetpoint(Target);
   cmd_queue_length++;
   ECODANDECODER::TransfertoBuffer(SET_REQUEST, cmd_queue_length);
