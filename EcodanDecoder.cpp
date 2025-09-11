@@ -1132,15 +1132,14 @@ uint8_t ECODANDECODER::CheckSum(uint8_t *Buffer, uint8_t len) {
 
 
 
-void ECODANDECODER::EncodeDHWSetpoint(float HotWaterSetpoint) {
+void ECODANDECODER::EncodeDHWSetpoint(float Setpoint) {
   uint8_t UpperByte, LowerByte;
   uint16_t ScaledTarget;
 
   TxMessage.Payload[0] = TX_MESSAGE_BASIC;
   TxMessage.Payload[1] = SET_HOT_WATER_SETPOINT;
 
-  ScaledTarget = HotWaterSetpoint;
-  ScaledTarget *= 100;
+  ScaledTarget = Setpoint * 100;
   UpperByte = (uint8_t)(ScaledTarget >> 8);
   LowerByte = (uint8_t)(ScaledTarget & 0x00ff);
 
