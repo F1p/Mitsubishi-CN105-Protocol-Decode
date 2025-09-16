@@ -439,6 +439,11 @@ void readSettingsFromConfig() {
         DEBUG_PRINTLN(F("[DONE]"));
         serializeJson(doc, TelnetServer);
         DEBUG_PRINTLN();
+        DEBUG_PRINTLN(F("Restarting Web Server and mDNS..."));
+        wifiManager.stopWebPortal();
+        wifiManager.startWebPortal();
+        MDNS.begin("heatpump");
+        MDNS.addService("http", "tcp", 80);
       }
     }
     configFile.close();
@@ -758,7 +763,12 @@ void readSettingsFromConfig() {
   uint8_t MQTTReconnect() {
     if (MQTTClient1.connected()) {
       return 1;
-    } else if (strcmp(mqttSettings.hostname, "IPorDNS") != 0 && strcmp(mqttSettings.hostname, "") != 0) {
+    }
+#ifdef ARDUINO_WT32_ETH01
+    else if (strcmp(mqttSettings.hostname, "IPorDNS") != 0 && strcmp(mqttSettings.hostname, "") != 0) {  // Do not block MQTT attempt on Ethernet
+#else
+  else if (strcmp(mqttSettings.hostname, "IPorDNS") != 0 && strcmp(mqttSettings.hostname, "") != 0 && WiFi.status() == WL_CONNECTED) {  // WiFi should be active to attempt connections (as MQTT connect is blocking)
+#endif
       initializeMQTTClient1();
       DEBUG_PRINT(F("With Client ID: "));
       DEBUG_PRINT(mqttSettings.deviceId);
@@ -782,7 +792,6 @@ void readSettingsFromConfig() {
         if (!wifiManager.getConfigPortalActive()) {  // Not got config portal open, change to orange:
           myLED.setPixel(0, L_ORANGE, 1);            // set the LED colour and show it
         }
-        //
 #endif
         switch (MQTTClient1.state()) {
           case -4:
@@ -820,7 +829,7 @@ void readSettingsFromConfig() {
       }
       return 0;
     } else {
-      DEBUG_PRINTLN(F("Primary MQTT Not Set"));
+      DEBUG_PRINTLN(F("Primary MQTT Not Set or WiFi not connected"));
       return 0;
     }
   }
@@ -838,7 +847,6 @@ void readSettingsFromConfig() {
       digitalWrite(Red_RGB_LED, HIGH);  // Add the Red LED to the Green LED = Orange
 #endif
       MQTTReconnect();
-      DEBUG_PRINTLN("Returned to here 1");
       delay(10);
     }
   }

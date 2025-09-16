@@ -183,6 +183,7 @@ typedef struct _EcodanStatus {
 
   // From Message 0x07
   uint8_t InputPower, OutputPower;
+  uint16_t EnergyConsumedIncreasing;
 
   // From Message 0x08
 

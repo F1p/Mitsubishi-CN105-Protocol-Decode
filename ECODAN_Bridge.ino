@@ -54,7 +54,7 @@
 #include "Ecodan.h"
 #include "Melcloud.h"
 
-String FirmwareVersion = "6.3.4-h2";
+String FirmwareVersion = "6.3.5";
 
 
 #ifdef ESP8266  // Define the Witty ESP8266 Serial Pins
@@ -247,7 +247,7 @@ TimerCallBack HeatPumpQuery3(30000, handleMQTTState);          // Re-connect att
 TimerCallBack HeatPumpQuery4(30000, handleMQTT2State);         // Re-connect attempt timer if MQTT Stream 2 is not online
 TimerCallBack HeatPumpQuery5(1000, HeatPumpWriteStateEngine);  // Set to 1000ms (Safe), 320-350ms best time between messages
 TimerCallBack HeatPumpQuery6(2000, FastPublish);               // Publish some reports at a faster rate
-TimerCallBack HeatPumpQuery7(300000, CalculateCompCurve);       // Calculate the Compensation Curve based on latest data   //300000 = 5min
+TimerCallBack HeatPumpQuery7(300000, CalculateCompCurve);      // Calculate the Compensation Curve based on latest data   //300000 = 5min
 
 unsigned long looppreviousMicros = 0;    // variable for comparing millis counter
 unsigned long ftcpreviousMillis = 0;     // variable for comparing millis counter
@@ -522,7 +522,7 @@ void loop() {
     }
 
 #ifdef ESP8266
-    ESP.reset();  // Define the Witty ESP8266 Ports
+    ESP.reset();  // ESP8266 Restart Method
 #endif
 #ifdef ESP32        // ESP32 Action
     ESP.restart();  // No button on ETH
@@ -750,16 +750,20 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
   }
   if ((Topic == MQTTCommandHotwaterNormalBoost) || (Topic == MQTTCommand2HotwaterNormalBoost)) {
     MQTTWriteReceived("MQTT Set Normal DHW Boost", 16);
-    if (Payload.toInt() == 1) {
+    if (Payload.toInt() == 1) {                                // Turn ON
       PreHWBoostSvrCtrlMode = HeatPump.Status.SvrControlMode;  // Record the Server Control Mode when Entering Boost Only
       if (HeatPump.Status.ProhibitDHW == 0) {                  // To boost, must be at transition of On > Off, so if current Prohibit Status if off first Enter SCM with Prohibit On to shortly create a transition
         HeatPump.SetSvrControlMode(Payload.toInt(), Payload.toInt(), HeatPump.Status.ProhibitHeatingZ1, HeatPump.Status.ProhibitCoolingZ1, HeatPump.Status.ProhibitHeatingZ2, HeatPump.Status.ProhibitCoolingZ2);
       }
+      HeatPump.SetSvrControlMode(Payload.toInt(), 1 - Payload.toInt(), HeatPump.Status.ProhibitHeatingZ1, HeatPump.Status.ProhibitCoolingZ1, HeatPump.Status.ProhibitHeatingZ2, HeatPump.Status.ProhibitCoolingZ2);
+      HeatPump.Status.SvrControlMode = 1;  // Server Control Mode Enables for this mode
+    } else if (Payload.toInt() == 0) {     // Turn OFF
+      HeatPump.SetSvrControlMode(PreHWBoostSvrCtrlMode, 1 - Payload.toInt(), HeatPump.Status.ProhibitHeatingZ1, HeatPump.Status.ProhibitCoolingZ1, HeatPump.Status.ProhibitHeatingZ2, HeatPump.Status.ProhibitCoolingZ2);
+      HeatPump.Status.SvrControlMode = PreHWBoostSvrCtrlMode;  // Server Control Mode is now Set to Status before Switch Toggle
     }
-    HeatPump.SetSvrControlMode(Payload.toInt(), 1 - Payload.toInt(), HeatPump.Status.ProhibitHeatingZ1, HeatPump.Status.ProhibitCoolingZ1, HeatPump.Status.ProhibitHeatingZ2, HeatPump.Status.ProhibitCoolingZ2);
-    if (PreHWBoostSvrCtrlMode == 0) { HeatPump.Status.SvrControlMode = Payload.toInt(); }  // Server Control Mode is now Set to Input
-    HeatPump.Status.ProhibitDHW = 1 - Payload.toInt();                                     // Hot Water Boost is Inverse
-    NormalHWBoostOperating = Payload.toInt();                                              // Hot Water Boost Operating is Active
+
+    HeatPump.Status.ProhibitDHW = 1 - Payload.toInt();  // Hot Water Prohibit is Inverse of request
+    NormalHWBoostOperating = Payload.toInt();           // Hot Water Boost Operating is Active/Inactive
   }
   if ((Topic == MQTTCommandSystemHolidayMode) || (Topic == MQTTCommand2SystemHolidayMode)) {
     MQTTWriteReceived("MQTT Set Holiday Mode", 16);
@@ -1216,6 +1220,7 @@ void EnergyReport(void) {
   doc[F("COOL_CoP")] = round2(cool_cop);
   doc[F("DHW_CoP")] = round2(dhw_cop);
   doc[F("TOTAL_CoP")] = round2(total_cop);
+  doc[F("ConsumedTotalInc")] = HeatPump.Status.EnergyConsumedIncreasing;
   doc[F("HB_ID")] = Heart_Value;
 
   serializeJson(doc, Buffer);
