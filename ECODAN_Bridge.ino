@@ -1542,7 +1542,7 @@ void CalculateCompCurve() {
           Z1_CurveFSP = doc["base"]["zone1"]["curve"][i]["flow"];                        // Set to Min Flow Temp
         } else {                                                                         // Intermediate Flow Points are calculated
           float tmp_o_2 = doc["base"]["zone1"]["curve"][i + 1]["outside"];               // Outside Temperature of the next point (warmer)
-          if ((OutsideAirTemperature > tmp_o_1) && (OutsideAirTemperature < tmp_o_2)) {  // Validate the current outside temp value is in the correct range between points
+          if ((OutsideAirTemperature >= tmp_o_1) && (OutsideAirTemperature <= tmp_o_2)) {  // Validate the current outside temp value is in the correct range between points
             float y1 = doc["base"]["zone1"]["curve"][i + 1]["flow"];                     // Calculate the slope using the formula: m = (y2 - y1) / (x2 - x1)
             float y2 = doc["base"]["zone1"]["curve"][i]["flow"];                         //
             float z1_delta_y = y2 - y1;                                                  // y2-y1
@@ -1564,7 +1564,7 @@ void CalculateCompCurve() {
           Z2_CurveFSP = doc["base"]["zone2"]["curve"][i]["flow"];
         } else {
           float tmp_o_2 = doc["base"]["zone2"]["curve"][i + 1]["outside"];
-          if ((OutsideAirTemperature > tmp_o_1) && (OutsideAirTemperature < tmp_o_2)) {
+          if ((OutsideAirTemperature >= tmp_o_1) && (OutsideAirTemperature <= tmp_o_2)) {
             float y1 = doc["base"]["zone2"]["curve"][i + 1]["flow"];  // Calculate the slope using the formula: m = (y2 - y1) / (x2 - x1)
             float y2 = doc["base"]["zone2"]["curve"][i]["flow"];
             float z2_delta_y = y2 - y1;
