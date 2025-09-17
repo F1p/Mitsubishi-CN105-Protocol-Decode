@@ -492,7 +492,11 @@ void ECODANDECODER::Process0x0B(uint8_t *Buffer, EcodanStatus *Status) {
     Array0x0b[i] = Buffer[i];
   }
 
-  fZone1 = ((float)ExtractUInt16(Buffer, 1) / 100);
+  if (Buffer[1] != 0xf0) {  // Extract if zone connected (not default value)
+    fZone1 = ((float)ExtractUInt16(Buffer, 1) / 100);
+  } else {
+    fZone1 = 0;
+  }
   if (Buffer[3] != 0xf0) {  // Extract if zone connected (not default value)
     fZone2 = ((float)ExtractUInt16(Buffer, 3) / 100);
   } else {
