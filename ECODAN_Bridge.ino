@@ -1066,31 +1066,41 @@ void SystemReport(void) {
     if (OutputPower == 0) { HeatOutputPower = HeatPump.Status.OutputPower; }
   }
 
-  if (HeatPump.Status.SystemOperationMode > 0) {             // Pump Operating
-    if (OutputPower < 0) {                                   // Cooling or Defrosting Mode
-      if (HeatPump.Status.Defrost != 0) {                    // If Defrosting Mode
-        EstHeatingInputPower = EstInputPower;                // Input Power attributed to Heating & Cooling
-        HeatingOutputPower = HeatOutputPower = OutputPower;  // Heating is Negative (Extracting heat to defrost)
-      }                                                      //
-      EstCoolingInputPower = EstInputPower;                  //
-      CoolOutputPower = fabsf(OutputPower);                  // Make Positive Cooling
-    } else if (OutputPower > 0) {                            // Heating by HP
-      if (DHW_Mode) {                                        // DHW Operation Mode via HP
-        EstDHWInputPower = EstInputPower;                    //
-        DHWOutputPower = HeatOutputPower = OutputPower;      //
-      } else {                                               // Heating Operation Mode via HP
-        EstHeatingInputPower = EstInputPower;                //
-        HeatingOutputPower = HeatOutputPower = OutputPower;  //
-      }                                                      // Heating Modes
-    } else if (OutputPower == 0 && Non_HP_Mode) {            // Boosters or Immersion
-      if (DHW_Mode) {                                        // DHW Operation Mode
-        EstDHWInputPower = EstInputPower;                    //
-        DHWOutputPower = OutputPower = HeatOutputPower;      //
-      } else {                                               // Heating Modes
-        EstHeatingInputPower = EstInputPower;                //
-        HeatingOutputPower = OutputPower = HeatOutputPower;  //
-      }                                                      //
-    }                                                        //
+  if (HeatPump.Status.SystemOperationMode > 0) {                // Pump Operating
+    if (OutputPower < 0) {                                      // Cooling or Defrosting Mode
+      if (HeatPump.Status.Defrost != 0) {                       // If Defrosting Mode
+        EstHeatingInputPower = EstInputPower;                   // Input Power attributed to Heating & Cooling
+        HeatingOutputPower = HeatOutputPower = OutputPower;     // Heating is Negative (Extracting heat to defrost)
+      }                                                         //
+      else if (DHW_Mode) {                                      // Not defrosting, hot water mode
+        EstDHWInputPower = EstInputPower;                       //
+        DHWOutputPower = HeatOutputPower = OutputPower;         // DHW Output Power is Negative
+      } else {                                                  // Heating/Cooling Mode
+        if (HeatPump.Status.SystemOperationMode == 2) {         // Heating Operating Mode
+          EstHeatingInputPower = EstInputPower;                 // Input Power attribution to Heating
+        } else if (HeatPump.Status.SystemOperationMode == 3) {  // Cooling Operation Mode
+          EstCoolingInputPower = EstInputPower;                 // Input Power attribution to Cooling
+        }                                                       //
+        HeatingOutputPower = HeatOutputPower = OutputPower;     // Heating is Negative Output Power
+        CoolOutputPower = fabsf(OutputPower);                   // Make Cooling Positive Output Power
+      }                                                         //
+    } else if (OutputPower > 0) {                               // Heating by HP
+      if (DHW_Mode) {                                           // DHW Operation Mode via HP
+        EstDHWInputPower = EstInputPower;                       //
+        DHWOutputPower = HeatOutputPower = OutputPower;         //
+      } else {                                                  // Heating Operation Mode via HP
+        EstHeatingInputPower = EstInputPower;                   //
+        HeatingOutputPower = HeatOutputPower = OutputPower;     //
+      }                                                         // Heating Modes
+    } else if (OutputPower == 0 && Non_HP_Mode) {               // Boosters or Immersion
+      if (DHW_Mode) {                                           // DHW Operation Mode
+        EstDHWInputPower = EstInputPower;                       //
+        DHWOutputPower = OutputPower = HeatOutputPower;         //
+      } else {                                                  // Heating Modes
+        EstHeatingInputPower = EstInputPower;                   //
+        HeatingOutputPower = OutputPower = HeatOutputPower;     //
+      }                                                         //
+    }                                                           //
   }
 
 
@@ -1533,24 +1543,24 @@ void CalculateCompCurve() {
       }
 
 
-      int z1_points = doc["base"]["zone1"]["curve"].size() - 1;                          // How many points are there specified on the curve
-      for (int i = 0; i <= z1_points; i++) {                                             // Iterate through the points
-        float tmp_o_1 = doc["base"]["zone1"]["curve"][i]["outside"];                     // Outside Temperature for this point
-        if ((i == 0) && (OutsideAirTemperature <= tmp_o_1)) {                            // On the first point, this determines the Maximum Flow Temp
-          Z1_CurveFSP = doc["base"]["zone1"]["curve"][i]["flow"];                        // Set to Max Flow Temp
-        } else if ((i == z1_points) && (OutsideAirTemperature >= tmp_o_1)) {             // The last point determines the Minimum Flow Temp
-          Z1_CurveFSP = doc["base"]["zone1"]["curve"][i]["flow"];                        // Set to Min Flow Temp
-        } else {                                                                         // Intermediate Flow Points are calculated
-          float tmp_o_2 = doc["base"]["zone1"]["curve"][i + 1]["outside"];               // Outside Temperature of the next point (warmer)
+      int z1_points = doc["base"]["zone1"]["curve"].size() - 1;                            // How many points are there specified on the curve
+      for (int i = 0; i <= z1_points; i++) {                                               // Iterate through the points
+        float tmp_o_1 = doc["base"]["zone1"]["curve"][i]["outside"];                       // Outside Temperature for this point
+        if ((i == 0) && (OutsideAirTemperature <= tmp_o_1)) {                              // On the first point, this determines the Maximum Flow Temp
+          Z1_CurveFSP = doc["base"]["zone1"]["curve"][i]["flow"];                          // Set to Max Flow Temp
+        } else if ((i == z1_points) && (OutsideAirTemperature >= tmp_o_1)) {               // The last point determines the Minimum Flow Temp
+          Z1_CurveFSP = doc["base"]["zone1"]["curve"][i]["flow"];                          // Set to Min Flow Temp
+        } else {                                                                           // Intermediate Flow Points are calculated
+          float tmp_o_2 = doc["base"]["zone1"]["curve"][i + 1]["outside"];                 // Outside Temperature of the next point (warmer)
           if ((OutsideAirTemperature >= tmp_o_1) && (OutsideAirTemperature <= tmp_o_2)) {  // Validate the current outside temp value is in the correct range between points
-            float y1 = doc["base"]["zone1"]["curve"][i + 1]["flow"];                     // Calculate the slope using the formula: m = (y2 - y1) / (x2 - x1)
-            float y2 = doc["base"]["zone1"]["curve"][i]["flow"];                         //
-            float z1_delta_y = y2 - y1;                                                  // y2-y1
-            float z1_delta_x = tmp_o_1 - tmp_o_2;                                        // x2-x1
-            float z1_m = 0;                                                              //
-            if (z1_delta_x != 0) { z1_m = z1_delta_y / z1_delta_x; }                     // Prevent Div by 0          m = y2-y1 / x2-x1
-            float z1_c = y2 - (z1_m * tmp_o_1);                                          // c = y-mx at point
-            Z1_CurveFSP = (z1_m * OutsideAirTemperature) + z1_c;                         // y = mx+c
+            float y1 = doc["base"]["zone1"]["curve"][i + 1]["flow"];                       // Calculate the slope using the formula: m = (y2 - y1) / (x2 - x1)
+            float y2 = doc["base"]["zone1"]["curve"][i]["flow"];                           //
+            float z1_delta_y = y2 - y1;                                                    // y2-y1
+            float z1_delta_x = tmp_o_1 - tmp_o_2;                                          // x2-x1
+            float z1_m = 0;                                                                //
+            if (z1_delta_x != 0) { z1_m = z1_delta_y / z1_delta_x; }                       // Prevent Div by 0          m = y2-y1 / x2-x1
+            float z1_c = y2 - (z1_m * tmp_o_1);                                            // c = y-mx at point
+            Z1_CurveFSP = (z1_m * OutsideAirTemperature) + z1_c;                           // y = mx+c
           }
         }
       }
