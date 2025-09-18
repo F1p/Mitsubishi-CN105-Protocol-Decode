@@ -270,6 +270,7 @@ extern int CurrentWriteAttempt;
 byte NormalHWBoostOperating = 0;
 byte PreHWBoostSvrCtrlMode = 0;
 uint8_t FTCVersionLastLoop = 0;
+uint8_t FrequencyLastLoop = 0;
 
 #ifdef ARDUINO_WT32_ETH01
 static bool eth_connected = false;
@@ -549,6 +550,14 @@ void loop() {
     if (MQTT2Reconnect()) { PublishDiscoveryTopics(2, MQTT_BASETOPIC); }
   }
   FTCVersionLastLoop = HeatPump.Status.FTCVersion;  // On FTC version capture, if criteria met then change
+
+  // -- Outdoor Triggers on Outdoor Unit Change -- //
+  if (FrequencyLastLoop > 0 && HeatPump.Status.CompressorFrequency == 0) {         // Transition of Compressor On to Off
+    HeatPump.WriteServiceCodeCMD(19);                                              // Trigger Fan Speed Request Service Code
+  } else if (FrequencyLastLoop == 0 && HeatPump.Status.CompressorFrequency > 0) {  // Transition of Compressor Off to On
+    HeatPump.WriteServiceCodeCMD(19);                                              // Trigger Fan Speed Request Service Code
+  }
+  FrequencyLastLoop = HeatPump.Status.CompressorFrequency;
 
   // -- CPU Loop Time End -- //
   CPULoopSpeed = micros() - looppreviousMicros;  // Loop Speed End Monitor
@@ -1067,7 +1076,7 @@ void SystemReport(void) {
   }
 
   if (HeatPump.Status.SystemOperationMode > 0) {                // Pump Operating
-    if (OutputPower < 0) {                                      // Cooling or Defrosting Mode
+    if (OutputPower <= 0) {                                      // Cooling or Defrosting Mode
       if (HeatPump.Status.Defrost != 0) {                       // If Defrosting Mode
         EstHeatingInputPower = EstInputPower;                   // Input Power attributed to Heating & Cooling
         HeatingOutputPower = HeatOutputPower = OutputPower;     // Heating is Negative (Extracting heat to defrost)

@@ -87,8 +87,8 @@ const char SystemPowerModeString[2][8] = { "Standby", "On" };
 #define SYSTEM_OPERATION_MODE_HEATING_ECO 7
 const char SystemOperationModeString[8][14] = { "Off", "Hot Water", "Heating", "Cooling", "Zero V", "Frost Protect", "Legionella", "Heating Eco" };
 
-const int HeatingRunningBinary[] = { 0, 0, 1, 0 };
-const int CoolingRunningBinary[] = { 0, 0, 0, 1 };
+const int HeatingRunningBinary[] = { 0, 0, 1, 0, 0, 0, 0, 0 };
+const int CoolingRunningBinary[] = { 0, 0, 0, 1, 0, 0, 0, 0 };
 
 #define HOT_WATER_CONTROL_MODE_NORMAL 0
 #define HOT_WATER_CONTROL_MODE_ECO 1
