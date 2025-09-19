@@ -439,11 +439,13 @@ void readSettingsFromConfig() {
         DEBUG_PRINTLN(F("[DONE]"));
         serializeJson(doc, TelnetServer);
         DEBUG_PRINTLN();
-        DEBUG_PRINTLN(F("Restarting Web Server and mDNS..."));
-        wifiManager.stopWebPortal();
-        wifiManager.startWebPortal();
-        MDNS.begin("heatpump");
-        MDNS.addService("http", "tcp", 80);
+#ifndef ARDUINO_WT32_ETH01
+        if (WiFi.status() == WL_CONNECTED) {
+          DEBUG_PRINTLN(F("Restarting Web Server..."));  // Restart the web server now it's on WiFi
+          wifiManager.stopWebPortal();
+          wifiManager.startWebPortal();
+        }
+#endif
       }
     }
     configFile.close();
