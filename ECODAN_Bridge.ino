@@ -54,7 +54,7 @@
 #include "Ecodan.h"
 #include "Melcloud.h"
 
-String FirmwareVersion = "6.3.5-h1";
+String FirmwareVersion = "6.3.5-h2";
 
 
 #ifdef ESP8266  // Define the Witty ESP8266 Serial Pins
@@ -924,20 +924,13 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
 
 
       // Adjustments Pre or Post WC Calculation (Float)
-      float z1_manual_offset = doc["zone1"]["manual_offset"];                      //
-      if (z1_manual_offset) { unitSettings.z1_manual_offset = z1_manual_offset; }  // Post Calcuation Zone1 Manual +/- Offset
-      float z1_temp_offset = doc["zone1"]["temp_offset"];                          //
-      if (z1_temp_offset) { unitSettings.z1_temp_offset = z1_temp_offset; }        // Post Calcuation Zone1 Temperature (e.g. Solar Gain) +/- Offset
-      float z1_wind_offset = doc["zone1"]["wind_offset"];                          //
-      if (z1_wind_offset) { unitSettings.z1_wind_offset = z1_wind_offset; }        // Post Calcuation Zone1 Wind Factor +/- Offset
-      float z2_manual_offset = doc["zone2"]["manual_offset"];                      //
-      if (z2_manual_offset) unitSettings.z2_manual_offset = z2_manual_offset;      // Post Calcuation Zone2 Manual +/- Offset
-      float z2_temp_offset = doc["zone2"]["temp_offset"];                          //
-      if (z2_temp_offset) unitSettings.z2_temp_offset = z2_temp_offset;            // Post Calcuation Zone2 Temperature (e.g. Solar Gain) +/- Offset
-      float z2_wind_offset = doc["zone2"]["wind_offset"];                          //
-      if (z2_wind_offset) unitSettings.z2_wind_offset = z2_wind_offset;            // Post Calcuation Zone2 Wind Factor +/- Offset
-      float cloud_outdoor = doc["cloud_outdoor"];                                  //
-      if (cloud_outdoor) unitSettings.cloud_outdoor = cloud_outdoor;               // Temperature Provided by a remote or cloud source when use_local_outdoor = False
+      if (doc["zone1"]["manual_offset"].is<float>()) { unitSettings.z1_manual_offset = doc["zone1"]["manual_offset"]; }  // Post Calcuation Zone1 Manual +/- Offset
+      if (doc["zone1"]["temp_offset"].is<float>()) { unitSettings.z1_temp_offset = doc["zone1"]["temp_offset"]; }        // Post Calcuation Zone1 Temperature (e.g. Solar Gain) +/- Offset
+      if (doc["zone1"]["wind_offset"].is<float>()) { unitSettings.z1_wind_offset = doc["zone1"]["wind_offset"]; }        // Post Calcuation Zone1 Wind Factor +/- Offset
+      if (doc["zone2"]["manual_offset"].is<float>()) { unitSettings.z2_manual_offset = doc["zone2"]["manual_offset"]; }  // Post Calcuation Zone2 Manual +/- Offset
+      if (doc["zone2"]["temp_offset"].is<float>()) { unitSettings.z2_temp_offset = doc["zone2"]["temp_offset"]; }        // Post Calcuation Zone2 Temperature (e.g. Solar Gain) +/- Offset
+      if (doc["zone2"]["wind_offset"].is<float>()) { unitSettings.z2_wind_offset = doc["zone2"]["wind_offset"]; }        // Post Calcuation Zone2 Wind Factor +/- Offset
+      if (doc["cloud_outdoor"].is<float>()) { unitSettings.cloud_outdoor = doc["cloud_outdoor"]; }                       // Temperature Provided by a remote or cloud source when use_local_outdoor = False
 
       CalculateCompCurve();  // Recalculate after modification
     }

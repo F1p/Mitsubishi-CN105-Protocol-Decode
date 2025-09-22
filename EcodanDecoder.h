@@ -183,7 +183,7 @@ typedef struct _EcodanStatus {
 
   // From Message 0x07
   uint8_t InputPower, OutputPower;
-  uint16_t EnergyConsumedIncreasing;
+  float EnergyConsumedIncreasing;
 
   // From Message 0x08
 
@@ -310,7 +310,7 @@ private:
   MessageStruct RxMessage;
   MessageStruct TxMessage;
 
-
+  bool IS_BIT_SET(uint8_t value, uint8_t bit);
 
   uint8_t Preamble[PREAMBLESIZE];
 

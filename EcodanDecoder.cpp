@@ -430,7 +430,7 @@ void ECODANDECODER::Process0x06(uint8_t *Buffer, EcodanStatus *Status) {
 
 void ECODANDECODER::Process0x07(uint8_t *Buffer, EcodanStatus *Status) {
   uint8_t InputPower, OutputPower;
-  uint16_t EnergyConsumedIncreasing;
+  float EnergyConsumedIncreasing;
 
   for (int i = 1; i < 16; i++) {
     Array0x07[i] = Buffer[i];
@@ -438,7 +438,7 @@ void ECODANDECODER::Process0x07(uint8_t *Buffer, EcodanStatus *Status) {
 
   InputPower = Buffer[4];
   OutputPower = Buffer[6];
-  EnergyConsumedIncreasing = ExtractUInt16(Buffer,11) / 10.0f;
+  EnergyConsumedIncreasing = ExtractUInt16(Buffer, 11) / 10.0f;
 
   Status->InputPower = InputPower;
   Status->OutputPower = OutputPower;
@@ -634,16 +634,16 @@ void ECODANDECODER::Process0x11(uint8_t *Buffer, EcodanStatus *Status) {
   DipSwitch6 = Buffer[11];
 
   // Bitmask Translation
-  if (DipSwitch2 & 0x08) {  // SW2-4
+  if (IS_BIT_SET(DipSwitch2, 3)) {  // SW2-4
     HasCooling = true;
   } else {
     HasCooling = false;
   }
 
-  if ((DipSwitch3 & 0x20) && !(DipSwitch2 & 0x40)) {  // SW3-6 True, SW2-7 False
+  if (IS_BIT_SET(DipSwitch3, 5) && !IS_BIT_SET(DipSwitch2, 6)) {  // SW3-6 True, SW2-7 False
     Has2Zone = true;
     Simple2Zone = true;
-  } else if ((DipSwitch2 & 0x02) || (DipSwitch2 & 0x04)) {  // SW2-6 or SW2-7 True
+  } else if (IS_BIT_SET(DipSwitch2, 5) || IS_BIT_SET(DipSwitch2, 6)) {  // SW2-6 or SW2-7 True
     Has2Zone = true;
     Simple2Zone = false;
   } else {
@@ -1325,4 +1325,8 @@ void ECODANDECODER::EncodeNextCommand(uint8_t bufferposition) {
   for (int i = 1; i < 16; i++) {
     TxMessage.Payload[i - 1] = BufferArray[bufferposition][i];
   }
+}
+
+bool ECODANDECODER::IS_BIT_SET(uint8_t value, uint8_t bit) {
+  return (((value) & (1U << (bit))) != 0);
 }
