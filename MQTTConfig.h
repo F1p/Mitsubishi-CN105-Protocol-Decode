@@ -872,6 +872,7 @@ void readSettingsFromConfig() {
     MQTT_2_STATUS_ADVANCED_TWO = MQTT_2_STATUS + "/AdvancedTwo";
     MQTT_2_STATUS_ENERGY = MQTT_2_STATUS + "/Energy";
     MQTT_2_STATUS_WIFISTATUS = MQTT_2_STATUS + "/WiFiStatus";
+    MQTT_2_STATUS_CURVE = MQTT_2_STATUS + "/CompCurve";
 
     MQTT_2_COMMAND_ZONE1 = MQTT_2_COMMAND + "/Zone1";
     MQTT_2_COMMAND_ZONE2 = MQTT_2_COMMAND + "/Zone2";
