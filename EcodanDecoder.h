@@ -222,10 +222,10 @@ typedef struct _EcodanStatus {
 
   //From Message 0x11
   uint8_t DipSwitch1, DipSwitch2, DipSwitch3, DipSwitch4, DipSwitch5, DipSwitch6;
-  bool HasCooling, Has2Zone, Simple2Zone;
-
+  bool HasCooling, Has2Zone, Simple2Zone, HasAnsweredDips;
   //From Message 0x13
   uint32_t RunHours;
+  bool CompressorRunning;
 
   //From Message 0x14
   uint8_t PrimaryFlowRate;

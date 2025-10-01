@@ -715,8 +715,9 @@ const char MQTT_SENSOR_UNITS[][7] PROGMEM = {
   "Times"
 };
 
-const char MQTT_NUMBER_AVAIL_TEMPLATE[][90] PROGMEM = {
-  "{{'online' if value_json.HeatingControlMode in ['Flow','Cool Flow'] else 'offline'}}"
+const char MQTT_NUMBER_AVAIL_TEMPLATE[][98] PROGMEM = {
+  "{{'online' if value_json.HeatingControlMode in ['Flow','Cool Flow'] else 'offline'}}",
+  "{{'online' if value_json.Has2Zone is true and value_json.HasSimple2Zone is false else 'offline'}}"
 };
 
 const char MQTT_SENSOR_VALUE_TEMPLATE[][50] PROGMEM = {

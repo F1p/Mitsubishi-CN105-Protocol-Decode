@@ -54,7 +54,7 @@
 #include "Ecodan.h"
 #include "Melcloud.h"
 
-String FirmwareVersion = "6.3.5-h2";
+String FirmwareVersion = "6.3.5-h3";
 
 
 #ifdef ESP8266  // Define the Witty ESP8266 Serial Pins
@@ -342,6 +342,7 @@ void setup() {
   MDNS.addService("http", "tcp", 80);
 
   HeatPump.Status.Write_To_Ecodan_OK = false;
+  HeatPump.Status.HasAnsweredDips = false;
 
   HeatPumpKeepAlive();
 }
@@ -1069,7 +1070,7 @@ void SystemReport(void) {
   }
 
   if (HeatPump.Status.SystemOperationMode > 0) {                // Pump Operating
-    if (OutputPower <= 0) {                                      // Cooling or Defrosting Mode
+    if (OutputPower <= 0) {                                     // Cooling or Defrosting Mode
       if (HeatPump.Status.Defrost != 0) {                       // If Defrosting Mode
         EstHeatingInputPower = EstInputPower;                   // Input Power attributed to Heating & Cooling
         HeatingOutputPower = HeatOutputPower = OutputPower;     // Heating is Negative (Extracting heat to defrost)

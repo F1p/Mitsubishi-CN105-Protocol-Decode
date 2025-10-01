@@ -166,7 +166,7 @@ void ECODAN::StatusStateMachine(void) {
     DEBUG_PRINT(F("[Bridge > FTC] "));
     ECODANDECODER::CreateBlankTxMessage(GET_REQUEST, 0x10);
 
-    if (Status.FTCVersion == 0) {
+    if (Status.FTCVersion == 0 || !Status.HasAnsweredDips) {
       ECODANDECODER::SetPayloadByte(FirstReadActiveCommand[CurrentMessage], 0);
     } else {
       ECODANDECODER::SetPayloadByte(ActiveCommand[CurrentMessage], 0);
@@ -186,7 +186,7 @@ void ECODAN::StatusStateMachine(void) {
 
     CurrentMessage++;
 
-    if (Status.FTCVersion == 0) {
+    if (Status.FTCVersion == 0 || !Status.HasAnsweredDips) {
       CurrentMessage %= FIRST_READ_NUMBER_COMMANDS;  // Once none left
     } else {
       CurrentMessage %= NUMBER_COMMANDS;  // Once none left

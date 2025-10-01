@@ -660,6 +660,7 @@ void ECODANDECODER::Process0x11(uint8_t *Buffer, EcodanStatus *Status) {
   Status->Has2Zone = Has2Zone;
   Status->Simple2Zone = Simple2Zone;
   Status->HasCooling = HasCooling;
+  Status->HasAnsweredDips = true;
 }
 
 void ECODANDECODER::Process0x12(uint8_t *Buffer, EcodanStatus *Status) {
@@ -671,12 +672,13 @@ void ECODANDECODER::Process0x12(uint8_t *Buffer, EcodanStatus *Status) {
 
 void ECODANDECODER::Process0x13(uint8_t *Buffer, EcodanStatus *Status) {
   uint32_t RunHours;
+  bool CompressorRunning;
 
   for (int i = 1; i < 16; i++) {
     Array0x13[i] = Buffer[i];
   }
 
-  //Unknown6 = Buffer[1];  // 0 When off, on/off 1's when running
+  CompressorRunning = Buffer[1];  // 0 When off, on/off 1's when running
 
   RunHours = Buffer[4];
   RunHours = RunHours << 8;
@@ -684,6 +686,7 @@ void ECODANDECODER::Process0x13(uint8_t *Buffer, EcodanStatus *Status) {
   RunHours *= 100;
   RunHours += Buffer[3];
 
+  Status->CompressorRunning = CompressorRunning;
   Status->RunHours = RunHours;
 }
 

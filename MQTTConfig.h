@@ -492,7 +492,7 @@ void readSettingsFromConfig() {
 
     //set minimum quality of signal so it ignores AP's under that quality
     //defaults to 8%
-    //wifiManager.setMinimumSignalQuality(20);
+    //wifiManager.setMinimumSignalQuality(50);
 
     snprintf(WiFiHostname, 40, "%s%s", ClientPrefix, mqttSettings.deviceId);
     WiFi.hostname(WiFiHostname);
@@ -688,6 +688,9 @@ void readSettingsFromConfig() {
         } else if (i >= 99 && i < 101) {  // Flow Op Mode Interlocks on Climate & Number
           Config["availability"]["topic"] = BASETOPIC + String(MQTT_TOPIC[i - 94]);
           Config["availability"]["value_template"] = String(MQTT_NUMBER_AVAIL_TEMPLATE[0]);
+        } else if (i == 113) {  // Interlock Zone2 Mode with Complex 2 Zone only
+          Config["availability"]["topic"] = BASETOPIC + String(MQTT_TOPIC[9]);
+          Config["availability"]["value_template"] = String(MQTT_NUMBER_AVAIL_TEMPLATE[1]);
         } else {  // Everything else LWT
           Config["availability"]["topic"] = BASETOPIC + String(MQTT_TOPIC[0]);
         }
