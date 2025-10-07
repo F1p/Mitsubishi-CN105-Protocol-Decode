@@ -14,6 +14,7 @@ String MQTT_STATUS_ADVANCED_TWO = MQTT_STATUS + "/AdvancedTwo";
 String MQTT_STATUS_ENERGY = MQTT_STATUS + "/Energy";
 String MQTT_STATUS_WIFISTATUS = MQTT_STATUS + "/WiFiStatus";
 String MQTT_STATUS_CURVE = MQTT_STATUS + "/CompCurve";
+String MQTT_STATUS_ACTV_CTRL = MQTT_STATUS + "/ActiveControl";
 
 String MQTT_COMMAND_ZONE1 = MQTT_COMMAND + "/Zone1";
 String MQTT_COMMAND_ZONE2 = MQTT_COMMAND + "/Zone2";
@@ -45,6 +46,7 @@ String MQTT_COMMAND_SYSTEM_UNITSIZE = MQTT_COMMAND_SYSTEM + "/UnitSize";
 String MQTT_COMMAND_SYSTEM_GLYCOL = MQTT_COMMAND_SYSTEM + "/Glycol";
 String MQTT_COMMAND_SYSTEM_SERVICE = MQTT_COMMAND_SYSTEM + "/Svc";
 String MQTT_COMMAND_SYSTEM_COMPCURVE = MQTT_COMMAND_SYSTEM + "/CompCurve";
+String MQTT_COMMAND_SYSTEM_ACTV_CTRL = MQTT_COMMAND_SYSTEM + "/ActiveControl";
 
 String MQTTCommandZone1FlowSetpoint = MQTT_COMMAND_ZONE1_FLOW_SETPOINT;
 String MQTTCommandZone1NoModeSetpoint = MQTT_COMMAND_ZONE1_NOMODE_SETPOINT;
@@ -71,6 +73,7 @@ String MQTTCommandSystemUnitSize = MQTT_COMMAND_SYSTEM_UNITSIZE;
 String MQTTCommandSystemGlycol = MQTT_COMMAND_SYSTEM_GLYCOL;
 String MQTTCommandSystemService = MQTT_COMMAND_SYSTEM_SERVICE;
 String MQTTCommandSystemCompCurve = MQTT_COMMAND_SYSTEM_COMPCURVE;
+String MQTTCommandSystemActvCtrl = MQTT_COMMAND_SYSTEM_ACTV_CTRL;
 
 
 String MQTT_2_BASETOPIC = "00000";
@@ -89,6 +92,7 @@ String MQTT_2_STATUS_ADVANCED_TWO = MQTT_2_STATUS + "/AdvancedTwo";
 String MQTT_2_STATUS_ENERGY = MQTT_2_STATUS + "/Energy";
 String MQTT_2_STATUS_WIFISTATUS = MQTT_2_STATUS + "/WiFiStatus";
 String MQTT_2_STATUS_CURVE = MQTT_2_STATUS + "/CompCurve";
+String MQTT_2_STATUS_ACTV_CTRL = MQTT_2_STATUS + "/ActiveControl";
 
 String MQTT_2_COMMAND_ZONE1 = MQTT_2_COMMAND + "/Zone1";
 String MQTT_2_COMMAND_ZONE2 = MQTT_2_COMMAND + "/Zone2";
@@ -120,6 +124,7 @@ String MQTT_2_COMMAND_SYSTEM_UNITSIZE = MQTT_2_COMMAND_SYSTEM + "/UnitSize";
 String MQTT_2_COMMAND_SYSTEM_GLYCOL = MQTT_2_COMMAND_SYSTEM + "/Glycol";
 String MQTT_2_COMMAND_SYSTEM_SERVICE = MQTT_2_COMMAND_SYSTEM + "/Svc";
 String MQTT_2_COMMAND_SYSTEM_COMPCURVE = MQTT_2_COMMAND_SYSTEM + "/CompCurve";
+String MQTT_2_COMMAND_SYSTEM_ACTV_CTRL = MQTT_2_COMMAND_SYSTEM + "/ActiveControl";
 
 String MQTTCommand2Zone1FlowSetpoint = MQTT_2_COMMAND_ZONE1_FLOW_SETPOINT;
 String MQTTCommand2Zone1NoModeSetpoint = MQTT_2_COMMAND_ZONE1_NOMODE_SETPOINT;
@@ -146,6 +151,7 @@ String MQTTCommand2SystemUnitSize = MQTT_2_COMMAND_SYSTEM_UNITSIZE;
 String MQTTCommand2SystemGlycol = MQTT_2_COMMAND_SYSTEM_GLYCOL;
 String MQTTCommand2SystemService = MQTT_2_COMMAND_SYSTEM_SERVICE;
 String MQTTCommand2SystemCompCurve = MQTT_2_COMMAND_SYSTEM_COMPCURVE;
+String MQTTCommand2SystemActvCtrl = MQTT_2_COMMAND_SYSTEM_ACTV_CTRL;
 
 
 
@@ -300,6 +306,12 @@ void readSettingsFromConfig() {
             } else {                    // For upgrading from <6.3.0, create the entry
               shouldSaveConfig = true;  // Save config after exit to update the file
             }
+            // Short Cycle Protection
+            if (doc.containsKey(unitSettings.act_ctrl_sc_identifier)) {
+              unitSettings.shortcycleprotectionenabled = doc[unitSettings.act_ctrl_sc_identifier].as<bool>();
+            } else {                    // For upgrading from <6.4.0, create the entry
+              shouldSaveConfig = true;  // Save config after exit to update the file
+            }
           }
         }
         configFile.close();
@@ -338,6 +350,7 @@ void readSettingsFromConfig() {
     MQTT_STATUS_ENERGY = MQTT_STATUS + "/Energy";
     MQTT_STATUS_WIFISTATUS = MQTT_STATUS + "/WiFiStatus";
     MQTT_STATUS_CURVE = MQTT_STATUS + "/CompCurve";
+    MQTT_STATUS_ACTV_CTRL = MQTT_STATUS + "/ActiveControl";
 
     MQTT_COMMAND_ZONE1 = MQTT_COMMAND + "/Zone1";
     MQTT_COMMAND_ZONE2 = MQTT_COMMAND + "/Zone2";
@@ -369,6 +382,7 @@ void readSettingsFromConfig() {
     MQTT_COMMAND_SYSTEM_GLYCOL = MQTT_COMMAND_SYSTEM + "/Glycol";
     MQTT_COMMAND_SYSTEM_SERVICE = MQTT_COMMAND_SYSTEM + "/Svc";
     MQTT_COMMAND_SYSTEM_COMPCURVE = MQTT_COMMAND_SYSTEM + "/CompCurve";
+    MQTT_COMMAND_SYSTEM_ACTV_CTRL = MQTT_COMMAND_SYSTEM + "/ActiveControl";
 
     MQTTCommandZone1FlowSetpoint = MQTT_COMMAND_ZONE1_FLOW_SETPOINT;
     MQTTCommandZone1NoModeSetpoint = MQTT_COMMAND_ZONE1_NOMODE_SETPOINT;
@@ -394,6 +408,8 @@ void readSettingsFromConfig() {
     MQTTCommandSystemUnitSize = MQTT_COMMAND_SYSTEM_UNITSIZE;
     MQTTCommandSystemGlycol = MQTT_COMMAND_SYSTEM_GLYCOL;
     MQTTCommandSystemService = MQTT_COMMAND_SYSTEM_SERVICE;
+    MQTTCommandSystemCompCurve = MQTT_COMMAND_SYSTEM_COMPCURVE;
+    MQTTCommandSystemActvCtrl = MQTT_COMMAND_SYSTEM_ACTV_CTRL;
   }
 
 
@@ -432,6 +448,7 @@ void readSettingsFromConfig() {
       doc[unitSettings.unitsize_identifier] = unitSettings.UnitSize;
       doc[unitSettings.glycol_identifier] = unitSettings.GlycolStrength;
       doc[unitSettings.compcurve_identifier] = unitSettings.CompCurve;
+      doc[unitSettings.act_ctrl_sc_identifier] = unitSettings.shortcycleprotectionenabled;
 
       if (serializeJson(doc, configFile) == 0) {
         DEBUG_PRINTLN(F("[FAILED]"));
@@ -560,7 +577,7 @@ void readSettingsFromConfig() {
 
 
       // Sensors
-      if (i >= 0 && i < 96) {
+      if (i >= 0 && i < 97) {
         Config["stat_t"] = BASETOPIC + String(MQTT_TOPIC[MQTT_TOPIC_POS[i]]);                               // Needs a positioner
         if (MQTT_UNITS_POS[i] > 0) {                                                                        // If there is a unit
           Config["unit_of_meas"] = String(MQTT_SENSOR_UNITS[MQTT_UNITS_POS[i]]);                            // Publish Units
@@ -574,37 +591,37 @@ void readSettingsFromConfig() {
       }
 
       // Climate
-      if (i >= 96 && i < 101) {
-        Config["object_id"] = String(MQTT_OBJECT_ID[i - 96]);
-        if (i >= 96 && i < 99) {
-          Config["curr_temp_t"] = BASETOPIC + String(MQTT_TOPIC[i - 92]);
+      if (i >= 97 && i < 102) {
+        Config["object_id"] = String(MQTT_OBJECT_ID[i - 97]);
+        if (i >= 97 && i < 100) {
+          Config["curr_temp_t"] = BASETOPIC + String(MQTT_TOPIC[i - 93]);
           Config["curr_temp_tpl"] = String(MQTT_SENSOR_VALUE_TEMPLATE[25]);
-          Config["temp_cmd_t"] = BASETOPIC + String(MQTT_TOPIC[i - 85]);
-          Config["temp_stat_t"] = BASETOPIC + String(MQTT_TOPIC[i - 92]);
-          Config["temp_stat_tpl"] = String(MQTT_SENSOR_VALUE_TEMPLATE[97]);
-        } else if (i >= 99 && i < 101) {
+          Config["temp_cmd_t"] = BASETOPIC + String(MQTT_TOPIC[i - 87]);
+          Config["temp_stat_t"] = BASETOPIC + String(MQTT_TOPIC[i - 93]);
+          Config["temp_stat_tpl"] = String(MQTT_SENSOR_VALUE_TEMPLATE[98]);
+        } else if (i >= 100 && i < 102) {
           Config["curr_temp_t"] = BASETOPIC + String(MQTT_TOPIC[2]);
           Config["curr_temp_tpl"] = String(MQTT_SENSOR_VALUE_TEMPLATE[6]);
-          Config["temp_cmd_t"] = BASETOPIC + String(MQTT_TOPIC[i - 75]);
-          Config["temp_stat_t"] = BASETOPIC + String(MQTT_TOPIC[i - 94]);
-          Config["temp_stat_tpl"] = String(MQTT_SENSOR_VALUE_TEMPLATE[98]);
+          Config["temp_cmd_t"] = BASETOPIC + String(MQTT_TOPIC[i - 76]);
+          Config["temp_stat_t"] = BASETOPIC + String(MQTT_TOPIC[i - 95]);
+          Config["temp_stat_tpl"] = String(MQTT_SENSOR_VALUE_TEMPLATE[99]);
         }
         Config["temp_unit"] = String(MQTT_SENSOR_UNITS[9]);
-        if (HeatPump.Status.RefrigerantType == 2 && i == 96) {  // If R290 then DHW Max can be 70C
+        if (HeatPump.Status.RefrigerantType == 2 && i == 97) {  // If R290 then DHW Max can be 70C
           Config["max_temp"] = MQTT_CLIMATE_MAX[6];
         } else {
-          Config["max_temp"] = MQTT_CLIMATE_MAX[i - 96];
+          Config["max_temp"] = MQTT_CLIMATE_MAX[i - 97];
         }
 
-        Config["min_temp"] = MQTT_CLIMATE_MIN[i - 96];
-        Config["temp_step"] = MQTT_CLIMATE_TEMP_STEP[i - 96];
-        Config["precision"] = MQTT_CLIMATE_PRECISION[i - 96];
-        Config["initial"] = MQTT_CLIMATE_INITAL[i - 96];
+        Config["min_temp"] = MQTT_CLIMATE_MIN[i - 97];
+        Config["temp_step"] = MQTT_CLIMATE_TEMP_STEP[i - 97];
+        Config["precision"] = MQTT_CLIMATE_PRECISION[i - 97];
+        Config["initial"] = MQTT_CLIMATE_INITAL[i - 97];
         Config["action_topic"] = BASETOPIC + String(MQTT_TOPIC[2]);
-        Config["action_template"] = String(MQTT_CLIMATE_MODE_STATE_TEMPLATE[i - 96]);
+        Config["action_template"] = String(MQTT_CLIMATE_MODE_STATE_TEMPLATE[i - 97]);
         Config["mode_state_topic"] = BASETOPIC + String(MQTT_TOPIC[8]);
-        Config["mode_state_template"] = String(MQTT_CLIMATE_STATE_TOPIC[i - 96]);
-        if (i == 96) {
+        Config["mode_state_template"] = String(MQTT_CLIMATE_STATE_TOPIC[i - 97]);
+        if (i == 97) {
           Config["modes"][0] = "heat";
           Config["modes"][1] = "off";
         } else {
@@ -619,11 +636,11 @@ void readSettingsFromConfig() {
       }
 
       // Switches
-      if (i >= 101 && i < 111) {
-        Config["state_topic"] = BASETOPIC + String(MQTT_TOPIC[MQTT_SWITCH_STATE_POS[i - 101]]);
+      if (i >= 102 && i < 113) {
+        Config["state_topic"] = BASETOPIC + String(MQTT_TOPIC[MQTT_SWITCH_STATE_POS[i - 102]]);
         Config["value_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[i - 2]);
         Config["command_topic"] = BASETOPIC + String(MQTT_TOPIC[i - 87]);
-        if (i == 102) {
+        if (i == 103) {
           Config["state_on"] = "On";
           Config["state_off"] = "Standby";
           Config["payload_on"] = "On";
@@ -641,14 +658,14 @@ void readSettingsFromConfig() {
 
 
       // Selects
-      if (i >= 111 && i < 116) {
+      if (i >= 113 && i < 118) {
         Config["command_topic"] = BASETOPIC + String(MQTT_TOPIC[i - 85]);
-        Config["state_topic"] = BASETOPIC + String(MQTT_TOPIC[i - 107]);
-        Config["value_template"] = String(MQTT_SELECT_VALUE_TEMPLATE[i - 111]);
-        if (i == 111) {  // DHW Modes
+        Config["state_topic"] = BASETOPIC + String(MQTT_TOPIC[i - 109]);
+        Config["value_template"] = String(MQTT_SELECT_VALUE_TEMPLATE[i - 113]);
+        if (i == 113) {  // DHW Modes
           Config["options"][0] = HotWaterControlModeString[0];
           Config["options"][1] = HotWaterControlModeString[1];
-        } else if (i == 114) {  // Unit Sizes - for some reason it doesn't like doing this from PROGMEM in a loop on the 8266
+        } else if (i == 116) {  // Unit Sizes - for some reason it doesn't like doing this from PROGMEM in a loop on the 8266
           Config["state_topic"] = BASETOPIC + String(MQTT_TOPIC[1]);
           Config["options"][0] = "4.0";
           Config["options"][1] = "5.0";
@@ -660,7 +677,7 @@ void readSettingsFromConfig() {
           Config["options"][7] = "11.2";
           Config["options"][8] = "12.0";
           Config["options"][9] = "14.0";
-        } else if (i == 115) {  // Glycol Strengths
+        } else if (i == 117) {  // Glycol Strengths
           Config["state_topic"] = BASETOPIC + String(MQTT_TOPIC[1]);
           Config["options"][0] = "0%";
           Config["options"][1] = "10%";
@@ -679,16 +696,16 @@ void readSettingsFromConfig() {
 
 
       // Add Availability Topics
-      if (i >= 97) {
-        if (i >= 105 && i < 110) {  // Server Control Mode Interlocks
+      if (i >= 98) {
+        if (i >= 106 && i < 111) {  // Server Control Mode Interlocks
           Config["availability"]["topic"] = BASETOPIC + String(MQTT_TOPIC[8]);
-          Config["availability"]["value_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[102]);
+          Config["availability"]["value_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[103]);
           Config["availability"]["payload_available"] = ITEM_ON;
           Config["availability"]["payload_not_available"] = ITEM_OFF;
-        } else if (i >= 99 && i < 101) {  // Flow Op Mode Interlocks on Climate & Number
-          Config["availability"]["topic"] = BASETOPIC + String(MQTT_TOPIC[i - 94]);
+        } else if (i >= 100 && i < 102) {  // Flow Op Mode Interlocks on Climate & Number
+          Config["availability"]["topic"] = BASETOPIC + String(MQTT_TOPIC[i - 95]);
           Config["availability"]["value_template"] = String(MQTT_NUMBER_AVAIL_TEMPLATE[0]);
-        } else if (i == 113) {  // Interlock Zone2 Mode with Complex 2 Zone only
+        } else if (i == 115) {  // Interlock Zone2 Mode with Complex 2 Zone only
           Config["availability"]["topic"] = BASETOPIC + String(MQTT_TOPIC[9]);
           Config["availability"]["value_template"] = String(MQTT_NUMBER_AVAIL_TEMPLATE[1]);
         } else {  // Everything else LWT
@@ -750,6 +767,7 @@ void readSettingsFromConfig() {
     MQTTClient1.subscribe(MQTTCommandSystemGlycol.c_str());
     MQTTClient1.subscribe(MQTTCommandSystemService.c_str());
     MQTTClient1.subscribe(MQTTCommandSystemCompCurve.c_str());
+    MQTTClient1.subscribe(MQTTCommandSystemActvCtrl.c_str());
 
     delay(10);
     PublishDiscoveryTopics(1, MQTT_BASETOPIC);
@@ -873,6 +891,7 @@ void readSettingsFromConfig() {
     MQTT_2_STATUS_ENERGY = MQTT_2_STATUS + "/Energy";
     MQTT_2_STATUS_WIFISTATUS = MQTT_2_STATUS + "/WiFiStatus";
     MQTT_2_STATUS_CURVE = MQTT_2_STATUS + "/CompCurve";
+    MQTT_2_STATUS_ACTV_CTRL = MQTT_2_STATUS + "/ActiveControl";
 
     MQTT_2_COMMAND_ZONE1 = MQTT_2_COMMAND + "/Zone1";
     MQTT_2_COMMAND_ZONE2 = MQTT_2_COMMAND + "/Zone2";
@@ -902,7 +921,8 @@ void readSettingsFromConfig() {
     MQTT_2_COMMAND_SYSTEM_POWER = MQTT_2_COMMAND_SYSTEM + "/Power";
     MQTT_2_COMMAND_SYSTEM_UNITSIZE = MQTT_2_COMMAND_SYSTEM + "/UnitSize";
     MQTT_2_COMMAND_SYSTEM_GLYCOL = MQTT_2_COMMAND_SYSTEM + "/Glycol";
-    MQTT_2_COMMAND_SYSTEM_SERVICE = MQTT_2_COMMAND_SYSTEM + "/Svc";
+    MQTT_2_COMMAND_SYSTEM_COMPCURVE = MQTT_2_COMMAND_SYSTEM + "/CompCurve";
+    MQTT_2_COMMAND_SYSTEM_ACTV_CTRL = MQTT_2_COMMAND_SYSTEM + "/ActiveControl";
 
     MQTTCommand2Zone1FlowSetpoint = MQTT_2_COMMAND_ZONE1_FLOW_SETPOINT;
     MQTTCommand2Zone1NoModeSetpoint = MQTT_2_COMMAND_ZONE1_NOMODE_SETPOINT;
@@ -928,6 +948,8 @@ void readSettingsFromConfig() {
     MQTTCommand2SystemUnitSize = MQTT_2_COMMAND_SYSTEM_UNITSIZE;
     MQTTCommand2SystemGlycol = MQTT_2_COMMAND_SYSTEM_GLYCOL;
     MQTTCommand2SystemService = MQTT_2_COMMAND_SYSTEM_SERVICE;
+    MQTTCommand2SystemCompCurve = MQTT_2_COMMAND_SYSTEM_COMPCURVE;
+    MQTTCommand2SystemActvCtrl = MQTT_2_COMMAND_SYSTEM_ACTV_CTRL;
   }
 
 
@@ -971,6 +993,7 @@ void readSettingsFromConfig() {
     MQTTClient2.subscribe(MQTTCommand2SystemGlycol.c_str());
     MQTTClient2.subscribe(MQTTCommand2SystemService.c_str());
     MQTTClient2.subscribe(MQTTCommand2SystemCompCurve.c_str());
+    MQTTClient2.subscribe(MQTTCommand2SystemActvCtrl.c_str());
     delay(10);
     PublishDiscoveryTopics(2, MQTT_2_BASETOPIC);
   }

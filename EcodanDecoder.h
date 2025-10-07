@@ -95,6 +95,8 @@ const int CoolingRunningBinary[] = { 0, 0, 0, 1, 0, 0, 0, 0 };
 const char HotWaterControlModeString[2][7] = { "Normal", "Eco" };
 
 const char HPControlModeString[2][5] = { "Heat", "Cool" };
+const char ShortCycleReason[3][33] = { "", "Flow Temp Exceeded Flow Setpoint", "Thermostat Demand" };
+
 
 #define HEATING_CONTROL_MODE_ZONE_TEMP 0x00
 #define HEATING_CONTROL_MODE_FLOW_TEMP 0x01
