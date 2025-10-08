@@ -570,14 +570,14 @@ void loop() {
     HeatPump.WriteServiceCodeCMD(19);                                                     // Trigger Fan Speed Request Service Code
     if (HeatPump.Status.Defrost == 0) {                                                   // If Not Defrosting
       CompressorPeriodDurations[1] = CompressorPeriodDurations[0];                        // Transfer Last Compressor Period to Array Pos 1
-      CompressorPeriodDurations[0] = millis() - CompressorStopStartTimer[0];              // Current Time from Stop > Stop (Seconds) to Array Pos 0
-      CompressorStopStartTimer[0] = millis() / 1000;                                      // Last Compressor Stop Time (Seconds)
+      CompressorPeriodDurations[0] = (millis() / 1000) - CompressorStopStartTimer[0];     // Current Time from Stop > Stop (Seconds) to Array Pos 0
+      CompressorStopStartTimer[0] = (millis() / 1000);                                    // Last Compressor Stop Time (Seconds)
       compressorrunduration = CompressorStopStartTimer[0] - CompressorStopStartTimer[1];  // Last Compressor Run Duration (Seconds)
     }                                                                                     //
   } else if (FrequencyLastLoop == 0 && HeatPump.Status.CompressorFrequency > 0) {         // Transition of Compressor Off to On
     HeatPump.WriteServiceCodeCMD(19);                                                     // Trigger Fan Speed Request Service Code
     if (HeatPump.Status.Defrost == 0) {                                                   // If Not Defrosting
-      CompressorStopStartTimer[1] = millis() / 1000;                                      // Last Compressor Start Time (Seconds)
+      CompressorStopStartTimer[1] = (millis() / 1000);                                    // Last Compressor Start Time (Seconds)
     }
   }
   FrequencyLastLoop = HeatPump.Status.CompressorFrequency;
