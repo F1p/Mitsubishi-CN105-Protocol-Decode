@@ -954,13 +954,12 @@ void ECODANDECODER::Process0xA3(uint8_t *Buffer, EcodanStatus *Status) {
   for (int i = 1; i < 16; i++) {
     Array0xa3[i] = Buffer[i];
   }
-  if (Buffer[3] == 2) {         // Valid Reply is "2" (result)
+  if (Buffer[3] == 1 || Buffer[3] == 2) {         // Valid Reply is "1" or "2" (result)
     Write_To_Ecodan_OK = true;  // For de-queue
     Status->Write_To_Ecodan_OK = Write_To_Ecodan_OK;
 
     // Data Packets
-    ServiceCode = ExtractUInt16(Buffer, 1);  // Decode the reply to Update the correct Value
-    Status->LastServiceCodeNumber = ServiceCode;
+    Status->LastServiceCodeNumber = ServiceCode = Buffer[2];// Decode the reply to Update the correct Value
 
     // Process into the correct locations
     if (ServiceCode == 3) {

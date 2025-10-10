@@ -690,6 +690,7 @@ void readSettingsFromConfig() {
           Config["options"][3] = "Cooling Temperature";
           Config["options"][4] = "Cooling Flow";
           Config["options"][5] = "Dry Up";
+          Config["options"][6] = "Cooling Compensation";
         }
         MQTT_DISCOVERY_TOPIC = String(MQTT_DISCOVERY_TOPICS[4]);
       }

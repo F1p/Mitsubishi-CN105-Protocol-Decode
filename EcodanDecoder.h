@@ -104,7 +104,8 @@ const char ShortCycleReason[3][33] = { "", "Flow Temp Exceeded Flow Setpoint", "
 #define HEATING_CONTROL_MODE_COOL_ZONE_TEMP 0x03
 #define HEATING_CONTROL_MODE_COOL_FLOW_TEMP 0x04
 #define HEATING_CONTROL_MODE_DRY_UP 0x05
-const char HeatingControlModeString[6][13] = { "Temp", "Flow", "Compensation", "Cool", "Cool Flow", "Dry Up" };
+#define HEATING_CONTROL_MODE_COOL_COMPENSATION 0x06
+const char HeatingControlModeString[7][18] = { "Temp", "Flow", "Compensation", "Cool", "Cool Flow", "Dry Up", "Cool Compensation" };
 const char ThermostatString[16][4] = { "MRC", "RC1", "RC2", "RC3", "RC4", "RC5", "RC6", "RC7", "RC8", "", "", "", "", "", "", "TH1" };
 
 #define HOLIDAY_MODE_OFF 0

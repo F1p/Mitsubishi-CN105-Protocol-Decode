@@ -849,6 +849,9 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
     } else if (Payload == String("Dry Up")) {
       HeatPump.SetHeatingControlMode(HEATING_CONTROL_MODE_DRY_UP, SET_HEATING_CONTROL_MODE_Z1);
       HeatPump.Status.HeatingControlModeZ1 = HEATING_CONTROL_MODE_DRY_UP;
+    } else if (Payload == String("Cool Compensation")) {
+      HeatPump.SetHeatingControlMode(HEATING_CONTROL_MODE_COOL_COMPENSATION, SET_HEATING_CONTROL_MODE_Z1);
+      HeatPump.Status.HeatingControlModeZ1 = HEATING_CONTROL_MODE_COOL_COMPENSATION;
     }
   } else if ((Topic == MQTTCommandZone2HeatingMode) || (Topic == MQTTCommand2Zone2HeatingMode)) {
     MQTTWriteReceived("MQTT Set Heating Mode Zone 2", 4);
@@ -871,6 +874,9 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
     } else if (Payload == String("Dry Up")) {
       HeatPump.SetHeatingControlMode(HEATING_CONTROL_MODE_DRY_UP, SET_HEATING_CONTROL_MODE_Z2);
       HeatPump.Status.HeatingControlModeZ2 = HEATING_CONTROL_MODE_DRY_UP;
+    } else if (Payload == String("Cool Compensation")) {
+      HeatPump.SetHeatingControlMode(HEATING_CONTROL_MODE_COOL_COMPENSATION, SET_HEATING_CONTROL_MODE_Z2);
+      HeatPump.Status.HeatingControlModeZ2 = HEATING_CONTROL_MODE_COOL_COMPENSATION;
     }
   } else if ((Topic == MQTTCommandSystemSvrMode) || (Topic == MQTTCommand2SystemSvrMode)) {
     MQTTWriteReceived("MQTT Server Control Mode", 17);

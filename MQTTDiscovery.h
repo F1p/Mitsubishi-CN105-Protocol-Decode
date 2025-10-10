@@ -705,10 +705,10 @@ const char MQTT_CLIMATE_MODE_STATE_TEMPLATE[][435] PROGMEM = {
   "{%set mode=value_json.SystemOperationMode|lower%}{%set h_prhbt=not(states('sensor.ecodan_ashp_zone_2_heating_prohibit')|bool)%}{%set c_prhbt=not(states('sensor.ecodan_ashp_zone_2_cooling_prohibit')|bool)%}{%set wrkg=states('sensor.ecodan_ashp_zone_2_working')|bool%}{%if mode in ['defrosting','frost protect']%}defrosting{%elif ((h_prhbt or c_prhbt) and not(wrkg)) or mode in ['hot water','legionella']%}idle{%else%}{{mode}}{%endif%}",
 };
 
-const char MQTT_SELECT_VALUE_TEMPLATE[][405] PROGMEM = {
+const char MQTT_SELECT_VALUE_TEMPLATE[][480] PROGMEM = {
   "{{'Normal' if value_json.HotWaterControlMode=='Normal' else 'Eco' if value_json.HotWaterControlMode=='Eco'}}",
-  "{{'Heating Temperature' if value_json.HeatingControlMode=='Temp' else 'Heating Flow' if value_json.HeatingControlMode=='Flow' else 'Heating Compensation' if value_json.HeatingControlMode=='Compensation' else 'Cooling Temperature' if value_json.HeatingControlMode=='Cool' else 'Cooling Flow' if value_json.HeatingControlMode=='Cool Flow' else 'Dry Up' if value_json.HeatingControlMode=='Dry Up'}}",
-  "{{'Heating Temperature' if value_json.HeatingControlMode=='Temp' else 'Heating Flow' if value_json.HeatingControlMode=='Flow' else 'Heating Compensation' if value_json.HeatingControlMode=='Compensation' else 'Cooling Temperature' if value_json.HeatingControlMode=='Cool' else 'Cooling Flow' if value_json.HeatingControlMode=='Cool Flow' else 'Dry Up' if value_json.HeatingControlMode=='Dry Up'}}",
+  "{{'Heating Temperature' if value_json.HeatingControlMode=='Temp' else 'Heating Flow' if value_json.HeatingControlMode=='Flow' else 'Heating Compensation' if value_json.HeatingControlMode=='Compensation' else 'Cooling Temperature' if value_json.HeatingControlMode=='Cool' else 'Cooling Flow' if value_json.HeatingControlMode=='Cool Flow' else 'Dry Up' if value_json.HeatingControlMode=='Dry Up' else 'Cool Compensation' if value_json.HeatingControlMode=='Cool Compensation'}}",
+  "{{'Heating Temperature' if value_json.HeatingControlMode=='Temp' else 'Heating Flow' if value_json.HeatingControlMode=='Flow' else 'Heating Compensation' if value_json.HeatingControlMode=='Compensation' else 'Cooling Temperature' if value_json.HeatingControlMode=='Cool' else 'Cooling Flow' if value_json.HeatingControlMode=='Cool Flow' else 'Dry Up' if value_json.HeatingControlMode=='Dry Up' else 'Cool Compensation' if value_json.HeatingControlMode=='Cool Compensation'}}",
   "{{value_json.UnitSize}}",
   "{{value_json.Glycol}}"
 };
