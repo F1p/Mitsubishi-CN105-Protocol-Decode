@@ -54,7 +54,7 @@
 #include "Ecodan.h"
 #include "Melcloud.h"
 
-String FirmwareVersion = "6.4.0";
+String FirmwareVersion = "6.4.0-Beta2";
 
 
 #ifdef ESP8266  // Define the Witty ESP8266 Serial Pins
@@ -750,6 +750,8 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
   else if ((Topic == MQTTCommandZone1FlowSetpoint) || (Topic == MQTTCommand2Zone1FlowSetpoint)) {
     MQTTWriteReceived("MQTT Set Zone1 Flow Setpoint", 6);
     HeatPump.SetFlowSetpoint(Payload.toFloat(), HeatPump.Status.HeatingControlModeZ1, ZONE1);
+    HeatPump.SetZoneTempSetpoint(HeatPump.Status.Zone1TemperatureSetpoint, HeatPump.Status.HeatingControlModeZ1, ZONE1);
+    HeatPump.SetZoneTempSetpoint(HeatPump.Status.Zone2TemperatureSetpoint, HeatPump.Status.HeatingControlModeZ2, ZONE2);
     HeatPump.Status.Zone1FlowTemperatureSetpoint = Payload.toFloat();
   }
 
@@ -765,6 +767,8 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
   else if ((Topic == MQTTCommandZone2FlowSetpoint) || (Topic == MQTTCommand2Zone2FlowSetpoint)) {
     MQTTWriteReceived("MQTT Set Zone2 Flow Setpoint", 6);
     HeatPump.SetFlowSetpoint(Payload.toFloat(), HeatPump.Status.HeatingControlModeZ2, ZONE2);
+    HeatPump.SetZoneTempSetpoint(HeatPump.Status.Zone1TemperatureSetpoint, HeatPump.Status.HeatingControlModeZ1, ZONE1);
+    HeatPump.SetZoneTempSetpoint(HeatPump.Status.Zone2TemperatureSetpoint, HeatPump.Status.HeatingControlModeZ2, ZONE2);
     HeatPump.Status.Zone2FlowTemperatureSetpoint = Payload.toFloat();
   }
 
@@ -1660,10 +1664,14 @@ void CalculateCompCurve() {
     // Write the Flow Setpoints to Heat Pump
     if (unitSettings.z1_active) {
       HeatPump.SetFlowSetpoint(Z1_CurveFSP, HEATING_CONTROL_MODE_FLOW_TEMP, ZONE1);
+      HeatPump.SetZoneTempSetpoint(HeatPump.Status.Zone1TemperatureSetpoint, HeatPump.Status.HeatingControlModeZ1, ZONE1);
+      HeatPump.SetZoneTempSetpoint(HeatPump.Status.Zone2TemperatureSetpoint, HeatPump.Status.HeatingControlModeZ2, ZONE2);
       HeatPump.Status.Zone1FlowTemperatureSetpoint = Z1_CurveFSP;
     }
     if (unitSettings.z2_active && HeatPump.Status.Has2Zone && !HeatPump.Status.Simple2Zone) {  // User must have Complex 2 zone to set different flow temp in different zones
       HeatPump.SetFlowSetpoint(Z2_CurveFSP, HEATING_CONTROL_MODE_FLOW_TEMP, ZONE2);
+      HeatPump.SetZoneTempSetpoint(HeatPump.Status.Zone1TemperatureSetpoint, HeatPump.Status.HeatingControlModeZ1, ZONE1);
+      HeatPump.SetZoneTempSetpoint(HeatPump.Status.Zone2TemperatureSetpoint, HeatPump.Status.HeatingControlModeZ2, ZONE2);
       HeatPump.Status.Zone2FlowTemperatureSetpoint = Z2_CurveFSP;
     }
     CompCurveReport();

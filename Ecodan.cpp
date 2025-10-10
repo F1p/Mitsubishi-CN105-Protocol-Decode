@@ -36,11 +36,11 @@ uint8_t ActiveCommand[] = { 0x00, 0x26, 0x14, 0x28, 0x03, 0x0C, 0x04, 0x05, 0x06
                             0x17, 0x18, 0x04, 0x0C, 0x19, 0x1A, 0x1B, 0x1C, 0x04, 0x15, 0x1D, 0x0C, 0x1E, 0x1F,
                             0x20, 0x04, 0x01, 0x0C, 0x27, 0x14, 0x02, 0x29, 0x04, 0xA1, 0x0C, 0xA2, 0x15, 0x00 };
 
-#define FIRST_READ_NUMBER_SVC_COMMANDS 11
-int FirstReadActiveServiceCode[] = { 3, 4, 5, 7, 8, 10, 13, 19, 20, 22, 23 };
+#define FIRST_READ_NUMBER_SVC_COMMANDS 12
+int FirstReadActiveServiceCode[] = { 3, 4, 5, 7, 8, 10, 12, 13, 19, 20, 22, 23 };
 
-#define NUMBER_SVC_COMMANDS 30
-int ActiveServiceCode[] = { 3, 4, 5, 13, 7, 4, 5, 13, 10, 4, 5, 13, 8, 4, 5, 13, 19, 4, 5, 13, 20, 4, 5, 13, 22, 4, 5, 13, 23, 5 };
+#define NUMBER_SVC_COMMANDS 32
+int ActiveServiceCode[] = { 3, 4, 5, 12, 13, 7, 4, 5, 10, 4, 5, 12, 13, 8, 4, 5, 12, 13, 19, 4, 5, 13, 20, 4, 5, 12, 13, 22, 4, 5, 23, 5 };
 
 #define NUMBER_SVC_COMMANDS_FTC7 6
 int ActiveServiceCodeFTC7[] = { 3, 19, 20, 22, 23, 5 };
