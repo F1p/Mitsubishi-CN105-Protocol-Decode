@@ -54,7 +54,7 @@
 #include "Ecodan.h"
 #include "Melcloud.h"
 
-String FirmwareVersion = "6.4.0-Beta6";
+String FirmwareVersion = "6.4.0-Beta7";
 
 
 #ifdef ESP8266  // Define the Witty ESP8266 Serial Pins
@@ -488,6 +488,7 @@ void loop() {
       myLED.setPixel(0, L_GREEN, 1);
 #endif
     }
+    WiFiOneShot = true;
     WiFiConnectedLastLoop = true;
   }
 
