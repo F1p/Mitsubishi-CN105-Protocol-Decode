@@ -673,8 +673,8 @@ float MQTT_CLIMATE_PRECISION[] PROGMEM = {
   0.5,
   0.5,
   0.5,
-  0.5,
-  0.5
+  0.1,
+  0.1
 };
 
 int MQTT_CLIMATE_INITAL[] PROGMEM = {

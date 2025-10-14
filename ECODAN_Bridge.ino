@@ -54,7 +54,7 @@
 #include "Ecodan.h"
 #include "Melcloud.h"
 
-String FirmwareVersion = "6.4.0-Beta4";
+String FirmwareVersion = "6.4.0-Beta5";
 
 
 #ifdef ESP8266  // Define the Witty ESP8266 Serial Pins
@@ -590,8 +590,7 @@ void loop() {
     if (unitSettings.shortcycleprotectionenabled && (!HeatPump.Status.ProhibitHeatingZ1 || !HeatPump.Status.ProhibitCoolingZ1 || !HeatPump.Status.ProhibitHeatingZ2 || !HeatPump.Status.ProhibitCoolingZ2 || !HeatPump.Status.ProhibitDHW)) {  // Check if prohibits are already active
       ShortCycleProtectionActive = true;
       std::array<uint8_t, 6> current_svc_state = { HeatPump.Status.SvrControlMode, HeatPump.Status.ProhibitDHW, HeatPump.Status.ProhibitHeatingZ1, HeatPump.Status.ProhibitCoolingZ1, HeatPump.Status.ProhibitHeatingZ2, HeatPump.Status.ProhibitCoolingZ2 };
-      std::array<uint8_t, 6> shortcycleprotection_svc_pre;
-      std::copy(current_svc_state.begin(), current_svc_state.end(), shortcycleprotection_svc_pre.begin());
+      std::copy(current_svc_state.begin(), current_svc_state.end(), shortcycleprotection_svc_pre);
       HeatPump.SetSvrControlMode(1, HeatPump.Status.ProhibitDHW, 1, 1, 1, 1);  // Prohibit Everything and keep DHW status the same
       HeatPump.Status.SvrControlMode = 1;                                      // Write Server Control Mode + Prohibits
     }
@@ -603,8 +602,8 @@ void loop() {
     ShortCycleProtectionActive = shortcycleprotectionexit = false;
     HeatPump.SetSvrControlMode(shortcycleprotection_svc_pre[0], shortcycleprotection_svc_pre[1], shortcycleprotection_svc_pre[2], shortcycleprotection_svc_pre[3], shortcycleprotection_svc_pre[4], shortcycleprotection_svc_pre[5]);  // Restore Server Control Mode + Prohibits
     HeatPump.Status.SvrControlMode = shortcycleprotection_svc_pre[0];
-    ShortCycleCauseNumber = 0;  // Reset the cause factor
-    ActiveControlReport();      // Publish MQTT on occurance
+    CompressorPeriodDurations[0] = CompressorPeriodDurations[1] = lockoutdurationMillis = ShortCycleCauseNumber = 0;  // Reset the compressor timers, lockout duration and cause factor
+    ActiveControlReport();                                                                                            // Publish MQTT on occurance
   }
 
 
