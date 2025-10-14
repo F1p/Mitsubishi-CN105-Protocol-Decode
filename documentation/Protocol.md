@@ -360,15 +360,16 @@ Responses so far identified.
 ### 0x15 - Unknown
 |   0   | 1  |  2 |  3 |  4 | 5 |  6 |  7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
 |-------|----|----|----|----|---|----|----|---|---|----|----|----|----|----|----|----|
-| 0x15  | PP | U2 | U2 | P2 |P3 |TWV |TWV2|   |   | MS | U5 |    |    |    |    |    |  
+| 0x15  | PP |PWM | U2 | P2 |P3 |TWV |TWV2|   |   | MS | U5 |    |    |    |    |    |  
 * PP : Primary Water Pump (Pump 1/OUT1)
-* U2 : Unknown Int (3+4 Two Bytes?)
+* PWM : Primary Water Pump PWM Speed
+* U2 : Unknown (Feedback Duty?)
 * P2 : Water Pump 2 (OUT2)
 * P3 : In "Complex Zone 2" configuration - Water Pump 3 (OUT3). See 0x16 for Simple Zone 2 OUT3
 * TWV : Three Way Valve Active
 * TWV2 : Three Way Valve 2 Active (Suspected, if installed)
 * MS : Mixing Valve Step (1 to 10)
-* U5 : Unknown - Always shows 04?
+* U5 : Mixing Valve 2 Operation - 0=Waiting/1=Closing/2=Opening/3=Init/4=Stop
 ### 0x16 - Pumps Running
 |   0   | 1  |  2 |  3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
 |-------|----|----|----|---|---|---|---|---|---|----|----|----|----|----|----|----|
