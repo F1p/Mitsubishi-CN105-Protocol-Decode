@@ -602,7 +602,7 @@ void readSettingsFromConfig() {
         } else if (i >= 100 && i < 102) {
           Config["curr_temp_t"] = BASETOPIC + String(MQTT_TOPIC[2]);
           Config["curr_temp_tpl"] = String(MQTT_SENSOR_VALUE_TEMPLATE[6]);
-          Config["temp_cmd_t"] = BASETOPIC + String(MQTT_TOPIC[i - 76]);
+          Config["temp_cmd_t"] = BASETOPIC + String(MQTT_TOPIC[i - 74]);
           Config["temp_stat_t"] = BASETOPIC + String(MQTT_TOPIC[i - 95]);
           Config["temp_stat_tpl"] = String(MQTT_SENSOR_VALUE_TEMPLATE[99]);
         }

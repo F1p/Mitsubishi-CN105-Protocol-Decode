@@ -665,8 +665,8 @@ float MQTT_CLIMATE_TEMP_STEP[] PROGMEM = {
   0.5,
   0.5,
   0.5,
-  0.5,
-  0.5
+  0.1,
+  0.1
 };
 
 float MQTT_CLIMATE_PRECISION[] PROGMEM = {

@@ -54,7 +54,7 @@
 #include "Ecodan.h"
 #include "Melcloud.h"
 
-String FirmwareVersion = "6.4.0-Beta2";
+String FirmwareVersion = "6.4.0-Beta4";
 
 
 #ifdef ESP8266  // Define the Witty ESP8266 Serial Pins
@@ -1574,7 +1574,7 @@ void onTelnetConnectionAttempt(String ip) {
 }
 
 float roundToOneDecimal(float value) {
-  return ((round(value * 10.0)) / 19.0);
+  return ((round(value * 10.0)) / 10.0);
 }
 
 double round2(double value) {
