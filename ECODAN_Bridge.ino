@@ -54,7 +54,7 @@
 #include "Ecodan.h"
 #include "Melcloud.h"
 
-String FirmwareVersion = "6.4.0";
+String FirmwareVersion = "6.4.0-h1";
 
 
 #ifdef ESP8266  // Define the Witty ESP8266 Serial Pins
@@ -1121,7 +1121,7 @@ void SystemReport(void) {
   if (HeatPump.Status.ImmersionActive == 1 || HeatPump.Status.Booster1Active == 1 || HeatPump.Status.Booster2Active == 1) {  // Account for Immersion or Booster Instead of HP
     Non_HP_Mode = true;
     if (EstInputPower == 0) { EstInputPower = HeatPump.Status.InputPower; }  // Uses Booster/Immersion Size in MRC
-    if (OutputPower == 0) { HeatOutputPower = HeatPump.Status.OutputPower; }
+    if (OutputPower == 0) { OutputPower = HeatOutputPower = HeatPump.Status.OutputPower; }
   }
 
   if (HeatPump.Status.SystemOperationMode > 0) {                // Pump Operating
@@ -1132,7 +1132,7 @@ void SystemReport(void) {
       }                                                         //
       else if (DHW_Mode) {                                      // Not defrosting, hot water mode
         EstDHWInputPower = EstInputPower;                       //
-        DHWOutputPower = HeatOutputPower = OutputPower;         // DHW Output Power is Negative
+        DHWOutputPower = HeatOutputPower = OutputPower;         // DHW Output Power is Negative or 0 (could be due to immersion)
       } else {                                                  // Heating/Cooling Mode
         if (HeatPump.Status.SystemOperationMode == 2) {         // Heating Operating Mode
           EstHeatingInputPower = EstInputPower;                 // Input Power attribution to Heating
