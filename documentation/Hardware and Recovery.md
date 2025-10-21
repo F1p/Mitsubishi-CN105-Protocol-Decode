@@ -8,7 +8,11 @@ M5Stack Atom S3 Lite
 
 2. Connect your board and install [ESPHome](https://web.esphome.io/?dashboard_install) from ESP Tool
 
-3. The Pins on the M5Stack are: 1 = Tx, 2 = Rx
+3. The Pins on the M5Stack are: 1 = Tx, 2 = Rx (Onboard Grove Port)
+
+On Proxy Carrier Boards: 38 = Rx from FTC, 39 = Tx from FTC, 8 = Rx from MELCloud, 7 = Tx from MELCloud
+
+
 
 
 Wemos D1 Mini
