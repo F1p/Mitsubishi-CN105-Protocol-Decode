@@ -54,7 +54,7 @@
 #include "Ecodan.h"
 #include "Melcloud.h"
 
-String FirmwareVersion = "6.4.0-h2";
+String FirmwareVersion = "6.4.0-h3";
 
 
 #ifdef ESP8266  // Define the Witty ESP8266 Serial Pins
@@ -1005,7 +1005,7 @@ void Zone1Report(void) {
   doc[F("Setpoint")] = HeatPump.Status.Zone1TemperatureSetpoint;
   doc[F("HeatingControlMode")] = HeatingControlModeString[HeatPump.Status.HeatingControlModeZ1];
   doc[F("FSP")] = round2(HeatPump.Status.Zone1FlowTemperatureSetpoint);
-  if ((HeatPump.Status.Zone2Temperature == 0) && (HeatPump.Status.SystemOperationMode == 2 || HeatPump.Status.SystemOperationMode == 3 || HeatPump.Status.SystemOperationMode == 7)) {
+  if ((!HeatPump.Status.Has2Zone) && (HeatPump.Status.SystemOperationMode == 2 || HeatPump.Status.SystemOperationMode == 3 || HeatPump.Status.SystemOperationMode == 7)) {
     doc[F("TwoZone_Z1Working")] = 1;
   } else {
     doc[F("TwoZone_Z1Working")] = HeatPump.Status.TwoZone_Z1Working;
