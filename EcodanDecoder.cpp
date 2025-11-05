@@ -990,6 +990,10 @@ void ECODANDECODER::Process0xA3(uint8_t *Buffer, EcodanStatus *Status) {
       Status->LEVA = Buffer[4];
     } else if (ServiceCode == 23) {
       Status->LEVB = Buffer[4];
+    } else if (ServiceCode == 70) {
+      Status->OutdoorUnitCapacity = Buffer[4];
+    } else if (ServiceCode == 90) {
+      snprintf(Status->OutdoorFirmware, 6, "%02X.%02X", Buffer[4], Buffer[5]);
     }
     Status->ServiceCodeReply = ExtractInt16_v2_Signed(Buffer, 4);
   } else if (Buffer[3] != 0) {  // FTC side done but response is Done (7) or Unknown (6)

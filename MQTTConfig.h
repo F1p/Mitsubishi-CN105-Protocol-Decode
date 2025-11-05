@@ -16,6 +16,8 @@ String MQTT_STATUS_WIFISTATUS = MQTT_STATUS + "/WiFiStatus";
 String MQTT_STATUS_CURVE = MQTT_STATUS + "/CompCurve";
 String MQTT_STATUS_ACTV_CTRL = MQTT_STATUS + "/ActiveControl";
 
+String MQTT_STATUS_WIFISTATUS_UPDATE = MQTT_STATUS_WIFISTATUS + "/Update";
+
 String MQTT_COMMAND_ZONE1 = MQTT_COMMAND + "/Zone1";
 String MQTT_COMMAND_ZONE2 = MQTT_COMMAND + "/Zone2";
 String MQTT_COMMAND_HOTWATER = MQTT_COMMAND + "/HotWater";
@@ -93,6 +95,8 @@ String MQTT_2_STATUS_ENERGY = MQTT_2_STATUS + "/Energy";
 String MQTT_2_STATUS_WIFISTATUS = MQTT_2_STATUS + "/WiFiStatus";
 String MQTT_2_STATUS_CURVE = MQTT_2_STATUS + "/CompCurve";
 String MQTT_2_STATUS_ACTV_CTRL = MQTT_2_STATUS + "/ActiveControl";
+
+String MQTT_2_STATUS_WIFISTATUS_UPDATE = MQTT_2_STATUS_WIFISTATUS + "/Update";
 
 String MQTT_2_COMMAND_ZONE1 = MQTT_2_COMMAND + "/Zone1";
 String MQTT_2_COMMAND_ZONE2 = MQTT_2_COMMAND + "/Zone2";
@@ -351,6 +355,7 @@ void readSettingsFromConfig() {
     MQTT_STATUS_WIFISTATUS = MQTT_STATUS + "/WiFiStatus";
     MQTT_STATUS_CURVE = MQTT_STATUS + "/CompCurve";
     MQTT_STATUS_ACTV_CTRL = MQTT_STATUS + "/ActiveControl";
+    MQTT_STATUS_WIFISTATUS_UPDATE = MQTT_STATUS_WIFISTATUS + "/Update";
 
     MQTT_COMMAND_ZONE1 = MQTT_COMMAND + "/Zone1";
     MQTT_COMMAND_ZONE2 = MQTT_COMMAND + "/Zone2";
@@ -556,15 +561,15 @@ void readSettingsFromConfig() {
     for (int i = 0; i < discovery_topics; i++) {
 
       if (i == 0) {  // If the first topic
-        Config["device"]["identifiers"] = WiFiHostname;
-        Config["device"]["manufacturer"] = "F1p";
+        Config["device"]["ids"] = WiFiHostname;
+        Config["device"]["mf"] = "F1p";
         Config["device"]["model"] = ChipModel;
-        Config["device"]["serial_number"] = ChipID;
+        Config["device"]["sn"] = ChipID;
         Config["device"]["name"] = "Ecodan ASHP";
 #ifdef ARDUINO_WT32_ETH01
-        Config["device"]["configuration_url"] = "http://" + ETH.localIP().toString() + ":80";
+        Config["device"]["cu"] = "http://" + ETH.localIP().toString() + ":80";
 #else
-      Config["device"]["configuration_url"] = "http://" + WiFi.localIP().toString() + ":80";
+      Config["device"]["cu"] = "http://" + WiFi.localIP().toString() + ":80";
 #endif
         Config["device"]["sw_version"] = FirmwareVersion;
       } else {  // Otherwise post just identifier
@@ -572,12 +577,12 @@ void readSettingsFromConfig() {
       }
 
       // Every one has a unique_id and name
-      Config["unique_id"] = String(MQTT_SENSOR_UNIQUE_ID[i]) + ChipID;
+      Config["uniq_id"] = String(MQTT_SENSOR_UNIQUE_ID[i]) + ChipID;
       Config["name"] = String(MQTT_SENSOR_NAME[i]);
 
 
       // Sensors
-      if (i >= 0 && i < 97) {
+      if (i >= 0 && i < 100) {
         Config["stat_t"] = BASETOPIC + String(MQTT_TOPIC[MQTT_TOPIC_POS[i]]);                               // Needs a positioner
         if (MQTT_UNITS_POS[i] > 0) {                                                                        // If there is a unit
           Config["unit_of_meas"] = String(MQTT_SENSOR_UNITS[MQTT_UNITS_POS[i]]);                            // Publish Units
@@ -591,56 +596,56 @@ void readSettingsFromConfig() {
       }
 
       // Climate
-      if (i >= 97 && i < 102) {
-        Config["object_id"] = String(MQTT_OBJECT_ID[i - 97]);
-        if (i >= 97 && i < 100) {
-          Config["curr_temp_t"] = BASETOPIC + String(MQTT_TOPIC[i - 93]);
+      if (i >= 100 && i < 105) {
+        Config["object_id"] = String(MQTT_OBJECT_ID[i - 100]);
+        if (i >= 100 && i < 103) {
+          Config["curr_temp_t"] = BASETOPIC + String(MQTT_TOPIC[i - 96]);
           Config["curr_temp_tpl"] = String(MQTT_SENSOR_VALUE_TEMPLATE[25]);
-          Config["temp_cmd_t"] = BASETOPIC + String(MQTT_TOPIC[i - 85]);
-          Config["temp_stat_t"] = BASETOPIC + String(MQTT_TOPIC[i - 93]);
-          Config["temp_stat_tpl"] = String(MQTT_SENSOR_VALUE_TEMPLATE[98]);
-        } else if (i >= 100 && i < 102) {
+          Config["temp_cmd_t"] = BASETOPIC + String(MQTT_TOPIC[i - 88]);
+          Config["temp_stat_t"] = BASETOPIC + String(MQTT_TOPIC[i - 96]);
+          Config["temp_stat_tpl"] = String(MQTT_SENSOR_VALUE_TEMPLATE[101]);
+        } else if (i >= 103 && i < 105) {
           Config["curr_temp_t"] = BASETOPIC + String(MQTT_TOPIC[2]);
           Config["curr_temp_tpl"] = String(MQTT_SENSOR_VALUE_TEMPLATE[6]);
-          Config["temp_cmd_t"] = BASETOPIC + String(MQTT_TOPIC[i - 74]);
-          Config["temp_stat_t"] = BASETOPIC + String(MQTT_TOPIC[i - 95]);
-          Config["temp_stat_tpl"] = String(MQTT_SENSOR_VALUE_TEMPLATE[99]);
+          Config["temp_cmd_t"] = BASETOPIC + String(MQTT_TOPIC[i - 77]);
+          Config["temp_stat_t"] = BASETOPIC + String(MQTT_TOPIC[i - 98]);
+          Config["temp_stat_tpl"] = String(MQTT_SENSOR_VALUE_TEMPLATE[102]);
         }
         Config["temp_unit"] = String(MQTT_SENSOR_UNITS[9]);
-        if (HeatPump.Status.RefrigerantType == 2 && i == 97) {  // If R290 then DHW Max can be 70C
+        if (HeatPump.Status.RefrigerantType == 2 && i == 100) {  // If R290 then DHW Max can be 70C
           Config["max_temp"] = MQTT_CLIMATE_MAX[6];
         } else {
-          Config["max_temp"] = MQTT_CLIMATE_MAX[i - 97];
+          Config["max_temp"] = MQTT_CLIMATE_MAX[i - 100];
         }
 
-        Config["min_temp"] = MQTT_CLIMATE_MIN[i - 97];
-        Config["temp_step"] = MQTT_CLIMATE_TEMP_STEP[i - 97];
-        Config["precision"] = MQTT_CLIMATE_PRECISION[i - 97];
-        Config["initial"] = MQTT_CLIMATE_INITAL[i - 97];
-        Config["action_topic"] = BASETOPIC + String(MQTT_TOPIC[2]);
-        Config["action_template"] = String(MQTT_CLIMATE_MODE_STATE_TEMPLATE[i - 97]);
-        Config["mode_state_topic"] = BASETOPIC + String(MQTT_TOPIC[8]);
-        Config["mode_state_template"] = String(MQTT_CLIMATE_STATE_TOPIC[i - 97]);
-        if (i == 97) {
+        Config["min_temp"] = MQTT_CLIMATE_MIN[i - 100];
+        Config["temp_step"] = MQTT_CLIMATE_TEMP_STEP[i - 100];
+        Config["precision"] = MQTT_CLIMATE_PRECISION[i - 100];
+        Config["init"] = MQTT_CLIMATE_INITAL[i - 100];
+        Config["act_t"] = BASETOPIC + String(MQTT_TOPIC[2]);
+        Config["act_tpl"] = String(MQTT_CLIMATE_MODE_STATE_TEMPLATE[i - 100]);
+        Config["mode_stat_t"] = BASETOPIC + String(MQTT_TOPIC[8]);
+        Config["mode_stat_tpl"] = String(MQTT_CLIMATE_STATE_TOPIC[i - 100]);
+        if (i == 100) {
           Config["modes"][0] = "heat";
           Config["modes"][1] = "off";
         } else {
           Config["modes"][0] = "heat";
           Config["modes"][1] = "cool";
           Config["modes"][2] = "off";
-          Config["mode_command_template"] = String(MQTT_CLIMATE_MODE[0]);
-          Config["mode_command_topic"] = BASETOPIC + String(MQTT_TOPIC[9]);
+          Config["mode_cmd_tpl"] = String(MQTT_CLIMATE_MODE[0]);
+          Config["mode_cmd_t"] = BASETOPIC + String(MQTT_TOPIC[9]);
         }
 
         MQTT_DISCOVERY_TOPIC = String(MQTT_DISCOVERY_TOPICS[1]);
       }
 
       // Switches
-      if (i >= 102 && i < 113) {
-        Config["state_topic"] = BASETOPIC + String(MQTT_TOPIC[MQTT_SWITCH_STATE_POS[i - 102]]);
-        Config["value_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[i - 2]);
-        Config["command_topic"] = BASETOPIC + String(MQTT_TOPIC[i - 87]);
-        if (i == 103) {
+      if (i >= 105 && i < 116) {
+        Config["stat_t"] = BASETOPIC + String(MQTT_TOPIC[MQTT_SWITCH_STATE_POS[i - 105]]);
+        Config["val_tpl"] = String(MQTT_SENSOR_VALUE_TEMPLATE[i - 2]);
+        Config["cmd_t"] = BASETOPIC + String(MQTT_TOPIC[i - 90]);
+        if (i == 106) {
           Config["state_on"] = "On";
           Config["state_off"] = "Standby";
           Config["payload_on"] = "On";
@@ -658,15 +663,15 @@ void readSettingsFromConfig() {
 
 
       // Selects
-      if (i >= 113 && i < 118) {
-        Config["command_topic"] = BASETOPIC + String(MQTT_TOPIC[i - 85]);
-        Config["state_topic"] = BASETOPIC + String(MQTT_TOPIC[i - 109]);
-        Config["value_template"] = String(MQTT_SELECT_VALUE_TEMPLATE[i - 113]);
-        if (i == 113) {  // DHW Modes
+      if (i >= 116 && i < 121) {
+        Config["cmd_t"] = BASETOPIC + String(MQTT_TOPIC[i - 88]);
+        Config["stat_t"] = BASETOPIC + String(MQTT_TOPIC[i - 112]);
+        Config["val_tpl"] = String(MQTT_SELECT_VALUE_TEMPLATE[i - 116]);
+        if (i == 116) {  // DHW Modes
           Config["options"][0] = HotWaterControlModeString[0];
           Config["options"][1] = HotWaterControlModeString[1];
-        } else if (i == 116) {  // Unit Sizes - for some reason it doesn't like doing this from PROGMEM in a loop on the 8266
-          Config["state_topic"] = BASETOPIC + String(MQTT_TOPIC[1]);
+        } else if (i == 119) {  // Unit Sizes - for some reason it doesn't like doing this from PROGMEM in a loop on the 8266
+          Config["stat_t"] = BASETOPIC + String(MQTT_TOPIC[1]);
           Config["options"][0] = "4.0";
           Config["options"][1] = "5.0";
           Config["options"][2] = "6.0";
@@ -677,8 +682,9 @@ void readSettingsFromConfig() {
           Config["options"][7] = "11.2";
           Config["options"][8] = "12.0";
           Config["options"][9] = "14.0";
-        } else if (i == 117) {  // Glycol Strengths
-          Config["state_topic"] = BASETOPIC + String(MQTT_TOPIC[1]);
+          Config["options"][10] = "23.0";
+        } else if (i == 120) {  // Glycol Strengths
+          Config["stat_t"] = BASETOPIC + String(MQTT_TOPIC[1]);
           Config["options"][0] = "0%";
           Config["options"][1] = "10%";
           Config["options"][2] = "20%";
@@ -695,22 +701,30 @@ void readSettingsFromConfig() {
         MQTT_DISCOVERY_TOPIC = String(MQTT_DISCOVERY_TOPICS[4]);
       }
 
+      // Update
+      if (i == 121) {
+        //Config["stat_t"] = BASETOPIC + String(MQTT_TOPIC[34]);
+        //Config["dev_cla"] = String(MQTT_DEVICE_CLASS[8]);
+        //Config["l_ver_t"] = BASETOPIC + String(MQTT_TOPIC[34]);
+        //Config["rel_u"] = "https://github.com/F1p/Mitsubishi-CN105-Protocol-Decode/releases/latest";
+        //MQTT_DISCOVERY_TOPIC = String(MQTT_DISCOVERY_TOPICS[6]);
+      }
 
       // Add Availability Topics
-      if (i >= 97) {
-        if (i >= 106 && i < 111) {  // Server Control Mode Interlocks
-          Config["availability"]["topic"] = BASETOPIC + String(MQTT_TOPIC[8]);
-          Config["availability"]["value_template"] = String(MQTT_SENSOR_VALUE_TEMPLATE[103]);
-          Config["availability"]["payload_available"] = ITEM_ON;
-          Config["availability"]["payload_not_available"] = ITEM_OFF;
-        } else if (i >= 100 && i < 102) {  // Flow Op Mode Interlocks on Climate & Number
-          Config["availability"]["topic"] = BASETOPIC + String(MQTT_TOPIC[i - 95]);
-          Config["availability"]["value_template"] = String(MQTT_NUMBER_AVAIL_TEMPLATE[0]);
-        } else if (i == 115) {  // Interlock Zone2 Mode with Complex 2 Zone only
-          Config["availability"]["topic"] = BASETOPIC + String(MQTT_TOPIC[9]);
-          Config["availability"]["value_template"] = String(MQTT_NUMBER_AVAIL_TEMPLATE[1]);
+      if (i >= 100) {
+        if (i >= 109 && i < 114) {  // Server Control Mode Interlocks
+          Config["availability"]["t"] = BASETOPIC + String(MQTT_TOPIC[8]);
+          Config["availability"]["val_tpl"] = String(MQTT_SENSOR_VALUE_TEMPLATE[106]);
+          Config["availability"]["pl_avail"] = ITEM_ON;
+          Config["availability"]["pl_not_avail"] = ITEM_OFF;
+        } else if (i >= 103 && i < 105) {  // Flow Op Mode Interlocks on Climate & Number
+          Config["availability"]["t"] = BASETOPIC + String(MQTT_TOPIC[i - 98]);
+          Config["availability"]["val_tpl"] = String(MQTT_NUMBER_AVAIL_TEMPLATE[0]);
+        } else if (i == 118) {  // Interlock Zone2 Mode with Complex 2 Zone only
+          Config["availability"]["t"] = BASETOPIC + String(MQTT_TOPIC[9]);
+          Config["availability"]["val_tpl"] = String(MQTT_NUMBER_AVAIL_TEMPLATE[1]);
         } else {  // Everything else LWT
-          Config["availability"]["topic"] = BASETOPIC + String(MQTT_TOPIC[0]);
+          Config["availability"]["t"] = BASETOPIC + String(MQTT_TOPIC[0]);
         }
       }
 
@@ -893,6 +907,7 @@ void readSettingsFromConfig() {
     MQTT_2_STATUS_WIFISTATUS = MQTT_2_STATUS + "/WiFiStatus";
     MQTT_2_STATUS_CURVE = MQTT_2_STATUS + "/CompCurve";
     MQTT_2_STATUS_ACTV_CTRL = MQTT_2_STATUS + "/ActiveControl";
+    MQTT_2_STATUS_WIFISTATUS_UPDATE = MQTT_2_STATUS_WIFISTATUS + "/Update";
 
     MQTT_2_COMMAND_ZONE1 = MQTT_2_COMMAND + "/Zone1";
     MQTT_2_COMMAND_ZONE2 = MQTT_2_COMMAND + "/Zone2";

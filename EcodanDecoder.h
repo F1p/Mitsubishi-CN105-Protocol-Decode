@@ -115,6 +115,7 @@ const char HolidayModetString[2][4] = { "Off", "On" };
 #define ITEM_OFF 0
 #define ITEM_ON 1
 const char OFF_ON_String[2][4] = { "Off", "On" };
+const char MELCloudStatusString[2][8] = { "Online", "Offline" };
 
 #define COMPRESSOR_NORMAL 0
 #define COMPRESSOR_STANDBY 1
@@ -270,7 +271,8 @@ typedef struct _EcodanStatus {
 
   //From Message 0xa3
   int16_t Fan1RPM, Fan2RPM, LEVA, LEVB, LiquidTemp, TH4Discharge, CompOpTimes, Subcool, TH8HeatSink, TH6Pipe, TH32Pipe, TH33, Superheat, ServiceCodeReply;
-  uint8_t LastServiceCodeNumber;
+  uint8_t LastServiceCodeNumber, OutdoorUnitCapacity;
+  char OutdoorFirmware[6];
 
   //From Message 0xc9
   uint8_t FTCVersion, RefrigerantType;

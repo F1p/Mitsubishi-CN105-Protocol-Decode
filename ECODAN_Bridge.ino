@@ -22,16 +22,17 @@
 
 #include <FS.h>  // Define File System First
 #include <LittleFS.h>
-
 #ifdef ESP8266
 #include <ESP8266WiFi.h>
 #include <ESP8266mDNS.h>
 #include <ESP8266WebServer.h>
+//#include <ESP8266HTTPClient.h>
 #include <SoftwareSerial.h>
 #include <sys/time.h>
 #endif
 #ifdef ESP32
 #include <WiFi.h>
+#include <HTTPClient.h>
 #ifndef ARDUINO_WT32_ETH01
 #include <AsyncTCP.h>  // Disable for WT32
 #endif
@@ -54,7 +55,8 @@
 #include "Ecodan.h"
 #include "Melcloud.h"
 
-String FirmwareVersion = "6.4.0-h3";
+String FirmwareVersion = "6.5.0";
+String LatestFirmwareVersion;
 
 
 #ifdef ESP8266  // Define the Witty ESP8266 Serial Pins
@@ -128,8 +130,10 @@ const int password_max_length = 50;
 const int basetopic_max_length = 30;
 bool BlockWriteFromMELCloud = false;
 bool ShortCycleProtectionActive = false;
+bool MELCloud_Adapter_Connected = false;
 float Z1_CurveFSP = 30;
 float Z2_CurveFSP = 30;
+
 
 // The extra parameters to be configured (can be either global or just in the setup)
 // After connecting, parameter.getValue() will get you the configured value
@@ -167,7 +171,7 @@ struct MqttSettings {
 
 struct UnitSettings {
   float UnitSize = 8.5;
-  float GlycolStrength = 3.9;
+  float GlycolStrength = 4.18;
   char unitsize_identifier[9] = "unitsize";
   char glycol_identifier[7] = "glycol";
   char compcurve_identifier[10] = "compcurve";
@@ -186,7 +190,7 @@ struct UnitSettings {
   bool shortcycleprotectionenabled = false;
 };
 
-
+//HTTPClient http;
 MqttSettings mqttSettings;
 UnitSettings unitSettings;
 ECODAN HeatPump;
@@ -197,9 +201,6 @@ SoftwareSerial SwSerial2;
 #endif
 WiFiClient NetworkClient1;
 WiFiClient NetworkClient2;
-
-
-//WiFiClientSecure NetworkClient;              // Encryption Support
 PubSubClient MQTTClient1(NetworkClient1);
 PubSubClient MQTTClient2(NetworkClient2);
 ESPTelnet TelnetServer;
@@ -244,6 +245,7 @@ void CompCurveReport(void);
 void ActiveControlReport(void);
 void CalculateCompCurve(void);
 void FastPublish(void);
+//void CheckForOTAUpdates(void);
 
 TimerCallBack HeatPumpQuery1(400, HeatPumpQueryStateEngine);   // Set to 400ms (Safe), 320-350ms best time between messages
 TimerCallBack HeatPumpQuery2(30000, HeatPumpKeepAlive);        // Set to 20-30s for heat pump query frequency
@@ -252,6 +254,7 @@ TimerCallBack HeatPumpQuery4(30000, handleMQTT2State);         // Re-connect att
 TimerCallBack HeatPumpQuery5(1000, HeatPumpWriteStateEngine);  // Set to 1000ms (Safe), 320-350ms best time between messages
 TimerCallBack HeatPumpQuery6(2000, FastPublish);               // Publish some reports at a faster rate
 TimerCallBack HeatPumpQuery7(300000, CalculateCompCurve);      // Calculate the Compensation Curve based on latest data   //300000 = 5min
+//TimerCallBack HeatPumpQuery8(3600000, CheckForOTAUpdates);     // Set check period to 1hr
 
 unsigned long looppreviousMicros = 0;     // variable for comparing millis counter
 unsigned long ftcpreviousMillis = 0;      // variable for comparing millis counter
@@ -356,7 +359,7 @@ void setup() {
 
   HeatPump.Status.Write_To_Ecodan_OK = false;
   HeatPump.Status.HasAnsweredDips = false;
-
+  //CheckForOTAUpdates();
   HeatPumpKeepAlive();
 }
 
@@ -373,6 +376,7 @@ void loop() {
   HeatPumpQuery5.Process();
   HeatPumpQuery6.Process();
   HeatPumpQuery7.Process();
+  //HeatPumpQuery8.Process();
 
   MELCloudQueryReplyEngine();
   MQTTClient1.loop();
@@ -381,6 +385,8 @@ void loop() {
   HeatPump.Process();
   MELCloud.Process();
   wifiManager.process();
+
+
 
 
   // -- Config Saver -- //
@@ -673,7 +679,6 @@ void HeatPumpWriteStateEngine(void) {
 void MELCloudQueryReplyEngine(void) {
   if (MELCloud.Status.ReplyNow) {
     if (MELCloud.Status.ActiveMessage == 0x28 && MELCloud.Status.MEL_Heartbeat) {  // Toggle the Heartbeat High for this request (MELCloud Only)
-      DEBUG_PRINTLN("Setting Heartbeat Byte");
       Array0x28[11] = 1;
       MELCloud.Status.MEL_Heartbeat = false;
     } else if (MELCloud.Status.ActiveMessage == 0x28 && !MELCloud.Status.MEL_Heartbeat) {  // Toggle the Heartbeat Low for other requests
@@ -682,7 +687,7 @@ void MELCloudQueryReplyEngine(void) {
     MELCloud.ReplyStatus(MELCloud.Status.ActiveMessage);  // Reply with the OK Message to MELCloud
     MELCloud.Status.ReplyNow = false;
     if (MELCloud.Status.ActiveMessage == 0x32 || MELCloud.Status.ActiveMessage == 0x33 || MELCloud.Status.ActiveMessage == 0x34 || MELCloud.Status.ActiveMessage == 0x35) {  // The write commands
-      if (!BlockWriteFromMELCloud) { HeatPump.WriteMELCloudCMD(MELCloud.Status.ActiveMessage); }                                                                             // Passes the MELCloud Interface Write Message to the Ecodan Interface Command Queue
+      if (!BlockWriteFromMELCloud) { HeatPump.WriteMELCloudCMD(MELCloud.Status.ActiveMessage); }
     }
   } else if ((MELCloud.Status.ConnectRequest) && (HeatPump.Status.FTCVersion != 0)) {
     MELCloud.Connect();  // Reply to the connect request
@@ -696,6 +701,7 @@ void MELCloudQueryReplyEngine(void) {
   } else if (MELCloud.Status.MEL_HB_Request) {  // Reply to the MELCloud Heartbeat
     MELCloud.ReplyStatus(0x34);
     MELCloud.Status.MEL_HB_Request = false;
+    MELCloud_Adapter_Connected = true;  // Mark as in use
   }
 }
 
@@ -732,6 +738,9 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
     } else if (Payload.toInt() == 996) {
       DEBUG_PRINTLN(F("Allowing Write Requests from MELCloud"));
       BlockWriteFromMELCloud = false;
+    } else if (Payload.toInt() == 994) {
+      DEBUG_PRINTLN(F("Requested Bridge Latest Firmware Available"));
+      //CheckForOTAUpdates();
     } else {
       HeatPump.WriteServiceCodeCMD(Payload.toInt());
       SvcRequested = Payload.toInt();
@@ -1103,6 +1112,8 @@ void SystemReport(void) {
     UnitSizeFactor = 1.5;
   } else if ((unitSettings.UnitSize == 12.0) || (unitSettings.UnitSize == 14.0)) {
     UnitSizeFactor = 1.7;
+  } else if (unitSettings.UnitSize == 23.0) {
+    UnitSizeFactor = 2.0;
   }
 
   if (HeatPump.Status.InputPower < 2) {  // To account for FTC's onboard estimation and limit the input power range
@@ -1352,15 +1363,16 @@ void StatusReport(void) {
   JsonDocument doc;
   char Buffer[1024];
   char TmBuffer[32];
+  bool changemade = false;
 
   doc[F("SSID")] = WiFi.SSID();
   doc[F("RSSI")] = WiFi.RSSI();
+  doc[F("Uptime")] = (millis() / 1000 / 60);  // Subject to rollover
 #ifdef ARDUINO_WT32_ETH01
   doc[F("IP")] = ETH.localIP().toString();
 #else
   doc[F("IP")] = WiFi.localIP().toString();
 #endif
-  doc[F("Firmware")] = FirmwareVersion;
 #ifdef ESP32  // Define the M5Stack LED
   doc[F("CPUTemp")] = round2(temperatureRead());
 #endif
@@ -1372,11 +1384,50 @@ void StatusReport(void) {
   doc[F("FTCReplyTime")] = HeatPump.Lastmsbetweenmsg();
   doc[F("FTCVersion")] = FTCString[HeatPump.Status.FTCVersion];
   doc[F("FTCSoftwareVersion")] = HeatPump.Status.FTCSoftware;
-
+  if (HeatPump.SVCPopulated) { doc[F("OutdoorSoftwareVersion")] = HeatPump.Status.OutdoorFirmware; }
+  if (MELCloud_Adapter_Connected) {
+    doc[F("MELCloud_Status")] = MELCloudStatusString[MELCloud.Status.MEL_Heartbeat];
+  } else {
+    doc[F("MELCloud_Status")] = "Adapter Disconnected";
+  }
+  doc[F("MELCloud_Write_Blocking")] = BlockWriteFromMELCloud;
   strftime(TmBuffer, sizeof(TmBuffer), "%FT%TZ", &HeatPump.Status.DateTimeStamp);
   doc[F("FTCTime")] = TmBuffer;
 
+
+  // Verify Outdoor Unit Size set by selector against outdoor unit Service Code Read and adjust if required
+  if (HeatPump.Status.OutdoorUnitCapacity > 0) {
+    if (HeatPump.Status.OutdoorUnitCapacity == 9 && unitSettings.UnitSize != 4.0) {  // 3.5kW
+      unitSettings.UnitSize = 4.0;
+      changemade = true;
+    } else if (HeatPump.Status.OutdoorUnitCapacity == 10 && unitSettings.UnitSize != 5.0) {  // 5kW
+      unitSettings.UnitSize = 5.0;
+      changemade = true;
+    } else if (HeatPump.Status.OutdoorUnitCapacity == 11 && unitSettings.UnitSize != 6.0) {  // 6kW
+      unitSettings.UnitSize = 6.0;
+      changemade = true;
+    } else if (HeatPump.Status.OutdoorUnitCapacity == 14 && (unitSettings.UnitSize < 8 || unitSettings.UnitSize > 9)) {  // 8.5kW
+      unitSettings.UnitSize = 8.5;
+      changemade = true;
+    } else if (HeatPump.Status.OutdoorUnitCapacity == 20 && (unitSettings.UnitSize < 10 || unitSettings.UnitSize > 11.2)) {  // 10kW
+      unitSettings.UnitSize = 10.0;
+      changemade = true;
+    } else if (HeatPump.Status.OutdoorUnitCapacity == 25 && unitSettings.UnitSize != 12.0) {  // 12.5kW
+      unitSettings.UnitSize = 12.0;
+      changemade = true;
+    } else if (HeatPump.Status.OutdoorUnitCapacity == 28 && unitSettings.UnitSize != 14.0) {  // 14kW
+      unitSettings.UnitSize = 14.0;
+      changemade = true;
+    } else if (HeatPump.Status.OutdoorUnitCapacity >= 40 && unitSettings.UnitSize != 23.0) {  // 17, 20 or 25kW  ( 23kW Split )
+      unitSettings.UnitSize = 23.0;
+      changemade = true;
+    }
+    if (changemade) { shouldSaveConfig = true; }
+  }
   doc[F("UnitSize")] = String(unitSettings.UnitSize, 1);
+
+
+
   if (round2(unitSettings.GlycolStrength) == 4.18) {
     doc[F("Glycol")] = "0%";
   } else if (round2(unitSettings.GlycolStrength) == 4.12) {
@@ -1393,6 +1444,18 @@ void StatusReport(void) {
   MQTTClient2.publish(MQTT_2_STATUS_WIFISTATUS.c_str(), Buffer, false);
   MQTTClient1.publish(MQTT_LWT.c_str(), "online");
   MQTTClient2.publish(MQTT_2_LWT.c_str(), "online");
+}
+
+void UpdateReport(void) {
+  JsonDocument doc;
+  char Buffer[512];
+
+  doc[F("installed_version")] = FirmwareVersion;
+  doc[F("latest_version")] = LatestFirmwareVersion;
+
+  serializeJson(doc, Buffer);
+  MQTTClient1.publish(MQTT_STATUS_WIFISTATUS_UPDATE.c_str(), Buffer, false);
+  MQTTClient2.publish(MQTT_2_STATUS_WIFISTATUS_UPDATE.c_str(), Buffer, false);
 }
 
 void ConfigurationReport(void) {
@@ -1492,6 +1555,7 @@ void PublishAllReports(void) {
   StatusReport();
   CompCurveReport();
   ActiveControlReport();
+  UpdateReport();
 
   FlashGreenLED();
   DEBUG_PRINTLN(F("MQTT Published!"));
@@ -1504,6 +1568,9 @@ void FastPublish(void) {
     AdvancedReport();
     AdvancedTwoReport();
   }  // Don't fast publish until at least whole data set gathering is complete
+  else {
+    UpdateReport();
+  }
 }
 
 
@@ -1737,7 +1804,7 @@ void printCurrentTime() {
   time(&now);
   localtime_r(&now, &timeinfo);
 
-  strftime(TimeBuffer, sizeof(TimeBuffer), "%F%T -> ", &timeinfo);
+  strftime(TimeBuffer, sizeof(TimeBuffer), "%F %T -> ", &timeinfo);
   DEBUG_PRINT(TimeBuffer);
 }
 
@@ -1745,6 +1812,38 @@ void MQTTWriteReceived(String message, int MsgNumber) {
   DEBUG_PRINTLN(message);
   WriteInProgress = true;  // Wait For OK
 }
+
+
+/*void CheckForOTAUpdates(void) {
+  printCurrentTime();
+  DEBUG_PRINT(F("Checking for Firmware Updates..."));
+
+  #ifdef ESP32
+  http.begin(F("https://..."));
+  #endif
+  #ifdef ESP8266
+  http.begin(NetworkClient1, F("https://..."));
+  #endif
+  http.addHeader("User-Agent", mqttSettings.deviceId);
+  int httpCode = http.GET();
+
+  if (httpCode == HTTP_CODE_OK) {
+    DEBUG_PRINTLN(F(" OK"));  // HTTP header has been sent and Server response header has been handled
+    String payload = http.getString();
+
+    JsonDocument doc;
+    deserializeJson(doc, payload);
+    String tv = doc["latest_version"];
+    LatestFirmwareVersion = tv.substring(1);
+  } else {  // httpCode will be negative on error
+    DEBUG_PRINT(F(" Failed - Error: "));
+    DEBUG_PRINT(httpCode);
+    DEBUG_PRINTLN(http.errorToString(httpCode));
+  }
+
+  http.end();
+}*/
+
 
 #ifdef ARDUINO_WT32_ETH01
 // WARNING: onEvent is called from a separate FreeRTOS task (thread)!
