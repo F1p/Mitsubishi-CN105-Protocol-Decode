@@ -43,7 +43,7 @@ int FirstReadActiveServiceCode[] = { 70, 3, 4, 5, 6, 7, 10, 12, 13, 19, 20, 22, 
 int ActiveServiceCode[] = { 3, 4, 5, 12, 13, 7, 4, 5, 10, 4, 5, 12, 13, 6, 4, 5, 12, 13, 19, 4, 5, 13, 20, 4, 5, 12, 13, 22, 4, 5, 23, 5 };
 
 #define NUMBER_SVC_COMMANDS_FTC7 6
-int ActiveServiceCodeFTC7[] = { 3, 19, 20, 22, 23, 5 };
+int ActiveServiceCodeFTC7[] = { 70, 3, 19, 20, 22, 23, 5, 90 };
 
 unsigned long lastmsgdispatchedMillis = 0;  // variable for comparing millis counter
 int cmd_queue_length = 0;

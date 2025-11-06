@@ -445,7 +445,7 @@ int MQTT_SWITCH_STATE_POS[] PROGMEM = {
 
 int MQTT_TOPIC_POS[] PROGMEM = {
   0,
-  34,
+  1,
   1,
   1,
   2,
@@ -752,7 +752,7 @@ const char MQTT_NUMBER_AVAIL_TEMPLATE[][98] PROGMEM = {
 
 const char MQTT_SENSOR_VALUE_TEMPLATE[][132] PROGMEM = {
   "{{ value if value is defined else 'Unknown' }}",
-  "{{ value_json.installed_version }}",
+  "{{ value_json.Firmware }}",
   "{{ value_json.RSSI }}",
   "{{ value_json.FTCVersion }}",
   "{{ value_json.SystemOperationMode }}",

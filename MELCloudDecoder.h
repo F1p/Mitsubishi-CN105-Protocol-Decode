@@ -19,8 +19,7 @@ typedef struct _MelCloudMessgeStruct {
 typedef struct _MelCloudStatus {
   uint8_t ReplyNow, ActiveMessage, Write_To_Melcloud_OK;
   uint8_t ConnectRequest, MELRequest1, MELRequest2, MEL_HB_Request;
-  bool MEL_Heartbeat = false;
-
+  bool MEL_Online = false;
 } MelCloudStatus;
 
 

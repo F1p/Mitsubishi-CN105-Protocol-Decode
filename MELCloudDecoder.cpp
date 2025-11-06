@@ -510,8 +510,9 @@ void MELCLOUDDECODER::Process0x33(uint8_t *Buffer, MelCloudStatus *Status) {
   Status->ActiveMessage = 0x33;
 }
 void MELCLOUDDECODER::Process0x34(uint8_t *Buffer, MelCloudStatus *Status) {
-  if (Buffer[2] == 0x01) {  // MELCloud Connection Heartbeat Bit Toggle Message
-    if (Buffer[11] == 0x01) { Status->MEL_Heartbeat = true; }
+  if (Buffer[2] == 0x01) {  // MELCloud Connection Online Message
+    if (Buffer[11] == 0x01) { Status->MEL_Online = true; }
+    else if(Buffer[11] == 0x00) { Status->MEL_Online = false; }
     Status->MEL_HB_Request = true;
   } else {
     for (int i = 1; i < 16; i++) {

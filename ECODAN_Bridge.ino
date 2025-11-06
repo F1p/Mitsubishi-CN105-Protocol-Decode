@@ -678,11 +678,10 @@ void HeatPumpWriteStateEngine(void) {
 
 void MELCloudQueryReplyEngine(void) {
   if (MELCloud.Status.ReplyNow) {
-    if (MELCloud.Status.ActiveMessage == 0x28 && MELCloud.Status.MEL_Heartbeat) {  // Toggle the Heartbeat High for this request (MELCloud Only)
-      Array0x28[11] = 1;
-      MELCloud.Status.MEL_Heartbeat = false;
-    } else if (MELCloud.Status.ActiveMessage == 0x28 && !MELCloud.Status.MEL_Heartbeat) {  // Toggle the Heartbeat Low for other requests
-      Array0x28[11] = 0;
+    if (MELCloud.Status.ActiveMessage == 0x28 && MELCloud.Status.MEL_Online) {          // Toggle the Online High (MELCloud Only)
+      Array0x28[11] = 1;                                                                // Set the FTC Bit
+    } else if (MELCloud.Status.ActiveMessage == 0x28 && !MELCloud.Status.MEL_Online) {  // For other requests, low
+      Array0x28[11] = 0;                                                                // Set the FTC Bit
     }
     MELCloud.ReplyStatus(MELCloud.Status.ActiveMessage);  // Reply with the OK Message to MELCloud
     MELCloud.Status.ReplyNow = false;
@@ -1373,6 +1372,7 @@ void StatusReport(void) {
 #else
   doc[F("IP")] = WiFi.localIP().toString();
 #endif
+  doc[F("Firmware")] = FirmwareVersion;
 #ifdef ESP32  // Define the M5Stack LED
   doc[F("CPUTemp")] = round2(temperatureRead());
 #endif
@@ -1386,7 +1386,7 @@ void StatusReport(void) {
   doc[F("FTCSoftwareVersion")] = HeatPump.Status.FTCSoftware;
   if (HeatPump.SVCPopulated) { doc[F("OutdoorSoftwareVersion")] = HeatPump.Status.OutdoorFirmware; }
   if (MELCloud_Adapter_Connected) {
-    doc[F("MELCloud_Status")] = MELCloudStatusString[MELCloud.Status.MEL_Heartbeat];
+    doc[F("MELCloud_Status")] = MELCloudStatusString[MELCloud.Status.MEL_Online];
   } else {
     doc[F("MELCloud_Status")] = "Adapter Disconnected";
   }
@@ -1406,7 +1406,7 @@ void StatusReport(void) {
     } else if (HeatPump.Status.OutdoorUnitCapacity == 11 && unitSettings.UnitSize != 6.0) {  // 6kW
       unitSettings.UnitSize = 6.0;
       changemade = true;
-    } else if (HeatPump.Status.OutdoorUnitCapacity == 14 && (unitSettings.UnitSize < 8 || unitSettings.UnitSize > 9)) {  // 8.5kW
+    } else if (HeatPump.Status.OutdoorUnitCapacity == 14 && (unitSettings.UnitSize < 7.5 || unitSettings.UnitSize > 8.5)) {  // 8.5kW
       unitSettings.UnitSize = 8.5;
       changemade = true;
     } else if (HeatPump.Status.OutdoorUnitCapacity == 20 && (unitSettings.UnitSize < 10 || unitSettings.UnitSize > 11.2)) {  // 10kW
