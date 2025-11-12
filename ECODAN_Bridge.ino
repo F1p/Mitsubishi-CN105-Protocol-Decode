@@ -1004,7 +1004,6 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
 }
 
 
-
 void Zone1Report(void) {
   JsonDocument doc;
   char Buffer[512];
@@ -1207,6 +1206,8 @@ void SystemReport(void) {
   }
   doc[F("HolidayMode")] = HeatPump.Status.HolidayModeActive;
   doc[F("FlowRate")] = HeatPump.Status.PrimaryFlowRate;
+  doc[F("PumpPWM")] = HeatPump.Status.PrimaryWaterPumpSpeed;
+  doc[F("PumpPwr")] = HeatPump.Status.PumpPower;
   doc[F("RunHours")] = HeatPump.Status.RunHours;
   doc[F("HB_ID")] = Heart_Value;
 

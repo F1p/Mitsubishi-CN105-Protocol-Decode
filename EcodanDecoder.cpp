@@ -712,20 +712,44 @@ void ECODANDECODER::Process0x14(uint8_t *Buffer, EcodanStatus *Status) {
 
 
 void ECODANDECODER::Process0x15(uint8_t *Buffer, EcodanStatus *Status) {
-  uint8_t PrimaryWaterPump, WaterPump2, WaterPump3a, ThreeWayValve, ThreeWayValve2, MixingStep;
+  uint8_t PrimaryWaterPump, PrimaryWaterPumpSpeed, PumpPower, WaterPump2, WaterPump3a, ThreeWayValve, ThreeWayValve2, MixingStep;
 
   for (int i = 1; i < 16; i++) {
     Array0x15[i] = Buffer[i];
   }
 
   PrimaryWaterPump = Buffer[1];  // 01 when running (Primary Water Pump)
-  WaterPump2 = Buffer[4];        // Water Pump 2 Active
-  WaterPump3a = Buffer[5];       // Complex Zone2 Water Pump OUT3
-  ThreeWayValve = Buffer[6];     // 3 Way Valve Position
-  ThreeWayValve2 = Buffer[7];    // 3 Way Valve 2 Position
-  MixingStep = Buffer[10];       // Mixing Valve Step
+
+  if (Buffer[2] == 0x34) {
+    PrimaryWaterPumpSpeed = 1;
+  } else if (Buffer[2] == 0x29) {
+    PrimaryWaterPumpSpeed = 2;
+  } else if (Buffer[2] == 0x1F) {
+    PrimaryWaterPumpSpeed = 3;
+  } else if (Buffer[2] == 0x14) {
+    PrimaryWaterPumpSpeed = 4;
+  } else if (Buffer[2] == 0x0) {
+    PrimaryWaterPumpSpeed = 5;
+  } else if (Buffer[2] == 0x64) {
+    PrimaryWaterPumpSpeed = 0;
+  }
+
+  PumpPower = Buffer[3];  // Primary Power Power Est.
+  // 74-76 = Warning
+  // 84-86 = Electrical Error
+  // 89-91 = Blockage
+  // 255 = Stopped
+
+
+  WaterPump2 = Buffer[4];      // Water Pump 2 Active
+  WaterPump3a = Buffer[5];     // Complex Zone2 Water Pump OUT3
+  ThreeWayValve = Buffer[6];   // 3 Way Valve Position
+  ThreeWayValve2 = Buffer[7];  // 3 Way Valve 2 Position
+  MixingStep = Buffer[10];     // Mixing Valve Step
 
   Status->PrimaryWaterPump = PrimaryWaterPump;
+  Status->PrimaryWaterPumpSpeed = PrimaryWaterPumpSpeed;
+  Status->PumpPower = PumpPower;
   Status->WaterPump2 = WaterPump2;
   Status->WaterPump3a = WaterPump3a;
   Status->ThreeWayValve = ThreeWayValve;
@@ -954,12 +978,12 @@ void ECODANDECODER::Process0xA3(uint8_t *Buffer, EcodanStatus *Status) {
   for (int i = 1; i < 16; i++) {
     Array0xa3[i] = Buffer[i];
   }
-  if (Buffer[3] == 1 || Buffer[3] == 2) {         // Valid Reply is "1" or "2" (result)
-    Write_To_Ecodan_OK = true;  // For de-queue
+  if (Buffer[3] == 1 || Buffer[3] == 2) {  // Valid Reply is "1" or "2" (result)
+    Write_To_Ecodan_OK = true;             // For de-queue
     Status->Write_To_Ecodan_OK = Write_To_Ecodan_OK;
 
     // Data Packets
-    Status->LastServiceCodeNumber = ServiceCode = Buffer[2];// Decode the reply to Update the correct Value
+    Status->LastServiceCodeNumber = ServiceCode = Buffer[2];  // Decode the reply to Update the correct Value
 
     // Process into the correct locations
     if (ServiceCode == 3) {
@@ -1318,7 +1342,7 @@ void ECODANDECODER::EncodeMELCloud(uint8_t cmd) {
 
 void ECODANDECODER::TransfertoBuffer(uint8_t msgtype, uint8_t bufferposition) {
   BufferArray[bufferposition][0] = msgtype;
-  for (int i = 1; i < 16; i++) {
+  for (int i = 1; i < 17; i++) {
     BufferArray[bufferposition][i] = TxMessage.Payload[i - 1];
   }
 }
@@ -1328,7 +1352,7 @@ uint8_t ECODANDECODER::ReturnNextCommandType(uint8_t bufferposition) {
 }
 
 void ECODANDECODER::EncodeNextCommand(uint8_t bufferposition) {
-  for (int i = 1; i < 16; i++) {
+  for (int i = 1; i < 17; i++) {
     TxMessage.Payload[i - 1] = BufferArray[bufferposition][i];
   }
 }

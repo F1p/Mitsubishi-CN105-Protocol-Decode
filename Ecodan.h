@@ -53,7 +53,6 @@ public:
   void SetSystemPowerMode(uint8_t OnOff);
   void WriteMELCloudCMD(uint8_t cmd);
   void WriteServiceCodeCMD(int cmd);
-
   bool SVCPopulated;
 
 protected:
