@@ -1075,7 +1075,7 @@ void HotWaterReport(void) {
 
 void SystemReport(void) {
   JsonDocument doc;
-  char Buffer[1024];
+  char Buffer[2048];
 
   double EstInputPower = 0;
   double OutputPower = 0;
@@ -1361,7 +1361,7 @@ void AdvancedTwoReport(void) {
 
 void StatusReport(void) {
   JsonDocument doc;
-  char Buffer[1024];
+  char Buffer[2048];
   char TmBuffer[32];
   bool changemade = false;
 

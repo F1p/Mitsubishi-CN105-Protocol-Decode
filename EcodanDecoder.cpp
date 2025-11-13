@@ -61,7 +61,7 @@ uint8_t Array0x33[] = {};
 uint8_t Array0x34[] = {};
 uint8_t Array0x35[] = {};
 
-uint8_t BufferArray[][17] = { {}, {}, {}, {}, {}, {}, {}, {}, {}, {} };
+uint8_t BufferArray[][17] = { {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {} };
 
 
 ECODANDECODER::ECODANDECODER(void) {

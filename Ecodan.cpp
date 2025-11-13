@@ -207,7 +207,7 @@ void ECODAN::WriteStateMachine(void) {
   uint8_t CommandSize;
   uint8_t i;
 
-  if (cmd_queue_length > 0 && cmd_queue_length < 10) {
+  if (cmd_queue_length > 0 && cmd_queue_length < 11) {
     CurrentWriteAttempt++;
     StopStateMachine();
     printCurrentTime();
@@ -289,19 +289,23 @@ uint8_t ECODAN::Lastmsbetweenmsg(void) {
 
 void ECODAN::SetZoneTempSetpoint(float Setpoint, uint8_t Mode, uint8_t Zone) {
   ECODANDECODER::EncodeRoomThermostat(Setpoint, Mode, Zone);  // Can OR the write with the mode but removed as different MQTT topic:      SET_ZONE_SETPOINT | SET_HEATING_CONTROL_MODE
-  cmd_queue_length++;
-  ECODANDECODER::TransfertoBuffer(SET_REQUEST, cmd_queue_length);
-  DEBUG_PRINT(F("Transferred msg to position: "));
-  DEBUG_PRINTLN(cmd_queue_length);
+  if (cmd_queue_length < 10) {
+    cmd_queue_length++;
+    ECODANDECODER::TransfertoBuffer(SET_REQUEST, cmd_queue_length);
+    DEBUG_PRINT(F("Transferred msg to position: "));
+    DEBUG_PRINTLN(cmd_queue_length);
+  }
 }
 
 
 void ECODAN::SetFlowSetpoint(float Setpoint, uint8_t Mode, uint8_t Zone) {
   ECODANDECODER::EncodeFlowTemperature(Setpoint, Mode, Zone);  // Can OR the write with the mode but removed as different MQTT topic:      SET_ZONE_SETPOINT | SET_HEATING_CONTROL_MODE
-  cmd_queue_length++;
-  ECODANDECODER::TransfertoBuffer(SET_REQUEST, cmd_queue_length);
-  DEBUG_PRINT(F("Transferred msg to position: "));
-  DEBUG_PRINTLN(cmd_queue_length);
+  if (cmd_queue_length < 10) {
+    cmd_queue_length++;
+    ECODANDECODER::TransfertoBuffer(SET_REQUEST, cmd_queue_length);
+    DEBUG_PRINT(F("Transferred msg to position: "));
+    DEBUG_PRINTLN(cmd_queue_length);
+  }
 }
 
 
@@ -311,10 +315,12 @@ void ECODAN::SetDHWMode(String *Mode) {
   } else if (*Mode == String("Eco")) {
     ECODANDECODER::EncodeDHWMode(1);
   }
-  cmd_queue_length++;
-  ECODANDECODER::TransfertoBuffer(SET_REQUEST, cmd_queue_length);
-  DEBUG_PRINT(F("Transferred msg to position: "));
-  DEBUG_PRINTLN(cmd_queue_length);
+  if (cmd_queue_length < 10) {
+    cmd_queue_length++;
+    ECODANDECODER::TransfertoBuffer(SET_REQUEST, cmd_queue_length);
+    DEBUG_PRINT(F("Transferred msg to position: "));
+    DEBUG_PRINTLN(cmd_queue_length);
+  }
 }
 
 
@@ -324,64 +330,78 @@ void ECODAN::ForceDHW(uint8_t OnOff) {
   uint8_t i;
 
   ECODANDECODER::EncodeForcedDHW(OnOff);
-  cmd_queue_length++;
-  ECODANDECODER::TransfertoBuffer(SET_REQUEST, cmd_queue_length);
-  DEBUG_PRINT(F("Transferred msg to position: "));
-  DEBUG_PRINTLN(cmd_queue_length);
+  if (cmd_queue_length < 10) {
+    cmd_queue_length++;
+    ECODANDECODER::TransfertoBuffer(SET_REQUEST, cmd_queue_length);
+    DEBUG_PRINT(F("Transferred msg to position: "));
+    DEBUG_PRINTLN(cmd_queue_length);
+  }
 }
 
 
 void ECODAN::SetHolidayMode(uint8_t OnOff) {
   ECODANDECODER::EncodeHolidayMode(OnOff);
-  cmd_queue_length++;
-  ECODANDECODER::TransfertoBuffer(SET_REQUEST, cmd_queue_length);
-  DEBUG_PRINT(F("Transferred msg to position: "));
-  DEBUG_PRINTLN(cmd_queue_length);
+  if (cmd_queue_length < 10) {
+    cmd_queue_length++;
+    ECODANDECODER::TransfertoBuffer(SET_REQUEST, cmd_queue_length);
+    DEBUG_PRINT(F("Transferred msg to position: "));
+    DEBUG_PRINTLN(cmd_queue_length);
+  }
 }
 
 
 void ECODAN::SetProhibits(uint8_t Flags, uint8_t OnOff) {
   ECODANDECODER::EncodeProhibit(Flags, OnOff);
-  cmd_queue_length++;
-  ECODANDECODER::TransfertoBuffer(SET_REQUEST, cmd_queue_length);
-  DEBUG_PRINT(F("Transferred msg to position: "));
-  DEBUG_PRINTLN(cmd_queue_length);
+  if (cmd_queue_length < 10) {
+    cmd_queue_length++;
+    ECODANDECODER::TransfertoBuffer(SET_REQUEST, cmd_queue_length);
+    DEBUG_PRINT(F("Transferred msg to position: "));
+    DEBUG_PRINTLN(cmd_queue_length);
+  }
 }
 
 
 void ECODAN::SetSvrControlMode(uint8_t OnOff, uint8_t DHW, uint8_t Z1H, uint8_t Z1C, uint8_t Z2H, uint8_t Z2C) {
   ECODANDECODER::EncodeServerControlMode(OnOff, DHW, Z1H, Z1C, Z2H, Z2C);
-  cmd_queue_length++;
-  ECODANDECODER::TransfertoBuffer(SET_REQUEST, cmd_queue_length);
-  DEBUG_PRINT(F("Transferred msg to position: "));
-  DEBUG_PRINTLN(cmd_queue_length);
+  if (cmd_queue_length < 10) {
+    cmd_queue_length++;
+    ECODANDECODER::TransfertoBuffer(SET_REQUEST, cmd_queue_length);
+    DEBUG_PRINT(F("Transferred msg to position: "));
+    DEBUG_PRINTLN(cmd_queue_length);
+  }
 }
 
 
 void ECODAN::SetHotWaterSetpoint(float Target) {
   ECODANDECODER::EncodeDHWSetpoint(Target);
-  cmd_queue_length++;
-  ECODANDECODER::TransfertoBuffer(SET_REQUEST, cmd_queue_length);
-  DEBUG_PRINT(F("Transferred msg to position: "));
-  DEBUG_PRINTLN(cmd_queue_length);
+  if (cmd_queue_length < 10) {
+    cmd_queue_length++;
+    ECODANDECODER::TransfertoBuffer(SET_REQUEST, cmd_queue_length);
+    DEBUG_PRINT(F("Transferred msg to position: "));
+    DEBUG_PRINTLN(cmd_queue_length);
+  }
 }
 
 
 void ECODAN::SetHeatingControlMode(uint8_t Mode, uint8_t Zone) {
   ECODANDECODER::EncodeControlMode(Mode, Zone);
-  cmd_queue_length++;
-  ECODANDECODER::TransfertoBuffer(SET_REQUEST, cmd_queue_length);
-  DEBUG_PRINT(F("Transferred msg to position: "));
-  DEBUG_PRINTLN(cmd_queue_length);
+  if (cmd_queue_length < 10) {
+    cmd_queue_length++;
+    ECODANDECODER::TransfertoBuffer(SET_REQUEST, cmd_queue_length);
+    DEBUG_PRINT(F("Transferred msg to position: "));
+    DEBUG_PRINTLN(cmd_queue_length);
+  }
 }
 
 
 void ECODAN::SetSystemPowerMode(uint8_t OnOff) {
   ECODANDECODER::EncodePower(OnOff);
-  cmd_queue_length++;
-  ECODANDECODER::TransfertoBuffer(SET_REQUEST, cmd_queue_length);
-  DEBUG_PRINT(F("Transferred msg to position: "));
-  DEBUG_PRINTLN(cmd_queue_length);
+  if (cmd_queue_length < 10) {
+    cmd_queue_length++;
+    ECODANDECODER::TransfertoBuffer(SET_REQUEST, cmd_queue_length);
+    DEBUG_PRINT(F("Transferred msg to position: "));
+    DEBUG_PRINTLN(cmd_queue_length);
+  }
 }
 
 
@@ -410,10 +430,12 @@ void ECODAN::GetFTCVersion() {
 
 void ECODAN::WriteMELCloudCMD(uint8_t cmd) {
   ECODANDECODER::EncodeMELCloud(cmd);
-  cmd_queue_length++;
-  ECODANDECODER::TransfertoBuffer(SET_REQUEST, cmd_queue_length);
-  DEBUG_PRINT(F("Transferred msg to position: "));
-  DEBUG_PRINTLN(cmd_queue_length);
+  if (cmd_queue_length < 10) {
+    cmd_queue_length++;
+    ECODANDECODER::TransfertoBuffer(SET_REQUEST, cmd_queue_length);
+    DEBUG_PRINT(F("Transferred msg to position: "));
+    DEBUG_PRINTLN(cmd_queue_length);
+  }
 }
 
 
@@ -425,10 +447,12 @@ void ECODAN::WriteServiceCodeCMD(int cmd) {
   ECODANDECODER::SetPayloadByte(UpperByte, 1);
   LowerByte = (uint8_t)(cmd & 0x00ff);
   ECODANDECODER::SetPayloadByte(LowerByte, 2);
-  cmd_queue_length++;
-  ECODANDECODER::TransfertoBuffer(GET_REQUEST, cmd_queue_length);
-  DEBUG_PRINT(F("Transferred msg to position: "));
-  DEBUG_PRINTLN(cmd_queue_length);
+  if (cmd_queue_length < 10) {
+    cmd_queue_length++;
+    ECODANDECODER::TransfertoBuffer(GET_REQUEST, cmd_queue_length);
+    DEBUG_PRINT(F("Transferred msg to position: "));
+    DEBUG_PRINTLN(cmd_queue_length);
+  }
 }
 
 
