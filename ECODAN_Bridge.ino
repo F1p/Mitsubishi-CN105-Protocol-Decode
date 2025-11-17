@@ -55,7 +55,7 @@
 #include "Ecodan.h"
 #include "Melcloud.h"
 
-String FirmwareVersion = "6.5.0";
+String FirmwareVersion = "6.5.1";
 String LatestFirmwareVersion;
 
 
@@ -133,6 +133,9 @@ bool ShortCycleProtectionActive = false;
 bool MELCloud_Adapter_Connected = false;
 float Z1_CurveFSP = 30;
 float Z2_CurveFSP = 30;
+float FlowTemp_Last = 0;
+float FlowTemp_Target = 0;
+int Flow_Inc_Count = 0;
 
 
 // The extra parameters to be configured (can be either global or just in the setup)
@@ -558,12 +561,15 @@ void loop() {
     WriteInProgress = true;                                                                                                                                                                            // Wait For OK
     NormalHWBoostOperating = 0;                                                                                                                                                                        // Don't enter again
   }
+  if ((HeatPump.Status.LastSystemOperationMode == 1 || HeatPump.Status.LastSystemOperationMode == 6) && HeatPump.Status.SystemOperationMode != 1) { CalculateCompCurve(); }  // For Onboard Comp Curve, recalculate FSP to prevent outdoor stopping
+
 
   // -- Defrost Handler -- //
   if (unitSettings.use_local_outdoor && HeatPump.Status.LastDefrost != 0 && HeatPump.Status.Defrost == 0) {  // Transitioned from Defrosting Stage to Normal
     postdfpreviousMillis = millis();                                                                         // Capture the current time it occured for Comp Curve
     PostDefrostTimer = true;                                                                                 // Trigger post defrost block
   }
+
 
   // -- FTC7 + R290 Outdoor Limit Adjustments -- //
   if (FTCVersionLastLoop != HeatPump.Status.FTCVersion && HeatPump.Status.RefrigerantType == 2) {  // Dynamic Update HA limit for FTC7
@@ -572,22 +578,29 @@ void loop() {
   }
   FTCVersionLastLoop = HeatPump.Status.FTCVersion;  // On FTC version capture, if criteria met then change
 
+
   // -- Outdoor Triggers on Outdoor Unit Change -- //
-  if (FrequencyLastLoop > 0 && HeatPump.Status.CompressorFrequency == 0) {                // Transition of Compressor On to Off
-    HeatPump.WriteServiceCodeCMD(19);                                                     // Trigger Fan Speed Request Service Code
-    if (HeatPump.Status.Defrost == 0) {                                                   // If Not Defrosting
-      CompressorPeriodDurations[1] = CompressorPeriodDurations[0];                        // Transfer Last Compressor Period to Array Pos 1
-      CompressorPeriodDurations[0] = (millis() / 1000) - CompressorStopStartTimer[0];     // Current Time from Stop > Stop (Seconds) to Array Pos 0
-      CompressorStopStartTimer[0] = (millis() / 1000);                                    // Last Compressor Stop Time (Seconds)
-      compressorrunduration = CompressorStopStartTimer[0] - CompressorStopStartTimer[1];  // Last Compressor Run Duration (Seconds)
-    }                                                                                     //
-  } else if (FrequencyLastLoop == 0 && HeatPump.Status.CompressorFrequency > 0) {         // Transition of Compressor Off to On
-    HeatPump.WriteServiceCodeCMD(19);                                                     // Trigger Fan Speed Request Service Code
-    if (HeatPump.Status.Defrost == 0) {                                                   // If Not Defrosting
-      CompressorStopStartTimer[1] = (millis() / 1000);                                    // Last Compressor Start Time (Seconds)
+  if (FrequencyLastLoop > 0 && HeatPump.Status.CompressorFrequency == 0) {                       // Transition of Compressor On to Off
+    HeatPump.WriteServiceCodeCMD(19);                                                            // Trigger Fan Speed Request Service Code
+    if (HeatPump.Status.Defrost == 0) {                                                          // If Not Defrosting
+      CompressorPeriodDurations[1] = CompressorPeriodDurations[0];                               // Transfer Last Compressor Period to Array Pos 1
+      CompressorPeriodDurations[0] = (millis() / 1000) - CompressorStopStartTimer[0];            // Current Time from Stop > Stop (Seconds) to Array Pos 0
+      CompressorStopStartTimer[0] = (millis() / 1000);                                           // Last Compressor Stop Time (Seconds)
+      compressorrunduration = CompressorStopStartTimer[0] - CompressorStopStartTimer[1];         // Last Compressor Run Duration (Seconds)
+      if (Flow_Inc_Count > 0) {                                                                  // If its been manipulated
+        HeatPump.SetFlowSetpoint(FlowTemp_Target, HeatPump.Status.HeatingControlModeZ1, ZONE1);  // Need to avoid overwriting by onboard weather curve..
+        write_thermostats();                                                                     //
+        Flow_Inc_Count = 0;                                                                      // Reset the Flow Temp Incrementer
+      }
+    }                                                                              //
+  } else if (FrequencyLastLoop == 0 && HeatPump.Status.CompressorFrequency > 0) {  // Transition of Compressor Off to On
+    HeatPump.WriteServiceCodeCMD(19);                                              // Trigger Fan Speed Request Service Code
+    if (HeatPump.Status.Defrost == 0) {                                            // If Not Defrosting
+      CompressorStopStartTimer[1] = (millis() / 1000);                             // Last Compressor Start Time (Seconds)
     }
   }
   FrequencyLastLoop = HeatPump.Status.CompressorFrequency;
+
 
   // -- Short Cycling Protection -- //
   // Definition of Short Cycle if there is 2 Compressor Periods in less than 20min (Stop > Run > Stop x2)
@@ -602,7 +615,11 @@ void loop() {
       HeatPump.Status.SvrControlMode = 1;                                      // Write Server Control Mode + Prohibits
     }
 
-    if (abs(HeatPump.Status.HeaterOutputFlowTemperature - HeatPump.Status.Zone1TemperatureSetpoint) > 4) { ShortCycleCauseNumber = 1; }
+    if (abs(HeatPump.Status.HeaterOutputFlowTemperature - HeatPump.Status.Zone1TemperatureSetpoint) > 4) {
+      ShortCycleCauseNumber = 1;
+    } else if (HeatPump.Status.SystemOperationMode == 0) {
+      ShortCycleCauseNumber = 2;
+    }
 
     ActiveControlReport();  // Publish MQTT on occurance
   } else if ((ShortCycleProtectionActive && (millis() - lockoutpreviousMillis > lockoutdurationMillis)) || shortcycleprotectionexit) {
@@ -613,6 +630,32 @@ void loop() {
     ActiveControlReport();                                                                                            // Publish MQTT on occurance
   }
 
+
+  // -- Flow Temperature Overshoot Hysterisis -- //
+  if ((HeatPump.Status.SystemOperationMode == 2 || HeatPump.Status.SystemOperationMode == 3) && unitSettings.shortcycleprotectionenabled) {
+    if (HeatPump.Status.HeatCool == 0) {  // Heating
+      if ((HeatPump.Status.HeaterOutputFlowTemperature - HeatPump.Status.Zone1FlowTemperatureSetpoint > 1.0) && (FlowTemp_Last < HeatPump.Status.HeaterOutputFlowTemperature)) {
+        // On entry of a new high flow temperature
+        if (Flow_Inc_Count == 0) { FlowTemp_Target = HeatPump.Status.Zone1FlowTemperatureSetpoint; }                                    // On First entry, set flow setpoint before
+        if (Flow_Inc_Count < 5) {                                                                                                       // Maximum increases is 0.5C * 4 = 2C
+          HeatPump.SetFlowSetpoint((HeatPump.Status.Zone1FlowTemperatureSetpoint + 0.5), HeatPump.Status.HeatingControlModeZ1, ZONE1);  // Need to avoid overwriting by onboard weather curve..
+          write_thermostats();
+          Flow_Inc_Count++;  // This will be cancelled at the next compressor stop
+        }
+      }
+    } else if (HeatPump.Status.HeatCool == 1) {  // Cooling
+      if ((HeatPump.Status.HeaterOutputFlowTemperature - HeatPump.Status.Zone1FlowTemperatureSetpoint < -1.0) && (FlowTemp_Last > HeatPump.Status.HeaterOutputFlowTemperature)) {
+        // On entry of a new high flow temperature
+        if (Flow_Inc_Count == 0) { FlowTemp_Target = HeatPump.Status.Zone1FlowTemperatureSetpoint; }                                    // On First entry, set flow setpoint before
+        if (Flow_Inc_Count < 5) {                                                                                                       // Maximum increases is -0.5C * 4 = -2C
+          HeatPump.SetFlowSetpoint((HeatPump.Status.Zone1FlowTemperatureSetpoint - 0.5), HeatPump.Status.HeatingControlModeZ1, ZONE1);  // Need to avoid overwriting by onboard weather curve..
+          write_thermostats();
+          Flow_Inc_Count++;  // This will be cancelled at the next compressor stop
+        }
+      }
+    }
+    FlowTemp_Last = HeatPump.Status.HeaterOutputFlowTemperature;  // Last Loop Flow Temperature
+  }
 
   // -- CPU Loop Time End -- //
   CPULoopSpeed = micros() - looppreviousMicros;  // Loop Speed End Monitor
@@ -758,8 +801,7 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
   else if ((Topic == MQTTCommandZone1FlowSetpoint) || (Topic == MQTTCommand2Zone1FlowSetpoint)) {
     MQTTWriteReceived("MQTT Set Zone1 Flow Setpoint", 6);
     HeatPump.SetFlowSetpoint(Payload.toFloat(), HeatPump.Status.HeatingControlModeZ1, ZONE1);
-    HeatPump.SetZoneTempSetpoint(HeatPump.Status.Zone1TemperatureSetpoint, HeatPump.Status.HeatingControlModeZ1, ZONE1);
-    HeatPump.SetZoneTempSetpoint(HeatPump.Status.Zone2TemperatureSetpoint, HeatPump.Status.HeatingControlModeZ2, ZONE2);
+    write_thermostats();
     HeatPump.Status.Zone1FlowTemperatureSetpoint = Payload.toFloat();
   }
 
@@ -775,8 +817,7 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
   else if ((Topic == MQTTCommandZone2FlowSetpoint) || (Topic == MQTTCommand2Zone2FlowSetpoint)) {
     MQTTWriteReceived("MQTT Set Zone2 Flow Setpoint", 6);
     HeatPump.SetFlowSetpoint(Payload.toFloat(), HeatPump.Status.HeatingControlModeZ2, ZONE2);
-    HeatPump.SetZoneTempSetpoint(HeatPump.Status.Zone1TemperatureSetpoint, HeatPump.Status.HeatingControlModeZ1, ZONE1);
-    HeatPump.SetZoneTempSetpoint(HeatPump.Status.Zone2TemperatureSetpoint, HeatPump.Status.HeatingControlModeZ2, ZONE2);
+    write_thermostats();
     HeatPump.Status.Zone2FlowTemperatureSetpoint = Payload.toFloat();
   }
 
@@ -843,6 +884,7 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
     if (Payload == String("Heating Temperature")) {
       HeatPump.SetHeatingControlMode(HEATING_CONTROL_MODE_ZONE_TEMP, SET_HEATING_CONTROL_MODE_Z1);
       HeatPump.Status.HeatingControlModeZ1 = HEATING_CONTROL_MODE_ZONE_TEMP;
+      write_thermostats();
     } else if (Payload == String("Heating Flow")) {
       HeatPump.SetHeatingControlMode(HEATING_CONTROL_MODE_FLOW_TEMP, SET_HEATING_CONTROL_MODE_Z1);
       HeatPump.Status.HeatingControlModeZ1 = HEATING_CONTROL_MODE_FLOW_TEMP;
@@ -853,6 +895,7 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
     } else if (Payload == String("Cooling Temperature")) {
       HeatPump.SetHeatingControlMode(HEATING_CONTROL_MODE_COOL_ZONE_TEMP, SET_HEATING_CONTROL_MODE_Z1);
       HeatPump.Status.HeatingControlModeZ1 = HEATING_CONTROL_MODE_COOL_ZONE_TEMP;
+      write_thermostats();
     } else if (Payload == String("Cooling Flow")) {
       HeatPump.SetHeatingControlMode(HEATING_CONTROL_MODE_COOL_FLOW_TEMP, SET_HEATING_CONTROL_MODE_Z1);
       HeatPump.Status.HeatingControlModeZ1 = HEATING_CONTROL_MODE_COOL_FLOW_TEMP;
@@ -1531,6 +1574,8 @@ void ActiveControlReport(void) {
   doc[F("ShortCycleLockoutDuration")] = lockoutdurationMillis;
   doc[F("LastCompressorPeriods")][0] = CompressorPeriodDurations[0];
   doc[F("LastCompressorPeriods")][1] = CompressorPeriodDurations[1];
+  doc[F("FlowTemp_Target")] = FlowTemp_Target;
+  doc[F("FlowIncrementCounter")] = Flow_Inc_Count;
   doc[F("HB_ID")] = Heart_Value;
 
   serializeJson(doc, Buffer);
@@ -1661,6 +1706,11 @@ String decimalToBinary(int decimal) {
   return binary;
 }
 
+void write_thermostats(void) {
+  HeatPump.SetZoneTempSetpoint(HeatPump.Status.Zone1TemperatureSetpoint, HeatPump.Status.HeatingControlModeZ1, ZONE1);
+  HeatPump.SetZoneTempSetpoint(HeatPump.Status.Zone2TemperatureSetpoint, HeatPump.Status.HeatingControlModeZ2, ZONE2);
+}
+
 void CalculateCompCurve() {
   DEBUG_PRINTLN("Performing Compensation Curve Calculation");
   JsonDocument doc;
@@ -1671,9 +1721,8 @@ void CalculateCompCurve() {
   } else {
     unitSettings.z1_active = doc["zone1"]["active"];  // Transfer JSON to Struct Bool
     unitSettings.z2_active = doc["zone2"]["active"];
-    //if (!unitSettings.z1_active && !unitSettings.z2_active) { return; }  // Only calculates (saves time, if mode enabled)
-    //else
-    {
+    if (!unitSettings.z1_active && !unitSettings.z2_active) { return; }  // Only calculates (saves time, if mode enabled)
+    else {
       float OutsideAirTemperature = 0;
 
       if (!unitSettings.use_local_outdoor && (MQTTClient1.connected() || MQTTClient2.connected())) {  // Determine Outdoor Temperature Input
@@ -1738,16 +1787,18 @@ void CalculateCompCurve() {
     Z2_CurveFSP = roundToOneDecimal(Z2_CurveFSP + unitSettings.z2_wind_offset + unitSettings.z2_temp_offset + unitSettings.z2_manual_offset);
 
     // Write the Flow Setpoints to Heat Pump
-    if (unitSettings.z1_active) {
-      HeatPump.SetFlowSetpoint(Z1_CurveFSP, HEATING_CONTROL_MODE_FLOW_TEMP, ZONE1);
-      HeatPump.SetZoneTempSetpoint(HeatPump.Status.Zone1TemperatureSetpoint, HeatPump.Status.HeatingControlModeZ1, ZONE1);
-      HeatPump.SetZoneTempSetpoint(HeatPump.Status.Zone2TemperatureSetpoint, HeatPump.Status.HeatingControlModeZ2, ZONE2);
-      HeatPump.Status.Zone1FlowTemperatureSetpoint = Z1_CurveFSP;
+    if (unitSettings.z1_active && Flow_Inc_Count == 0) {
+      if (HeatPump.Status.DHWActive == 1) {
+        HeatPump.SetFlowSetpoint(HeatPump.Status.HeaterOutputFlowTemperature, HEATING_CONTROL_MODE_FLOW_TEMP, ZONE1);  // In Hot Water mode, keep FSP following Actual
+      } else {
+        HeatPump.SetFlowSetpoint(Z1_CurveFSP, HEATING_CONTROL_MODE_FLOW_TEMP, ZONE1);
+        HeatPump.Status.Zone1FlowTemperatureSetpoint = Z1_CurveFSP;
+      }
+      write_thermostats();
     }
     if (unitSettings.z2_active && HeatPump.Status.Has2Zone && !HeatPump.Status.Simple2Zone) {  // User must have Complex 2 zone to set different flow temp in different zones
       HeatPump.SetFlowSetpoint(Z2_CurveFSP, HEATING_CONTROL_MODE_FLOW_TEMP, ZONE2);
-      HeatPump.SetZoneTempSetpoint(HeatPump.Status.Zone1TemperatureSetpoint, HeatPump.Status.HeatingControlModeZ1, ZONE1);
-      HeatPump.SetZoneTempSetpoint(HeatPump.Status.Zone2TemperatureSetpoint, HeatPump.Status.HeatingControlModeZ2, ZONE2);
+      write_thermostats();
       HeatPump.Status.Zone2FlowTemperatureSetpoint = Z2_CurveFSP;
     }
     CompCurveReport();

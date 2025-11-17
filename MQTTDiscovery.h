@@ -286,7 +286,7 @@ const char MQTT_SENSOR_NAME[][45] PROGMEM = {
   "Refrigerant Temperature",
   "Immersion Heater",
   "Booster Heater 1",  //20
-  "Primary Water Pump",
+  "Water Pump 1",
   "Water Pump 2",
   "Three Way Valve 1",
   "Three Way Valve 2",
@@ -365,7 +365,7 @@ const char MQTT_SENSOR_NAME[][45] PROGMEM = {
   "Outdoor Unit Software Version",
   "MELCloud Adapter Status",
   "Dip Switch Configuration (Switch 1-1 to 6-8)",
-  "Primary Water Pump PWM Speed",
+  "Water Pump 1 PWM Speed",
 
   "DHW Thermostat",
   "Zone 1 Thermostat",  //80

@@ -53,10 +53,6 @@ The Curve is recorded and sent as JSON to be saved on the device, using the exam
           "outside": -10
         },
         {
-          "flow": 40,
-          "outside": 0
-        },
-        {
           "flow": 35,
           "outside": 0
         },
@@ -75,10 +71,6 @@ The Curve is recorded and sent as JSON to be saved on the device, using the exam
         {
           "flow": 60,
           "outside": -10
-        },
-        {
-          "flow": 40,
-          "outside": 0
         },
         {
           "flow": 35,

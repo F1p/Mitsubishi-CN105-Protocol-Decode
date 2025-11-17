@@ -853,7 +853,7 @@ void ECODANDECODER::Process0x26(uint8_t *Buffer, EcodanStatus *Status) {
   DHWSetpoint = ((float)ExtractUInt16(Buffer, 8) / 100);
   //Zone1FlowSetpoint = ((float)ExtractUInt16(Buffer, 10) / 100);   // Duplicate of 0x09
   //Zone2FlowSetpoint = ((float)ExtractUInt16(Buffer, 12) / 100);   // Duplicate of 0x09
-  //ScheduleStatus = Buffer[14];
+  //MRCProhibit = Buffer[14];
 
   Status->SystemPowerMode = SystemPowerMode;
   Status->SystemOperationMode = SystemOperationMode;
@@ -1017,7 +1017,7 @@ void ECODANDECODER::Process0xA3(uint8_t *Buffer, EcodanStatus *Status) {
     } else if (ServiceCode == 70) {
       Status->OutdoorUnitCapacity = Buffer[4];
     } else if (ServiceCode == 90) {
-      snprintf(Status->OutdoorFirmware, 6, "%02X.%02X", Buffer[4], Buffer[5]);
+      snprintf(Status->OutdoorFirmware, 6, "%02X.%02X", Buffer[5], Buffer[4]);
     }
     Status->ServiceCodeReply = ExtractInt16_v2_Signed(Buffer, 4);
   } else if (Buffer[3] != 0) {  // FTC side done but response is Done (7) or Unknown (6)
