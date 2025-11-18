@@ -136,6 +136,12 @@ Active commands so far identified.
 * CH : Cooling (1) /Heating (0)
 * Z1SP : Zone 1 Setpoint (* 100)
 * Z2SP : Zone 2 Setpoint (* 100)
+
+### 0xC8 - Main Room Controller (MRC) Information
+|   0   |   1  | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
+|-------|------|---|---|---|---|---|---|---|---|----|----|----|----|----|----|----|
+| 0xC8  |      |   |   |   |   |   |   |   |   |    |    |    |    |    |    |    |  
+
 ### 0xC9 - FTC Information
 |   0   |   1  | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
 |-------|------|---|---|---|---|---|---|---|---|----|----|----|----|----|----|----|
@@ -181,6 +187,7 @@ Active commands so far identified, 0x00 to 0xff. Commands not listed appear to g
 | 0x29 | Zone 1 & 2 Temperatures |
 | 0xa1 | Consumed Energy |
 | 0xa2 | Delivered Energy |
+| 0xa3 | Outdoor Unit Service Codes |
 ### Payload - All Commands
 | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
 |---|---|---|---|---|---|---|---|---|---|----|----|----|----|----|----|----|
@@ -191,7 +198,7 @@ Active commands so far identified.
 | Command | Brief Description |
 | ------- | ----------- |
 | 0x00 |  OK |
-### 0x00 - OK , Command OK, or Just Format?
+### 0x00 - OK , Command OK
 | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
 |---|---|---|---|---|---|---|---|---|---|----|----|----|----|----|----|----|
 | Command | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0  | 0  |  0 |  0 |  0 |  0 |  0 |
@@ -451,6 +458,12 @@ Responses so far identified.
   * 6: Unknown
   * 7: Done
 * Ans1/2: Reply Value
+  
+### 0xC8 - MRC Information 
+|   0   | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
+|-------|---|---|---|---|---|---|---|---|---|----|----|----|----|----|----|----|
+| 0xC8  |   |   |   |   |   |   |   |   |   |    |    |    |    |    |    |    |  
+
 ### 0xC9 - FTC Information
 |   0   | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
 |-------|---|---|---|---|---|---|---|---|---|----|----|----|----|----|----|----|
