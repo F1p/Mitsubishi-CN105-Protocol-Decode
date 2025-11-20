@@ -257,9 +257,9 @@ TimerCallBack HeatPumpQuery3(30000, handleMQTTState);          // Re-connect att
 TimerCallBack HeatPumpQuery4(30000, handleMQTT2State);         // Re-connect attempt timer if MQTT Stream 2 is not online
 TimerCallBack HeatPumpQuery5(1000, HeatPumpWriteStateEngine);  // Set to 1000ms (Safe), 320-350ms best time between messages
 TimerCallBack HeatPumpQuery6(2000, FastPublish);               // Publish some reports at a faster rate
-TimerCallBack HeatPumpQuery7(300000, CalculateCompCurve);  // Calculate the Compensation Curve based on latest data   //300000 = 5min
+TimerCallBack HeatPumpQuery7(300000, CalculateCompCurve);      // Calculate the Compensation Curve based on latest data   //300000 = 5min
 //TimerCallBack HeatPumpQuery8(3600000, CheckForOTAUpdates);     // Set check period to 1hr
-TimerCallBack HeatPumpQuery9(30000, dhw_flow_follower);        // 30s DHW Flow Setpoint Follower
+TimerCallBack HeatPumpQuery9(30000, dhw_flow_follower);  // 30s DHW Flow Setpoint Follower
 
 unsigned long looppreviousMicros = 0;     // variable for comparing millis counter
 unsigned long ftcpreviousMillis = 0;      // variable for comparing millis counter
@@ -1709,18 +1709,17 @@ String decimalToBinary(int decimal) {
   return binary;
 }
 
-void write_thermostats(void) {
+void write_thermostats() {
   HeatPump.SetZoneTempSetpoint(HeatPump.Status.Zone1TemperatureSetpoint, HeatPump.Status.HeatingControlModeZ1, ZONE1);
   HeatPump.SetZoneTempSetpoint(HeatPump.Status.Zone2TemperatureSetpoint, HeatPump.Status.HeatingControlModeZ2, ZONE2);
 }
 
-void dhw_flow_follower(void) {
-  if (HeatPump.Status.DHWActive == 1 && HeatPump.Status.HeatingControlModeZ1 == 1 && ShortCycleProtectionActive) {
+void dhw_flow_follower() {
+  if (HeatPump.Status.DHWActive == 1 && HeatPump.Status.HeatingControlModeZ1 == 1 && unitSettings.shortcycleprotectionenabled) {
     HeatPump.SetFlowSetpoint(HeatPump.Status.HeaterOutputFlowTemperature, HEATING_CONTROL_MODE_FLOW_TEMP, ZONE1);  // In Hot Water mode, keep FSP following Actual
     write_thermostats();
   }
 }
-
 
 void CalculateCompCurve() {
   DEBUG_PRINTLN("Performing Compensation Curve Calculation");
