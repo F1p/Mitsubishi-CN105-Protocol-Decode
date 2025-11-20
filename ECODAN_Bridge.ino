@@ -248,6 +248,7 @@ void CompCurveReport(void);
 void ActiveControlReport(void);
 void CalculateCompCurve(void);
 void FastPublish(void);
+void dhw_flow_follower(void);
 //void CheckForOTAUpdates(void);
 
 TimerCallBack HeatPumpQuery1(400, HeatPumpQueryStateEngine);   // Set to 400ms (Safe), 320-350ms best time between messages
@@ -256,8 +257,9 @@ TimerCallBack HeatPumpQuery3(30000, handleMQTTState);          // Re-connect att
 TimerCallBack HeatPumpQuery4(30000, handleMQTT2State);         // Re-connect attempt timer if MQTT Stream 2 is not online
 TimerCallBack HeatPumpQuery5(1000, HeatPumpWriteStateEngine);  // Set to 1000ms (Safe), 320-350ms best time between messages
 TimerCallBack HeatPumpQuery6(2000, FastPublish);               // Publish some reports at a faster rate
-TimerCallBack HeatPumpQuery7(300000, CalculateCompCurve);      // Calculate the Compensation Curve based on latest data   //300000 = 5min
+TimerCallBack HeatPumpQuery7(300000, CalculateCompCurve);  // Calculate the Compensation Curve based on latest data   //300000 = 5min
 //TimerCallBack HeatPumpQuery8(3600000, CheckForOTAUpdates);     // Set check period to 1hr
+TimerCallBack HeatPumpQuery9(30000, dhw_flow_follower);        // 30s DHW Flow Setpoint Follower
 
 unsigned long looppreviousMicros = 0;     // variable for comparing millis counter
 unsigned long ftcpreviousMillis = 0;      // variable for comparing millis counter
@@ -380,6 +382,7 @@ void loop() {
   HeatPumpQuery6.Process();
   HeatPumpQuery7.Process();
   //HeatPumpQuery8.Process();
+  HeatPumpQuery9.Process();
 
   MELCloudQueryReplyEngine();
   MQTTClient1.loop();
@@ -1711,6 +1714,14 @@ void write_thermostats(void) {
   HeatPump.SetZoneTempSetpoint(HeatPump.Status.Zone2TemperatureSetpoint, HeatPump.Status.HeatingControlModeZ2, ZONE2);
 }
 
+void dhw_flow_follower(void) {
+  if (HeatPump.Status.DHWActive == 1 && HeatPump.Status.HeatingControlModeZ1 == 1 && ShortCycleProtectionActive) {
+    HeatPump.SetFlowSetpoint(HeatPump.Status.HeaterOutputFlowTemperature, HEATING_CONTROL_MODE_FLOW_TEMP, ZONE1);  // In Hot Water mode, keep FSP following Actual
+    write_thermostats();
+  }
+}
+
+
 void CalculateCompCurve() {
   DEBUG_PRINTLN("Performing Compensation Curve Calculation");
   JsonDocument doc;
@@ -1787,16 +1798,12 @@ void CalculateCompCurve() {
     Z2_CurveFSP = roundToOneDecimal(Z2_CurveFSP + unitSettings.z2_wind_offset + unitSettings.z2_temp_offset + unitSettings.z2_manual_offset);
 
     // Write the Flow Setpoints to Heat Pump
-    if (unitSettings.z1_active && Flow_Inc_Count == 0) {
-      if (HeatPump.Status.DHWActive == 1) {
-        HeatPump.SetFlowSetpoint(HeatPump.Status.HeaterOutputFlowTemperature, HEATING_CONTROL_MODE_FLOW_TEMP, ZONE1);  // In Hot Water mode, keep FSP following Actual
-      } else {
-        HeatPump.SetFlowSetpoint(Z1_CurveFSP, HEATING_CONTROL_MODE_FLOW_TEMP, ZONE1);
-        HeatPump.Status.Zone1FlowTemperatureSetpoint = Z1_CurveFSP;
-      }
+    if (unitSettings.z1_active && Flow_Inc_Count == 0 && HeatPump.Status.DHWActive != 1 && Z1_CurveFSP != HeatPump.Status.Zone1FlowTemperatureSetpoint) {
+      HeatPump.SetFlowSetpoint(Z1_CurveFSP, HEATING_CONTROL_MODE_FLOW_TEMP, ZONE1);
       write_thermostats();
+      HeatPump.Status.Zone1FlowTemperatureSetpoint = Z1_CurveFSP;
     }
-    if (unitSettings.z2_active && HeatPump.Status.Has2Zone && !HeatPump.Status.Simple2Zone) {  // User must have Complex 2 zone to set different flow temp in different zones
+    if (unitSettings.z2_active && HeatPump.Status.Has2Zone && !HeatPump.Status.Simple2Zone && Z2_CurveFSP != HeatPump.Status.Zone2FlowTemperatureSetpoint) {  // User must have Complex 2 zone to set different flow temp in different zones
       HeatPump.SetFlowSetpoint(Z2_CurveFSP, HEATING_CONTROL_MODE_FLOW_TEMP, ZONE2);
       write_thermostats();
       HeatPump.Status.Zone2FlowTemperatureSetpoint = Z2_CurveFSP;

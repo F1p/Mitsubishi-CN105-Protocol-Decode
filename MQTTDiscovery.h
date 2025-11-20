@@ -349,7 +349,7 @@ const char MQTT_SENSOR_NAME[][45] PROGMEM = {
   "Discharge Temperature TH4",
   "Subcool Temperature",
   "Heatsink Temperature TH8",
-  "2 Phase Temperature TH6",
+  "Plate Hex Liquid Temperature TH6",
   "Fan 1 Speed",
   "Fan 2 Speed",
   "Valve LEV A",

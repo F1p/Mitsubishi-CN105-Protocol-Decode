@@ -143,7 +143,11 @@ void ECODAN::StatusSVCMachine(void) {
     if (Status.FTCVersion == FTC7 && Status.OutdoorExtendedSensors) {
       CurrentSVCMessage %= NUMBER_SVC_COMMANDS_FTC7;  // Once none left
     } else {
-      CurrentSVCMessage %= NUMBER_SVC_COMMANDS;  // Once none left
+      if (!SVCPopulated) {
+        CurrentSVCMessage %= FIRST_READ_NUMBER_SVC_COMMANDS;  // Once none left
+      } else {
+        CurrentSVCMessage %= NUMBER_SVC_COMMANDS;  // Once none left
+      }
     }
 
     if (CurrentSVCMessage == 0) {
