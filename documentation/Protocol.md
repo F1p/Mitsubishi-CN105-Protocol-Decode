@@ -89,7 +89,7 @@ Active commands so far identified.
 ### 0x34 - Hot Water and Holiday Mode
 |   0   |  1  |  2  | 3 |   4  |  5   |   6  |  7  |   8   |   9   |  10  |  11  |  12  |  13  | 14 | 15 | 16 |
 |-------|-----|-----|---|------|------|------|-----|-------|-------|------|------|------|------|----|----|----|
-| 0x34  |Flags|Flags|DHW|  HOL | IDHW | Z1HI | Z1CI| Z2HI  | CZ2I  | SCM  | Unk1 | Unk2 | Unk3 |Unk4|Unk5|CHK |  
+| 0x34  |Flags|Flags|DHW|  HOL | IDHW | Z1HI | Z1CI| Z2HI  | CZ2I  | SCM  | MEL | Unk2 | Unk3 |Unk4|Unk5|CHK |  
 
 * Flags (2 Bytes) : Flags to Indicate which fields are active
   * 0x01 0x00 : Hot Water Force (Boost)
@@ -109,7 +109,7 @@ Active commands so far identified.
 * HOL : On (1) / Off (0)
 * SCM : Server Control Mode On (1) / Off (0)
 * IDHW : Inhibit DHW On (1) / Off (0)
-* Unk1 : Unused (Sets 0x28 Byte 11)
+* MEL : MELCloud Online/Offline Status (Sets 0x28 Byte 11)
 * Unk2 : Unused (Sets 0x28 Byte 12 - suspected)
 * Unk3 : Unused (Sets 0x28 Byte 13 - suspected)
 * Unk4 : Unused (Sets 0x28 Byte 14 - suspected)
