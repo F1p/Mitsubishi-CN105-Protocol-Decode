@@ -39,6 +39,9 @@ uint8_t MELCLOUDDECODER::Process(uint8_t c) {
         case 0x07:
           Process0x07(RxMessage.Payload, &Status);
           break;
+        case 0x08:
+          Process0x08(RxMessage.Payload, &Status);
+          break;
         case 0x09:
           Process0x09(RxMessage.Payload, &Status);
           break;

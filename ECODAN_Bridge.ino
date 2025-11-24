@@ -55,7 +55,7 @@
 #include "Ecodan.h"
 #include "Melcloud.h"
 
-String FirmwareVersion = "6.5.1";
+String FirmwareVersion = "6.5.2";
 String LatestFirmwareVersion;
 
 
@@ -130,6 +130,8 @@ const int password_max_length = 50;
 const int basetopic_max_length = 30;
 bool BlockWriteFromMELCloud = false;
 bool ShortCycleProtectionActive = false;
+bool FlowFollowingActive = false;
+bool DHWFlowFollowingActive = false;
 bool MELCloud_Adapter_Connected = false;
 float Z1_CurveFSP = 30;
 float Z2_CurveFSP = 30;
@@ -564,7 +566,10 @@ void loop() {
     WriteInProgress = true;                                                                                                                                                                            // Wait For OK
     NormalHWBoostOperating = 0;                                                                                                                                                                        // Don't enter again
   }
-  if ((HeatPump.Status.LastSystemOperationMode == 1 || HeatPump.Status.LastSystemOperationMode == 6) && HeatPump.Status.SystemOperationMode != 1) { CalculateCompCurve(); }  // For Onboard Comp Curve, recalculate FSP to prevent outdoor stopping
+  if ((HeatPump.Status.LastSystemOperationMode == 1 && HeatPump.Status.SystemOperationMode != 1) || (HeatPump.Status.LastSystemOperationMode == 6 && HeatPump.Status.SystemOperationMode != 6)) {
+    Flow_Inc_Count = 0;
+    CalculateCompCurve();
+  }  // For Onboard Comp Curve, recalculate FSP to prevent outdoor stopping
 
 
   // -- Defrost Handler -- //
@@ -639,11 +644,15 @@ void loop() {
     if (HeatPump.Status.HeatCool == 0) {  // Heating
       if ((HeatPump.Status.HeaterOutputFlowTemperature - HeatPump.Status.Zone1FlowTemperatureSetpoint > 1.0) && (FlowTemp_Last < HeatPump.Status.HeaterOutputFlowTemperature)) {
         // On entry of a new high flow temperature
-        if (Flow_Inc_Count == 0) { FlowTemp_Target = HeatPump.Status.Zone1FlowTemperatureSetpoint; }                                    // On First entry, set flow setpoint before
+        if (Flow_Inc_Count == 0) {
+          FlowTemp_Target = HeatPump.Status.Zone1FlowTemperatureSetpoint;
+          FlowFollowingActive = false;
+        }                                                                                                                               // On First entry, set flow setpoint before
         if (Flow_Inc_Count < 5) {                                                                                                       // Maximum increases is 0.5C * 4 = 2C
           HeatPump.SetFlowSetpoint((HeatPump.Status.Zone1FlowTemperatureSetpoint + 0.5), HeatPump.Status.HeatingControlModeZ1, ZONE1);  // Need to avoid overwriting by onboard weather curve..
           write_thermostats();
           Flow_Inc_Count++;  // This will be cancelled at the next compressor stop
+          FlowFollowingActive = true;
         }
       }
     } else if (HeatPump.Status.HeatCool == 1) {  // Cooling
@@ -1459,10 +1468,10 @@ void StatusReport(void) {
     } else if (HeatPump.Status.OutdoorUnitCapacity == 20 && (unitSettings.UnitSize < 10 || unitSettings.UnitSize > 11.2)) {  // 10kW
       unitSettings.UnitSize = 10.0;
       changemade = true;
-    } else if (HeatPump.Status.OutdoorUnitCapacity == 25 && unitSettings.UnitSize != 12.0) {  // 12.5kW
+    } else if (HeatPump.Status.OutdoorUnitCapacity == 25 && (unitSettings.UnitSize < 12 || unitSettings.UnitSize > 14)) {  // 12.5kW or 14kW (14kW monobloc shows as 25, 14kW split shows 14)
       unitSettings.UnitSize = 12.0;
       changemade = true;
-    } else if (HeatPump.Status.OutdoorUnitCapacity == 28 && unitSettings.UnitSize != 14.0) {  // 14kW
+    } else if (HeatPump.Status.OutdoorUnitCapacity == 28 && (unitSettings.UnitSize < 12 || unitSettings.UnitSize > 14)) {  // 14kW mono
       unitSettings.UnitSize = 14.0;
       changemade = true;
     } else if (HeatPump.Status.OutdoorUnitCapacity >= 40 && unitSettings.UnitSize != 23.0) {  // 17, 20 or 25kW  ( 23kW Split )
@@ -1569,10 +1578,16 @@ void CompCurveReport(void) {
 
 void ActiveControlReport(void) {
   JsonDocument doc;
-  char Buffer[512];
+  char Buffer[1024];
+  String CycleProtectionStatus = "";
 
   doc[F("ShortCycleProtectionEnabled")] = unitSettings.shortcycleprotectionenabled ? 1 : 0;
-  doc[F("ShortCycleProtectionActive")] = ShortCycleProtectionActive ? "Active" : "Inactive";
+
+  if (FlowFollowingActive) { CycleProtectionStatus = "Anti-Stop Flow Temperature Following Active"; }
+  if (DHWFlowFollowingActive) { CycleProtectionStatus = "DHW Flow Temperature Following Active"; }
+  if (ShortCycleProtectionActive) { CycleProtectionStatus = "Short Cycle Lockout Active"; }
+
+  doc[F("ShortCycleProtectionActive")] = CycleProtectionStatus;
   doc[F("ShortCycleReason")] = ShortCycleReason[ShortCycleCauseNumber];
   doc[F("ShortCycleLockoutDuration")] = lockoutdurationMillis;
   doc[F("LastCompressorPeriods")][0] = CompressorPeriodDurations[0];
@@ -1718,10 +1733,13 @@ void dhw_flow_follower() {
   if (HeatPump.Status.DHWActive == 1 && HeatPump.Status.HeatingControlModeZ1 == 1 && unitSettings.shortcycleprotectionenabled) {
     HeatPump.SetFlowSetpoint(HeatPump.Status.HeaterOutputFlowTemperature, HEATING_CONTROL_MODE_FLOW_TEMP, ZONE1);  // In Hot Water mode, keep FSP following Actual
     write_thermostats();
+    DHWFlowFollowingActive = true;
+  } else {
+    DHWFlowFollowingActive = false;
   }
 }
 
-void CalculateCompCurve() {
+void CalculateCompCurve(void) {
   DEBUG_PRINTLN("Performing Compensation Curve Calculation");
   JsonDocument doc;
   DeserializationError error = deserializeJson(doc, unitSettings.CompCurve);

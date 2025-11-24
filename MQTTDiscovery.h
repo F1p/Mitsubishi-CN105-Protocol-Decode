@@ -361,7 +361,7 @@ const char MQTT_SENSOR_NAME[][45] PROGMEM = {
   "Computed Heating Input Power",
   "Computed Cooling Input Power",
   "Superheat Temperature",
-  "Short Cycle Protection Lockout",
+  "Short Cycle Protection State",
   "Outdoor Unit Software Version",
   "MELCloud Adapter Status",
   "Dip Switch Configuration (Switch 1-1 to 6-8)",
