@@ -91,9 +91,9 @@ The Curve is recorded and sent as JSON to be saved on the device, using the exam
 ```
 
 
-### Programming or Modifying the Curve
+### Programming or Modifying the Curve (Base)
 
-Using MQTT Explorer, we can send our design, in JSON to the topic: Ecodan/ASHP/Command/System/CompCurve
+Using MQTT Explorer, we can send our design, in JSON to the topic: Ecodan/ASHP/**Command**/System/CompCurve
 
 
 
@@ -145,14 +145,15 @@ Using MQTT Explorer, we can send our design, in JSON to the topic: Ecodan/ASHP/C
 
 
 
-You can verify the curve has been saved, looking at the Ecodan/ASHP/Status/CompCurve topic:
+You can verify the curve has been saved, looking at the Ecodan/ASHP/**Status**/CompCurve topic:
 ![Config Readback](https://github.com/F1p/Mitsubishi-CN105-Protocol-Decode/blob/master/documentation/images/Curve_Status.png)
 
 
 
 
 
-### Enable or Disable the Mode 
+### Enable or Disable the Mode
+In JSON to the topic: Ecodan/ASHP/**Command**/System/CompCurve
 
 ```javascript
 {   
@@ -174,6 +175,8 @@ Up to three Offsets exist, all act in the same way by adding or subtracting to t
 * Temp Offset is intended if you reduce flow when solar gain is high, usually calculated from an automation
 
 
+In JSON to the topic same: Ecodan/ASHP/**Command**/System/CompCurve
+
 ```javascript
 {   
     "zone1": {
@@ -191,6 +194,8 @@ Up to three Offsets exist, all act in the same way by adding or subtracting to t
 The value of Outside Air Temperature (OAT) used in the curve calculation by default is from the sensor located on the unit itself, however you can choose to use your own value for Outdoor Air Temperature in the following way:
 
 
+In JSON to the topic same: Ecodan/ASHP/**Command**/System/CompCurve
+
 Set Use Local Outdoor as False:
 ```javascript
 {   
@@ -198,7 +203,7 @@ Set Use Local Outdoor as False:
 }
 ```
 
-Provide a regularly updating Outdoor Air Temperature Value:
+Provide a regularly updating Outdoor Air Temperature Value and ensure it is published when home assistant starts for example:
 ```javascript
 {   
     "cloud_outdoor": 14.3
