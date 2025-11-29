@@ -55,7 +55,7 @@
 #include "Ecodan.h"
 #include "Melcloud.h"
 
-String FirmwareVersion = "6.5.2";
+String FirmwareVersion = "6.5.2-h1";
 String LatestFirmwareVersion;
 
 
@@ -1453,10 +1453,10 @@ void StatusReport(void) {
 
   // Verify Outdoor Unit Size set by selector against outdoor unit Service Code Read and adjust if required
   if (HeatPump.Status.OutdoorUnitCapacity > 0) {
-    if (HeatPump.Status.OutdoorUnitCapacity == 9 && unitSettings.UnitSize != 4.0) {  // 3.5kW
+    if (HeatPump.Status.OutdoorUnitCapacity == 9 && (unitSettings.UnitSize < 4.0 || unitSettings.UnitSize > 5.0)) {  // 3.5kW
       unitSettings.UnitSize = 4.0;
       changemade = true;
-    } else if (HeatPump.Status.OutdoorUnitCapacity == 10 && unitSettings.UnitSize != 5.0) {  // 5kW
+    } else if (HeatPump.Status.OutdoorUnitCapacity == 10 && (unitSettings.UnitSize < 4.0 || unitSettings.UnitSize > 5.0)) {  // 5kW
       unitSettings.UnitSize = 5.0;
       changemade = true;
     } else if (HeatPump.Status.OutdoorUnitCapacity == 11 && unitSettings.UnitSize != 6.0) {  // 6kW
