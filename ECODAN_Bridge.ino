@@ -55,7 +55,7 @@
 #include "Ecodan.h"
 #include "Melcloud.h"
 
-String FirmwareVersion = "6.5.2-h1";
+String FirmwareVersion = "6.5.2-h2";
 String LatestFirmwareVersion;
 
 
@@ -430,9 +430,10 @@ void loop() {
   }
 
   // -- Read Operation Restart -- //
-  if ((PostWriteTrigger) && (millis() - postwrpreviousMillis >= 10000)) {  // Allow 1s to pass before re-starting reads for FTC to process
+  if ((PostWriteTrigger) && (millis() - postwrpreviousMillis >= 10000)) {  // Allow 10s to pass before re-starting reads for FTC to process
     DEBUG_PRINTLN(F("Restarting Read Operations"));
-    HeatPumpKeepAlive();
+    HeatPump.PauseStateMachine = false;
+    //HeatPumpKeepAlive();
     PostWriteTrigger = false;
   }
 
@@ -706,7 +707,7 @@ void HeatPumpQueryStateEngine(void) {
     DEBUG_PRINTLN(F("Update Complete"));
     FTCLoopSpeed = millis() - ftcpreviousMillis;  // Loop Speed End
 
-    if (HeatPump.Status.FTCVersion == 0) {
+    if (HeatPump.Status.FTCVersion == 0 && !HeatPump.Status.HasAnsweredDips) {
       HeatPump.GetFTCVersion();
       if (MQTTReconnect() || MQTT2Reconnect()) {
         StatusReport();

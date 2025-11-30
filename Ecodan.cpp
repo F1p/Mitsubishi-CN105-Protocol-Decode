@@ -27,8 +27,8 @@ uint8_t Init4[] = { 0xfc, 0x5a, 0x02, 0x7a, 0x02, 0xca, 0x02, 0x5c };  // Air to
 
 #define FIRST_READ_NUMBER_COMMANDS 38
 uint8_t FirstReadActiveCommand[] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
-                                     0x10, 0x11, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F,
-                                     0x20, 0x26, 0x27, 0x28, 0x29, 0xA1, 0xA2, 0x00 };
+                                     0x10, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20,
+                                     0x26, 0x27, 0x28, 0x29, 0xA1, 0xA2, 0x11, 0x00 };
 
 #define NUMBER_COMMANDS 56
 uint8_t ActiveCommand[] = { 0x00, 0x26, 0x14, 0x28, 0x03, 0x0C, 0x04, 0x05, 0x06, 0x15, 0x07, 0x08, 0x09, 0x04,
@@ -61,6 +61,7 @@ ECODAN::ECODAN(void)
   SVCPopulated = false;
   ProcessFlag = false;
   Connected = false;
+  PauseStateMachine = false;
   msbetweenmsg = 0;
 }
 
@@ -120,15 +121,15 @@ void ECODAN::TriggerStatusStateMachine(void) {
 void ECODAN::StopStateMachine(void) {
   if (CurrentMessage != 0) {
     printCurrentTime();
-    DEBUG_PRINTLN(F("Stopping Heat Pump Read Operation to FTC"));
-    CurrentMessage = 0;
+    DEBUG_PRINTLN(F("Pausing Heat Pump Read Operation to FTC"));
+    PauseStateMachine = true;
+    //CurrentMessage = 0;
   }
 }
 
 
 void ECODAN::StatusSVCMachine(void) {
   if (CurrentSVCMessage > 0) {
-
     if (Status.FTCVersion == FTC7 && Status.OutdoorExtendedSensors) {
       WriteServiceCodeCMD(ActiveServiceCodeFTC7[CurrentSVCMessage - 1]);
     } else {
@@ -165,7 +166,7 @@ void ECODAN::StatusStateMachine(void) {
   uint8_t CommandSize;
   uint8_t i;
 
-  if (CurrentMessage != 0) {
+  if (CurrentMessage != 0 && !PauseStateMachine) {
     printCurrentTime();
     DEBUG_PRINT(F("[Bridge > FTC] "));
     ECODANDECODER::CreateBlankTxMessage(GET_REQUEST, 0x10);
@@ -237,6 +238,8 @@ void ECODAN::WriteStateMachine(void) {
     DEBUG_PRINTLN();
 
     WriteInProgress = true;
+  } else {
+    PauseStateMachine = false;
   }
 }
 
