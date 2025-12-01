@@ -55,7 +55,7 @@
 #include "Ecodan.h"
 #include "Melcloud.h"
 
-String FirmwareVersion = "6.5.2-h2";
+String FirmwareVersion = "6.5.2-h3";
 String LatestFirmwareVersion;
 
 
@@ -655,6 +655,11 @@ void loop() {
           Flow_Inc_Count++;  // This will be cancelled at the next compressor stop
           FlowFollowingActive = true;
         }
+      } else if (Flow_Inc_Count > 0 && HeatPump.Status.HeaterOutputFlowTemperature <= HeatPump.Status.Zone1FlowTemperatureSetpoint) {  // Flow Temp reducer
+        HeatPump.SetFlowSetpoint((HeatPump.Status.Zone1FlowTemperatureSetpoint - 0.5), HeatPump.Status.HeatingControlModeZ1, ZONE1);   // Need to avoid overwriting by onboard weather curve..
+        write_thermostats();
+        Flow_Inc_Count--;                                          // This will be cancelled at the next compressor stop
+        if (Flow_Inc_Count == 0) { FlowFollowingActive = false; }  // End Flow Following
       }
     } else if (HeatPump.Status.HeatCool == 1) {  // Cooling
       if ((HeatPump.Status.HeaterOutputFlowTemperature - HeatPump.Status.Zone1FlowTemperatureSetpoint < -1.0) && (FlowTemp_Last > HeatPump.Status.HeaterOutputFlowTemperature)) {
@@ -665,6 +670,12 @@ void loop() {
           write_thermostats();
           Flow_Inc_Count++;  // This will be cancelled at the next compressor stop
         }
+      }
+      else if (Flow_Inc_Count > 0 && HeatPump.Status.HeaterOutputFlowTemperature >= HeatPump.Status.Zone1FlowTemperatureSetpoint) {  // Flow Temp reducer
+        HeatPump.SetFlowSetpoint((HeatPump.Status.Zone1FlowTemperatureSetpoint + 0.5), HeatPump.Status.HeatingControlModeZ1, ZONE1);   // Need to avoid overwriting by onboard weather curve..
+        write_thermostats();
+        Flow_Inc_Count--;                                          // This will be cancelled at the next compressor stop
+        if (Flow_Inc_Count == 0) { FlowFollowingActive = false; }  // End Flow Following
       }
     }
     FlowTemp_Last = HeatPump.Status.HeaterOutputFlowTemperature;  // Last Loop Flow Temperature
@@ -814,6 +825,7 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
   else if ((Topic == MQTTCommandZone1FlowSetpoint) || (Topic == MQTTCommand2Zone1FlowSetpoint)) {
     MQTTWriteReceived("MQTT Set Zone1 Flow Setpoint", 6);
     HeatPump.SetFlowSetpoint(Payload.toFloat(), HeatPump.Status.HeatingControlModeZ1, ZONE1);
+    FlowFollowingActive = false;
     write_thermostats();
     HeatPump.Status.Zone1FlowTemperatureSetpoint = Payload.toFloat();
   }
@@ -830,6 +842,7 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
   else if ((Topic == MQTTCommandZone2FlowSetpoint) || (Topic == MQTTCommand2Zone2FlowSetpoint)) {
     MQTTWriteReceived("MQTT Set Zone2 Flow Setpoint", 6);
     HeatPump.SetFlowSetpoint(Payload.toFloat(), HeatPump.Status.HeatingControlModeZ2, ZONE2);
+    FlowFollowingActive = false;
     write_thermostats();
     HeatPump.Status.Zone2FlowTemperatureSetpoint = Payload.toFloat();
   }
@@ -1044,6 +1057,7 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
       if (doc["zone2"]["wind_offset"].is<float>()) { unitSettings.z2_wind_offset = doc["zone2"]["wind_offset"]; }        // Post Calcuation Zone2 Wind Factor +/- Offset
       if (doc["cloud_outdoor"].is<float>()) { unitSettings.cloud_outdoor = doc["cloud_outdoor"]; }                       // Temperature Provided by a remote or cloud source when use_local_outdoor = False
 
+      FlowFollowingActive = false;
       CalculateCompCurve();  // Recalculate after modification
     }
   } else if ((Topic == MQTTCommandSystemActvCtrl) || (Topic == MQTTCommand2SystemActvCtrl)) {
@@ -1586,7 +1600,11 @@ void ActiveControlReport(void) {
 
   if (FlowFollowingActive) { CycleProtectionStatus = "Anti-Stop Flow Temperature Following Active"; }
   if (DHWFlowFollowingActive) { CycleProtectionStatus = "DHW Flow Temperature Following Active"; }
-  if (ShortCycleProtectionActive) { CycleProtectionStatus = "Short Cycle Lockout Active"; }
+  if (ShortCycleProtectionActive) {
+    CycleProtectionStatus = "Short Cycle Lockout Active";
+  } else {
+    CycleProtectionStatus = "Inactive";
+  }
 
   doc[F("ShortCycleProtectionActive")] = CycleProtectionStatus;
   doc[F("ShortCycleReason")] = ShortCycleReason[ShortCycleCauseNumber];
