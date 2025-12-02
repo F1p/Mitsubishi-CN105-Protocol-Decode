@@ -55,7 +55,7 @@
 #include "Ecodan.h"
 #include "Melcloud.h"
 
-String FirmwareVersion = "6.5.2-h3";
+String FirmwareVersion = "6.5.2-h4";
 String LatestFirmwareVersion;
 
 
@@ -651,12 +651,14 @@ void loop() {
         }                                                                                                                               // On First entry, set flow setpoint before
         if (Flow_Inc_Count < 5) {                                                                                                       // Maximum increases is 0.5C * 4 = 2C
           HeatPump.SetFlowSetpoint((HeatPump.Status.Zone1FlowTemperatureSetpoint + 0.5), HeatPump.Status.HeatingControlModeZ1, ZONE1);  // Need to avoid overwriting by onboard weather curve..
+          HeatPump.Status.Zone1FlowTemperatureSetpoint += 0.5;
           write_thermostats();
           Flow_Inc_Count++;  // This will be cancelled at the next compressor stop
           FlowFollowingActive = true;
         }
       } else if (Flow_Inc_Count > 0 && HeatPump.Status.HeaterOutputFlowTemperature <= HeatPump.Status.Zone1FlowTemperatureSetpoint) {  // Flow Temp reducer
         HeatPump.SetFlowSetpoint((HeatPump.Status.Zone1FlowTemperatureSetpoint - 0.5), HeatPump.Status.HeatingControlModeZ1, ZONE1);   // Need to avoid overwriting by onboard weather curve..
+        HeatPump.Status.Zone1FlowTemperatureSetpoint -= 0.5;
         write_thermostats();
         Flow_Inc_Count--;                                          // This will be cancelled at the next compressor stop
         if (Flow_Inc_Count == 0) { FlowFollowingActive = false; }  // End Flow Following
@@ -667,12 +669,13 @@ void loop() {
         if (Flow_Inc_Count == 0) { FlowTemp_Target = HeatPump.Status.Zone1FlowTemperatureSetpoint; }                                    // On First entry, set flow setpoint before
         if (Flow_Inc_Count < 5) {                                                                                                       // Maximum increases is -0.5C * 4 = -2C
           HeatPump.SetFlowSetpoint((HeatPump.Status.Zone1FlowTemperatureSetpoint - 0.5), HeatPump.Status.HeatingControlModeZ1, ZONE1);  // Need to avoid overwriting by onboard weather curve..
+          HeatPump.Status.Zone1FlowTemperatureSetpoint -= 0.5;
           write_thermostats();
           Flow_Inc_Count++;  // This will be cancelled at the next compressor stop
         }
-      }
-      else if (Flow_Inc_Count > 0 && HeatPump.Status.HeaterOutputFlowTemperature >= HeatPump.Status.Zone1FlowTemperatureSetpoint) {  // Flow Temp reducer
+      } else if (Flow_Inc_Count > 0 && HeatPump.Status.HeaterOutputFlowTemperature >= HeatPump.Status.Zone1FlowTemperatureSetpoint) {  // Flow Temp reducer
         HeatPump.SetFlowSetpoint((HeatPump.Status.Zone1FlowTemperatureSetpoint + 0.5), HeatPump.Status.HeatingControlModeZ1, ZONE1);   // Need to avoid overwriting by onboard weather curve..
+        HeatPump.Status.Zone1FlowTemperatureSetpoint += 0.5;
         write_thermostats();
         Flow_Inc_Count--;                                          // This will be cancelled at the next compressor stop
         if (Flow_Inc_Count == 0) { FlowFollowingActive = false; }  // End Flow Following
@@ -718,8 +721,8 @@ void HeatPumpQueryStateEngine(void) {
     DEBUG_PRINTLN(F("Update Complete"));
     FTCLoopSpeed = millis() - ftcpreviousMillis;  // Loop Speed End
 
-    if (HeatPump.Status.FTCVersion == 0 && !HeatPump.Status.HasAnsweredDips) {
-      HeatPump.GetFTCVersion();
+    if (HeatPump.Status.FTCVersion == 0) { HeatPump.GetFTCVersion(); }
+    if (!HeatPump.Status.HasAnsweredDips) {
       if (MQTTReconnect() || MQTT2Reconnect()) {
         StatusReport();
         CalculateCompCurve();
