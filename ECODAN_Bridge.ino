@@ -55,7 +55,7 @@
 #include "Ecodan.h"
 #include "Melcloud.h"
 
-String FirmwareVersion = "6.5.2-h4";
+String FirmwareVersion = "6.5.3";
 String LatestFirmwareVersion;
 
 
@@ -263,15 +263,16 @@ TimerCallBack HeatPumpQuery7(300000, CalculateCompCurve);      // Calculate the 
 //TimerCallBack HeatPumpQuery8(3600000, CheckForOTAUpdates);     // Set check period to 1hr
 TimerCallBack HeatPumpQuery9(30000, dhw_flow_follower);  // 30s DHW Flow Setpoint Follower
 
-unsigned long looppreviousMicros = 0;     // variable for comparing millis counter
-unsigned long ftcpreviousMillis = 0;      // variable for comparing millis counter
-unsigned long wifipreviousMillis = 0;     // variable for comparing millis counter
-unsigned long postwrpreviousMillis = 0;   // variable for comparing millis counter
-unsigned long postdfpreviousMillis = 0;   // variable for comparing millis counter
-unsigned long lockoutpreviousMillis = 0;  // variable for comparing millis counter
-unsigned long lockoutdurationMillis = 0;  // variable for comparing millis counter
-unsigned long compressorrunduration = 0;  // variable for comparing millis counter
-int FTCLoopSpeed, CPULoopSpeed;           // variable for holding loop time in ms
+unsigned long looppreviousMicros = 0;           // variable for comparing millis counter
+unsigned long ftcpreviousMillis = 0;            // variable for comparing millis counter
+unsigned long wifipreviousMillis = 0;           // variable for comparing millis counter
+unsigned long postwrpreviousMillis = 0;         // variable for comparing millis counter
+unsigned long postdfpreviousMillis = 0;         // variable for comparing millis counter
+unsigned long lockoutpreviousMillis = 0;        // variable for comparing millis counter
+unsigned long lockoutdurationMillis = 0;        // variable for comparing millis counter
+unsigned long compressorrundurationMillis = 0;  // variable for comparing millis counter
+unsigned long postdhwfspdurationMillis = 0;     // variable for comparing millis counter
+int FTCLoopSpeed, CPULoopSpeed;                 // variable for holding loop time in ms
 uint8_t SvcRequested = 0;
 int16_t SvcReply = 0;
 bool WiFiOneShot = true;
@@ -279,6 +280,7 @@ bool CableConnected = true;
 bool WiFiConnectedLastLoop = false;
 bool PostWriteTrigger = false;
 bool PostDefrostTimer = false;
+bool PostDHWTimer = false;
 bool CompressorRunningLastLoop = false;
 bool shortcycleprotectionexit = false;
 int ShortCycleCauseNumber = 0;
@@ -433,7 +435,6 @@ void loop() {
   if ((PostWriteTrigger) && (millis() - postwrpreviousMillis >= 10000)) {  // Allow 10s to pass before re-starting reads for FTC to process
     DEBUG_PRINTLN(F("Restarting Read Operations"));
     HeatPump.PauseStateMachine = false;
-    //HeatPumpKeepAlive();
     PostWriteTrigger = false;
   }
 
@@ -567,11 +568,15 @@ void loop() {
     WriteInProgress = true;                                                                                                                                                                            // Wait For OK
     NormalHWBoostOperating = 0;                                                                                                                                                                        // Don't enter again
   }
-  if ((HeatPump.Status.LastSystemOperationMode == 1 && HeatPump.Status.SystemOperationMode != 1) || (HeatPump.Status.LastSystemOperationMode == 6 && HeatPump.Status.SystemOperationMode != 6)) {
-    Flow_Inc_Count = 0;
-    CalculateCompCurve();
-  }  // For Onboard Comp Curve, recalculate FSP to prevent outdoor stopping
-
+  if ((HeatPump.Status.LastSystemOperationMode == 1 && HeatPump.Status.SystemOperationMode != 1) || (HeatPump.Status.LastSystemOperationMode == 6 && HeatPump.Status.SystemOperationMode != 6) && DHWFlowFollowingActive) {
+    PostDHWTimer = true;                                                 // Start timing
+    postdhwfspdurationMillis = millis();                                 // Start the post-defrost timer
+  }                                                                      // For Onboard Comp Curve, recalculate FSP to prevent outdoor stopping
+  if (PostDHWTimer && (millis() - postdhwfspdurationMillis >= 60000)) {  // Once 60s after DHW has completed, write flow setpoint back down
+    PostDHWTimer = false;                                                // End
+    CalculateCompCurve();                                                // Delay this until 60s after mode finished
+    Flow_Inc_Count = 0;                                                  // Reset Flow Following Counter
+  }
 
   // -- Defrost Handler -- //
   if (unitSettings.use_local_outdoor && HeatPump.Status.LastDefrost != 0 && HeatPump.Status.Defrost == 0) {  // Transitioned from Defrosting Stage to Normal
@@ -595,7 +600,7 @@ void loop() {
       CompressorPeriodDurations[1] = CompressorPeriodDurations[0];                               // Transfer Last Compressor Period to Array Pos 1
       CompressorPeriodDurations[0] = (millis() / 1000) - CompressorStopStartTimer[0];            // Current Time from Stop > Stop (Seconds) to Array Pos 0
       CompressorStopStartTimer[0] = (millis() / 1000);                                           // Last Compressor Stop Time (Seconds)
-      compressorrunduration = CompressorStopStartTimer[0] - CompressorStopStartTimer[1];         // Last Compressor Run Duration (Seconds)
+      compressorrundurationMillis = CompressorStopStartTimer[0] - CompressorStopStartTimer[1];   // Last Compressor Run Duration (Seconds)
       if (Flow_Inc_Count > 0) {                                                                  // If its been manipulated
         HeatPump.SetFlowSetpoint(FlowTemp_Target, HeatPump.Status.HeatingControlModeZ1, ZONE1);  // Need to avoid overwriting by onboard weather curve..
         write_thermostats();                                                                     //
@@ -1603,11 +1608,8 @@ void ActiveControlReport(void) {
 
   if (FlowFollowingActive) { CycleProtectionStatus = "Anti-Stop Flow Temperature Following Active"; }
   if (DHWFlowFollowingActive) { CycleProtectionStatus = "DHW Flow Temperature Following Active"; }
-  if (ShortCycleProtectionActive) {
-    CycleProtectionStatus = "Short Cycle Lockout Active";
-  } else {
-    CycleProtectionStatus = "Inactive";
-  }
+  if (ShortCycleProtectionActive) { CycleProtectionStatus = "Short Cycle Lockout Active"; }
+  if (!FlowFollowingActive && !DHWFlowFollowingActive && !ShortCycleProtectionActive) { CycleProtectionStatus = "Inactive"; }
 
   doc[F("ShortCycleProtectionActive")] = CycleProtectionStatus;
   doc[F("ShortCycleReason")] = ShortCycleReason[ShortCycleCauseNumber];
@@ -1747,12 +1749,12 @@ String decimalToBinary(int decimal) {
 }
 
 void write_thermostats() {
-  HeatPump.SetZoneTempSetpoint(HeatPump.Status.Zone1TemperatureSetpoint, HeatPump.Status.HeatingControlModeZ1, ZONE1);
-  HeatPump.SetZoneTempSetpoint(HeatPump.Status.Zone2TemperatureSetpoint, HeatPump.Status.HeatingControlModeZ2, ZONE2);
+  if (HeatPump.Status.Zone1TemperatureSetpoint > 0 && HeatPump.Status.Zone1Temperature > 0) { HeatPump.SetZoneTempSetpoint(HeatPump.Status.Zone1TemperatureSetpoint, HeatPump.Status.HeatingControlModeZ1, ZONE1); }
+  if (HeatPump.Status.Zone2TemperatureSetpoint > 0 && HeatPump.Status.Zone2Temperature > 0) { HeatPump.SetZoneTempSetpoint(HeatPump.Status.Zone2TemperatureSetpoint, HeatPump.Status.HeatingControlModeZ2, ZONE2); }
 }
 
 void dhw_flow_follower() {
-  if (HeatPump.Status.DHWActive == 1 && HeatPump.Status.HeatingControlModeZ1 == 1 && unitSettings.shortcycleprotectionenabled) {
+  if (HeatPump.Status.DHWActive == 1 && HeatPump.Status.HeatingControlModeZ1 == 1 && unitSettings.shortcycleprotectionenabled && (unitSettings.z1_active || unitSettings.z2_active)) {
     HeatPump.SetFlowSetpoint(HeatPump.Status.HeaterOutputFlowTemperature, HEATING_CONTROL_MODE_FLOW_TEMP, ZONE1);  // In Hot Water mode, keep FSP following Actual
     write_thermostats();
     DHWFlowFollowingActive = true;
@@ -1780,8 +1782,8 @@ void CalculateCompCurve(void) {
       } else {
         OutsideAirTemperature = HeatPump.Status.OutsideTemperature;
 
-        if (HeatPump.Status.Defrost != 0 || ((PostDefrostTimer) && (millis() - postdfpreviousMillis < 240000))) {  // To allow sensor to stabilise after influence from the defrost
-          return;                                                                                                  // If currently defrosting or less than 4 minutes post-defrost skip re-calculation
+        if (HeatPump.Status.Defrost != 0 || ((PostDefrostTimer) && (millis() - postdfpreviousMillis < 360000))) {  // To allow sensor to stabilise after influence from the defrost
+          return;                                                                                                  // If currently defrosting or less than 6 minutes post-defrost skip re-calculation
         } else {
           PostDefrostTimer = false;
         }

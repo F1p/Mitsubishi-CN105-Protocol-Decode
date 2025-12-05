@@ -597,7 +597,7 @@ void readSettingsFromConfig() {
 
       // Climate
       if (i >= 101 && i < 106) {
-        Config["object_id"] = String(MQTT_OBJECT_ID[i - 101]);
+        Config["default_entity_id"] = String(MQTT_OBJECT_ID[i - 101]);
         if (i >= 101 && i < 104) {
           Config["curr_temp_t"] = BASETOPIC + String(MQTT_TOPIC[i - 97]);
           Config["curr_temp_tpl"] = String(MQTT_SENSOR_VALUE_TEMPLATE[25]);
