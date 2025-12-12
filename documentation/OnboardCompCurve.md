@@ -187,6 +187,28 @@ In JSON to the topic same: Ecodan/ASHP/**Command**/System/CompCurve
 }
 ```
 
+It might be helpful to add a number entity to configuration.yaml, to adjust this offset from within HA, like so:
+
+```yaml
+  number:
+    - name: "Ecodan ASHP Zone 1 Compensation Curve Offset"
+      state_topic: "Ecodan/ASHP/Status/CompCurve"
+      value_template: "{{ value_json.zone1.manual_offset }}"
+      command_topic: "Ecodan/ASHP/Command/System/CompCurve"
+      command_template: >
+        {
+          "zone1":
+            {
+              "manual_offset": {{ value }} 
+            }
+        }
+      unit_of_measurement: "°C"
+      min: -5
+      max: 5
+      step: 0.5
+```
+
+
 ![Publish Parameters](https://github.com/F1p/Mitsubishi-CN105-Protocol-Decode/blob/master/documentation/images/Partial_Publish_Curve.png)
 
 
