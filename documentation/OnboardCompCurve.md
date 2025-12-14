@@ -191,7 +191,7 @@ It might be helpful to add a number entity to configuration.yaml, to adjust this
 
 ```yaml
   number:
-    - name: "Ecodan ASHP Zone 1 Compensation Curve Offset"
+    - name: "Zone 1 Compensation Curve Offset"
       state_topic: "Ecodan/ASHP/Status/CompCurve"
       value_template: "{{ value_json.zone1.manual_offset }}"
       command_topic: "Ecodan/ASHP/Command/System/CompCurve"
@@ -206,6 +206,7 @@ It might be helpful to add a number entity to configuration.yaml, to adjust this
       min: -5
       max: 5
       step: 0.5
+      unique_id: "ecodan_ashp_z1_comp_curve_offset"
 ```
 
 
