@@ -190,6 +190,7 @@ In JSON to the topic same: Ecodan/ASHP/**Command**/System/CompCurve
 It might be helpful to add a number entity to configuration.yaml, to adjust this offset from within HA, like so:
 
 ```yaml
+mqtt:
   number:
     - name: "Zone 1 Compensation Curve Offset"
       state_topic: "Ecodan/ASHP/Status/CompCurve"
