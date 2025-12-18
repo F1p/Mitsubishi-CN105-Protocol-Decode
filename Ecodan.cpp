@@ -123,7 +123,6 @@ void ECODAN::StopStateMachine(void) {
     printCurrentTime();
     DEBUG_PRINTLN(F("Pausing Heat Pump Read Operation to FTC"));
     PauseStateMachine = true;
-    //CurrentMessage = 0;
   }
 }
 

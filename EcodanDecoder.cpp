@@ -1213,7 +1213,7 @@ void ECODANDECODER::EncodeRoomThermostat(float Setpoint, uint8_t ControlMode, ui
   LowerByte = (uint8_t)(ScaledTarget & 0x00ff);
 
   TxMessage.Payload[0] = TX_MESSAGE_ROOM_STAT;
-  TxMessage.Payload[3] = (ControlMode == HEATING_CONTROL_MODE_COOL_ZONE_TEMP || ControlMode == HEATING_CONTROL_MODE_COOL_FLOW_TEMP) ? 1 : 0;
+  TxMessage.Payload[3] = (ControlMode == HEATING_CONTROL_MODE_COOL_ZONE_TEMP || ControlMode == HEATING_CONTROL_MODE_COOL_FLOW_TEMP || ControlMode == HEATING_CONTROL_MODE_COOL_COMPENSATION) ? 1 : 0;
 
   if (Zone == ZONE1) {
     TxMessage.Payload[1] = ZONE1_TSTAT;
