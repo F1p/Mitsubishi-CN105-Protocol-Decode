@@ -1222,41 +1222,41 @@ void SystemReport(void) {
     if (OutputPower == 0) { OutputPower = HeatOutputPower = HeatPump.Status.OutputPower; }
   }
 
-  if (HeatPump.Status.SystemOperationMode > 0) {                // Pump Operating
-    if (OutputPower <= 0) {                                     // Cooling or Defrosting Mode
-      if (HeatPump.Status.Defrost != 0) {                       // If Defrosting Mode
-        EstHeatingInputPower = EstInputPower;                   // Input Power attributed to Heating & Cooling
-        HeatingOutputPower = HeatOutputPower = OutputPower;     // Heating is Negative (Extracting heat to defrost)
-      }                                                         //
-      else if (DHW_Mode) {                                      // Not defrosting, hot water mode
-        EstDHWInputPower = EstInputPower;                       //
-        DHWOutputPower = HeatOutputPower = OutputPower;         // DHW Output Power is Negative or 0 (could be due to immersion)
-      } else {                                                  // Heating/Cooling Mode
-        if (HeatPump.Status.SystemOperationMode == 2) {         // Heating Operating Mode
-          EstHeatingInputPower = EstInputPower;                 // Input Power attribution to Heating
-        } else if (HeatPump.Status.SystemOperationMode == 3) {  // Cooling Operation Mode
-          EstCoolingInputPower = EstInputPower;                 // Input Power attribution to Cooling
-        }                                                       //
-        HeatingOutputPower = HeatOutputPower = OutputPower;     // Heating is Negative Output Power
-        CoolOutputPower = fabsf(OutputPower);                   // Make Cooling Positive Output Power
-      }                                                         //
-    } else if (OutputPower > 0) {                               // Heating by HP
-      if (DHW_Mode) {                                           // DHW Operation Mode via HP
-        EstDHWInputPower = EstInputPower;                       //
-        DHWOutputPower = HeatOutputPower = OutputPower;         //
-      } else {                                                  // Heating Operation Mode via HP
-        EstHeatingInputPower = EstInputPower;                   //
-        HeatingOutputPower = HeatOutputPower = OutputPower;     //
-      }                                                         // Heating Modes
-    } else if (OutputPower == 0 && Non_HP_Mode) {               // Boosters or Immersion
-      if (DHW_Mode) {                                           // DHW Operation Mode
-        EstDHWInputPower = EstInputPower;                       //
-        DHWOutputPower = OutputPower = HeatOutputPower;         //
-      } else {                                                  // Heating Modes
-        EstHeatingInputPower = EstInputPower;                   //
-        HeatingOutputPower = OutputPower = HeatOutputPower;     //
-      }                                                         //
-    }                                                           //
+  if (HeatPump.Status.SystemOperationMode > 0 || HeatPump.Status.CompressorFrequency > 0) {  // Pump Operating
+    if (OutputPower <= 0) {                                                                  // Cooling or Defrosting Mode
+      if (HeatPump.Status.Defrost != 0) {                                                    // If Defrosting Mode
+        EstHeatingInputPower = EstInputPower;                                                // Input Power attributed to Heating & Cooling
+        HeatingOutputPower = HeatOutputPower = OutputPower;                                  // Heating is Negative (Extracting heat to defrost)
+      }                                                                                      //
+      else if (DHW_Mode) {                                                                   // Not defrosting, hot water mode
+        EstDHWInputPower = EstInputPower;                                                    //
+        DHWOutputPower = HeatOutputPower = OutputPower;                                      // DHW Output Power is Negative or 0 (could be due to immersion)
+      } else {                                                                               // Heating/Cooling Mode
+        if (HeatPump.Status.SystemOperationMode == 2) {                                      // Heating Operating Mode
+          EstHeatingInputPower = EstInputPower;                                              // Input Power attribution to Heating
+        } else if (HeatPump.Status.SystemOperationMode == 3) {                               // Cooling Operation Mode
+          EstCoolingInputPower = EstInputPower;                                              // Input Power attribution to Cooling
+        }                                                                                    //
+        HeatingOutputPower = HeatOutputPower = OutputPower;                                  // Heating is Negative Output Power
+        CoolOutputPower = fabsf(OutputPower);                                                // Make Cooling Positive Output Power
+      }                                                                                      //
+    } else if (OutputPower > 0) {                                                            // Heating by HP
+      if (DHW_Mode) {                                                                        // DHW Operation Mode via HP
+        EstDHWInputPower = EstInputPower;                                                    //
+        DHWOutputPower = HeatOutputPower = OutputPower;                                      //
+      } else {                                                                               // Heating Operation Mode via HP
+        EstHeatingInputPower = EstInputPower;                                                //
+        HeatingOutputPower = HeatOutputPower = OutputPower;                                  //
+      }                                                                                      // Heating Modes
+    } else if (OutputPower == 0 && Non_HP_Mode) {                                            // Boosters or Immersion
+      if (DHW_Mode) {                                                                        // DHW Operation Mode
+        EstDHWInputPower = EstInputPower;                                                    //
+        DHWOutputPower = OutputPower = HeatOutputPower;                                      //
+      } else {                                                                               // Heating Modes
+        EstHeatingInputPower = EstInputPower;                                                //
+        HeatingOutputPower = OutputPower = HeatOutputPower;                                  //
+      }                                                                                      //
+    }                                                                                        //
   }
 
 
