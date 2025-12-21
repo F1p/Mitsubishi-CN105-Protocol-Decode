@@ -46,7 +46,7 @@ It's possible with appropriate hardware to keep MELCloud running, see [Hardware 
 
 # Onboard Compensation Curve
 
-To learn all about the Mitsibushi CN105 Protocol, please read [OnboardCompCurve.md](https://github.com/F1p/Mitsubishi-CN105-Protocol-Decode/blob/master/documentation/OnboardCompCurve.md)
+To learn all about the Onboard Compensation Curve, please read [OnboardCompCurve.md](https://github.com/F1p/Mitsubishi-CN105-Protocol-Decode/blob/master/documentation/OnboardCompCurve.md)
 ![Comp Curve Graph](https://github.com/F1p/Mitsubishi-CN105-Protocol-Decode/blob/master/documentation/images/Curve_Points.png)
 
 
