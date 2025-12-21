@@ -11,13 +11,21 @@ To learn about the Hardware and Device Recovery, please read [Hardware and Recov
 
 Pre-Compiled software is for offical hardware:
 
- - Generation 1 ESP8266 ebay sold hardware: https://www.ebay.co.uk/itm/325967595655
- - Generation 2 ESP32 ebay sold hardware: https://www.ebay.co.uk/itm/326347231581
- - ESP32 Ethernet ebay sold hardware: https://www.ebay.co.uk/itm/326278295259
+ - [Generation 2 WiFi ESP32 ebay sold hardware (with or without MELCloud port)](https://www.ebay.co.uk/itm/326373657740?var=515493740627)
+ - [ESP32 Ethernet ebay sold hardware](https://www.ebay.co.uk/itm/326373657740?var=515493740625)
+- [Generation 1 WiFi ESP8266 ebay sold hardware (No longer available)](https://www.ebay.co.uk/itm/325967595655)
 
 
+You can bring your own, compile in Arduino or flash the same hardware above with pre-compiled files.
 
-You can bring your own, compile in Arduino or flash the hardware above with pre-compiled.
+# Detailed Setup Instructions
+
+The full instructions on how to setup Home Assistant and this adapter is documented [here](https://github.com/F1p/Mitsubishi-CN105-Protocol-Decode/blob/master/documentation/DetailedInstructions.md).
+
+
+# Performing Firmware Updates 
+
+You can find instructions on how to update your device firmware [here](https://github.com/F1p/Mitsubishi-CN105-Protocol-Decode/blob/master/documentation/DetailedInstructions.md).
 
 
 # Home Assistant
@@ -36,6 +44,18 @@ It's possible with appropriate hardware to keep MELCloud running, see [Hardware 
 
 
 
+# Onboard Compensation Curve
+
+To learn all about the Mitsibushi CN105 Protocol, please read [OnboardCompCurve.md](https://github.com/F1p/Mitsubishi-CN105-Protocol-Decode/blob/master/documentation/OnboardCompCurve.md)
+![Comp Curve Graph](https://github.com/F1p/Mitsubishi-CN105-Protocol-Decode/blob/master/documentation/images/Curve_Points.png)
+
+
 # Mitsibushi CN105 Protocol
 
 To learn all about the Mitsibushi CN105 Protocol, please read [Protocol.md](https://github.com/F1p/Mitsubishi-CN105-Protocol-Decode/blob/master/documentation/Protocol.md)
+
+
+# Buy me a coffee
+
+[Supporting this project by purchasing hardware is the primary way to help, but you can always say thanks by buying me a coffee.](https://www.paypal.com/ncp/payment/E57Q5G4XRSTRA)
+
