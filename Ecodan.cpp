@@ -298,8 +298,7 @@ void ECODAN::SetZoneTempSetpoint(float Setpoint, uint8_t Mode, uint8_t Zone) {
   if (cmd_queue_length < 10) {
     cmd_queue_length++;
     ECODANDECODER::TransfertoBuffer(SET_REQUEST, cmd_queue_length);
-    DEBUG_PRINT(F("Transferred msg to position: "));
-    DEBUG_PRINTLN(cmd_queue_length);
+    printTransferMsg(cmd_queue_length);
   }
 }
 
@@ -309,8 +308,7 @@ void ECODAN::SetFlowSetpoint(float Setpoint, uint8_t Mode, uint8_t Zone) {
   if (cmd_queue_length < 10) {
     cmd_queue_length++;
     ECODANDECODER::TransfertoBuffer(SET_REQUEST, cmd_queue_length);
-    DEBUG_PRINT(F("Transferred msg to position: "));
-    DEBUG_PRINTLN(cmd_queue_length);
+    printTransferMsg(cmd_queue_length);
   }
 }
 
@@ -324,8 +322,7 @@ void ECODAN::SetDHWMode(String *Mode) {
   if (cmd_queue_length < 10) {
     cmd_queue_length++;
     ECODANDECODER::TransfertoBuffer(SET_REQUEST, cmd_queue_length);
-    DEBUG_PRINT(F("Transferred msg to position: "));
-    DEBUG_PRINTLN(cmd_queue_length);
+    printTransferMsg(cmd_queue_length);
   }
 }
 
@@ -339,8 +336,7 @@ void ECODAN::ForceDHW(uint8_t OnOff) {
   if (cmd_queue_length < 10) {
     cmd_queue_length++;
     ECODANDECODER::TransfertoBuffer(SET_REQUEST, cmd_queue_length);
-    DEBUG_PRINT(F("Transferred msg to position: "));
-    DEBUG_PRINTLN(cmd_queue_length);
+    printTransferMsg(cmd_queue_length);
   }
 }
 
@@ -350,8 +346,7 @@ void ECODAN::SetHolidayMode(uint8_t OnOff) {
   if (cmd_queue_length < 10) {
     cmd_queue_length++;
     ECODANDECODER::TransfertoBuffer(SET_REQUEST, cmd_queue_length);
-    DEBUG_PRINT(F("Transferred msg to position: "));
-    DEBUG_PRINTLN(cmd_queue_length);
+    printTransferMsg(cmd_queue_length);
   }
 }
 
@@ -361,8 +356,7 @@ void ECODAN::SetProhibits(uint8_t Flags, uint8_t OnOff) {
   if (cmd_queue_length < 10) {
     cmd_queue_length++;
     ECODANDECODER::TransfertoBuffer(SET_REQUEST, cmd_queue_length);
-    DEBUG_PRINT(F("Transferred msg to position: "));
-    DEBUG_PRINTLN(cmd_queue_length);
+    printTransferMsg(cmd_queue_length);
   }
 }
 
@@ -372,8 +366,7 @@ void ECODAN::SetSvrControlMode(uint8_t OnOff, uint8_t DHW, uint8_t Z1H, uint8_t 
   if (cmd_queue_length < 10) {
     cmd_queue_length++;
     ECODANDECODER::TransfertoBuffer(SET_REQUEST, cmd_queue_length);
-    DEBUG_PRINT(F("Transferred msg to position: "));
-    DEBUG_PRINTLN(cmd_queue_length);
+    printTransferMsg(cmd_queue_length);
   }
 }
 
@@ -383,8 +376,7 @@ void ECODAN::SetHotWaterSetpoint(float Target) {
   if (cmd_queue_length < 10) {
     cmd_queue_length++;
     ECODANDECODER::TransfertoBuffer(SET_REQUEST, cmd_queue_length);
-    DEBUG_PRINT(F("Transferred msg to position: "));
-    DEBUG_PRINTLN(cmd_queue_length);
+    printTransferMsg(cmd_queue_length);
   }
 }
 
@@ -394,8 +386,7 @@ void ECODAN::SetHeatingControlMode(uint8_t Mode, uint8_t Zone) {
   if (cmd_queue_length < 10) {
     cmd_queue_length++;
     ECODANDECODER::TransfertoBuffer(SET_REQUEST, cmd_queue_length);
-    DEBUG_PRINT(F("Transferred msg to position: "));
-    DEBUG_PRINTLN(cmd_queue_length);
+    printTransferMsg(cmd_queue_length);
   }
 }
 
@@ -405,8 +396,7 @@ void ECODAN::SetSystemPowerMode(uint8_t OnOff) {
   if (cmd_queue_length < 10) {
     cmd_queue_length++;
     ECODANDECODER::TransfertoBuffer(SET_REQUEST, cmd_queue_length);
-    DEBUG_PRINT(F("Transferred msg to position: "));
-    DEBUG_PRINTLN(cmd_queue_length);
+    printTransferMsg(cmd_queue_length);
   }
 }
 
@@ -439,8 +429,7 @@ void ECODAN::WriteMELCloudCMD(uint8_t cmd) {
   if (cmd_queue_length < 10) {
     cmd_queue_length++;
     ECODANDECODER::TransfertoBuffer(SET_REQUEST, cmd_queue_length);
-    DEBUG_PRINT(F("Transferred msg to position: "));
-    DEBUG_PRINTLN(cmd_queue_length);
+    printTransferMsg(cmd_queue_length);
   }
 }
 
@@ -456,8 +445,7 @@ void ECODAN::WriteServiceCodeCMD(int cmd) {
   if (cmd_queue_length < 10) {
     cmd_queue_length++;
     ECODANDECODER::TransfertoBuffer(GET_REQUEST, cmd_queue_length);
-    DEBUG_PRINT(F("Transferred msg to position: "));
-    DEBUG_PRINTLN(cmd_queue_length);
+    printTransferMsg(cmd_queue_length);
   }
 }
 
@@ -472,4 +460,9 @@ void ECODAN::printCurrentTime(void) {
 
   strftime(TimeBuffer, sizeof(TimeBuffer), "%F %T -> ", &timeinfo);
   DEBUG_PRINT(TimeBuffer);
+}
+
+void ECODAN::printTransferMsg(int length){
+  DEBUG_PRINT(F("Transferred msg to position: "));
+  DEBUG_PRINTLN(length);
 }

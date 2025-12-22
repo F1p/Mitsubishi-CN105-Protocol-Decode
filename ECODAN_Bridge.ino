@@ -55,7 +55,7 @@
 #include "Ecodan.h"
 #include "Melcloud.h"
 
-String FirmwareVersion = "6.5.4";
+String FirmwareVersion = "6.5.4-h1";
 String LatestFirmwareVersion;
 
 
@@ -285,6 +285,7 @@ bool CompressorRunningLastLoop = false;
 bool shortcycleprotectionexit = false;
 int ShortCycleCauseNumber = 0;
 uint8_t shortcycleprotection_svc_pre[6] = { 0, 0, 0, 0, 0, 0 };  // Format: SCM, DHW, Z1H, Z1C, Z2H, Z2C
+uint8_t dhw_svc_pre[6] = { 0, 0, 0, 0, 0, 0 };                   // Format: SCM, DHW, Z1H, Z1C, Z2H, Z2C
 unsigned long CompressorStopStartTimer[2] = { 0, 0 };            // Compressor Last Stop Time, Compressor Last Start Time
 unsigned long CompressorPeriodDurations[2] = { 0, 0 };           // Last 2 Compressor Periods
 
@@ -565,9 +566,10 @@ void loop() {
 
   // -- Normal DHW Boost Handler (Enter SCM > Remove DHW Prohibit > Remain or Exit SCM) -- //
   if ((HeatPump.Status.LastSystemOperationMode == 1 || HeatPump.Status.LastSystemOperationMode == 6) && HeatPump.Status.SystemOperationMode != 1 && NormalHWBoostOperating == 1) {
-    HeatPump.SetSvrControlMode(PreHWBoostSvrCtrlMode, 1, HeatPump.Status.ProhibitHeatingZ1, HeatPump.Status.ProhibitCoolingZ1, HeatPump.Status.ProhibitHeatingZ2, HeatPump.Status.ProhibitCoolingZ2);  // Enable the Prohibit and Return Server Control Mode to the previous state when the System Operation Mode changes from Hot Water to anything else
-    WriteInProgress = true;                                                                                                                                                                            // Wait For OK
-    NormalHWBoostOperating = 0;                                                                                                                                                                        // Don't enter again
+    HeatPump.SetSvrControlMode(dhw_svc_pre[0], dhw_svc_pre[1], dhw_svc_pre[2], dhw_svc_pre[3], dhw_svc_pre[4], dhw_svc_pre[5]);  // Restore Server Control Mode + Prohibits
+    HeatPump.Status.SvrControlMode = dhw_svc_pre[0];
+    WriteInProgress = true;      // Wait For OK
+    NormalHWBoostOperating = 0;  // Don't enter again
   }
   if ((HeatPump.Status.LastSystemOperationMode == 1 && HeatPump.Status.SystemOperationMode != 1) || (HeatPump.Status.LastSystemOperationMode == 6 && HeatPump.Status.SystemOperationMode != 6) && DHWFlowFollowingActive) {
     PostDHWTimer = true;                                                 // Start timing
@@ -893,16 +895,17 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
     HeatPump.Status.HotWaterBoostActive = Payload.toInt();
   } else if ((Topic == MQTTCommandHotwaterNormalBoost) || (Topic == MQTTCommand2HotwaterNormalBoost)) {
     MQTTWriteReceived("MQTT Set Normal DHW Boost", 16);
-    if (Payload.toInt() == 1) {                                // Turn ON
-      PreHWBoostSvrCtrlMode = HeatPump.Status.SvrControlMode;  // Record the Server Control Mode when Entering Boost Only
-      if (HeatPump.Status.ProhibitDHW == 0) {                  // To boost, must be at transition of On > Off, so if current Prohibit Status if off first Enter SCM with Prohibit On to shortly create a transition
+    if (Payload.toInt() == 1) {  // Turn ON
+      std::array<uint8_t, 6> current_svc_state = { HeatPump.Status.SvrControlMode, HeatPump.Status.ProhibitDHW, HeatPump.Status.ProhibitHeatingZ1, HeatPump.Status.ProhibitCoolingZ1, HeatPump.Status.ProhibitHeatingZ2, HeatPump.Status.ProhibitCoolingZ2 };
+      std::copy(current_svc_state.begin(), current_svc_state.end(), dhw_svc_pre);
+      if (HeatPump.Status.ProhibitDHW == 0) {  // To boost, must be at transition of On > Off, so if current Prohibit Status if off first Enter SCM with Prohibit On to shortly create a transition
         HeatPump.SetSvrControlMode(Payload.toInt(), Payload.toInt(), HeatPump.Status.ProhibitHeatingZ1, HeatPump.Status.ProhibitCoolingZ1, HeatPump.Status.ProhibitHeatingZ2, HeatPump.Status.ProhibitCoolingZ2);
       }
       HeatPump.SetSvrControlMode(Payload.toInt(), 1 - Payload.toInt(), HeatPump.Status.ProhibitHeatingZ1, HeatPump.Status.ProhibitCoolingZ1, HeatPump.Status.ProhibitHeatingZ2, HeatPump.Status.ProhibitCoolingZ2);
-      HeatPump.Status.SvrControlMode = 1;  // Server Control Mode Enables for this mode
-    } else if (Payload.toInt() == 0) {     // Turn OFF
-      HeatPump.SetSvrControlMode(PreHWBoostSvrCtrlMode, 1 - Payload.toInt(), HeatPump.Status.ProhibitHeatingZ1, HeatPump.Status.ProhibitCoolingZ1, HeatPump.Status.ProhibitHeatingZ2, HeatPump.Status.ProhibitCoolingZ2);
-      HeatPump.Status.SvrControlMode = PreHWBoostSvrCtrlMode;  // Server Control Mode is now Set to Status before Switch Toggle
+      HeatPump.Status.SvrControlMode = 1;                                                                                          // Server Control Mode Enables for this mode
+    } else if (Payload.toInt() == 0) {                                                                                             // Turn OFF
+      HeatPump.SetSvrControlMode(dhw_svc_pre[0], dhw_svc_pre[1], dhw_svc_pre[2], dhw_svc_pre[3], dhw_svc_pre[4], dhw_svc_pre[5]);  // Restore Server Control Mode + Prohibits
+      HeatPump.Status.SvrControlMode = dhw_svc_pre[0];
     }
 
     HeatPump.Status.ProhibitDHW = 1 - Payload.toInt();  // Hot Water Prohibit is Inverse of request
@@ -1710,34 +1713,34 @@ void startTelnet() {
 }
 
 void stopTelnet() {
-  DEBUG_PRINTLN(F("Stopping Telnet"));
+  //DEBUG_PRINTLN(F("Stopping Telnet"));
   TelnetServer.stop();
 }
 
 void onTelnetConnect(String ip) {
-  DEBUG_PRINT(F("Telnet: "));
-  DEBUG_PRINT(ip);
-  DEBUG_PRINTLN(F(" connected"));
+  //DEBUG_PRINT(F("Telnet: "));
+  //DEBUG_PRINT(ip);
+  //DEBUG_PRINTLN(F(" connected"));
   TelnetServer.println("\nWelcome " + TelnetServer.getIP());
   TelnetServer.println(F("(Use ^] + q  to disconnect.)"));
 }
 
 void onTelnetDisconnect(String ip) {
-  DEBUG_PRINT(F("Telnet: "));
-  DEBUG_PRINT(ip);
-  DEBUG_PRINTLN(F(" disconnected"));
+  //DEBUG_PRINT(F("Telnet: "));
+  //DEBUG_PRINT(ip);
+  //DEBUG_PRINTLN(F(" disconnected"));
 }
 
 void onTelnetReconnect(String ip) {
-  DEBUG_PRINT(F("Telnet: "));
-  DEBUG_PRINT(ip);
-  DEBUG_PRINTLN(F(" reconnected"));
+  //DEBUG_PRINT(F("Telnet: "));
+  //DEBUG_PRINT(ip);
+  //DEBUG_PRINTLN(F(" reconnected"));
 }
 
 void onTelnetConnectionAttempt(String ip) {
-  DEBUG_PRINT(F("Telnet: "));
-  DEBUG_PRINT(ip);
-  DEBUG_PRINTLN(F(" tried to connected"));
+  //DEBUG_PRINT(F("Telnet: "));
+  //DEBUG_PRINT(ip);
+  //DEBUG_PRINTLN(F(" tried to connected"));
 }
 
 float roundToOneDecimal(float value) {
@@ -1960,7 +1963,7 @@ void MQTTWriteReceived(String message, int MsgNumber) {
 void onEvent(arduino_event_id_t event) {
   switch (event) {
     case ARDUINO_EVENT_ETH_START:
-      DEBUG_PRINTLN(F("ETH Started"));
+      //DEBUG_PRINTLN(F("ETH Started"));
       // The hostname must be set after the interface is started, but needs
       // to be set before DHCP, so set it from the event handler thread.
       ETH.setHostname("Ecodan-Bridge");
@@ -1969,20 +1972,20 @@ void onEvent(arduino_event_id_t event) {
       DEBUG_PRINTLN(F("ETH Connected"));
       break;
     case ARDUINO_EVENT_ETH_GOT_IP:
-      DEBUG_PRINTLN(F("ETH Got IP"));
-      DEBUG_PRINTLN(ETH);
+      //DEBUG_PRINTLN(F("ETH Got IP"));
+      //DEBUG_PRINTLN(ETH);
       eth_connected = true;
       break;
     case ARDUINO_EVENT_ETH_LOST_IP:
-      DEBUG_PRINTLN(F("ETH Lost IP"));
+      //DEBUG_PRINTLN(F("ETH Lost IP"));
       eth_connected = false;
       break;
     case ARDUINO_EVENT_ETH_DISCONNECTED:
-      DEBUG_PRINTLN(F("ETH Disconnected"));
+      //DEBUG_PRINTLN(F("ETH Disconnected"));
       eth_connected = false;
       break;
     case ARDUINO_EVENT_ETH_STOP:
-      DEBUG_PRINTLN(F("ETH Stopped"));
+      //DEBUG_PRINTLN(F("ETH Stopped"));
       eth_connected = false;
       break;
     default: break;

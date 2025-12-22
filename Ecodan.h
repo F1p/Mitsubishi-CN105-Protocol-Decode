@@ -71,6 +71,7 @@ private:
   Stream *DeviceStream;
   void Connect(void);
   void printCurrentTime(void);
+  void printTransferMsg(int length);
 };
 
 #endif
