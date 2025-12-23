@@ -294,7 +294,6 @@ extern int cmd_queue_position;
 extern bool WriteInProgress;
 extern int CurrentWriteAttempt;
 byte NormalHWBoostOperating = 0;
-byte PreHWBoostSvrCtrlMode = 0;
 uint8_t FTCVersionLastLoop = 0;
 uint8_t FrequencyLastLoop = 0;
 
@@ -898,18 +897,18 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
     if (Payload.toInt() == 1) {  // Turn ON
       std::array<uint8_t, 6> current_svc_state = { HeatPump.Status.SvrControlMode, HeatPump.Status.ProhibitDHW, HeatPump.Status.ProhibitHeatingZ1, HeatPump.Status.ProhibitCoolingZ1, HeatPump.Status.ProhibitHeatingZ2, HeatPump.Status.ProhibitCoolingZ2 };
       std::copy(current_svc_state.begin(), current_svc_state.end(), dhw_svc_pre);
-      if (HeatPump.Status.ProhibitDHW == 0) {  // To boost, must be at transition of On > Off, so if current Prohibit Status if off first Enter SCM with Prohibit On to shortly create a transition
+      if (HeatPump.Status.ProhibitDHW == 0) {  // To boost, must be at transition of On > Off, so if current Prohibit Status if off first Enter SCM with Prohibit On to create a transition for a short interval
         HeatPump.SetSvrControlMode(Payload.toInt(), Payload.toInt(), HeatPump.Status.ProhibitHeatingZ1, HeatPump.Status.ProhibitCoolingZ1, HeatPump.Status.ProhibitHeatingZ2, HeatPump.Status.ProhibitCoolingZ2);
       }
-      HeatPump.SetSvrControlMode(Payload.toInt(), 1 - Payload.toInt(), HeatPump.Status.ProhibitHeatingZ1, HeatPump.Status.ProhibitCoolingZ1, HeatPump.Status.ProhibitHeatingZ2, HeatPump.Status.ProhibitCoolingZ2);
-      HeatPump.Status.SvrControlMode = 1;                                                                                          // Server Control Mode Enables for this mode
-    } else if (Payload.toInt() == 0) {                                                                                             // Turn OFF
-      HeatPump.SetSvrControlMode(dhw_svc_pre[0], dhw_svc_pre[1], dhw_svc_pre[2], dhw_svc_pre[3], dhw_svc_pre[4], dhw_svc_pre[5]);  // Restore Server Control Mode + Prohibits
-      HeatPump.Status.SvrControlMode = dhw_svc_pre[0];
+      HeatPump.Status.ProhibitDHW = 1 - Payload.toInt();                                                                                                                                                                     // Hot Water Prohibit is Inverse of request (For Status Indication Only)
+      HeatPump.Status.SvrControlMode = 1;                                                                                                                                                                                    // Server Control Mode Enables for this mode (For Status Indication Only)
+      HeatPump.SetSvrControlMode(Payload.toInt(), HeatPump.Status.ProhibitDHW, HeatPump.Status.ProhibitHeatingZ1, HeatPump.Status.ProhibitCoolingZ1, HeatPump.Status.ProhibitHeatingZ2, HeatPump.Status.ProhibitCoolingZ2);  // Perform write to FTC
+    } else if (Payload.toInt() == 0) {                                                                                                                                                                                       // Turn OFF
+      HeatPump.SetSvrControlMode(dhw_svc_pre[0], dhw_svc_pre[1], dhw_svc_pre[2], dhw_svc_pre[3], dhw_svc_pre[4], dhw_svc_pre[5]);                                                                                            // Restore Server Control Mode + Prohibits
+      HeatPump.Status.SvrControlMode = dhw_svc_pre[0];                                                                                                                                                                       // Publish the status just written
+      HeatPump.Status.ProhibitDHW = dhw_svc_pre[1];                                                                                                                                                                          // Publish the status just written
     }
-
-    HeatPump.Status.ProhibitDHW = 1 - Payload.toInt();  // Hot Water Prohibit is Inverse of request
-    NormalHWBoostOperating = Payload.toInt();           // Hot Water Boost Operating is Active/Inactive
+    NormalHWBoostOperating = Payload.toInt();  // Hot Water Boost Operating is Active/Inactive
   } else if ((Topic == MQTTCommandSystemHolidayMode) || (Topic == MQTTCommand2SystemHolidayMode)) {
     MQTTWriteReceived("MQTT Set Holiday Mode", 16);
     HeatPump.SetHolidayMode(Payload.toInt());

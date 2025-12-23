@@ -1011,9 +1011,9 @@ void ECODANDECODER::Process0xA3(uint8_t *Buffer, EcodanStatus *Status) {
     } else if (ServiceCode == 20) {
       Status->Fan2RPM = ExtractInt16_v2_Signed(Buffer, 4);  //Little endian
     } else if (ServiceCode == 22) {
-      Status->LEVA = Buffer[4];
+      Status->LEVA = ExtractInt16_v2_Signed(Buffer, 4);
     } else if (ServiceCode == 23) {
-      Status->LEVB = Buffer[4];
+      Status->LEVB = ExtractInt16_v2_Signed(Buffer, 4);
     } else if (ServiceCode == 70) {
       Status->OutdoorUnitCapacity = Buffer[4];
     } else if (ServiceCode == 90) {
