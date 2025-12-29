@@ -55,7 +55,7 @@
 #include "Ecodan.h"
 #include "Melcloud.h"
 
-String FirmwareVersion = "6.5.4-h1";
+String FirmwareVersion = "6.5.4-h2";
 String LatestFirmwareVersion;
 
 
@@ -864,19 +864,19 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
   else if ((Topic == MQTTCommandZone1ProhibitHeating) || (Topic == MQTTCommand2Zone1ProhibitHeating)) {
     MQTTWriteReceived("MQTT Zone 1 Prohibit Heating", 16);
     HeatPump.SetProhibits(TX_MESSAGE_SETTING_HEAT_Z1_INH_Flag, Payload.toInt());
-    HeatPump.Status.ProhibitHeatingZ1 = Payload.toInt();
+    HeatPump.Status.ProhibitHeatingZ1 = dhw_svc_pre[2] = shortcycleprotection_svc_pre[2] = Payload.toInt();
   } else if ((Topic == MQTTCommandZone1ProhibitCooling) || (Topic == MQTTCommand2Zone1ProhibitCooling)) {
     MQTTWriteReceived("MQTT Zone 1 Prohibit Cooling", 16);
     HeatPump.SetProhibits(TX_MESSAGE_SETTING_COOL_Z1_INH_Flag, Payload.toInt());
-    HeatPump.Status.ProhibitCoolingZ1 = Payload.toInt();
+    HeatPump.Status.ProhibitCoolingZ1 = dhw_svc_pre[3] = shortcycleprotection_svc_pre[3] = Payload.toInt();
   } else if ((Topic == MQTTCommandZone2ProhibitHeating) || (Topic == MQTTCommand2Zone2ProhibitHeating)) {
     MQTTWriteReceived("MQTT Zone 2 Prohibit Heating", 16);
     HeatPump.SetProhibits(TX_MESSAGE_SETTING_HEAT_Z2_INH_Flag, Payload.toInt());
-    HeatPump.Status.ProhibitHeatingZ2 = Payload.toInt();
+    HeatPump.Status.ProhibitHeatingZ2 = dhw_svc_pre[4] = shortcycleprotection_svc_pre[4] = Payload.toInt();
   } else if ((Topic == MQTTCommandZone2ProhibitCooling) || (Topic == MQTTCommand2Zone2ProhibitCooling)) {
     MQTTWriteReceived("MQTT Zone 2 Prohibit Cooling", 16);
     HeatPump.SetProhibits(TX_MESSAGE_SETTING_COOL_Z2_INH_Flag, Payload.toInt());
-    HeatPump.Status.ProhibitCoolingZ2 = Payload.toInt();
+    HeatPump.Status.ProhibitCoolingZ2 = dhw_svc_pre[5] = shortcycleprotection_svc_pre[5] = Payload.toInt();
   } else if ((Topic == MQTTCommandHotwaterProhibit) || (Topic == MQTTCommand2HotwaterProhibit)) {
     MQTTWriteReceived("MQTT DHW Prohibit", 16);
     HeatPump.SetProhibits(TX_MESSAGE_SETTING_DHW_INH_Flag, Payload.toInt());
@@ -1213,8 +1213,8 @@ void SystemReport(void) {
 
 
   float x = ((((((float)HeatPump.Status.CompressorFrequency * 2) * ((float)HeatPump.Status.HeaterOutputFlowTemperature * 0.8)) / 1000) / 2) * UnitSizeFactor);
-  EstInputPower = ((x - Min_Input_Power) * (Max_Input_Power - Min_Input_Power) / (Max_Input_Power - Min_Input_Power) + Min_Input_Power);  // Constrain Input Power to FTC Onboard Reading range
-  OutputPower = (((float)HeatPump.Status.PrimaryFlowRate / 60) * (float)HeatPump.Status.HeaterDeltaT * unitSettings.GlycolStrength);      // Approx Heat Capacity of Fluid in Use
+  EstInputPower = ((x - Min_Input_Power) * (Max_Input_Power - Min_Input_Power) / (Max_Input_Power - Min_Input_Power) + Min_Input_Power);           // Constrain Input Power to FTC Onboard Reading range
+  OutputPower = (((float)HeatPump.Status.PrimaryFlowRate / 60) * (float)HeatPump.Status.HeaterDeltaT * unitSettings.GlycolStrength);  // Approx Heat Capacity of Fluid in Use (Carnot Power then 8% removed for losses)
 
 
   if (HeatPump.Status.ThreeWayValve == 1 || HeatPump.Status.SystemOperationMode == 1 || HeatPump.Status.SystemOperationMode == 6) { DHW_Mode = true; }
