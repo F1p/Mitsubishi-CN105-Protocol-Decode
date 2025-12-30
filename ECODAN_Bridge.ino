@@ -55,7 +55,7 @@
 #include "Ecodan.h"
 #include "Melcloud.h"
 
-String FirmwareVersion = "6.5.4-h2";
+String FirmwareVersion = "6.5.4-h3";
 String LatestFirmwareVersion;
 
 
@@ -1790,7 +1790,7 @@ void CalculateCompCurve(void) {
       float OutsideAirTemperature = 0;
 
       if (!unitSettings.use_local_outdoor && (MQTTClient1.connected() || MQTTClient2.connected())) {  // Determine Outdoor Temperature Input
-        OutsideAirTemperature = doc["cloud_outdoor"];
+        OutsideAirTemperature = unitSettings.cloud_outdoor;
       } else {
         if (HeatPump.Status.Defrost != 0 || (millis() - postdfpreviousMillis <= 360000)) {  // To allow sensor to stabilise after influence from the defrost
           DEBUG_PRINTLN("Skipping due to Defrost...");
