@@ -328,9 +328,9 @@ void ECODANDECODER::Process0x01(uint8_t *Buffer, EcodanStatus *Status) {
 }
 
 void ECODANDECODER::Process0x02(uint8_t *Buffer, EcodanStatus *Status) {
-  uint8_t Defrost, LastDefrost, ThermostatZ1, ThermostatZ2;
+  uint8_t Defrost, ThermostatZ1, ThermostatZ2;
 
-  LastDefrost = Defrost;
+  Status->LastDefrost = Status->Defrost;
 
   for (int i = 1; i < 16; i++) {
     Array0x02[i] = Buffer[i];

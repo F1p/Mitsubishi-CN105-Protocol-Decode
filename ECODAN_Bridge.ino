@@ -55,7 +55,7 @@
 #include "Ecodan.h"
 #include "Melcloud.h"
 
-String FirmwareVersion = "6.5.4-h3";
+String FirmwareVersion = "6.5.4-h4";
 String LatestFirmwareVersion;
 
 
