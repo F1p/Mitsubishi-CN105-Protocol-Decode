@@ -553,7 +553,7 @@ void ECODANDECODER::Process0x0D(uint8_t *Buffer, EcodanStatus *Status) {
 }
 
 void ECODANDECODER::Process0x0E(uint8_t *Buffer, EcodanStatus *Status) {
-  float ExternalBoilerFlowTemperature, ExternalBoilerReturnTemperature;
+  float ExternalBoilerFlowTemperature, ExternalBoilerReturnTemperature, BrineInletTemp, BrineOutletTemp;
 
   for (int i = 1; i < 16; i++) {
     Array0x0e[i] = Buffer[i];
@@ -561,7 +561,6 @@ void ECODANDECODER::Process0x0E(uint8_t *Buffer, EcodanStatus *Status) {
 
   ExternalBoilerFlowTemperature = ((float)ExtractUInt16(Buffer, 1) / 100);    // Suspected (THWB1)
   ExternalBoilerReturnTemperature = ((float)ExtractUInt16(Buffer, 4) / 100);  // Suspected (THWB2)
-  //Unknown = ((float)ExtractUInt16(Buffer, 10) / 100);                       // Unknown
 
   Status->ExternalBoilerFlowTemperature = ExternalBoilerFlowTemperature;
   Status->ExternalBoilerReturnTemperature = ExternalBoilerReturnTemperature;
@@ -1014,7 +1013,13 @@ void ECODANDECODER::Process0xA3(uint8_t *Buffer, EcodanStatus *Status) {
       Status->LEVA = ExtractInt16_v2_Signed(Buffer, 4);
     } else if (ServiceCode == 23) {
       Status->LEVB = ExtractInt16_v2_Signed(Buffer, 4);
-    } else if (ServiceCode == 70) {
+    } else if (ServiceCode == 27) {
+      Status->TH32 = ExtractInt16_v2_Signed(Buffer, 4);
+      Status->HasGeodan = true;
+    } else if (ServiceCode == 28) {
+      Status->TH34 = ExtractInt16_v2_Signed(Buffer, 4);
+      Status->HasGeodan = true;
+    }  else if (ServiceCode == 70) {
       Status->OutdoorUnitCapacity = Buffer[4];
     } else if (ServiceCode == 90) {
       snprintf(Status->OutdoorFirmware, 6, "%02X.%02X", Buffer[5], Buffer[4]);

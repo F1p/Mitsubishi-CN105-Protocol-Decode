@@ -55,7 +55,7 @@
 #include "Ecodan.h"
 #include "Melcloud.h"
 
-String FirmwareVersion = "6.5.4-h4";
+String FirmwareVersion = "6.5.5";
 String LatestFirmwareVersion;
 
 
@@ -181,7 +181,7 @@ struct UnitSettings {
   char glycol_identifier[7] = "glycol";
   char compcurve_identifier[10] = "compcurve";
   char act_ctrl_sc_identifier[9] = "shortcyc";
-  String CompCurve = "{\"base\":{\"zone1\":{\"curve\":[{\"flow\":60,\"outside\":-10},{\"flow\":35,\"outside\":0},{\"flow\":20,\"outside\":15},{\"flow\":10,\"outside\":20}]},\"zone2\":{\"curve\":[{\"flow\":60,\"outside\":-10},{\"flow\":35,\"outside\":0},{\"flow\":20,\"outside\":15}]}},\"zone1\":{\"active\":false},\"zone2\":{\"active\":false}}";
+  String CompCurve = "{\"base\":{\"zone1\":{\"curve\":[{\"flow\":60,\"outside\":-10},{\"flow\":35,\"outside\":0},{\"flow\":20,\"outside\":15},{\"flow\":10,\"outside\":20}]},\"zone2\":{\"curve\":[{\"flow\":60,\"outside\":-10},{\"flow\":35,\"outside\":0},{\"flow\":20,\"outside\":15}]}},\"zone1\":{\"active\":false,\"manual_offset\":0,\"temp_offset\": 0,\"wind_offset\":0},\"zone2\":{\"active\":false,\"manual_offset\":0,\"temp_offset\": 0,\"wind_offset\":0},\"use_local_outdoor\":true,\"max_flow_overshoot\": 3}";
   float z1_manual_offset = 0;
   float z1_wind_offset = 0;
   float z1_temp_offset = 0;
@@ -513,8 +513,8 @@ void loop() {
 #ifndef ARDUINO_WT32_ETH01
   if (digitalRead(Reset_Button) == LOW) {                                                                                                                                                                    // Inverted (Button Pushed is LOW)
     HeatPump.SetSvrControlMode(0, HeatPump.Status.ProhibitDHW, HeatPump.Status.ProhibitHeatingZ1, HeatPump.Status.ProhibitCoolingZ1, HeatPump.Status.ProhibitHeatingZ2, HeatPump.Status.ProhibitCoolingZ2);  // Exit SCM leaving state
-    ModifyCompCurveState(1, false);                                                                                                                                                                          // Escape Local WC Mode
-    ModifyCompCurveState(2, false);                                                                                                                                                                          // Escape Local WC Mode
+    ModifyCompCurveState(1, false, 1, 0);                                                                                                                                                                    // Escape Local WC Mode
+    ModifyCompCurveState(2, false, 1, 0);                                                                                                                                                                    // Escape Local WC Mode
 #ifdef ESP8266                                                                                                                                                                                               // Define the Witty ESP8266 Ports
     digitalWrite(Red_RGB_LED, HIGH);                                                                                                                                                                         // Flash the Red LED
     delay(500);
@@ -691,8 +691,8 @@ void loop() {
   }
 
   // -- Exit Onboard Compensation Curve if System Operation Modes Change -- //
-  if (unitSettings.z1_active && HeatPump.Status.HasAnsweredDips && (HeatPump.Status.HeatingControlModeZ1 != 1 && HeatPump.Status.HeatingControlModeZ1 != 4)) { ModifyCompCurveState(1, false); }
-  if (unitSettings.z2_active && HeatPump.Status.HasAnsweredDips && (HeatPump.Status.HeatingControlModeZ2 != 1 && HeatPump.Status.HeatingControlModeZ2 != 4)) { ModifyCompCurveState(2, false); }
+  if (unitSettings.z1_active && HeatPump.Status.HasAnsweredDips && (HeatPump.Status.HeatingControlModeZ1 != 1 && HeatPump.Status.HeatingControlModeZ1 != 4)) { ModifyCompCurveState(1, false, 1, 0); }
+  if (unitSettings.z2_active && HeatPump.Status.HasAnsweredDips && (HeatPump.Status.HeatingControlModeZ2 != 1 && HeatPump.Status.HeatingControlModeZ2 != 4)) { ModifyCompCurveState(2, false, 1, 0); }
 
   // -- CPU Loop Time End -- //
   CPULoopSpeed = micros() - looppreviousMicros;  // Loop Speed End Monitor
@@ -820,6 +820,9 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
     } else if (Payload.toInt() == 994) {
       DEBUG_PRINTLN(F("Requested Bridge Latest Firmware Available"));
       //CheckForOTAUpdates();
+    } else if (Payload.toInt() == 993) {
+      DEBUG_PRINTLN(F("Requested FTC Version Information"));
+      HeatPump.GetFTCVersion();
     } else {
       HeatPump.WriteServiceCodeCMD(Payload.toInt());
       SvcRequested = Payload.toInt();
@@ -928,7 +931,7 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
       HeatPump.SetHeatingControlMode(HEATING_CONTROL_MODE_FLOW_TEMP, SET_HEATING_CONTROL_MODE_Z1);
       HeatPump.Status.HeatingControlModeZ1 = HEATING_CONTROL_MODE_FLOW_TEMP;
       HeatPump.SetFlowSetpoint(HeatPump.Status.Zone1FlowTemperatureSetpoint, HeatPump.Status.HeatingControlModeZ1, ZONE1);
-      if (unitSettings.z1_active) { ModifyCompCurveState(1, false); }
+      if (unitSettings.z1_active) { ModifyCompCurveState(1, false, 1, 0); }
     } else if (Payload == String("Heating Compensation")) {
       HeatPump.SetHeatingControlMode(HEATING_CONTROL_MODE_COMPENSATION, SET_HEATING_CONTROL_MODE_Z1);
       HeatPump.Status.HeatingControlModeZ1 = HEATING_CONTROL_MODE_COMPENSATION;
@@ -939,7 +942,7 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
     } else if (Payload == String("Cooling Flow")) {
       HeatPump.SetHeatingControlMode(HEATING_CONTROL_MODE_COOL_FLOW_TEMP, SET_HEATING_CONTROL_MODE_Z1);
       HeatPump.Status.HeatingControlModeZ1 = HEATING_CONTROL_MODE_COOL_FLOW_TEMP;
-      if (unitSettings.z1_active) { ModifyCompCurveState(1, false); }
+      if (unitSettings.z1_active) { ModifyCompCurveState(1, false, 1, 0); }
     } else if (Payload == String("Dry Up")) {
       HeatPump.SetHeatingControlMode(HEATING_CONTROL_MODE_DRY_UP, SET_HEATING_CONTROL_MODE_Z1);
       HeatPump.Status.HeatingControlModeZ1 = HEATING_CONTROL_MODE_DRY_UP;
@@ -956,7 +959,7 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
       HeatPump.SetHeatingControlMode(HEATING_CONTROL_MODE_FLOW_TEMP, SET_HEATING_CONTROL_MODE_Z2);
       HeatPump.Status.HeatingControlModeZ2 = HEATING_CONTROL_MODE_FLOW_TEMP;
       HeatPump.SetFlowSetpoint(HeatPump.Status.Zone2FlowTemperatureSetpoint, HeatPump.Status.HeatingControlModeZ2, ZONE2);
-      if (unitSettings.z2_active) { ModifyCompCurveState(2, false); }
+      if (unitSettings.z2_active) { ModifyCompCurveState(2, false, 1, 0); }
     } else if (Payload == String("Heating Compensation")) {
       HeatPump.SetHeatingControlMode(HEATING_CONTROL_MODE_COMPENSATION, SET_HEATING_CONTROL_MODE_Z2);
       HeatPump.Status.HeatingControlModeZ2 = HEATING_CONTROL_MODE_COMPENSATION;
@@ -966,7 +969,7 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
     } else if (Payload == String("Cooling Flow")) {
       HeatPump.SetHeatingControlMode(HEATING_CONTROL_MODE_COOL_FLOW_TEMP, SET_HEATING_CONTROL_MODE_Z2);
       HeatPump.Status.HeatingControlModeZ2 = HEATING_CONTROL_MODE_COOL_FLOW_TEMP;
-      if (unitSettings.z2_active) { ModifyCompCurveState(2, false); }
+      if (unitSettings.z2_active) { ModifyCompCurveState(2, false, 1, 0); }
     } else if (Payload == String("Dry Up")) {
       HeatPump.SetHeatingControlMode(HEATING_CONTROL_MODE_DRY_UP, SET_HEATING_CONTROL_MODE_Z2);
       HeatPump.Status.HeatingControlModeZ2 = HEATING_CONTROL_MODE_DRY_UP;
@@ -1045,7 +1048,7 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
             HeatPump.Status.HeatingControlModeZ1 = HEATING_CONTROL_MODE_FLOW_TEMP;
           }
         }
-        ModifyCompCurveState(1, wc_z1_active);  // State Save
+        ModifyCompCurveState(1, wc_z1_active, 1, 0);  // State Save
       }
       if (doc["zone2"]["active"].is<bool>()) {
         bool wc_z2_active = doc["zone2"]["active"];
@@ -1055,26 +1058,48 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
             HeatPump.Status.HeatingControlModeZ2 = HEATING_CONTROL_MODE_FLOW_TEMP;
           }
         }
-        ModifyCompCurveState(2, wc_z2_active);  // State Save
+        ModifyCompCurveState(2, wc_z2_active, 1, 0);  // State Save
       }
 
 
       // Local or Remote Outdoor Temperature Measurement (Bool)
       if (doc["use_local_outdoor"].is<bool>()) {
         unitSettings.use_local_outdoor = doc["use_local_outdoor"];
+        ModifyCompCurveState(1, unitSettings.use_local_outdoor, 5, 0);  // State Save
       }
 
       // Flow Overshooting (Short Cycle Protection)
-      if (doc["max_flow_overshoot"].is<float>()) { unitSettings.max_flow_overshoot = doc["max_flow_overshoot"]; }
+      if (doc["max_flow_overshoot"].is<float>()) {
+        unitSettings.max_flow_overshoot = doc["max_flow_overshoot"];
+        ModifyCompCurveState(1, true, 6, unitSettings.max_flow_overshoot);
+      }
 
       // Adjustments Pre or Post WC Calculation (Float)
-      if (doc["zone1"]["manual_offset"].is<float>()) { unitSettings.z1_manual_offset = doc["zone1"]["manual_offset"]; }  // Post Calcuation Zone1 Manual +/- Offset
-      if (doc["zone1"]["temp_offset"].is<float>()) { unitSettings.z1_temp_offset = doc["zone1"]["temp_offset"]; }        // Post Calcuation Zone1 Temperature (e.g. Solar Gain) +/- Offset
-      if (doc["zone1"]["wind_offset"].is<float>()) { unitSettings.z1_wind_offset = doc["zone1"]["wind_offset"]; }        // Post Calcuation Zone1 Wind Factor +/- Offset
-      if (doc["zone2"]["manual_offset"].is<float>()) { unitSettings.z2_manual_offset = doc["zone2"]["manual_offset"]; }  // Post Calcuation Zone2 Manual +/- Offset
-      if (doc["zone2"]["temp_offset"].is<float>()) { unitSettings.z2_temp_offset = doc["zone2"]["temp_offset"]; }        // Post Calcuation Zone2 Temperature (e.g. Solar Gain) +/- Offset
-      if (doc["zone2"]["wind_offset"].is<float>()) { unitSettings.z2_wind_offset = doc["zone2"]["wind_offset"]; }        // Post Calcuation Zone2 Wind Factor +/- Offset
-      if (doc["cloud_outdoor"].is<float>()) { unitSettings.cloud_outdoor = doc["cloud_outdoor"]; }                       // Temperature Provided by a remote or cloud source when use_local_outdoor = False
+      if (doc["zone1"]["manual_offset"].is<float>()) {
+        unitSettings.z1_manual_offset = doc["zone1"]["manual_offset"];
+        ModifyCompCurveState(1, true, 2, unitSettings.z1_manual_offset);
+      }  // Post Calcuation Zone1 Manual +/- Offset
+      if (doc["zone1"]["temp_offset"].is<float>()) {
+        unitSettings.z1_temp_offset = doc["zone1"]["temp_offset"];
+        ModifyCompCurveState(1, true, 3, unitSettings.z1_manual_offset);
+      }  // Post Calcuation Zone1 Temperature (e.g. Solar Gain) +/- Offset
+      if (doc["zone1"]["wind_offset"].is<float>()) {
+        unitSettings.z1_wind_offset = doc["zone1"]["wind_offset"];
+        ModifyCompCurveState(1, true, 4, unitSettings.z1_manual_offset);
+      }  // Post Calcuation Zone1 Wind Factor +/- Offset
+      if (doc["zone2"]["manual_offset"].is<float>()) {
+        unitSettings.z2_manual_offset = doc["zone2"]["manual_offset"];
+        ModifyCompCurveState(2, true, 2, unitSettings.z1_manual_offset);
+      }  // Post Calcuation Zone2 Manual +/- Offset
+      if (doc["zone2"]["temp_offset"].is<float>()) {
+        unitSettings.z2_temp_offset = doc["zone2"]["temp_offset"];
+        ModifyCompCurveState(2, true, 3, unitSettings.z1_manual_offset);
+      }  // Post Calcuation Zone2 Temperature (e.g. Solar Gain) +/- Offset
+      if (doc["zone2"]["wind_offset"].is<float>()) {
+        unitSettings.z2_wind_offset = doc["zone2"]["wind_offset"];
+        ModifyCompCurveState(2, true, 4, unitSettings.z1_manual_offset);
+      }                                                                                             // Post Calcuation Zone2 Wind Factor +/- Offset
+      if (doc["cloud_outdoor"].is<float>()) { unitSettings.cloud_outdoor = doc["cloud_outdoor"]; }  // Temperature Provided by a remote or cloud source when use_local_outdoor = False
 
       FlowFollowingActive = false;
       CalculateCompCurve();  // Recalculate after modification
@@ -1213,8 +1238,8 @@ void SystemReport(void) {
 
 
   float x = ((((((float)HeatPump.Status.CompressorFrequency * 2) * ((float)HeatPump.Status.HeaterOutputFlowTemperature * 0.8)) / 1000) / 2) * UnitSizeFactor);
-  EstInputPower = ((x - Min_Input_Power) * (Max_Input_Power - Min_Input_Power) / (Max_Input_Power - Min_Input_Power) + Min_Input_Power);           // Constrain Input Power to FTC Onboard Reading range
-  OutputPower = (((float)HeatPump.Status.PrimaryFlowRate / 60) * (float)HeatPump.Status.HeaterDeltaT * unitSettings.GlycolStrength);  // Approx Heat Capacity of Fluid in Use (Carnot Power then 8% removed for losses)
+  EstInputPower = ((x - Min_Input_Power) * (Max_Input_Power - Min_Input_Power) / (Max_Input_Power - Min_Input_Power) + Min_Input_Power);  // Constrain Input Power to FTC Onboard Reading range
+  OutputPower = (((float)HeatPump.Status.PrimaryFlowRate / 60) * (float)HeatPump.Status.HeaterDeltaT * unitSettings.GlycolStrength);      // Approx Heat Capacity of Fluid in Use (Carnot Power then 8% removed for losses)
 
 
   if (HeatPump.Status.ThreeWayValve == 1 || HeatPump.Status.SystemOperationMode == 1 || HeatPump.Status.SystemOperationMode == 6) { DHW_Mode = true; }
@@ -1307,7 +1332,7 @@ void SystemReport(void) {
 
 void AdvancedReport(void) {
   JsonDocument doc;
-  char Buffer[1024];
+  char Buffer[2048];
 
   doc[F("FlowTMax")] = HeatPump.Status.FlowTempMax;
   doc[F("FlowTMin")] = HeatPump.Status.FlowTempMin;
@@ -1324,6 +1349,8 @@ void AdvancedReport(void) {
   doc[F("CondensingTemp")] = HeatPump.Status.CondensingTemp;
   doc[F("HeatingActive")] = HeatingRunningBinary[HeatPump.Status.SystemOperationMode];
   doc[F("CoolingActive")] = CoolingRunningBinary[HeatPump.Status.SystemOperationMode];
+  doc[F("BrineInletTemp")] = HeatPump.Status.TH32;
+  doc[F("BrineOutletTemp")] = HeatPump.Status.TH34;
   doc[F("HB_ID")] = Heart_Value;
 
   serializeJson(doc, Buffer);
@@ -1783,10 +1810,21 @@ void CalculateCompCurve(void) {
     DEBUG_PRINT("Failed to read: ");
     DEBUG_PRINTLN(error.c_str());
   } else {
+    // Read the Active Status First
     unitSettings.z1_active = doc["zone1"]["active"];  // Transfer JSON to Struct Bool
     unitSettings.z2_active = doc["zone2"]["active"];
     if (!unitSettings.z1_active && !unitSettings.z2_active) { return; }  // Only calculates (saves time, if mode enabled)
     else {
+      // Continue to unpack the JSON document into unitSettings for the other saved parameters from the save file
+      unitSettings.z1_manual_offset = doc["zone1"]["manual_offset"];
+      unitSettings.z1_wind_offset = doc["zone1"]["wind_offset"];
+      unitSettings.z1_temp_offset = doc["zone1"]["temp_offset"];
+      unitSettings.z2_manual_offset = doc["zone2"]["manual_offset"];
+      unitSettings.z2_wind_offset = doc["zone2"]["wind_offset"];
+      unitSettings.z2_temp_offset = doc["zone2"]["temp_offset"];
+      unitSettings.use_local_outdoor = doc["use_local_outdoor"];
+      unitSettings.max_flow_overshoot = doc["max_flow_overshoot"];
+
       float OutsideAirTemperature = 0;
 
       if (!unitSettings.use_local_outdoor && (MQTTClient1.connected() || MQTTClient2.connected())) {  // Determine Outdoor Temperature Input
@@ -1862,24 +1900,32 @@ void CalculateCompCurve(void) {
   }
 }
 
-void ModifyCompCurveState(int Zone, bool Active) {
-  // Save the state
+void ModifyCompCurveState(int Zone, bool Active, int ModType, float Value) {
+  // Mod Types: 1 = Activate, 2 = manual_offset, 3 = temp_offset, 4 = wind_offset, 5 = use_local_outdoor, 6 = max_flow_overshoot
   JsonDocument local_stored_doc;                                                           // Variable for the locally decoded JSON
   DeserializationError error = deserializeJson(local_stored_doc, unitSettings.CompCurve);  // Unpack the local stored JSON document
   if (error) {
     DEBUG_PRINT("Failed to read: ");
     DEBUG_PRINTLN(error.c_str());
   } else {
-    if (Zone == 1) {
-      local_stored_doc["zone1"]["active"] = Active;
-      DEBUG_PRINT("Comp Curve Zone 1: ");
-      DEBUG_PRINTLN(Active);
-    }  // Load the new Base into the correct area of the locally stored file
+    String target_zone = "zone1";
     if (Zone == 2) {
-      local_stored_doc["zone2"]["active"] = Active;
-      DEBUG_PRINT("Comp Curve Zone 2: ");
-      DEBUG_PRINTLN(Active);
-    }  // Load the new Base into the correct area of the locally stored file
+      String target_zone = "zone2";
+    }
+
+    if (ModType == 1) {
+      local_stored_doc[target_zone]["active"] = Active;
+    } else if (ModType == 2) {
+      local_stored_doc[target_zone]["manual_offset"] = Value;
+    } else if (ModType == 3) {
+      local_stored_doc[target_zone]["temp_offset"] = Value;
+    } else if (ModType == 4) {
+      local_stored_doc[target_zone]["wind_offset"] = Value;
+    } else if (ModType == 5) {
+      local_stored_doc["use_local_outdoor"] = Active;
+    } else if (ModType == 6) {
+      local_stored_doc["max_flow_overshoot"] = Value;
+    }
   }
   local_stored_doc.shrinkToFit();
   serializeJson(local_stored_doc, unitSettings.CompCurve);  // Repack the JSON
