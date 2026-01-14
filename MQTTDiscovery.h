@@ -1,9 +1,9 @@
 //-- MQTT Home Assistant Auto Discovery --//
 
-const int discovery_topics PROGMEM = 123;
+const int discovery_topics PROGMEM = 125;
 
 // Build the sensor JSON structure
-const char MQTT_DISCOVERY_OBJ_ID[][3] PROGMEM = { "aa", "ab", "ac", "ad", "ae", "af", "ag", "ai", "aj", "ak", "al", "am", "an", "ao", "ap", "aq", "ar", "as", "au", "av", "aw", "ax", "ay", "az", "ba", "bb", "bc", "bd", "be", "bf", "bg", "bh", "bi", "bj", "bk", "bl", "bm", "bn", "bo", "bp", "bq", "br", "bs", "bt", "bu", "bv", "bw", "bx", "by", "bz", "ca", "cb", "cc", "cd", "cu", "cv", "cw", "cx", "cz", "da", "db", "dc", "de", "df", "dg", "dh", "di", "dj", "dk", "dl", "dm", "dn", "do", "dp", "dq", "ds", "dt", "dx", "dz", "ea", "eb", "ec", "ed", "ee", "ef", "eg", "eh", "ei", "ej", "ek", "el", "em", "en", "eo", "ep", "eq", "er", "et", "eu", "ev", "ew", "ce", "cf", "cg", "dw", "du", "ch", "ci", "cj", "ck", "cl", "cm", "cn", "co", "cp", "dr", "es", "cs", "ct", "dv", "dx", "dy", "es" };
+const char MQTT_DISCOVERY_OBJ_ID[][3] PROGMEM = { "aa", "ab", "ac", "ad", "ae", "af", "ag", "ai", "aj", "ak", "al", "am", "an", "ao", "ap", "aq", "ar", "as", "au", "av", "aw", "ax", "ay", "az", "ba", "bb", "bc", "bd", "be", "bf", "bg", "bh", "bi", "bj", "bk", "bl", "bm", "bn", "bo", "bp", "bq", "br", "bs", "bt", "bu", "bv", "bw", "bx", "by", "bz", "ca", "cb", "cc", "cd", "cu", "cv", "cw", "cx", "cz", "da", "db", "dc", "de", "df", "dg", "dh", "di", "dj", "dk", "dl", "dm", "dn", "do", "dp", "dq", "ds", "dt", "dx", "dz", "ea", "eb", "ec", "ed", "ee", "ef", "eg", "eh", "ei", "ej", "ek", "el", "em", "en", "eo", "ep", "eq", "er", "et", "eu", "ev", "ew", "ex", "ey", "ce", "cf", "cg", "dw", "du", "ch", "ci", "cj", "ck", "cl", "cm", "cn", "co", "cp", "dr", "es", "cs", "ct", "dv", "dx", "dy", "es" };
 
 const char MQTT_SENSOR_UNIQUE_ID[][32] PROGMEM = {
   "ashp_bridge_lwt_",
@@ -107,6 +107,8 @@ const char MQTT_SENSOR_UNIQUE_ID[][32] PROGMEM = {
   "ashp_mel_status_",
   "ashp_dip_sw_conf_",
   "ashp_pri_pump_pwm_",
+  "gshp_brine_in_",
+  "gshp_brine_out_",
 
   "ashp_dhw_climate_",  //65
   "ashp_Zone1_climate_",
@@ -237,6 +239,8 @@ const char MQTT_MDI_ICONS[][30] PROGMEM = {
   "mdi:cloud-question",
   "mdi:dip-switch",
   "mdi:pump",
+  "mdi:heating-coil",
+  "mdi:heating-coil",
 
   "mdi:thermostat",
   "mdi:thermostat",  //80
@@ -366,6 +370,8 @@ const char MQTT_SENSOR_NAME[][45] PROGMEM = {
   "MELCloud Adapter Status",
   "Dip Switch Configuration (Switch 1-1 to 7-8)",
   "Water Pump 1 PWM Speed",
+  "Brine Inlet Temperature",
+  "Brine Outlet Temperature",
 
   "DHW Thermostat",
   "Zone 1 Thermostat",  //80
@@ -547,7 +553,9 @@ int MQTT_TOPIC_POS[] PROGMEM = {
   1,
   1,
   9,
-  2
+  2,
+  3,
+  3
 };
 
 int MQTT_UNITS_POS[] PROGMEM = {
@@ -651,7 +659,9 @@ int MQTT_UNITS_POS[] PROGMEM = {
   0,
   0,
   0,
-  0
+  0,
+  2,
+  2
 };
 
 
@@ -857,6 +867,8 @@ const char MQTT_SENSOR_VALUE_TEMPLATE[][154] PROGMEM = {
   "{{ value_json.MELCloud_Status }}",
   "{{value_json.DipSw1~' '~value_json.DipSw2~' '~value_json.DipSw3~' '~value_json.DipSw4~' '~value_json.DipSw5~' '~value_json.DipSw6~' '~value_json.DipSw7}}",
   "{{ value_json.PumpPWM }}",
+  "{{ value_json.BrineInletTemp }}",
+  "{{ value_json.BrineOutletTemp }}",
   "{{ value_json }}",
   "{{ value_json.Setpoint }}",  //80
   "{{ value_json.FSP }}",
