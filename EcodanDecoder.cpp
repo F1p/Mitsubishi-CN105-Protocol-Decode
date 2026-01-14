@@ -553,7 +553,7 @@ void ECODANDECODER::Process0x0D(uint8_t *Buffer, EcodanStatus *Status) {
 }
 
 void ECODANDECODER::Process0x0E(uint8_t *Buffer, EcodanStatus *Status) {
-  float ExternalBoilerFlowTemperature, ExternalBoilerReturnTemperature, BrineInletTemp, BrineOutletTemp;
+  float ExternalBoilerFlowTemperature, ExternalBoilerReturnTemperature;
 
   for (int i = 1; i < 16; i++) {
     Array0x0e[i] = Buffer[i];
@@ -618,7 +618,7 @@ void ECODANDECODER::Process0x10(uint8_t *Buffer, EcodanStatus *Status) {
 
 
 void ECODANDECODER::Process0x11(uint8_t *Buffer, EcodanStatus *Status) {
-  uint8_t DipSwitch1, DipSwitch2, DipSwitch3, DipSwitch4, DipSwitch5, DipSwitch6;
+  uint8_t DipSwitch1, DipSwitch2, DipSwitch3, DipSwitch4, DipSwitch5, DipSwitch6, DipSwitch7;
   bool HasCooling, Has2Zone, Simple2Zone;
 
   for (int i = 1; i < 16; i++) {
@@ -631,6 +631,7 @@ void ECODANDECODER::Process0x11(uint8_t *Buffer, EcodanStatus *Status) {
   DipSwitch4 = Buffer[7];
   DipSwitch5 = Buffer[9];
   DipSwitch6 = Buffer[11];
+  DipSwitch7 = Buffer[13]; // FTC7 only
 
   // Bitmask Translation
   if (IS_BIT_SET(DipSwitch2, 3)) {  // SW2-4
@@ -656,6 +657,7 @@ void ECODANDECODER::Process0x11(uint8_t *Buffer, EcodanStatus *Status) {
   Status->DipSwitch4 = DipSwitch4;
   Status->DipSwitch5 = DipSwitch5;
   Status->DipSwitch6 = DipSwitch6;
+  Status->DipSwitch7 = DipSwitch7;
   Status->Has2Zone = Has2Zone;
   Status->Simple2Zone = Simple2Zone;
   Status->HasCooling = HasCooling;

@@ -225,7 +225,7 @@ typedef struct _EcodanStatus {
   uint8_t Zone1ThermostatDemand, Zone2ThermostatDemand, OutdoorThermostatDemand;
 
   //From Message 0x11
-  uint8_t DipSwitch1, DipSwitch2, DipSwitch3, DipSwitch4, DipSwitch5, DipSwitch6;
+  uint8_t DipSwitch1, DipSwitch2, DipSwitch3, DipSwitch4, DipSwitch5, DipSwitch6, DipSwitch7;
   bool HasCooling, Has2Zone, Simple2Zone, HasAnsweredDips, HasGeodan;
 
   //From Message 0x13

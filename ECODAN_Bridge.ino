@@ -401,7 +401,10 @@ void loop() {
 
 
   // -- Config Saver -- //
-  if (shouldSaveConfig) { saveConfig(); }  // Handles WiFiManager Settings Changes
+  if (shouldSaveConfig) {
+    saveConfig();
+    CalculateCompCurve();  // Reload the Comp Curve
+  }                        // Handles WiFiManager Settings Changes
 
   // -- Heat Pump Write Command Handler -- //
   if (HeatPump.Status.Write_To_Ecodan_OK && WriteInProgress) {  // A write command is executing
@@ -606,12 +609,12 @@ void loop() {
         HeatPump.SetFlowSetpoint(FlowTemp_Target, HeatPump.Status.HeatingControlModeZ1, ZONE1);  // Need to avoid overwriting by onboard weather curve..
         write_thermostats();                                                                     //
         Flow_Inc_Count = 0;                                                                      // Reset the Flow Temp Incrementer
-      }
-    }                                                                              //
-  } else if (FrequencyLastLoop == 0 && HeatPump.Status.CompressorFrequency > 0) {  // Transition of Compressor Off to On
-    HeatPump.WriteServiceCodeCMD(19);                                              // Trigger Fan Speed Request Service Code
-    if (HeatPump.Status.Defrost == 0) {                                            // If Not Defrosting
-      CompressorStopStartTimer[1] = (millis() / 1000);                             // Last Compressor Start Time (Seconds)
+      }                                                                                          //
+    }                                                                                            //
+  } else if (FrequencyLastLoop == 0 && HeatPump.Status.CompressorFrequency > 0) {                // Transition of Compressor Off to On
+    HeatPump.WriteServiceCodeCMD(19);                                                            // Trigger Fan Speed Request Service Code
+    if (HeatPump.Status.Defrost == 0) {                                                          // If Not Defrosting
+      CompressorStopStartTimer[1] = (millis() / 1000);                                           // Last Compressor Start Time (Seconds)
     }
   }
   FrequencyLastLoop = HeatPump.Status.CompressorFrequency;
@@ -990,6 +993,7 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
       HeatPump.SetSystemPowerMode(SYSTEM_POWER_MODE_STANDBY);
       HeatPump.Status.SystemPowerMode = SYSTEM_POWER_MODE_STANDBY;
     }
+    write_thermostats();
   } else if ((Topic == MQTTCommandSystemUnitSize) || (Topic == MQTTCommand2SystemUnitSize)) {
     MQTTWriteReceived("MQTT Set Unit Size", 15);
     unitSettings.UnitSize = Payload.toFloat();
@@ -1081,23 +1085,23 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
       }  // Post Calcuation Zone1 Manual +/- Offset
       if (doc["zone1"]["temp_offset"].is<float>()) {
         unitSettings.z1_temp_offset = doc["zone1"]["temp_offset"];
-        ModifyCompCurveState(1, true, 3, unitSettings.z1_manual_offset);
+        ModifyCompCurveState(1, true, 3, unitSettings.z1_temp_offset);
       }  // Post Calcuation Zone1 Temperature (e.g. Solar Gain) +/- Offset
       if (doc["zone1"]["wind_offset"].is<float>()) {
         unitSettings.z1_wind_offset = doc["zone1"]["wind_offset"];
-        ModifyCompCurveState(1, true, 4, unitSettings.z1_manual_offset);
+        ModifyCompCurveState(1, true, 4, unitSettings.z1_wind_offset);
       }  // Post Calcuation Zone1 Wind Factor +/- Offset
       if (doc["zone2"]["manual_offset"].is<float>()) {
         unitSettings.z2_manual_offset = doc["zone2"]["manual_offset"];
-        ModifyCompCurveState(2, true, 2, unitSettings.z1_manual_offset);
+        ModifyCompCurveState(2, true, 2, unitSettings.z2_manual_offset);
       }  // Post Calcuation Zone2 Manual +/- Offset
       if (doc["zone2"]["temp_offset"].is<float>()) {
         unitSettings.z2_temp_offset = doc["zone2"]["temp_offset"];
-        ModifyCompCurveState(2, true, 3, unitSettings.z1_manual_offset);
+        ModifyCompCurveState(2, true, 3, unitSettings.z2_temp_offset);
       }  // Post Calcuation Zone2 Temperature (e.g. Solar Gain) +/- Offset
       if (doc["zone2"]["wind_offset"].is<float>()) {
         unitSettings.z2_wind_offset = doc["zone2"]["wind_offset"];
-        ModifyCompCurveState(2, true, 4, unitSettings.z1_manual_offset);
+        ModifyCompCurveState(2, true, 4, unitSettings.z2_wind_offset);
       }                                                                                             // Post Calcuation Zone2 Wind Factor +/- Offset
       if (doc["cloud_outdoor"].is<float>()) { unitSettings.cloud_outdoor = doc["cloud_outdoor"]; }  // Temperature Provided by a remote or cloud source when use_local_outdoor = False
 
@@ -1585,6 +1589,7 @@ void ConfigurationReport(void) {
   doc[F("DipSw4")] = decimalToBinary(HeatPump.Status.DipSwitch4);
   doc[F("DipSw5")] = decimalToBinary(HeatPump.Status.DipSwitch5);
   doc[F("DipSw6")] = decimalToBinary(HeatPump.Status.DipSwitch6);
+  doc[F("DipSw7")] = decimalToBinary(HeatPump.Status.DipSwitch7);
   doc[F("HasCooling")] = HeatPump.Status.HasCooling;
   doc[F("Has2Zone")] = HeatPump.Status.Has2Zone;
   doc[F("HasSimple2Zone")] = HeatPump.Status.Simple2Zone;
@@ -1908,9 +1913,11 @@ void ModifyCompCurveState(int Zone, bool Active, int ModType, float Value) {
     DEBUG_PRINT("Failed to read: ");
     DEBUG_PRINTLN(error.c_str());
   } else {
-    String target_zone = "zone1";
-    if (Zone == 2) {
-      String target_zone = "zone2";
+    String target_zone;
+    if (Zone == 1) {
+      target_zone = "zone1";
+    } else if (Zone == 2) {
+      target_zone = "zone2";
     }
 
     if (ModType == 1) {
@@ -1930,7 +1937,6 @@ void ModifyCompCurveState(int Zone, bool Active, int ModType, float Value) {
   local_stored_doc.shrinkToFit();
   serializeJson(local_stored_doc, unitSettings.CompCurve);  // Repack the JSON
   shouldSaveConfig = true;                                  // Write the data to onboard JSON file so if device reboots it is saved
-  CalculateCompCurve();                                     // Reload the Comp Curve
 }
 
 void syncCurrentTime() {

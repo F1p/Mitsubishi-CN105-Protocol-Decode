@@ -364,7 +364,7 @@ const char MQTT_SENSOR_NAME[][45] PROGMEM = {
   "Short Cycle Protection State",
   "Outdoor Unit Software Version",
   "MELCloud Adapter Status",
-  "Dip Switch Configuration (Switch 1-1 to 6-8)",
+  "Dip Switch Configuration (Switch 1-1 to 7-8)",
   "Water Pump 1 PWM Speed",
 
   "DHW Thermostat",
@@ -755,7 +755,7 @@ const char MQTT_NUMBER_AVAIL_TEMPLATE[][98] PROGMEM = {
   "{{'online' if value_json.Has2Zone is true and value_json.HasSimple2Zone is false else 'offline'}}"
 };
 
-const char MQTT_SENSOR_VALUE_TEMPLATE[][132] PROGMEM = {
+const char MQTT_SENSOR_VALUE_TEMPLATE[][154] PROGMEM = {
   "{{ value if value is defined else 'Unknown' }}",
   "{{ value_json.Firmware }}",
   "{{ value_json.RSSI }}",
@@ -855,7 +855,7 @@ const char MQTT_SENSOR_VALUE_TEMPLATE[][132] PROGMEM = {
   "{{ value_json.ShortCycleProtectionActive }}",
   "{{ value_json.OutdoorSoftwareVersion }}",
   "{{ value_json.MELCloud_Status }}",
-  "{{value_json.DipSw1~' '~value_json.DipSw2~' '~value_json.DipSw3~' '~value_json.DipSw4~' '~value_json.DipSw5~' '~value_json.DipSw6}}",
+  "{{value_json.DipSw1~' '~value_json.DipSw2~' '~value_json.DipSw3~' '~value_json.DipSw4~' '~value_json.DipSw5~' '~value_json.DipSw6~' '~value_json.DipSw7}}",
   "{{ value_json.PumpPWM }}",
   "{{ value_json }}",
   "{{ value_json.Setpoint }}",  //80
