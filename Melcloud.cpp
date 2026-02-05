@@ -258,6 +258,7 @@ void MELCLOUD::ReplyStatus(uint8_t TargetMessage) {
     if (Buffer[i] < 0x10) DEBUG_PRINT("0");
     DEBUG_PRINT(String(Buffer[i], HEX));
     DEBUG_PRINT(", ");
+    Buffer[i] = 0x00;
   }
   DEBUG_PRINTLN();
 }

@@ -55,7 +55,7 @@
 #include "Ecodan.h"
 #include "Melcloud.h"
 
-String FirmwareVersion = "6.5.5";
+String FirmwareVersion = "6.5.5-h1";
 String LatestFirmwareVersion;
 
 
@@ -274,7 +274,7 @@ unsigned long lockoutdurationMillis = 0;        // variable for comparing millis
 unsigned long compressorrundurationMillis = 0;  // variable for comparing millis counter
 unsigned long postdhwfspdurationMillis = 0;     // variable for comparing millis counter
 int FTCLoopSpeed, CPULoopSpeed;                 // variable for holding loop time in ms
-uint8_t SvcRequested = 0;
+uint16_t SvcRequested = 0;
 int16_t SvcReply = 0;
 bool WiFiOneShot = true;
 bool CableConnected = true;

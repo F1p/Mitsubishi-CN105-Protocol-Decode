@@ -141,8 +141,10 @@ void ECODAN::StatusSVCMachine(void) {
       if (!SVCPopulated) {
         WriteServiceCodeCMD(FirstReadActiveServiceCode[CurrentSVCMessage - 1]);
       } else {
-        if (Status.HasGeodan && (ActiveServiceCode[CurrentSVCMessage - 1]) == 8) { WriteServiceCodeCMD(27); }   // Substitue TH32 Pipe for TH32 on Geodan
-        else if (Status.HasGeodan && (ActiveServiceCode[CurrentSVCMessage - 1]) == 23) { WriteServiceCodeCMD(28); }  // Substitue LEV-B for TH34 on Geodan
+        if (Status.HasGeodan && (ActiveServiceCode[CurrentSVCMessage - 1]) == 8) { WriteServiceCodeCMD(27); }  // Substitue TH32 Pipe for TH32 on Geodan
+        else if (Status.HasGeodan && (ActiveServiceCode[CurrentSVCMessage - 1]) == 23) {
+          WriteServiceCodeCMD(28);
+        }  // Substitue LEV-B for TH34 on Geodan
         else {
           WriteServiceCodeCMD(ActiveServiceCode[CurrentSVCMessage - 1]);
         }
@@ -195,6 +197,7 @@ void ECODAN::StatusStateMachine(void) {
       if (Buffer[i] < 0x10) DEBUG_PRINT(F("0"));
       DEBUG_PRINT(String(Buffer[i], HEX));
       DEBUG_PRINT(F(", "));
+      Buffer[i] = 0x00;
     }
     DEBUG_PRINTLN();
 
@@ -243,6 +246,7 @@ void ECODAN::WriteStateMachine(void) {
       if (Buffer[i] < 0x10) DEBUG_PRINT(F("0"));
       DEBUG_PRINT(String(Buffer[i], HEX));
       DEBUG_PRINT(F(", "));
+      Buffer[i] = 0x00;
     }
     DEBUG_PRINTLN();
 
@@ -429,6 +433,7 @@ void ECODAN::GetFTCVersion() {
     if (Buffer[i] < 0x10) DEBUG_PRINT(F("0"));
     DEBUG_PRINT(String(Buffer[i], HEX));
     DEBUG_PRINT(F(", "));
+    Buffer[i] = 0x00;
   }
   DEBUG_PRINTLN();
 }
