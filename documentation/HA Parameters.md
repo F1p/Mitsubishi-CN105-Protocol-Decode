@@ -29,6 +29,10 @@ These depend on your outdoor unit and can be located within the [Service Manuals
 
 *Results will be allocated to their standard topic location, or for ones not published the topic: Ecodan/ASHP/Status/AdvancedTwo under "LastSvc": 995 and "LastSvcReply": 0*
 
+This can be used to poll certain outdoor sensors at an increased rate, warning, this may reduce the speed of other operations
+
+
+
 | Request Code | Name | Unit      | Description of Function      |
 |-------|------------------|----------------|----|
 | 3 |   Compressor-Number of operation times      | 100 Times  |  |
