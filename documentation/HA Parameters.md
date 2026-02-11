@@ -24,6 +24,11 @@
 
 # Service Codes
 These depend on your outdoor unit and can be located within the [Service Manuals specific to your unit](https://www.manualslib.com/manual/795612/Mitsubishi-Electric-Par-21maa.html?page=51)
+
+*Using MQTT Explorer or Home Assistant Automations, you can publish Service Codes to: Ecodan/ASHP/Command/System/Svc*
+
+*Results will be allocated to their standard topic location, or for ones not published the topic: Ecodan/ASHP/Status/AdvancedTwo under "LastSvc": 995 and "LastSvcReply": 0*
+
 | Request Code | Name | Unit      | Description of Function      |
 |-------|------------------|----------------|----|
 | 3 |   Compressor-Number of operation times      | 100 Times  |  |
