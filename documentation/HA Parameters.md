@@ -23,6 +23,7 @@
 |   "Yesterday" figures | n/a       | The energy consumed/delivered & CoP, estimated by the FTC and matching the stats on the Main Controller |
 
 # Service Codes
+These depend on your outdoor unit and can be located within the [Service Manuals specific to your unit](https://www.manualslib.com/manual/795612/Mitsubishi-Electric-Par-21maa.html?page=51)
 | Request Code | Name | Unit      | Description of Function      |
 |-------|------------------|----------------|----|
 | 3 |   Compressor-Number of operation times      | 100 Times  |  |
@@ -40,3 +41,16 @@
 | 20 | Outdoor unit-Fan 2 speed | rpm      |     |
 | 22 | LEV (A) opening | Pulses  |     |
 | 23 | LEV (B) opening | Pulses      |     |
+
+# Adapter Special Service Codes
+In addition, there are special service codes
+| Request Code | Name |  Description of Function      | Applicable Firmware | 
+|-------|------------------|-----------|---------|
+| 999 |   Restart Adapter      |  The Adapter will perform a restart  | All|
+| 998 |   Disconnect from FTC      |  The Adapter will close connection gracefully with the FTC  |Home Assistant Only|
+| 997 |   Block Write Requests from MELCloud      |  The Adapter will not pass on any write requests from MELCloud to the FTC  | All (In MELPump, Code 997 toggles this both on/off)|
+| 996 |   Enable Write Requests from MELCloud      |  The Adapter will allow any write requests from MELCloud to the FTC (Default Action)  | Home Assistant|
+| 994 |   Check for OTA Updates      |  The Adapter will Check the Server for any Updates | MELPump |
+| 993 |   Poll FTC For Version Information      |  Normally performed at the start, this ad-hoc method can be used to call the FTC for version information | All |
+| 992 |   Short Cycle Protection      |  Toggles the Short Cycle Protection (Onboard Compensation Curve Mode) On/Off | MELPump |
+| 880 to 900 |   Short Cycle Protection Max. Flow. Overshoot      |  The Maximum Permitted Overshoot when running Short Cycle Protection where 880 = 0C and 900 = 20C | MELPump |
