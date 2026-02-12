@@ -1,9 +1,9 @@
 //-- MQTT Home Assistant Auto Discovery --//
 
-const int discovery_topics PROGMEM = 125;
+const int discovery_topics PROGMEM = 127;
 
 // Build the sensor JSON structure
-const char MQTT_DISCOVERY_OBJ_ID[][3] PROGMEM = { "aa", "ab", "ac", "ad", "ae", "af", "ag", "ai", "aj", "ak", "al", "am", "an", "ao", "ap", "aq", "ar", "as", "au", "av", "aw", "ax", "ay", "az", "ba", "bb", "bc", "bd", "be", "bf", "bg", "bh", "bi", "bj", "bk", "bl", "bm", "bn", "bo", "bp", "bq", "br", "bs", "bt", "bu", "bv", "bw", "bx", "by", "bz", "ca", "cb", "cc", "cd", "cu", "cv", "cw", "cx", "cz", "da", "db", "dc", "de", "df", "dg", "dh", "di", "dj", "dk", "dl", "dm", "dn", "do", "dp", "dq", "ds", "dt", "dx", "dz", "ea", "eb", "ec", "ed", "ee", "ef", "eg", "eh", "ei", "ej", "ek", "el", "em", "en", "eo", "ep", "eq", "er", "et", "eu", "ev", "ew", "ex", "ey", "ce", "cf", "cg", "dw", "du", "ch", "ci", "cj", "ck", "cl", "cm", "cn", "co", "cp", "dr", "es", "cs", "ct", "dv", "dx", "dy", "es" };
+const char MQTT_DISCOVERY_OBJ_ID[][3] PROGMEM = { "aa", "ab", "ac", "ad", "ae", "af", "ag", "ai", "aj", "ak", "al", "am", "an", "ao", "ap", "aq", "ar", "as", "au", "av", "aw", "ax", "ay", "az", "ba", "bb", "bc", "bd", "be", "bf", "bg", "bh", "bi", "bj", "bk", "bl", "bm", "bn", "bo", "bp", "bq", "br", "bs", "bt", "bu", "bv", "bw", "bx", "by", "bz", "ca", "cb", "cc", "cd", "cu", "cv", "cw", "cx", "cz", "da", "db", "dc", "de", "df", "dg", "dh", "di", "dj", "dk", "dl", "dm", "dn", "do", "dp", "dq", "ds", "dt", "dx", "dz", "ea", "eb", "ec", "ed", "ee", "ef", "eg", "eh", "ei", "ej", "ek", "el", "em", "en", "eo", "ep", "eq", "er", "et", "eu", "ev", "ew", "ex", "ey", "ez", "ce", "cf", "cg", "dw", "du", "ch", "ci", "cj", "ck", "cl", "cm", "cn", "co", "cp", "dr", "es", "cs", "ct", "dv", "dx", "dy", "es" };
 
 const char MQTT_SENSOR_UNIQUE_ID[][32] PROGMEM = {
   "ashp_bridge_lwt_",
@@ -109,6 +109,7 @@ const char MQTT_SENSOR_UNIQUE_ID[][32] PROGMEM = {
   "ashp_pri_pump_pwm_",
   "gshp_brine_in_",
   "gshp_brine_out_",
+  "ashp_est_cop_today",
 
   "ashp_dhw_climate_",  //65
   "ashp_Zone1_climate_",
@@ -127,6 +128,7 @@ const char MQTT_SENSOR_UNIQUE_ID[][32] PROGMEM = {
   "ashp_svrctrol_z2c_",
   "ashp_svrctrol_norm_dhw_",
   "ashp_actv_ctrl_cycl_",
+  "ashp_melcloud_readonly_",
 
   "ashp_dhw_mode",  //79
   "ashp_heat_cool_mode",
@@ -241,6 +243,7 @@ const char MQTT_MDI_ICONS[][30] PROGMEM = {
   "mdi:pump",
   "mdi:heating-coil",
   "mdi:heating-coil",
+  "mdi:poll",
 
   "mdi:thermostat",
   "mdi:thermostat",  //80
@@ -259,6 +262,7 @@ const char MQTT_MDI_ICONS[][30] PROGMEM = {
   "mdi:cancel",
   "mdi:thermometer-plus",
   "mdi:fan-alert",
+  "mdi:read",
 
   "mdi:auto-mode",
   "mdi:sun-snowflake-variant",
@@ -372,6 +376,7 @@ const char MQTT_SENSOR_NAME[][45] PROGMEM = {
   "Water Pump 1 PWM Speed",
   "Brine Inlet Temperature",
   "Brine Outlet Temperature",
+  "Total CoP Today",
 
   "DHW Thermostat",
   "Zone 1 Thermostat",  //80
@@ -390,6 +395,7 @@ const char MQTT_SENSOR_NAME[][45] PROGMEM = {
   "Prohibit Zone 2 Cooling",
   "DHW Boost",
   "Short Cycle Protection",
+  "MELCloud Read Only",
 
   "DHW Mode",
   "Heating/Cooling Operation Mode Zone 1",  //95
@@ -449,7 +455,8 @@ int MQTT_SWITCH_STATE_POS[] PROGMEM = {
   6,
   6,
   4,
-  10
+  10,
+  1
 };
 
 int MQTT_TOPIC_POS[] PROGMEM = {
@@ -555,7 +562,8 @@ int MQTT_TOPIC_POS[] PROGMEM = {
   9,
   2,
   3,
-  3
+  3,
+  7
 };
 
 int MQTT_UNITS_POS[] PROGMEM = {
@@ -661,7 +669,8 @@ int MQTT_UNITS_POS[] PROGMEM = {
   0,
   0,
   2,
-  2
+  2,
+  0
 };
 
 
@@ -762,7 +771,8 @@ const char MQTT_SENSOR_UNITS[][7] PROGMEM = {
 
 const char MQTT_NUMBER_AVAIL_TEMPLATE[][98] PROGMEM = {
   "{{'online' if value_json.HeatingControlMode in ['Flow','Cool Flow'] else 'offline'}}",
-  "{{'online' if value_json.Has2Zone is true and value_json.HasSimple2Zone is false else 'offline'}}"
+  "{{'online' if value_json.Has2Zone is true and value_json.HasSimple2Zone is false else 'offline'}}",
+  "{{'online' if value_json.MELCloud_Status in ['Online','Offline'] else 'offline'}}"
 };
 
 const char MQTT_SENSOR_VALUE_TEMPLATE[][154] PROGMEM = {
@@ -869,6 +879,7 @@ const char MQTT_SENSOR_VALUE_TEMPLATE[][154] PROGMEM = {
   "{{ value_json.PumpPWM }}",
   "{{ value_json.BrineInletTemp }}",
   "{{ value_json.BrineOutletTemp }}",
+  "{{ value_json.OB_TOTAL_CoP_TDay }}",
   "{{ value_json }}",
   "{{ value_json.Setpoint }}",  //80
   "{{ value_json.FSP }}",
@@ -883,6 +894,7 @@ const char MQTT_SENSOR_VALUE_TEMPLATE[][154] PROGMEM = {
   "{{ value_json.ProhibitCooling }}",  //90
   "{{ value_json.HotWaterEcoBoostActive }}",
   "{{ value_json.ShortCycleProtectionEnabled }}",
+  "{{ value_json.MELCloud_Write_Blocking }}",
   "{{ value_json.HeatingControlMode }}",
   "{{ value_json.latest_version }}"
 };

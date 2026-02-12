@@ -316,6 +316,12 @@ void readSettingsFromConfig() {
             } else {                    // For upgrading from <6.4.0, create the entry
               shouldSaveConfig = true;  // Save config after exit to update the file
             }
+            // MELCloud Read Only
+            if (doc.containsKey(unitSettings.mel_block_identifier)) {
+              unitSettings.BlockWriteFromMELCloud = doc[unitSettings.mel_block_identifier].as<bool>();
+            } else {                    // For upgrading from <6.5.6, create the entry
+              shouldSaveConfig = true;  // Save config after exit to update the file
+            }
           }
         }
         configFile.close();
@@ -454,6 +460,7 @@ void readSettingsFromConfig() {
       doc[unitSettings.glycol_identifier] = unitSettings.GlycolStrength;
       doc[unitSettings.compcurve_identifier] = unitSettings.CompCurve;
       doc[unitSettings.act_ctrl_sc_identifier] = unitSettings.shortcycleprotectionenabled;
+      doc[unitSettings.mel_block_identifier] = unitSettings.BlockWriteFromMELCloud;
 
       if (serializeJson(doc, configFile) == 0) {
         DEBUG_PRINTLN(F("[FAILED]"));
@@ -582,7 +589,7 @@ void readSettingsFromConfig() {
 
 
       // Sensors
-      if (i >= 0 && i < 103) {
+      if (i >= 0 && i < 104) {
         Config["stat_t"] = BASETOPIC + String(MQTT_TOPIC[MQTT_TOPIC_POS[i]]);                               // Needs a positioner
         if (MQTT_UNITS_POS[i] > 0) {                                                                        // If there is a unit
           Config["unit_of_meas"] = String(MQTT_SENSOR_UNITS[MQTT_UNITS_POS[i]]);                            // Publish Units
@@ -596,37 +603,37 @@ void readSettingsFromConfig() {
       }
 
       // Climate
-      if (i >= 103 && i < 108) {
-        Config["default_entity_id"] = String(MQTT_OBJECT_ID[i - 103]);
-        if (i >= 103 && i < 106) {
-          Config["curr_temp_t"] = BASETOPIC + String(MQTT_TOPIC[i - 99]);
+      if (i >= 104 && i < 109) {
+        Config["default_entity_id"] = String(MQTT_OBJECT_ID[i - 104]);
+        if (i >= 104 && i < 107) {
+          Config["curr_temp_t"] = BASETOPIC + String(MQTT_TOPIC[i - 100]);
           Config["curr_temp_tpl"] = String(MQTT_SENSOR_VALUE_TEMPLATE[25]);
-          Config["temp_cmd_t"] = BASETOPIC + String(MQTT_TOPIC[i - 91]);
-          Config["temp_stat_t"] = BASETOPIC + String(MQTT_TOPIC[i - 99]);
-          Config["temp_stat_tpl"] = String(MQTT_SENSOR_VALUE_TEMPLATE[104]);
-        } else if (i >= 106 && i < 108) {
+          Config["temp_cmd_t"] = BASETOPIC + String(MQTT_TOPIC[i - 92]);
+          Config["temp_stat_t"] = BASETOPIC + String(MQTT_TOPIC[i - 100]);
+          Config["temp_stat_tpl"] = String(MQTT_SENSOR_VALUE_TEMPLATE[105]);
+        } else if (i >= 107 && i < 109) {
           Config["curr_temp_t"] = BASETOPIC + String(MQTT_TOPIC[2]);
           Config["curr_temp_tpl"] = String(MQTT_SENSOR_VALUE_TEMPLATE[6]);
-          Config["temp_cmd_t"] = BASETOPIC + String(MQTT_TOPIC[i - 80]);
-          Config["temp_stat_t"] = BASETOPIC + String(MQTT_TOPIC[i - 101]);
-          Config["temp_stat_tpl"] = String(MQTT_SENSOR_VALUE_TEMPLATE[105]);
+          Config["temp_cmd_t"] = BASETOPIC + String(MQTT_TOPIC[i - 81]);
+          Config["temp_stat_t"] = BASETOPIC + String(MQTT_TOPIC[i - 102]);
+          Config["temp_stat_tpl"] = String(MQTT_SENSOR_VALUE_TEMPLATE[106]);
         }
         Config["temp_unit"] = String(MQTT_SENSOR_UNITS[9]);
-        if (HeatPump.Status.RefrigerantType == 2 && i == 103) {  // If R290 then DHW Max can be 70C
+        if (HeatPump.Status.RefrigerantType == 2 && i == 104) {  // If R290 then DHW Max can be 70C
           Config["max_temp"] = MQTT_CLIMATE_MAX[6];
         } else {
-          Config["max_temp"] = MQTT_CLIMATE_MAX[i - 103];
+          Config["max_temp"] = MQTT_CLIMATE_MAX[i - 104];
         }
 
-        Config["min_temp"] = MQTT_CLIMATE_MIN[i - 103];
-        Config["temp_step"] = MQTT_CLIMATE_TEMP_STEP[i - 103];
-        Config["precision"] = MQTT_CLIMATE_PRECISION[i - 103];
-        Config["init"] = MQTT_CLIMATE_INITAL[i - 103];
+        Config["min_temp"] = MQTT_CLIMATE_MIN[i - 104];
+        Config["temp_step"] = MQTT_CLIMATE_TEMP_STEP[i - 104];
+        Config["precision"] = MQTT_CLIMATE_PRECISION[i - 104];
+        Config["init"] = MQTT_CLIMATE_INITAL[i - 104];
         Config["act_t"] = BASETOPIC + String(MQTT_TOPIC[2]);
-        Config["act_tpl"] = String(MQTT_CLIMATE_MODE_STATE_TEMPLATE[i - 103]);
+        Config["act_tpl"] = String(MQTT_CLIMATE_MODE_STATE_TEMPLATE[i - 104]);
         Config["mode_stat_t"] = BASETOPIC + String(MQTT_TOPIC[8]);
-        Config["mode_stat_tpl"] = String(MQTT_CLIMATE_STATE_TOPIC[i - 103]);
-        if (i == 103) {
+        Config["mode_stat_tpl"] = String(MQTT_CLIMATE_STATE_TOPIC[i - 104]);
+        if (i == 104) {
           Config["modes"][0] = "heat";
           Config["modes"][1] = "off";
         } else {
@@ -641,16 +648,27 @@ void readSettingsFromConfig() {
       }
 
       // Switches
-      if (i >= 108 && i < 119) {
-        Config["stat_t"] = BASETOPIC + String(MQTT_TOPIC[MQTT_SWITCH_STATE_POS[i - 108]]);
+      if (i >= 109 && i < 121) {
+        Config["stat_t"] = BASETOPIC + String(MQTT_TOPIC[MQTT_SWITCH_STATE_POS[i - 110]]);
         Config["val_tpl"] = String(MQTT_SENSOR_VALUE_TEMPLATE[i - 2]);
-        Config["cmd_t"] = BASETOPIC + String(MQTT_TOPIC[i - 93]);
-        if (i == 109) {
+        if (i == 120) {
+          Config["cmd_t"] = BASETOPIC + String(MQTT_TOPIC[33]);
+        } else {
+          Config["cmd_t"] = BASETOPIC + String(MQTT_TOPIC[i - 95]);
+        }
+
+        if (i == 110) {
           Config["state_on"] = "On";
           Config["state_off"] = "Standby";
           Config["payload_on"] = "On";
           Config["payload_off"] = "Standby";
-        } else {
+        }else if(i==120){
+          Config["state_on"] = "true";
+          Config["state_off"] = "false";
+          Config["payload_on"] = "997";
+          Config["payload_off"] = "996";
+        }
+         else {
           Config["state_on"] = ITEM_ON;
           Config["state_off"] = ITEM_OFF;
           Config["payload_on"] = ITEM_ON;
@@ -663,14 +681,14 @@ void readSettingsFromConfig() {
 
 
       // Selects
-      if (i >= 119 && i < 124) {
-        Config["cmd_t"] = BASETOPIC + String(MQTT_TOPIC[i - 91]);
-        Config["stat_t"] = BASETOPIC + String(MQTT_TOPIC[i - 115]);
-        Config["val_tpl"] = String(MQTT_SELECT_VALUE_TEMPLATE[i - 119]);
-        if (i == 119) {  // DHW Modes
+      if (i >= 121 && i < 126) {
+        Config["cmd_t"] = BASETOPIC + String(MQTT_TOPIC[i - 93]);
+        Config["stat_t"] = BASETOPIC + String(MQTT_TOPIC[i - 117]);
+        Config["val_tpl"] = String(MQTT_SELECT_VALUE_TEMPLATE[i - 121]);
+        if (i == 121) {  // DHW Modes
           Config["options"][0] = HotWaterControlModeString[0];
           Config["options"][1] = HotWaterControlModeString[1];
-        } else if (i == 122) {  // Unit Sizes - for some reason it doesn't like doing this from PROGMEM in a loop on the 8266
+        } else if (i == 124) {  // Unit Sizes - for some reason it doesn't like doing this from PROGMEM in a loop on the 8266
           Config["stat_t"] = BASETOPIC + String(MQTT_TOPIC[1]);
           Config["options"][0] = "4.0";
           Config["options"][1] = "5.0";
@@ -683,12 +701,14 @@ void readSettingsFromConfig() {
           Config["options"][8] = "12.0";
           Config["options"][9] = "14.0";
           Config["options"][10] = "23.0";
-        } else if (i == 123) {  // Glycol Strengths
+        } else if (i == 125) {  // Glycol Strengths
           Config["stat_t"] = BASETOPIC + String(MQTT_TOPIC[1]);
           Config["options"][0] = "0%";
           Config["options"][1] = "10%";
-          Config["options"][2] = "20%";
-          Config["options"][3] = "30%";
+          Config["options"][2] = "15%";
+          Config["options"][3] = "20%";
+          Config["options"][4] = "25%";
+          Config["options"][5] = "30%";
         } else {  // Zone Options
           Config["options"][0] = "Heating Temperature";
           Config["options"][1] = "Heating Flow";
@@ -702,7 +722,7 @@ void readSettingsFromConfig() {
       }
 
       // Update
-      if (i == 124) {
+      if (i == 126) {
         //Config["stat_t"] = BASETOPIC + String(MQTT_TOPIC[34]);
         //Config["dev_cla"] = String(MQTT_DEVICE_CLASS[8]);
         //Config["l_ver_t"] = BASETOPIC + String(MQTT_TOPIC[34]);
@@ -711,16 +731,19 @@ void readSettingsFromConfig() {
       }
 
       // Add Availability Topics
-      if (i >= 103) {
-        if (i >= 112 && i < 117) {  // Server Control Mode Interlocks
+      if (i >= 104) {
+        if (i >= 114 && i < 119) {  // Server Control Mode Interlocks
           Config["availability"]["t"] = BASETOPIC + String(MQTT_TOPIC[8]);
-          Config["availability"]["val_tpl"] = String(MQTT_SENSOR_VALUE_TEMPLATE[109]);
+          Config["availability"]["val_tpl"] = String(MQTT_SENSOR_VALUE_TEMPLATE[110]);
           Config["availability"]["pl_avail"] = ITEM_ON;
           Config["availability"]["pl_not_avail"] = ITEM_OFF;
-        } else if (i >= 106 && i < 108) {  // Flow Op Mode Interlocks on Climate & Number
-          Config["availability"]["t"] = BASETOPIC + String(MQTT_TOPIC[i - 101]);
+        } else if (i >= 107 && i < 109) {  // Flow Op Mode Interlocks on Climate & Number
+          Config["availability"]["t"] = BASETOPIC + String(MQTT_TOPIC[i - 102]);
           Config["availability"]["val_tpl"] = String(MQTT_NUMBER_AVAIL_TEMPLATE[0]);
-        } else if (i == 121) {  // Interlock Zone2 Mode with Complex 2 Zone only
+        } else if (i == 121) {  // Interlock MELCloud Read Only with Adapter Status Not Disconnected
+          Config["availability"]["t"] = BASETOPIC + String(MQTT_TOPIC[1]);
+          Config["availability"]["val_tpl"] = String(MQTT_NUMBER_AVAIL_TEMPLATE[2]);
+        } else if (i == 123) {  // Interlock Zone2 Mode with Complex 2 Zone only
           Config["availability"]["t"] = BASETOPIC + String(MQTT_TOPIC[9]);
           Config["availability"]["val_tpl"] = String(MQTT_NUMBER_AVAIL_TEMPLATE[1]);
         } else {  // Everything else LWT

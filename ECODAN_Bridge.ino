@@ -55,7 +55,7 @@
 #include "Ecodan.h"
 #include "Melcloud.h"
 
-String FirmwareVersion = "6.5.5-h1";
+String FirmwareVersion = "6.6.0-Beta";
 String LatestFirmwareVersion;
 
 
@@ -128,7 +128,6 @@ const int port_max_length = 10;
 const int user_max_length = 30;
 const int password_max_length = 50;
 const int basetopic_max_length = 30;
-bool BlockWriteFromMELCloud = false;
 bool ShortCycleProtectionActive = false;
 bool FlowFollowingActive = false;
 bool DHWFlowFollowingActive = false;
@@ -138,7 +137,7 @@ float Z2_CurveFSP = 30;
 float FlowTemp_Last = 0;
 float FlowTemp_Target = 0;
 int Flow_Inc_Count = 0;
-
+int lastResetDay = -1;
 
 // The extra parameters to be configured (can be either global or just in the setup)
 // After connecting, parameter.getValue() will get you the configured value
@@ -181,6 +180,7 @@ struct UnitSettings {
   char glycol_identifier[7] = "glycol";
   char compcurve_identifier[10] = "compcurve";
   char act_ctrl_sc_identifier[9] = "shortcyc";
+  char mel_block_identifier[10] = "melblock";
   String CompCurve = "{\"base\":{\"zone1\":{\"curve\":[{\"flow\":60,\"outside\":-10},{\"flow\":35,\"outside\":0},{\"flow\":20,\"outside\":15},{\"flow\":10,\"outside\":20}]},\"zone2\":{\"curve\":[{\"flow\":60,\"outside\":-10},{\"flow\":35,\"outside\":0},{\"flow\":20,\"outside\":15}]}},\"zone1\":{\"active\":false,\"manual_offset\":0,\"temp_offset\": 0,\"wind_offset\":0},\"zone2\":{\"active\":false,\"manual_offset\":0,\"temp_offset\": 0,\"wind_offset\":0},\"use_local_outdoor\":true,\"max_flow_overshoot\": 3}";
   float z1_manual_offset = 0;
   float z1_wind_offset = 0;
@@ -193,7 +193,16 @@ struct UnitSettings {
   bool z1_active = false;
   bool z2_active = false;
   bool shortcycleprotectionenabled = false;
+  bool BlockWriteFromMELCloud = false;
   float max_flow_overshoot = 3;
+  bool z1_room_influence_active = false;
+  bool z2_room_influence_active = false;
+  bool z1_use_local_sensor = false;
+  bool z2_use_local_sensor = false;
+  float z1_room_setpoint = 0;
+  float z1_room_temperature = 0;
+  float z2_room_setpoint = 0;
+  float z2_room_temperature = 0;
 };
 
 //HTTPClient http;
@@ -264,16 +273,18 @@ TimerCallBack HeatPumpQuery7(300000, CalculateCompCurve);      // Calculate the 
 //TimerCallBack HeatPumpQuery8(3600000, CheckForOTAUpdates);     // Set check period to 1hr
 TimerCallBack HeatPumpQuery9(30000, dhw_flow_follower);  // 30s DHW Flow Setpoint Follower
 
-unsigned long looppreviousMicros = 0;           // variable for comparing millis counter
-unsigned long ftcpreviousMillis = 0;            // variable for comparing millis counter
-unsigned long wifipreviousMillis = 0;           // variable for comparing millis counter
-unsigned long postwrpreviousMillis = 0;         // variable for comparing millis counter
-unsigned long postdfpreviousMillis = 0;         // variable for comparing millis counter
-unsigned long lockoutpreviousMillis = 0;        // variable for comparing millis counter
-unsigned long lockoutdurationMillis = 0;        // variable for comparing millis counter
-unsigned long compressorrundurationMillis = 0;  // variable for comparing millis counter
-unsigned long postdhwfspdurationMillis = 0;     // variable for comparing millis counter
-int FTCLoopSpeed, CPULoopSpeed;                 // variable for holding loop time in ms
+unsigned long looppreviousMicros = 0;            // variable for comparing millis counter
+unsigned long ftcpreviousMillis = 0;             // variable for comparing millis counter
+unsigned long wifipreviousMillis = 0;            // variable for comparing millis counter
+unsigned long postwrpreviousMillis = 0;          // variable for comparing millis counter
+unsigned long postdfpreviousMillis = 0;          // variable for comparing millis counter
+unsigned long lockoutpreviousMillis = 0;         // variable for comparing millis counter
+unsigned long lockoutdurationMillis = 0;         // variable for comparing millis counter
+unsigned long compressorrundurationMillis = 0;   // variable for comparing millis counter
+unsigned long postdhwfspdurationMillis = 0;      // variable for comparing millis counter
+unsigned long lastConsumedEnergyTimestamp = 0;   // variable for comparing millis counter
+unsigned long lastDeliveredEnergyTimestamp = 0;  // variable for comparing millis counter
+int FTCLoopSpeed, CPULoopSpeed;                  // variable for holding loop time in ms
 uint16_t SvcRequested = 0;
 int16_t SvcReply = 0;
 bool WiFiOneShot = true;
@@ -296,6 +307,8 @@ extern int CurrentWriteAttempt;
 byte NormalHWBoostOperating = 0;
 uint8_t FTCVersionLastLoop = 0;
 uint8_t FrequencyLastLoop = 0;
+double cumulativeEnergyToday[6] = { 0, 0, 0, 0, 0, 0 };      // Format: Heating Consumed, Cooling Consumed, DHW Consumed, Heating Delivered, Cooling Delivered, DHW Delivered
+double cumulativeEnergyYesterday[6] = { 0, 0, 0, 0, 0, 0 };  // Format: Heating Consumed, Cooling Consumed, DHW Consumed, Heating Delivered, Cooling Delivered, DHW Delivered
 
 #ifdef ARDUINO_WT32_ETH01
 static bool eth_connected = false;
@@ -697,6 +710,15 @@ void loop() {
   if (unitSettings.z1_active && HeatPump.Status.HasAnsweredDips && (HeatPump.Status.HeatingControlModeZ1 != 1 && HeatPump.Status.HeatingControlModeZ1 != 4)) { ModifyCompCurveState(1, false, 1, 0); }
   if (unitSettings.z2_active && HeatPump.Status.HasAnsweredDips && (HeatPump.Status.HeatingControlModeZ2 != 1 && HeatPump.Status.HeatingControlModeZ2 != 4)) { ModifyCompCurveState(2, false, 1, 0); }
 
+  // -- Energy Cumulative Counter -- //
+  if (HeatPump.Status.DateTimeStamp.tm_hour == 0 && HeatPump.Status.DateTimeStamp.tm_mday != lastResetDay) {  // When the day changes (midnight)
+    std::array<double, 6> today_energy = { cumulativeEnergyToday[0], cumulativeEnergyToday[1], cumulativeEnergyToday[2], cumulativeEnergyToday[3], cumulativeEnergyToday[4], cumulativeEnergyToday[5] };
+    std::copy(today_energy.begin(), today_energy.end(), cumulativeEnergyYesterday);  // Move today into Yeseterday
+    std::array<double, 6> clear_energy = { 0, 0, 0, 0, 0, 0 };                       // Set all 0
+    std::copy(clear_energy.begin(), clear_energy.end(), cumulativeEnergyToday);      // Move 0 to todays
+    lastResetDay = HeatPump.Status.DateTimeStamp.tm_mday;                            // Mark this day as completed
+  }
+
   // -- CPU Loop Time End -- //
   CPULoopSpeed = micros() - looppreviousMicros;  // Loop Speed End Monitor
 }
@@ -769,7 +791,7 @@ void MELCloudQueryReplyEngine(void) {
     MELCloud.ReplyStatus(MELCloud.Status.ActiveMessage);  // Reply with the OK Message to MELCloud
     MELCloud.Status.ReplyNow = false;
     if (MELCloud.Status.ActiveMessage == 0x32 || MELCloud.Status.ActiveMessage == 0x33 || MELCloud.Status.ActiveMessage == 0x34 || MELCloud.Status.ActiveMessage == 0x35) {  // The write commands
-      if (!BlockWriteFromMELCloud) { HeatPump.WriteMELCloudCMD(MELCloud.Status.ActiveMessage); }
+      if (!unitSettings.BlockWriteFromMELCloud) { HeatPump.WriteMELCloudCMD(MELCloud.Status.ActiveMessage); }
     }
   } else if ((MELCloud.Status.ConnectRequest) && (HeatPump.Status.FTCVersion != 0)) {
     MELCloud.Connect();  // Reply to the connect request
@@ -816,16 +838,39 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
       HeatPump.Disconnect();
     } else if (Payload.toInt() == 997) {
       DEBUG_PRINTLN(F("Ignoring Write Requests from MELCloud"));
-      BlockWriteFromMELCloud = true;
+      unitSettings.BlockWriteFromMELCloud = true;
+      shouldSaveConfig = true;
     } else if (Payload.toInt() == 996) {
       DEBUG_PRINTLN(F("Allowing Write Requests from MELCloud"));
-      BlockWriteFromMELCloud = false;
+      unitSettings.BlockWriteFromMELCloud = false;
+      shouldSaveConfig = true;
     } else if (Payload.toInt() == 994) {
       DEBUG_PRINTLN(F("Requested Bridge Latest Firmware Available"));
+      DEBUG_PRINTLN(F(": UNAVAILABLE"));
       //CheckForOTAUpdates();
     } else if (Payload.toInt() == 993) {
       DEBUG_PRINTLN(F("Requested FTC Version Information"));
       HeatPump.GetFTCVersion();
+    } else if (Payload.toInt() == 992) {
+      DEBUG_PRINT(F("Short Cycle Protection: "));
+      if (!unitSettings.shortcycleprotectionenabled) {
+        DEBUG_PRINTLN(F("ENABLED"));
+        unitSettings.shortcycleprotectionenabled = true;
+        SvcReply = 1;
+      } else if (unitSettings.shortcycleprotectionenabled) {
+        DEBUG_PRINTLN(F("DISABLED"));
+        unitSettings.shortcycleprotectionenabled = false;
+        shortcycleprotectionexit = true;
+        SvcReply = 0;
+      }
+      SvcRequested = 992;
+      shouldSaveConfig = true;
+    } else if (Payload.toInt() >= 880 && Payload.toInt() <= 900) {
+      DEBUG_PRINT(F("SCP - Max Flow Overshoot Set: "));
+      SvcReply = unitSettings.max_flow_overshoot = Payload.toInt() - 880;
+      SvcRequested = Payload.toInt();
+      DEBUG_PRINTLN(Payload.toInt());
+      shouldSaveConfig = true;
     } else {
       HeatPump.WriteServiceCodeCMD(Payload.toInt());
       SvcRequested = Payload.toInt();
@@ -1004,8 +1049,12 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
       unitSettings.GlycolStrength = 4.18;
     } else if (Payload == String("10%")) {
       unitSettings.GlycolStrength = 4.12;
+    } else if (Payload == String("15%")) {
+      unitSettings.GlycolStrength = 4.10;
     } else if (Payload == String("20%")) {
       unitSettings.GlycolStrength = 4.07;
+    } else if (Payload == String("25%")) {
+      unitSettings.GlycolStrength = 3.98;
     } else if (Payload == String("30%")) {
       unitSettings.GlycolStrength = 3.9;
     }
@@ -1054,6 +1103,14 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
         }
         ModifyCompCurveState(1, wc_z1_active, 1, 0);  // State Save
       }
+      // Room Influence is Enabled/Disabled
+      if (doc["zone1"]["room_influence_active"].is<bool>()) {
+        unitSettings.z1_room_influence_active = doc["room_influence_active"];
+      }
+      if (doc["zone1"]["use_local_tsensor"].is<bool>()) {
+        unitSettings.z1_use_local_sensor = doc["use_local_tsensor"];
+      }
+
       if (doc["zone2"]["active"].is<bool>()) {
         bool wc_z2_active = doc["zone2"]["active"];
         if (!unitSettings.z2_active && wc_z2_active) {                                                    // On transition from Inactive > Active
@@ -1064,7 +1121,13 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
         }
         ModifyCompCurveState(2, wc_z2_active, 1, 0);  // State Save
       }
-
+      // Room Influence is Enabled/Disabled
+      if (doc["zone2"]["room_influence_active"].is<bool>()) {
+        unitSettings.z2_room_influence_active = doc["room_influence_active"];
+      }
+      if (doc["zone2"]["use_local_tsensor"].is<bool>()) {
+        unitSettings.z2_use_local_sensor = doc["use_local_tsensor"];
+      }
 
       // Local or Remote Outdoor Temperature Measurement (Bool)
       if (doc["use_local_outdoor"].is<bool>()) {
@@ -1091,6 +1154,12 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
         unitSettings.z1_wind_offset = doc["zone1"]["wind_offset"];
         ModifyCompCurveState(1, true, 4, unitSettings.z1_wind_offset);
       }  // Post Calcuation Zone1 Wind Factor +/- Offset
+      if (doc["zone1"]["room_setpoint"].is<float>()) {
+        unitSettings.z2_room_setpoint = doc["zone1"]["room_setpoint"];
+      }  // Room Influence Temperature Setpoint
+      if (doc["zone1"]["room_temperature"].is<float>()) {
+        unitSettings.z2_room_temperature = doc["zone1"]["room_temperature"];
+      }  // Room Influence Temperature Sensor
       if (doc["zone2"]["manual_offset"].is<float>()) {
         unitSettings.z2_manual_offset = doc["zone2"]["manual_offset"];
         ModifyCompCurveState(2, true, 2, unitSettings.z2_manual_offset);
@@ -1102,8 +1171,17 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
       if (doc["zone2"]["wind_offset"].is<float>()) {
         unitSettings.z2_wind_offset = doc["zone2"]["wind_offset"];
         ModifyCompCurveState(2, true, 4, unitSettings.z2_wind_offset);
-      }                                                                                             // Post Calcuation Zone2 Wind Factor +/- Offset
+      }  // Post Calcuation Zone2 Wind Factor +/- Offset
+      if (doc["zone2"]["room_setpoint"].is<float>()) {
+        unitSettings.z2_room_setpoint = doc["zone2"]["room_setpoint"];
+      }  // Room Influence Temperature Setpoint
+      if (doc["zone2"]["room_temperature"].is<float>()) {
+        unitSettings.z2_room_temperature = doc["zone2"]["room_temperature"];
+      }  // Room Influence Temperature Sensor
+
+
       if (doc["cloud_outdoor"].is<float>()) { unitSettings.cloud_outdoor = doc["cloud_outdoor"]; }  // Temperature Provided by a remote or cloud source when use_local_outdoor = False
+
 
       FlowFollowingActive = false;
       CalculateCompCurve();  // Recalculate after modification
@@ -1329,6 +1407,24 @@ void SystemReport(void) {
   doc[F("RunHours")] = HeatPump.Status.RunHours;
   doc[F("HB_ID")] = Heart_Value;
 
+
+  // Calculate Consumption Energy Onboard (Left Integral)
+  if (EstHeatingInputPower != 0) {
+    updateEnergyMeter(round2(EstHeatingInputPower), 0);
+  } else if (EstCoolingInputPower != 0) {
+    updateEnergyMeter(round2(EstCoolingInputPower), 1);
+  } else if (EstDHWInputPower != 0) {
+    updateEnergyMeter(round2(EstDHWInputPower), 2);
+  }
+  if (HeatingOutputPower != 0) {
+    updateEnergyMeter(round2(HeatingOutputPower), 3);
+  } else if (CoolOutputPower != 0) {
+    updateEnergyMeter(round2(CoolOutputPower), 4);
+  } else if (DHWOutputPower != 0) {
+    updateEnergyMeter(round2(DHWOutputPower), 5);
+  }
+
+
   serializeJson(doc, Buffer);
   MQTTClient1.publish(MQTT_STATUS_SYSTEM.c_str(), Buffer, false);
   MQTTClient2.publish(MQTT_2_STATUS_SYSTEM.c_str(), Buffer, false);
@@ -1365,9 +1461,29 @@ void AdvancedReport(void) {
 
 void EnergyReport(void) {
   JsonDocument doc;
-  char Buffer[1024];
-
+  char Buffer[2048];
+  struct tm yesterday;
   float heat_cop, cool_cop, dhw_cop, ctotal, dtotal, total_cop;
+
+  // Energy Substitution and Data Checking
+  bool DeliveredYesterday = false;
+  bool ConsumedYesterday = false;
+
+  yesterday = HeatPump.Status.DateTimeStamp;
+  yesterday.tm_mday -= 1;
+  mktime(&yesterday);
+  if (yesterday.tm_mday == HeatPump.Status.DeliveredDateTimeStamp.tm_mday && yesterday.tm_mon == HeatPump.Status.DeliveredDateTimeStamp.tm_mon && yesterday.tm_year == HeatPump.Status.DeliveredDateTimeStamp.tm_year) { DeliveredYesterday = true; }  // Must be Yesterday
+  if (yesterday.tm_mday == HeatPump.Status.ConsumedDateTimeStamp.tm_mday && yesterday.tm_mon == HeatPump.Status.ConsumedDateTimeStamp.tm_mon && yesterday.tm_year == HeatPump.Status.ConsumedDateTimeStamp.tm_year) { ConsumedYesterday = true; }      // Must be Yesterday
+  if (!DeliveredYesterday) { HeatPump.Status.DeliveredHeatingEnergy = HeatPump.Status.DeliveredCoolingEnergy = HeatPump.Status.DeliveredHotWaterEnergy = 0; }
+  if (!ConsumedYesterday) { HeatPump.Status.ConsumedHeatingEnergy = HeatPump.Status.ConsumedCoolingEnergy = HeatPump.Status.ConsumedHotWaterEnergy = 0; }
+  // Re-write the onboard data into the memory locations
+  if (cumulativeEnergyYesterday[0] > 0 && HeatPump.Status.ConsumedHeatingEnergy == 0) { HeatPump.Status.ConsumedHeatingEnergy = cumulativeEnergyYesterday[0]; }
+  if (cumulativeEnergyYesterday[1] > 0 && HeatPump.Status.ConsumedCoolingEnergy == 0) { HeatPump.Status.ConsumedCoolingEnergy = cumulativeEnergyYesterday[1]; }
+  if (cumulativeEnergyYesterday[2] > 0 && HeatPump.Status.ConsumedHotWaterEnergy == 0) { HeatPump.Status.ConsumedHotWaterEnergy = cumulativeEnergyYesterday[2]; }
+  if (cumulativeEnergyYesterday[3] > 0 && HeatPump.Status.DeliveredHeatingEnergy == 0) { HeatPump.Status.DeliveredHeatingEnergy = cumulativeEnergyYesterday[3]; }
+  if (cumulativeEnergyYesterday[4] > 0 && HeatPump.Status.DeliveredCoolingEnergy == 0) { HeatPump.Status.DeliveredCoolingEnergy = cumulativeEnergyYesterday[4]; }
+  if (cumulativeEnergyYesterday[5] > 0 && HeatPump.Status.DeliveredHotWaterEnergy == 0) { HeatPump.Status.DeliveredHotWaterEnergy = cumulativeEnergyYesterday[5]; }
+
 
   // A check for errors before calculating CoP
   if ((HeatPump.Status.DeliveredHeatingEnergy == 0) && (HeatPump.Status.ConsumedHeatingEnergy > 0)) {
@@ -1422,8 +1538,25 @@ void EnergyReport(void) {
   doc[F("DHW_CoP")] = round2(dhw_cop);
   doc[F("TOTAL_CoP")] = round2(total_cop);
   doc[F("ConsumedTotalInc")] = HeatPump.Status.EnergyConsumedIncreasing;
-  doc[F("HB_ID")] = Heart_Value;
 
+  doc[F("OB_CHEAT_YDay")] = round2(cumulativeEnergyYesterday[0]);
+  doc[F("OB_CCOOL_YDay")] = round2(cumulativeEnergyYesterday[1]);
+  doc[F("OB_CDHW_YDay")] = round2(cumulativeEnergyYesterday[2]);
+  doc[F("OB_DHEAT_YDay")] = round2(cumulativeEnergyYesterday[3]);
+  doc[F("OB_DCOOL_YDay")] = round2(cumulativeEnergyYesterday[4]);
+  doc[F("OB_DDHW_YDay")] = round2(cumulativeEnergyYesterday[5]);
+  doc[F("OB_CHEAT_TDay")] = round2(cumulativeEnergyToday[0]);
+  doc[F("OB_CCOOL_TDay")] = round2(cumulativeEnergyToday[1]);
+  doc[F("OB_CDHW_TDay")] = round2(cumulativeEnergyToday[2]);
+  doc[F("OB_DHEAT_TDay")] = round2(cumulativeEnergyToday[3]);
+  doc[F("OB_DCOOL_TDay")] = round2(cumulativeEnergyToday[4]);
+  doc[F("OB_DDHW_TDay")] = round2(cumulativeEnergyToday[5]);
+  doc[F("OB_CTOTAL_TDay")] = round2(cumulativeEnergyToday[0] + cumulativeEnergyToday[1] + cumulativeEnergyToday[2]);
+  doc[F("OB_DTOTAL_TDay")] = round2(cumulativeEnergyToday[3] + cumulativeEnergyToday[4] + cumulativeEnergyToday[5]);
+  doc[F("OB_TOTAL_CoP_TDay")] = round2((cumulativeEnergyToday[3] + cumulativeEnergyToday[4] + cumulativeEnergyToday[5]) / (cumulativeEnergyToday[0] + cumulativeEnergyToday[1] + cumulativeEnergyToday[2]));
+
+
+  doc[F("HB_ID")] = Heart_Value;
   serializeJson(doc, Buffer);
   MQTTClient1.publish(MQTT_STATUS_ENERGY.c_str(), Buffer, false);
   MQTTClient2.publish(MQTT_2_STATUS_ENERGY.c_str(), Buffer, false);
@@ -1511,7 +1644,7 @@ void StatusReport(void) {
   } else {
     doc[F("MELCloud_Status")] = "Adapter Disconnected";
   }
-  doc[F("MELCloud_Write_Blocking")] = BlockWriteFromMELCloud;
+  doc[F("MELCloud_Write_Blocking")] = unitSettings.BlockWriteFromMELCloud;
   strftime(TmBuffer, sizeof(TmBuffer), "%FT%TZ", &HeatPump.Status.DateTimeStamp);
   doc[F("FTCTime")] = TmBuffer;
 
@@ -1553,8 +1686,12 @@ void StatusReport(void) {
     doc[F("Glycol")] = "0%";
   } else if (round2(unitSettings.GlycolStrength) == 4.12) {
     doc[F("Glycol")] = "10%";
+  } else if (round2(unitSettings.GlycolStrength) == 4.10) {
+    doc[F("Glycol")] = "15%";
   } else if (round2(unitSettings.GlycolStrength) == 4.07) {
     doc[F("Glycol")] = "20%";
+  } else if (round2(unitSettings.GlycolStrength) == 3.98) {
+    doc[F("Glycol")] = "25%";
   } else if (round2(unitSettings.GlycolStrength) == 3.9) {
     doc[F("Glycol")] = "30%";
   }
@@ -1619,15 +1756,23 @@ void ConfigurationReport(void) {
 void CompCurveReport(void) {
   JsonDocument storeddoc;
   deserializeJson(storeddoc, unitSettings.CompCurve);  // Extract Saved to Flash Settings
-  char Buffer[1024];
+  char Buffer[2048];
 
   // Add to saved settings with live
   storeddoc[F("zone1")]["active"] = unitSettings.z1_active;
+  storeddoc[F("zone1")]["room_influence_active"] = unitSettings.z1_room_influence_active;
+  storeddoc[F("zone1")]["use_local_tsensor"] = unitSettings.z1_use_local_sensor;
+  storeddoc[F("zone1")]["room_setpoint"] = unitSettings.z1_room_setpoint;
+  storeddoc[F("zone1")]["room_temperature"] = unitSettings.z1_room_temperature;
   storeddoc[F("zone1")]["manual_offset"] = unitSettings.z1_manual_offset;
   storeddoc[F("zone1")]["temp_offset"] = unitSettings.z1_temp_offset;
   storeddoc[F("zone1")]["wind_offset"] = unitSettings.z1_wind_offset;
   storeddoc[F("zone1")]["calculated_FSP"] = Z1_CurveFSP;
   storeddoc[F("zone2")]["active"] = unitSettings.z2_active;
+  storeddoc[F("zone2")]["room_influence_active"] = unitSettings.z2_room_influence_active;
+  storeddoc[F("zone2")]["use_local_tsensor"] = unitSettings.z2_use_local_sensor;
+  storeddoc[F("zone2")]["room_setpoint"] = unitSettings.z1_room_setpoint;
+  storeddoc[F("zone2")]["room_temperature"] = unitSettings.z1_room_temperature;
   storeddoc[F("zone2")]["manual_offset"] = unitSettings.z2_manual_offset;
   storeddoc[F("zone2")]["temp_offset"] = unitSettings.z2_temp_offset;
   storeddoc[F("zone2")]["wind_offset"] = unitSettings.z2_wind_offset;
@@ -1818,8 +1963,9 @@ void CalculateCompCurve(void) {
     // Read the Active Status First
     unitSettings.z1_active = doc["zone1"]["active"];  // Transfer JSON to Struct Bool
     unitSettings.z2_active = doc["zone2"]["active"];
-    if (!unitSettings.z1_active && !unitSettings.z2_active) { return; }  // Only calculates (saves time, if mode enabled)
-    else {
+    //if (!unitSettings.z1_active && !unitSettings.z2_active) { return; }  // Only calculates (saves time, if mode enabled)
+    //else{
+    {
       // Continue to unpack the JSON document into unitSettings for the other saved parameters from the save file
       unitSettings.z1_manual_offset = doc["zone1"]["manual_offset"];
       unitSettings.z1_wind_offset = doc["zone1"]["wind_offset"];
@@ -1829,6 +1975,7 @@ void CalculateCompCurve(void) {
       unitSettings.z2_temp_offset = doc["zone2"]["temp_offset"];
       unitSettings.use_local_outdoor = doc["use_local_outdoor"];
       unitSettings.max_flow_overshoot = doc["max_flow_overshoot"];
+
 
       float OutsideAirTemperature = 0;
 
@@ -1886,9 +2033,34 @@ void CalculateCompCurve(void) {
         }
       }
     }
+
+    // Apply Room Influence
+    float Z1_Room_Offset = 0;
+    float Z2_Room_Offset = 0;
+
+    if (unitSettings.z1_room_influence_active) {
+      if (unitSettings.z1_use_local_sensor) {
+        Z1_Room_Offset = calculateRoomInfluence(HeatPump.Status.Zone1Temperature, HeatPump.Status.Zone1TemperatureSetpoint, 1.5);
+      } else {
+        Z1_Room_Offset = calculateRoomInfluence(unitSettings.z1_room_temperature, unitSettings.z1_room_setpoint, 1.5);
+      }
+    }
+    if (unitSettings.z2_room_influence_active && unitSettings.z2_active && HeatPump.Status.Has2Zone && !HeatPump.Status.Simple2Zone) {
+      if (unitSettings.z2_use_local_sensor) {
+        Z2_Room_Offset = calculateRoomInfluence(HeatPump.Status.Zone2Temperature, HeatPump.Status.Zone2TemperatureSetpoint, 1.5);
+      } else {
+        Z2_Room_Offset = calculateRoomInfluence(unitSettings.z2_room_temperature, unitSettings.z2_room_setpoint, 1.5);
+      }
+    }
+
     // Apply Post Calculation Offsets to Calculated Curve Flow Setpoint
-    Z1_CurveFSP = roundToOneDecimal(Z1_CurveFSP + unitSettings.z1_wind_offset + unitSettings.z1_temp_offset + unitSettings.z1_manual_offset);
-    Z2_CurveFSP = roundToOneDecimal(Z2_CurveFSP + unitSettings.z2_wind_offset + unitSettings.z2_temp_offset + unitSettings.z2_manual_offset);
+    Z1_CurveFSP = roundToOneDecimal(Z1_CurveFSP + Z1_Room_Offset + unitSettings.z1_wind_offset + unitSettings.z1_temp_offset + unitSettings.z1_manual_offset);
+    Z2_CurveFSP = roundToOneDecimal(Z2_CurveFSP + Z2_Room_Offset + unitSettings.z2_wind_offset + unitSettings.z2_temp_offset + unitSettings.z2_manual_offset);
+
+    // Apply Clamping based on FTC Settings For Min/Max Flow Temperature
+    if (Z1_CurveFSP > HeatPump.Status.FlowTempMax) { Z1_CurveFSP = HeatPump.Status.FlowTempMax; }
+    if (Z1_CurveFSP < HeatPump.Status.FlowTempMin) { Z1_CurveFSP = HeatPump.Status.FlowTempMin; }
+
 
     // Write the Flow Setpoints to Heat Pump
     if (unitSettings.z1_active && Flow_Inc_Count == 0 && HeatPump.Status.DHWActive != 1 && Z1_CurveFSP != HeatPump.Status.Zone1FlowTemperatureSetpoint) {
@@ -1903,6 +2075,11 @@ void CalculateCompCurve(void) {
     }
     CompCurveReport();
   }
+}
+
+float calculateRoomInfluence(float actual, float setpoint, float gain) {
+  float error = setpoint - actual;
+  return error * gain;
 }
 
 void ModifyCompCurveState(int Zone, bool Active, int ModType, float Value) {
@@ -1975,6 +2152,30 @@ void printCurrentTime() {
 void MQTTWriteReceived(String message, int MsgNumber) {
   DEBUG_PRINTLN(message);
   WriteInProgress = true;  // Wait For OK
+}
+
+
+void updateEnergyMeter(double currentPowerKW, int mode) {
+  unsigned long* lastTimestamp;
+
+  if (mode >= 0 && mode <= 2) {
+    lastTimestamp = &lastConsumedEnergyTimestamp;
+  } else if (mode >= 3 && mode <= 5) {
+    lastTimestamp = &lastDeliveredEnergyTimestamp;
+  } else {
+    return;
+  }
+
+  unsigned long currentTime = millis();
+  unsigned long durationMs = currentTime - *lastTimestamp;
+
+  if (*lastTimestamp > 0 && durationMs > 0) {
+    // (1000ms * 60s * 60m) = 3,600,000
+    double durationHours = (double)durationMs / 3600000.0;
+    cumulativeEnergyToday[mode] += (currentPowerKW * durationHours);
+  }
+
+  *lastTimestamp = currentTime;
 }
 
 
