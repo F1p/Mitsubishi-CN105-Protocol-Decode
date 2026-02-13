@@ -1157,10 +1157,10 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
         ModifyCompCurveState(1, true, 4, unitSettings.z1_wind_offset);
       }  // Post Calcuation Zone1 Wind Factor +/- Offset
       if (doc["zone1"]["room_setpoint"].is<float>()) {
-        unitSettings.z2_room_setpoint = doc["zone1"]["room_setpoint"];
+        unitSettings.z1_room_setpoint = doc["zone1"]["room_setpoint"];
       }  // Room Influence Temperature Setpoint
       if (doc["zone1"]["room_temperature"].is<float>()) {
-        unitSettings.z2_room_temperature = doc["zone1"]["room_temperature"];
+        unitSettings.z1_room_temperature = doc["zone1"]["room_temperature"];
       }  // Room Influence Temperature Sensor
       if (doc["zone2"]["manual_offset"].is<float>()) {
         unitSettings.z2_manual_offset = doc["zone2"]["manual_offset"];
@@ -1527,13 +1527,13 @@ void EnergyReport(void) {
     total_cop = 0;
   }
 
-if (ob_ctotal != 0) {
+  if (ob_ctotal != 0) {
     ob_total_cop = ob_dtotal / ob_ctotal;
   } else {
     ob_total_cop = 0;
   }
 
-  
+
 
 
   // Write into the JSON with 2dp rounding
@@ -1783,8 +1783,8 @@ void CompCurveReport(void) {
   storeddoc[F("zone2")]["active"] = unitSettings.z2_active;
   storeddoc[F("zone2")]["room_influence_active"] = unitSettings.z2_room_influence_active;
   storeddoc[F("zone2")]["use_local_tsensor"] = unitSettings.z2_use_local_sensor;
-  storeddoc[F("zone2")]["room_setpoint"] = unitSettings.z1_room_setpoint;
-  storeddoc[F("zone2")]["room_temperature"] = unitSettings.z1_room_temperature;
+  storeddoc[F("zone2")]["room_setpoint"] = unitSettings.z2_room_setpoint;
+  storeddoc[F("zone2")]["room_temperature"] = unitSettings.z2_room_temperature;
   storeddoc[F("zone2")]["manual_offset"] = unitSettings.z2_manual_offset;
   storeddoc[F("zone2")]["temp_offset"] = unitSettings.z2_temp_offset;
   storeddoc[F("zone2")]["wind_offset"] = unitSettings.z2_wind_offset;
@@ -2052,17 +2052,17 @@ void CalculateCompCurve(void) {
 
     if (unitSettings.z1_room_influence_active) {
       if (unitSettings.z1_use_local_sensor) {
-        Z1_Room_Offset = calculateRoomInfluence(HeatPump.Status.Zone1Temperature, HeatPump.Status.Zone1TemperatureSetpoint, 1.5);
-      } else {
-        Z1_Room_Offset = calculateRoomInfluence(unitSettings.z1_room_temperature, unitSettings.z1_room_setpoint, 1.5);
+        unitSettings.z1_room_temperature = HeatPump.Status.Zone1Temperature;
+        unitSettings.z1_room_setpoint = HeatPump.Status.Zone1TemperatureSetpoint;
       }
+      Z1_Room_Offset = calculateRoomInfluence(unitSettings.z1_room_temperature, unitSettings.z1_room_setpoint, 1.5);
     }
     if (unitSettings.z2_room_influence_active && unitSettings.z2_active && HeatPump.Status.Has2Zone && !HeatPump.Status.Simple2Zone) {
       if (unitSettings.z2_use_local_sensor) {
-        Z2_Room_Offset = calculateRoomInfluence(HeatPump.Status.Zone2Temperature, HeatPump.Status.Zone2TemperatureSetpoint, 1.5);
-      } else {
-        Z2_Room_Offset = calculateRoomInfluence(unitSettings.z2_room_temperature, unitSettings.z2_room_setpoint, 1.5);
+        unitSettings.z2_room_temperature = HeatPump.Status.Zone2Temperature;
+        unitSettings.z2_room_setpoint = HeatPump.Status.Zone2TemperatureSetpoint;
       }
+      Z2_Room_Offset = calculateRoomInfluence(unitSettings.z2_room_temperature, unitSettings.z2_room_setpoint, 1.5);
     }
 
     // Apply Post Calculation Offsets to Calculated Curve Flow Setpoint
