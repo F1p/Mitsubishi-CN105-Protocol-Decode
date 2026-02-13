@@ -840,10 +840,12 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
       DEBUG_PRINTLN(F("Ignoring Write Requests from MELCloud"));
       unitSettings.BlockWriteFromMELCloud = true;
       shouldSaveConfig = true;
+      StatusReport();
     } else if (Payload.toInt() == 996) {
       DEBUG_PRINTLN(F("Allowing Write Requests from MELCloud"));
       unitSettings.BlockWriteFromMELCloud = false;
       shouldSaveConfig = true;
+      StatusReport();
     } else if (Payload.toInt() == 994) {
       DEBUG_PRINTLN(F("Requested Bridge Latest Firmware Available"));
       DEBUG_PRINTLN(F(": UNAVAILABLE"));
@@ -1463,7 +1465,7 @@ void EnergyReport(void) {
   JsonDocument doc;
   char Buffer[2048];
   struct tm yesterday;
-  float heat_cop, cool_cop, dhw_cop, ctotal, dtotal, total_cop;
+  float heat_cop, cool_cop, dhw_cop, ctotal, dtotal, total_cop, ob_ctotal, ob_dtotal, ob_total_cop;
 
   // Energy Substitution and Data Checking
   bool DeliveredYesterday = false;
@@ -1516,12 +1518,22 @@ void EnergyReport(void) {
   // CoP Totals
   ctotal = (HeatPump.Status.ConsumedHeatingEnergy + HeatPump.Status.ConsumedCoolingEnergy + HeatPump.Status.ConsumedHotWaterEnergy);
   dtotal = (HeatPump.Status.DeliveredHeatingEnergy + HeatPump.Status.DeliveredCoolingEnergy + HeatPump.Status.DeliveredHotWaterEnergy);
+  ob_ctotal = cumulativeEnergyToday[0] + cumulativeEnergyToday[1] + cumulativeEnergyToday[2];
+  ob_dtotal = cumulativeEnergyToday[3] + cumulativeEnergyToday[4] + cumulativeEnergyToday[5];
 
   if (ctotal != 0) {
     total_cop = dtotal / ctotal;
   } else {
     total_cop = 0;
   }
+
+if (ob_ctotal != 0) {
+    ob_total_cop = ob_dtotal / ob_ctotal;
+  } else {
+    ob_total_cop = 0;
+  }
+
+  
 
 
   // Write into the JSON with 2dp rounding
@@ -1551,9 +1563,9 @@ void EnergyReport(void) {
   doc[F("OB_DHEAT_TDay")] = round2(cumulativeEnergyToday[3]);
   doc[F("OB_DCOOL_TDay")] = round2(cumulativeEnergyToday[4]);
   doc[F("OB_DDHW_TDay")] = round2(cumulativeEnergyToday[5]);
-  doc[F("OB_CTOTAL_TDay")] = round2(cumulativeEnergyToday[0] + cumulativeEnergyToday[1] + cumulativeEnergyToday[2]);
-  doc[F("OB_DTOTAL_TDay")] = round2(cumulativeEnergyToday[3] + cumulativeEnergyToday[4] + cumulativeEnergyToday[5]);
-  doc[F("OB_TOTAL_CoP_TDay")] = round2((cumulativeEnergyToday[3] + cumulativeEnergyToday[4] + cumulativeEnergyToday[5]) / (cumulativeEnergyToday[0] + cumulativeEnergyToday[1] + cumulativeEnergyToday[2]));
+  doc[F("OB_CTOTAL_TDay")] = round2(ob_ctotal);
+  doc[F("OB_DTOTAL_TDay")] = round2(ob_dtotal);
+  doc[F("OB_TOTAL_CoP_TDay")] = round2(ob_total_cop);
 
 
   doc[F("HB_ID")] = Heart_Value;

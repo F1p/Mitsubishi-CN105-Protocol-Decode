@@ -163,6 +163,54 @@ In JSON to the topic: Ecodan/ASHP/**Command**/System/CompCurve
 }
 ```
 
+### Using Room Influence, Setpoint & Temperatures
+
+It is possible to send Room Influence values, which will influence the flow setpoint based on the difference between current temperature and setpoint of a room sensor.
+You can use both Local Ecodan measurements and External temperature sensors & setpoint.
+
+For "local" system temperature setpoint and temperature feedback, e.g. from the Main Room Controller (MRC) or Wireless Controllers set "use_local_tsensor": true and the setpoint and current temperature will be used
+For "remote" system temperature setpoint and temperature feedback, e.g. from another sensor is default "use_local_tsensor": false
+
+
+In JSON to the topic same: Ecodan/ASHP/**Command**/System/CompCurve
+
+```javascript
+{   
+    "zone1": {
+      "room_influence_active": true,
+      "use_local_tsensor": false,
+      "room_setpoint": 21,
+      "room_temperature": 19.3,
+  }
+}
+```
+
+Publish Internal Temperatures from Extenal Sensors on change with Automations:
+
+
+```yaml
+alias: Publish Zone 1 Temperature from HA to Bridge
+description: ""
+triggers:
+  - trigger: state
+    entity_id:
+      - sensor.bedroom_temperature
+conditions: []
+actions:
+  - action: mqtt.publish
+    metadata: {}
+    data:
+      evaluate_payload: false
+      qos: "0"
+      topic: Ecodan/ASHP/Command/System/CompCurve
+      payload: >-
+        { "zone1": {"room_temperature": {{ states('sensor.bedroom_temperature')|float(0) }} }}
+mode: single
+```
+
+
+
+
 
 
 ### Sending Offsets & Outdoor Temperatures
@@ -268,3 +316,5 @@ mode: single
 If the MQTT connection is lost, the Bridge device will revert to using the local sensor.
 
 NOTE: The FTC may still use the OAT sensor in it's processes, such as defrosting or frequency limiting - this value cannot influence those actions but only determining a Flow Temperature
+
+

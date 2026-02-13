@@ -649,12 +649,12 @@ void readSettingsFromConfig() {
 
       // Switches
       if (i >= 109 && i < 121) {
-        Config["stat_t"] = BASETOPIC + String(MQTT_TOPIC[MQTT_SWITCH_STATE_POS[i - 110]]);
+        Config["stat_t"] = BASETOPIC + String(MQTT_TOPIC[MQTT_SWITCH_STATE_POS[i - 109]]);
         Config["val_tpl"] = String(MQTT_SENSOR_VALUE_TEMPLATE[i - 2]);
         if (i == 120) {
           Config["cmd_t"] = BASETOPIC + String(MQTT_TOPIC[33]);
         } else {
-          Config["cmd_t"] = BASETOPIC + String(MQTT_TOPIC[i - 95]);
+          Config["cmd_t"] = BASETOPIC + String(MQTT_TOPIC[i - 94]);
         }
 
         if (i == 110) {
@@ -663,8 +663,8 @@ void readSettingsFromConfig() {
           Config["payload_on"] = "On";
           Config["payload_off"] = "Standby";
         }else if(i==120){
-          Config["state_on"] = "true";
-          Config["state_off"] = "false";
+          Config["state_on"] = true;
+          Config["state_off"] = false;
           Config["payload_on"] = "997";
           Config["payload_off"] = "996";
         }
@@ -731,8 +731,8 @@ void readSettingsFromConfig() {
       }
 
       // Add Availability Topics
-      if (i >= 104) {
-        if (i >= 114 && i < 119) {  // Server Control Mode Interlocks
+      if (i >= 105) {
+        if (i >= 113 && i < 118) {  // Server Control Mode Interlocks
           Config["availability"]["t"] = BASETOPIC + String(MQTT_TOPIC[8]);
           Config["availability"]["val_tpl"] = String(MQTT_SENSOR_VALUE_TEMPLATE[110]);
           Config["availability"]["pl_avail"] = ITEM_ON;
@@ -740,7 +740,7 @@ void readSettingsFromConfig() {
         } else if (i >= 107 && i < 109) {  // Flow Op Mode Interlocks on Climate & Number
           Config["availability"]["t"] = BASETOPIC + String(MQTT_TOPIC[i - 102]);
           Config["availability"]["val_tpl"] = String(MQTT_NUMBER_AVAIL_TEMPLATE[0]);
-        } else if (i == 121) {  // Interlock MELCloud Read Only with Adapter Status Not Disconnected
+        } else if (i == 120) {  // Interlock MELCloud Read Only with Adapter Status Not Disconnected
           Config["availability"]["t"] = BASETOPIC + String(MQTT_TOPIC[1]);
           Config["availability"]["val_tpl"] = String(MQTT_NUMBER_AVAIL_TEMPLATE[2]);
         } else if (i == 123) {  // Interlock Zone2 Mode with Complex 2 Zone only
@@ -756,8 +756,10 @@ void readSettingsFromConfig() {
       Buffer_Topic = MQTT_DISCOVERY_TOPIC + ChipID + String(MQTT_DISCOVERY_OBJ_ID[i]) + String(MQTT_DISCOVERY_TOPICS[5]);
 
       if (MQTTStream == 1) {
+        MQTTClient1.publish(Buffer_Topic.c_str(), NULL, 0, true);
         MQTTClient1.publish(Buffer_Topic.c_str(), (uint8_t*)&Buffer_Payload, buf_size, true);
       } else if (MQTTStream == 2) {
+        MQTTClient2.publish(Buffer_Topic.c_str(), NULL, 0, true);
         MQTTClient2.publish(Buffer_Topic.c_str(), (uint8_t*)&Buffer_Payload, buf_size, true);
       }
 
