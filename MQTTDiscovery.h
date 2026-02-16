@@ -670,7 +670,7 @@ int MQTT_UNITS_POS[] PROGMEM = {
   0,
   2,
   2,
-  0
+  8
 };
 
 

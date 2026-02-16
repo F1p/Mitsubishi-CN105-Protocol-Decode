@@ -138,6 +138,13 @@ float FlowTemp_Last = 0;
 float FlowTemp_Target = 0;
 int Flow_Inc_Count = 0;
 int lastResetDay = -1;
+const int OAT_Window_Size = 300;
+int OAT_readings[OAT_Window_Size];
+int OAT_readIndex = 0;
+int OAT_total = 0;
+float OAT_average = 0;
+bool OAT_isFull = false;
+bool inDefrostWindow = false;
 
 // The extra parameters to be configured (can be either global or just in the setup)
 // After connecting, parameter.getValue() will get you the configured value
@@ -384,6 +391,7 @@ void setup() {
   //CheckForOTAUpdates();
   CalculateCompCurve();
   HeatPumpKeepAlive();
+  for (int i = 0; i < OAT_Window_Size; i++) { OAT_readings[i] = 0; }
 }
 
 
@@ -597,9 +605,12 @@ void loop() {
   }
 
   // -- Defrost Handler -- //
-  if (unitSettings.use_local_outdoor && HeatPump.Status.LastDefrost != 0 && HeatPump.Status.Defrost == 0) {  // Transitioned from Defrosting Stage to Normal
-    postdfpreviousMillis = millis();                                                                         // Capture the current time it occured for Comp Curve
+  if (HeatPump.Status.Defrost == 0 && (millis() - postdfpreviousMillis >= 360000)) { inDefrostWindow = false; }  // End Defrost Window
+  if (HeatPump.Status.Defrost == 1) { inDefrostWindow = true; }                                                  // Start Defrost Window
+  if (HeatPump.Status.LastDefrost != 0 && HeatPump.Status.Defrost == 0) {                                        // Transitioned from Defrosting Stage to Normal
+    postdfpreviousMillis = millis();                                                                             // Capture the current time it occured for Comp Curve
   }
+
 
 
   // -- FTC7 + R290 Outdoor Limit Adjustments -- //
@@ -678,6 +689,10 @@ void loop() {
           Flow_Inc_Count++;  // This will be cancelled at the next compressor stop
           FlowFollowingActive = true;
         }
+        if (HeatPump.Status.Zone1FlowTemperatureSetpoint < Z1_CurveFSP) {  // Cancel Flow Following if FSP exceeds Comp Curve Target
+          FlowTemp_Target = HeatPump.Status.Zone1FlowTemperatureSetpoint;
+          FlowFollowingActive = false;
+        }
       } else if ((Flow_Inc_Count > 0) && (HeatPump.Status.HeaterOutputFlowTemperature - HeatPump.Status.Zone1FlowTemperatureSetpoint < 0.5)) {  // Flow Temp reducer if within 0.5C
         HeatPump.SetFlowSetpoint((HeatPump.Status.Zone1FlowTemperatureSetpoint - 0.5), HeatPump.Status.HeatingControlModeZ1, ZONE1);            // Need to avoid overwriting by onboard weather curve..
         HeatPump.Status.Zone1FlowTemperatureSetpoint -= 0.5;
@@ -688,12 +703,19 @@ void loop() {
     } else if (HeatPump.Status.HeatCool == 1 && HeatPump.Status.HeatingControlModeZ1 == 3) {  // Cooling
       if ((HeatPump.Status.HeaterOutputFlowTemperature - HeatPump.Status.Zone1FlowTemperatureSetpoint < -1.0) && (FlowTemp_Last > HeatPump.Status.HeaterOutputFlowTemperature)) {
         // On entry of a new high flow temperature
-        if (Flow_Inc_Count == 0) { FlowTemp_Target = HeatPump.Status.Zone1FlowTemperatureSetpoint; }                                    // On First entry, set flow setpoint before
+        if (Flow_Inc_Count == 0) {
+          FlowTemp_Target = HeatPump.Status.Zone1FlowTemperatureSetpoint;
+          FlowFollowingActive = false;
+        }                                                                                                                               // On First entry, set flow setpoint before
         if (Flow_Inc_Count < (unitSettings.max_flow_overshoot / 0.5)) {                                                                 // Maximum increases is -0.5C * 5 = -2.5C
           HeatPump.SetFlowSetpoint((HeatPump.Status.Zone1FlowTemperatureSetpoint - 0.5), HeatPump.Status.HeatingControlModeZ1, ZONE1);  // Need to avoid overwriting by onboard weather curve..
           HeatPump.Status.Zone1FlowTemperatureSetpoint -= 0.5;
           write_thermostats();
           Flow_Inc_Count++;  // This will be cancelled at the next compressor stop
+        }
+        if (HeatPump.Status.Zone1FlowTemperatureSetpoint < Z1_CurveFSP) {  // Cancel Flow Following if FSP exceeds Comp Curve Target
+          FlowTemp_Target = HeatPump.Status.Zone1FlowTemperatureSetpoint;
+          FlowFollowingActive = false;
         }
       } else if ((Flow_Inc_Count > 0) && (HeatPump.Status.HeaterOutputFlowTemperature - HeatPump.Status.Zone1FlowTemperatureSetpoint > -0.5)) {  // Flow Temp reducer if within 0.5C
         HeatPump.SetFlowSetpoint((HeatPump.Status.Zone1FlowTemperatureSetpoint + 0.5), HeatPump.Status.HeatingControlModeZ1, ZONE1);             // Need to avoid overwriting by onboard weather curve..
@@ -1286,6 +1308,7 @@ void SystemReport(void) {
   float EstDHWInputPower = 0;
   float Min_Input_Power = 0;
   float Max_Input_Power = 0;
+  float Outside_Air_Temp = 0;
 
   bool DHW_Mode = false;
   bool Non_HP_Mode = false;
@@ -1378,11 +1401,19 @@ void SystemReport(void) {
     Instant_CoP = 0;
   }
 
+  if (!inDefrostWindow) {
+    getOATRunningAverage(HeatPump.Status.OutsideTemperature);
+  }
+  if (OAT_isFull) {
+    Outside_Air_Temp = OAT_average;
+  } else {
+    Outside_Air_Temp = HeatPump.Status.OutsideTemperature;
+  }
 
   doc[F("HeaterFlow")] = HeatPump.Status.HeaterOutputFlowTemperature;
   doc[F("HeaterReturn")] = HeatPump.Status.HeaterReturnFlowTemperature;
   doc[F("FlowReturnDeltaT")] = HeatPump.Status.HeaterDeltaT;
-  doc[F("OutsideTemp")] = HeatPump.Status.OutsideTemperature;
+  doc[F("OutsideTemp")] = Outside_Air_Temp;
   doc[F("Defrost")] = DefrostModeString[HeatPump.Status.Defrost];
   doc[F("InputPower")] = HeatPump.Status.InputPower;
   doc[F("HeaterPower")] = HeatPump.Status.OutputPower;
@@ -1964,6 +1995,7 @@ void dhw_flow_follower() {
   }
 }
 
+
 void CalculateCompCurve(void) {
   DEBUG_PRINTLN("Performing Compensation Curve Calculation");
   JsonDocument doc;
@@ -1994,11 +2026,15 @@ void CalculateCompCurve(void) {
       if (!unitSettings.use_local_outdoor && (MQTTClient1.connected() || MQTTClient2.connected())) {  // Determine Outdoor Temperature Input
         OutsideAirTemperature = unitSettings.cloud_outdoor;
       } else {
-        if (HeatPump.Status.Defrost != 0 || (millis() - postdfpreviousMillis <= 360000)) {  // To allow sensor to stabilise after influence from the defrost
+        if (inDefrostWindow) {  // To allow sensor to stabilise after influence from the defrost
           DEBUG_PRINTLN("Skipping due to Defrost...");
           return;  // If currently defrosting or less than 6 minutes post-defrost skip re-calculation
         }
-        OutsideAirTemperature = HeatPump.Status.OutsideTemperature;  // Set the OAT as the local heat pump figure
+        if (OAT_isFull) {
+          OutsideAirTemperature = OAT_average;
+        } else {
+          OutsideAirTemperature = HeatPump.Status.OutsideTemperature;  // Set the OAT as the local heat pump figure
+        }
       }
 
       int z1_points = doc["base"]["zone1"]["curve"].size() - 1;                            // How many points are there specified on the curve
@@ -2164,6 +2200,27 @@ void printCurrentTime() {
 void MQTTWriteReceived(String message, int MsgNumber) {
   DEBUG_PRINTLN(message);
   WriteInProgress = true;  // Wait For OK
+}
+
+
+bool getOATRunningAverage(uint8_t newOAT) {
+  OAT_total -= OAT_readings[OAT_readIndex];  // Subtract oldest value and add newest
+  OAT_readings[OAT_readIndex] = newOAT;
+  OAT_total += OAT_readings[OAT_readIndex];
+
+  OAT_readIndex++;  // Increment the index
+
+  // Wrap index and mark as full
+  if (OAT_readIndex >= OAT_Window_Size) {
+    OAT_readIndex = 0;
+    OAT_isFull = true;
+  }
+
+  if (OAT_isFull) {  // Once full, return true so not to skew results
+    OAT_average = OAT_total / OAT_Window_Size;
+    return true;
+  }
+  return false;
 }
 
 

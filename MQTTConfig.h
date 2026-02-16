@@ -481,9 +481,37 @@ void readSettingsFromConfig() {
     shouldSaveConfig = false;
   }
 
-  //callback notifying us of the need to save config
+  // Callback notifying us of the need to save config
   void saveConfigCallback() {
     saveConfig();
+  }
+
+  // Handle Webhook Callbacks
+  void handleRoute() {
+    if (wifiManager.server->hasArg("z1temp")) {  // Pull Argument room1
+      String input = wifiManager.server->arg("z1temp");
+      unitSettings.z1_room_temperature = input.toFloat();
+      wifiManager.server->send(200, "text/plain", "success");
+    } else if (wifiManager.server->hasArg("z1setpoint")) {
+      String input = wifiManager.server->arg("z1setpoint");
+      unitSettings.z1_room_setpoint = input.toFloat();
+      wifiManager.server->send(200, "text/plain", "success");
+    } else if (wifiManager.server->hasArg("z2temp")) {
+      String input = wifiManager.server->arg("z2temp");
+      unitSettings.z2_room_temperature = input.toFloat();
+      wifiManager.server->send(200, "text/plain", "success");
+    } else if (wifiManager.server->hasArg("z2setpoint")) {
+      String input = wifiManager.server->arg("z2setpoint");
+      unitSettings.z2_room_setpoint = input.toFloat();
+      wifiManager.server->send(200, "text/plain", "success");
+    } else {
+      wifiManager.server->send(400, "text/plain", "failed");
+    }
+  }
+
+  // Callback for webhooks
+  void bindServerCallback() {
+    wifiManager.server->on("/webhook", handleRoute);
   }
 
   void initializeWifiManager() {
@@ -532,6 +560,7 @@ void readSettingsFromConfig() {
     wifiManager.setBreakAfterConfig(true);                  // Saves settings, even if WiFi Fails
     wifiManager.setSaveConfigCallback(saveConfigCallback);  // Set config save callback
     wifiManager.setAPClientCheck(true);                     // Avoid timeout if client connected to softap
+    wifiManager.setWebServerCallback(bindServerCallback);            // Callback for the webhook route
 
 #ifndef ARDUINO_WT32_ETH01
     wifiManager.setConfigPortalTimeout(600);  // Timeout before launching the config portal (WiFi Only)
@@ -662,13 +691,12 @@ void readSettingsFromConfig() {
           Config["state_off"] = "Standby";
           Config["payload_on"] = "On";
           Config["payload_off"] = "Standby";
-        }else if(i==120){
+        } else if (i == 120) {
           Config["state_on"] = true;
           Config["state_off"] = false;
           Config["payload_on"] = "997";
           Config["payload_off"] = "996";
-        }
-         else {
+        } else {
           Config["state_on"] = ITEM_ON;
           Config["state_off"] = ITEM_OFF;
           Config["payload_on"] = ITEM_ON;
