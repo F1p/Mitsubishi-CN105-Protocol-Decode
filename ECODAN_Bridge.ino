@@ -605,10 +605,9 @@ void loop() {
   }
 
   // -- Defrost Handler -- //
-  if (HeatPump.Status.Defrost == 0 && (millis() - postdfpreviousMillis >= 360000)) { inDefrostWindow = false; }  // End Defrost Window
   if (HeatPump.Status.Defrost != 0) { inDefrostWindow = true; }                                                  // Start Defrost Window
   if (HeatPump.Status.LastDefrost != 0 && HeatPump.Status.Defrost == 0) { postdfpreviousMillis = millis(); }     // Transitioned from Defrosting Stage to Normal
-
+  if (HeatPump.Status.Defrost == 0 && (millis() - postdfpreviousMillis >= 360000)) { inDefrostWindow = false; }  // End Defrost Window
 
 
 
