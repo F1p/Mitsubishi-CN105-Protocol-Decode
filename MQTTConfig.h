@@ -560,7 +560,7 @@ void readSettingsFromConfig() {
     wifiManager.setBreakAfterConfig(true);                  // Saves settings, even if WiFi Fails
     wifiManager.setSaveConfigCallback(saveConfigCallback);  // Set config save callback
     wifiManager.setAPClientCheck(true);                     // Avoid timeout if client connected to softap
-    wifiManager.setWebServerCallback(bindServerCallback);            // Callback for the webhook route
+    wifiManager.setWebServerCallback(bindServerCallback);   // Callback for the webhook route
 
 #ifndef ARDUINO_WT32_ETH01
     wifiManager.setConfigPortalTimeout(600);  // Timeout before launching the config portal (WiFi Only)

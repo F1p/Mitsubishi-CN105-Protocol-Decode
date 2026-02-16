@@ -55,7 +55,7 @@
 #include "Ecodan.h"
 #include "Melcloud.h"
 
-String FirmwareVersion = "6.6.0-Beta";
+String FirmwareVersion = "6.6.0";
 String LatestFirmwareVersion;
 
 
@@ -596,7 +596,7 @@ void loop() {
   }
   if ((HeatPump.Status.LastSystemOperationMode == 1 && HeatPump.Status.SystemOperationMode != 1) || (HeatPump.Status.LastSystemOperationMode == 6 && HeatPump.Status.SystemOperationMode != 6) && DHWFlowFollowingActive) {
     PostDHWTimer = true;                                                 // Start timing
-    postdhwfspdurationMillis = millis();                                 // Start the post-defrost timer
+    postdhwfspdurationMillis = millis();                                 // Start the post DHW timer
   }                                                                      // For Onboard Comp Curve, recalculate FSP to prevent outdoor stopping
   if (PostDHWTimer && (millis() - postdhwfspdurationMillis >= 60000)) {  // Once 60s after DHW has completed, write flow setpoint back down
     PostDHWTimer = false;                                                // End
@@ -606,10 +606,9 @@ void loop() {
 
   // -- Defrost Handler -- //
   if (HeatPump.Status.Defrost == 0 && (millis() - postdfpreviousMillis >= 360000)) { inDefrostWindow = false; }  // End Defrost Window
-  if (HeatPump.Status.Defrost == 1) { inDefrostWindow = true; }                                                  // Start Defrost Window
-  if (HeatPump.Status.LastDefrost != 0 && HeatPump.Status.Defrost == 0) {                                        // Transitioned from Defrosting Stage to Normal
-    postdfpreviousMillis = millis();                                                                             // Capture the current time it occured for Comp Curve
-  }
+  if (HeatPump.Status.Defrost != 0) { inDefrostWindow = true; }                                                  // Start Defrost Window
+  if (HeatPump.Status.LastDefrost != 0 && HeatPump.Status.Defrost == 0) { postdfpreviousMillis = millis(); }     // Transitioned from Defrosting Stage to Normal
+
 
 
 
@@ -1413,7 +1412,7 @@ void SystemReport(void) {
   doc[F("HeaterFlow")] = HeatPump.Status.HeaterOutputFlowTemperature;
   doc[F("HeaterReturn")] = HeatPump.Status.HeaterReturnFlowTemperature;
   doc[F("FlowReturnDeltaT")] = HeatPump.Status.HeaterDeltaT;
-  doc[F("OutsideTemp")] = Outside_Air_Temp;
+  doc[F("OutsideTemp")] = round1(Outside_Air_Temp);
   doc[F("Defrost")] = DefrostModeString[HeatPump.Status.Defrost];
   doc[F("InputPower")] = HeatPump.Status.InputPower;
   doc[F("HeaterPower")] = HeatPump.Status.OutputPower;
@@ -1966,6 +1965,12 @@ float roundToOneDecimal(float value) {
   return ((round(value * 10.0)) / 10.0);
 }
 
+double round0(double value) {
+  return (int)(value);
+}
+double round1(double value) {
+  return (int)(value * 10 + 0.5) / 10.0;
+}
 double round2(double value) {
   return (int)(value * 100 + 0.5) / 100.0;
 }
@@ -2204,22 +2209,21 @@ void MQTTWriteReceived(String message, int MsgNumber) {
 
 
 bool getOATRunningAverage(uint8_t newOAT) {
-  OAT_total -= OAT_readings[OAT_readIndex];  // Subtract oldest value and add newest
+  OAT_total -= OAT_readings[OAT_readIndex];
   OAT_readings[OAT_readIndex] = newOAT;
-  OAT_total += OAT_readings[OAT_readIndex];
+  OAT_total += newOAT;
+  OAT_readIndex++;
 
-  OAT_readIndex++;  // Increment the index
-
-  // Wrap index and mark as full
   if (OAT_readIndex >= OAT_Window_Size) {
     OAT_readIndex = 0;
     OAT_isFull = true;
   }
 
-  if (OAT_isFull) {  // Once full, return true so not to skew results
-    OAT_average = OAT_total / OAT_Window_Size;
+  if (OAT_isFull) {
+    OAT_average = (float)OAT_total / OAT_Window_Size;
     return true;
   }
+
   return false;
 }
 
