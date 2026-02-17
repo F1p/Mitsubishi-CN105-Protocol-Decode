@@ -1407,7 +1407,7 @@ void SystemReport(void) {
   } else {
     Outside_Air_Temp = HeatPump.Status.OutsideTemperature;
   }
-
+  
   doc[F("HeaterFlow")] = HeatPump.Status.HeaterOutputFlowTemperature;
   doc[F("HeaterReturn")] = HeatPump.Status.HeaterReturnFlowTemperature;
   doc[F("FlowReturnDeltaT")] = HeatPump.Status.HeaterDeltaT;
@@ -2207,7 +2207,7 @@ void MQTTWriteReceived(String message, int MsgNumber) {
 }
 
 
-bool getOATRunningAverage(uint8_t newOAT) {
+bool getOATRunningAverage(float newOAT) {
   OAT_total -= OAT_readings[OAT_readIndex];
   OAT_readings[OAT_readIndex] = newOAT;
   OAT_total += newOAT;
