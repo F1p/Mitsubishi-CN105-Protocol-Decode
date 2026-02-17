@@ -209,7 +209,13 @@ mode: single
 ```
 
 
+Additionally, you can by-pass Home Assistant automations if your temperature sensor supports sending HTTP requests (e.g. Shelly devices with Automations) directly.
+Sending the payload to the following endpoints, for either current temperature zXtemp or zXsetpoint:
 
+```http://heatpump.local/webhook?z1temp=22.1```
+```http://heatpump.local/webhook?z1setpoint=22.0```
+```http://heatpump.local/webhook?z2temp=22.1```
+```http://heatpump.local/webhook?z2setpoint=22.1```
 
 
 
