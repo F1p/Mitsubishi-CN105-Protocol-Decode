@@ -55,7 +55,7 @@
 #include "Ecodan.h"
 #include "Melcloud.h"
 
-String FirmwareVersion = "6.6.0";
+String FirmwareVersion = "6.6.0-h1";
 String LatestFirmwareVersion;
 
 
@@ -1127,10 +1127,10 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
       }
       // Room Influence is Enabled/Disabled
       if (doc["zone1"]["room_influence_active"].is<bool>()) {
-        unitSettings.z1_room_influence_active = doc["room_influence_active"];
+        unitSettings.z1_room_influence_active = doc["zone1"]["room_influence_active"];
       }
       if (doc["zone1"]["use_local_tsensor"].is<bool>()) {
-        unitSettings.z1_use_local_sensor = doc["use_local_tsensor"];
+        unitSettings.z1_use_local_sensor = doc["zone1"]["use_local_tsensor"];
       }
 
       if (doc["zone2"]["active"].is<bool>()) {
@@ -1145,10 +1145,10 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
       }
       // Room Influence is Enabled/Disabled
       if (doc["zone2"]["room_influence_active"].is<bool>()) {
-        unitSettings.z2_room_influence_active = doc["room_influence_active"];
+        unitSettings.z2_room_influence_active = doc["zone2"]["room_influence_active"];
       }
       if (doc["zone2"]["use_local_tsensor"].is<bool>()) {
-        unitSettings.z2_use_local_sensor = doc["use_local_tsensor"];
+        unitSettings.z2_use_local_sensor = doc["zone2"]["use_local_tsensor"];
       }
 
       // Local or Remote Outdoor Temperature Measurement (Bool)
