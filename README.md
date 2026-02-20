@@ -11,6 +11,7 @@ To learn about the Hardware and Device Recovery, please read [Hardware and Recov
 
 Pre-Compiled software is for offical hardware:
 
+ - [All variations of PayPal sold hardware](https://www.paypal.com/ncp/payment/5664MSMETNMVY)
  - [Generation 2 WiFi ESP32 ebay sold hardware (with or without MELCloud port)](https://www.ebay.co.uk/itm/326373657740?var=515493740627)
  - [ESP32 Ethernet ebay sold hardware](https://www.ebay.co.uk/itm/326373657740?var=515493740625)
 - [Generation 1 WiFi ESP8266 ebay sold hardware (No longer available)](https://www.ebay.co.uk/itm/325967595655)
