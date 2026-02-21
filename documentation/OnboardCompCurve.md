@@ -218,6 +218,10 @@ Sending the payload to the following endpoints, for either current temperature z
 ```http://heatpump.local/webhook?z2setpoint=22.1```
 
 
+![Publish Parameters](https://github.com/F1p/Mitsubishi-CN105-Protocol-Decode/blob/master/documentation/images/shelly_H&t.png)
+
+
+
 
 ### Sending Offsets & Outdoor Temperatures
 
