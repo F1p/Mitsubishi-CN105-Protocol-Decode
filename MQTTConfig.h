@@ -473,6 +473,9 @@ void readSettingsFromConfig() {
           DEBUG_PRINTLN(F("Restarting Web Server..."));  // Restart the web server now it's on WiFi
           wifiManager.stopWebPortal();
           wifiManager.startWebPortal();
+          MDNS.end();
+          MDNS.begin("heatpump");
+          MDNS.addService("http", "tcp", 80);
         }
 #endif
       }
@@ -784,10 +787,8 @@ void readSettingsFromConfig() {
       Buffer_Topic = MQTT_DISCOVERY_TOPIC + ChipID + String(MQTT_DISCOVERY_OBJ_ID[i]) + String(MQTT_DISCOVERY_TOPICS[5]);
 
       if (MQTTStream == 1) {
-        MQTTClient1.publish(Buffer_Topic.c_str(), NULL, 0, true);
         MQTTClient1.publish(Buffer_Topic.c_str(), (uint8_t*)&Buffer_Payload, buf_size, true);
       } else if (MQTTStream == 2) {
-        MQTTClient2.publish(Buffer_Topic.c_str(), NULL, 0, true);
         MQTTClient2.publish(Buffer_Topic.c_str(), (uint8_t*)&Buffer_Payload, buf_size, true);
       }
 

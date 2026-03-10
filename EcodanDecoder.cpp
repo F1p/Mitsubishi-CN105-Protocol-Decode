@@ -631,7 +631,7 @@ void ECODANDECODER::Process0x11(uint8_t *Buffer, EcodanStatus *Status) {
   DipSwitch4 = Buffer[7];
   DipSwitch5 = Buffer[9];
   DipSwitch6 = Buffer[11];
-  DipSwitch7 = Buffer[13]; // FTC7 only
+  DipSwitch7 = Buffer[13];  // FTC7 only
 
   // Bitmask Translation
   if (IS_BIT_SET(DipSwitch2, 3)) {  // SW2-4
@@ -1021,7 +1021,7 @@ void ECODANDECODER::Process0xA3(uint8_t *Buffer, EcodanStatus *Status) {
     } else if (ServiceCode == 28) {
       Status->TH34 = ExtractInt16_v2_Signed(Buffer, 4);
       Status->HasGeodan = true;
-    }  else if (ServiceCode == 70) {
+    } else if (ServiceCode == 70) {
       Status->OutdoorUnitCapacity = Buffer[4];
     } else if (ServiceCode == 90) {
       snprintf(Status->OutdoorFirmware, 6, "%02X.%02X", Buffer[5], Buffer[4]);
@@ -1234,12 +1234,21 @@ void ECODANDECODER::EncodeRoomThermostat(float Setpoint, uint8_t ControlMode, ui
 }
 
 
-void ECODANDECODER::EncodeFlowTemperature(float Setpoint, uint8_t ControlMode, uint8_t Zone) {
+void ECODANDECODER::EncodeFlowTemperature(float Setpoint, uint8_t ControlMode, uint8_t Zone, float SetpointDHW) {
   uint8_t UpperByte, LowerByte;
   uint16_t ScaledTarget;
 
   TxMessage.Payload[0] = TX_MESSAGE_BASIC;
+  TxMessage.Payload[1] = 0x00;
   TxMessage.Payload[2] = Zone;
+
+  // DHW Anti 0 Setpoint
+  ScaledTarget = SetpointDHW * 100;
+  UpperByte = (uint8_t)(ScaledTarget >> 8);
+  LowerByte = (uint8_t)(ScaledTarget & 0x00ff);
+
+  TxMessage.Payload[8] = UpperByte;
+  TxMessage.Payload[9] = LowerByte;
 
 
   if (Zone == ZONE1) {

@@ -298,7 +298,7 @@ public:
   void EncodeDHWMode(uint8_t HotWaterMode);
   void EncodeDHWSetpoint(float HotWaterSetpoint);
   void EncodeRoomThermostat(float Setpoint, uint8_t ControlMode, uint8_t Zone);
-  void EncodeFlowTemperature(float Setpoint, uint8_t ControlMode, uint8_t Zone);
+  void EncodeFlowTemperature(float Setpoint, uint8_t ControlMode, uint8_t Zone, float SetpointDHW);
   void EncodeForcedDHW(uint8_t OnOff);
   void EncodeHolidayMode(uint8_t OnOff);
   void EncodeFTCVersion(void);

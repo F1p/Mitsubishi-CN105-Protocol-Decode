@@ -318,7 +318,7 @@ void ECODAN::SetZoneTempSetpoint(float Setpoint, uint8_t Mode, uint8_t Zone) {
 
 
 void ECODAN::SetFlowSetpoint(float Setpoint, uint8_t Mode, uint8_t Zone) {
-  ECODANDECODER::EncodeFlowTemperature(Setpoint, Mode, Zone);  // Can OR the write with the mode but removed as different MQTT topic:      SET_ZONE_SETPOINT | SET_HEATING_CONTROL_MODE
+  ECODANDECODER::EncodeFlowTemperature(Setpoint, Mode, Zone, Status.HotWaterSetpoint);  // Can OR the write with the mode but removed as different MQTT topic:      SET_ZONE_SETPOINT | SET_HEATING_CONTROL_MODE
   if (cmd_queue_length < 10) {
     cmd_queue_length++;
     ECODANDECODER::TransfertoBuffer(SET_REQUEST, cmd_queue_length);
