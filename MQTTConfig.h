@@ -195,7 +195,7 @@ void readSettingsFromConfig() {
             DEBUG_PRINTLN(error.c_str());
           } else {
             DEBUG_PRINTLN(F("Parsed JSON: "));
-            serializeJson(doc, TelnetServer);
+            serializeJson(doc, DEBUGPORT);
             DEBUG_PRINTLN();
 
             // Build in safety check, otherwise ESP will crash out and you can't get back in
@@ -466,7 +466,7 @@ void readSettingsFromConfig() {
         DEBUG_PRINTLN(F("[FAILED]"));
       } else {
         DEBUG_PRINTLN(F("[DONE]"));
-        serializeJson(doc, TelnetServer);
+        serializeJson(doc, DEBUGPORT);
         DEBUG_PRINTLN();
 #ifndef ARDUINO_WT32_ETH01
         if (WiFi.status() == WL_CONNECTED) {

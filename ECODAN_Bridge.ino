@@ -55,7 +55,7 @@
 #include "Ecodan.h"
 #include "Melcloud.h"
 
-String FirmwareVersion = "6.6.0-h1";
+String FirmwareVersion = "6.6.0-h3";
 String LatestFirmwareVersion;
 
 
@@ -226,8 +226,6 @@ WiFiClient NetworkClient2;
 PubSubClient MQTTClient1(NetworkClient1);
 PubSubClient MQTTClient2(NetworkClient2);
 ESPTelnet TelnetServer;
-WiFiManager wifiManager;
-
 
 // Delcare Global Scope for Non-Blocking, always active Portal with "TEMP" placeholder, real values populated later from filesystem
 WiFiManagerParameter custom_mqtt_server("server", "<b>Required</b> Primary MQTT Server (IP Address or DNS)", "TEMP", hostname_max_length);
@@ -242,6 +240,7 @@ WiFiManagerParameter custom_mqtt2_port("port2", "Secondary MQTT Server Port", "T
 WiFiManagerParameter custom_mqtt2_basetopic("basetopic2", "Secondary MQTT Base Topic", "TEMP", basetopic_max_length);
 WiFiManagerParameter custom_device_id("device_id", "<hr>Device ID<br><font size='0.8em'>Only modify if upgrading or changing hardware, copy your previous device ID over</font>", "TEMP", deviceId_max_length);
 
+WiFiManager wifiManager;
 
 #include "TimerCallBack.h"
 #include "Debug.h"
@@ -622,6 +621,7 @@ void loop() {
   // -- Outdoor Triggers on Outdoor Unit Change -- //
   if (FrequencyLastLoop > 0 && HeatPump.Status.CompressorFrequency == 0) {                       // Transition of Compressor On to Off
     HeatPump.WriteServiceCodeCMD(19);                                                            // Trigger Fan Speed Request Service Code
+    HeatPump.WriteServiceCodeCMD(20);                                                            // Trigger Fan Speed Request Service Code
     if (HeatPump.Status.Defrost == 0) {                                                          // If Not Defrosting
       CompressorPeriodDurations[1] = CompressorPeriodDurations[0];                               // Transfer Last Compressor Period to Array Pos 1
       CompressorPeriodDurations[0] = (millis() / 1000) - CompressorStopStartTimer[0];            // Current Time from Stop > Stop (Seconds) to Array Pos 0
@@ -635,6 +635,7 @@ void loop() {
     }                                                                                            //
   } else if (FrequencyLastLoop == 0 && HeatPump.Status.CompressorFrequency > 0) {                // Transition of Compressor Off to On
     HeatPump.WriteServiceCodeCMD(19);                                                            // Trigger Fan Speed Request Service Code
+    HeatPump.WriteServiceCodeCMD(20);                                                            // Trigger Fan Speed Request Service Code
     if (HeatPump.Status.Defrost == 0) {                                                          // If Not Defrosting
       CompressorStopStartTimer[1] = (millis() / 1000);                                           // Last Compressor Start Time (Seconds)
     }

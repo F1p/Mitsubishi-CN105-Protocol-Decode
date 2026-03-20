@@ -729,20 +729,20 @@ const char MQTT_CLIMATE_MODE[][120] PROGMEM = {
   "{%set values = {'heat':'Heating Temperature','cool':'Cooling Temperature'}%}{{values[value] if value in values.keys()}}"
 };
 
-const char MQTT_CLIMATE_STATE_TOPIC[][360] PROGMEM = {
+const char MQTT_CLIMATE_STATE_TOPIC[][375] PROGMEM = {
   "{{'heat' if states('sensor.ecodan_ashp_prohibit_dhw')=='0' or states('sensor.ecodan_ashp_dhw_heating_phase')!='Off' else 'off'}}",
   "{{'heat' if (value_json.OpMode=='Heat' and states('sensor.ecodan_ashp_zone_1_heating_prohibit')=='0') else 'cool' if (value_json.OpMode=='Cool' and states('sensor.ecodan_ashp_zone_1_cooling_prohibit')=='0') else 'off'}}",
-  "{{'heat' if (value_json.OpMode=='Heat' and state_attr('climate.zone2_climate','current_temperature')!=0 and states('sensor.ecodan_ashp_zone_2_heating_prohibit')=='0') else 'cool' if (value_json.OpMode=='Cool' and state_attr('climate.zone2_climate','current_temperature')!=0 and states('sensor.ecodan_ashp_zone_2_cooling_prohibit')=='0') else 'off'}}",
+  "{{'heat' if (value_json.OpMode=='Heat' and state_attr('climate.zone2_climate','current_temperature')!=0 and states('sensor.ecodan_ashp_zone_2_heating_prohibit')=='0') else 'cool' if (value_json.OpMode=='Cool' and state_attr('climate.zone2_climate','current_temperature')|default(0)!=0 and states('sensor.ecodan_ashp_zone_2_cooling_prohibit')|default(0)=='0') else 'off'}}",
   "{{'heat' if (value_json.OpMode=='Heat' and states('sensor.ecodan_ashp_zone_1_heating_prohibit')=='0') else 'cool' if (value_json.OpMode=='Cool' and states('sensor.ecodan_ashp_zone_1_cooling_prohibit')=='0') else 'off'}}",
-  "{{'heat' if (value_json.OpMode=='Heat' and state_attr('climate.zone2_climate','current_temperature')!=0 and states('sensor.ecodan_ashp_zone_2_heating_prohibit')=='0') else 'cool' if (value_json.OpMode=='Cool' and state_attr('climate.zone2_climate','current_temperature')!=0 and states('sensor.ecodan_ashp_zone_2_cooling_prohibit')=='0') else 'off'}}"
+  "{{'heat' if (value_json.OpMode=='Heat' and state_attr('climate.zone2_climate','current_temperature')!=0 and states('sensor.ecodan_ashp_zone_2_heating_prohibit')=='0') else 'cool' if (value_json.OpMode=='Cool' and state_attr('climate.zone2_climate','current_temperature')|default(0)!=0 and states('sensor.ecodan_ashp_zone_2_cooling_prohibit')|default(0)=='0') else 'off'}}"
 };
 
-const char MQTT_CLIMATE_MODE_STATE_TEMPLATE[][435] PROGMEM = {
+const char MQTT_CLIMATE_MODE_STATE_TEMPLATE[][455] PROGMEM = {
   "{{'heating' if value_json.SystemOperationMode in ['Hot Water','Legionella'] else 'defrosting' if value_json.SystemOperationMode in ['Defrosting','Frost Protect'] else 'idle' if states('sensor.ecodan_ashp_prohibit_dhw')!='1' else 'off'}}",
-  "{%set mode=value_json.SystemOperationMode|lower%}{%set h_prhbt=not(states('sensor.ecodan_ashp_zone_1_heating_prohibit')|bool)%}{%set c_prhbt=not(states('sensor.ecodan_ashp_zone_1_cooling_prohibit')|bool)%}{%set wrkg=states('sensor.ecodan_ashp_zone_1_working')|bool%}{%if mode in ['defrosting','frost protect']%}defrosting{%elif ((h_prhbt or c_prhbt) and not(wrkg)) or mode in ['hot water','legionella']%}idle{%else%}{{mode}}{%endif%}",
-  "{%set mode=value_json.SystemOperationMode|lower%}{%set h_prhbt=not(states('sensor.ecodan_ashp_zone_2_heating_prohibit')|bool)%}{%set c_prhbt=not(states('sensor.ecodan_ashp_zone_2_cooling_prohibit')|bool)%}{%set wrkg=states('sensor.ecodan_ashp_zone_2_working')|bool%}{%if mode in ['defrosting','frost protect']%}defrosting{%elif ((h_prhbt or c_prhbt) and not(wrkg)) or mode in ['hot water','legionella']%}idle{%else%}{{mode}}{%endif%}",
-  "{%set mode=value_json.SystemOperationMode|lower%}{%set h_prhbt=not(states('sensor.ecodan_ashp_zone_1_heating_prohibit')|bool)%}{%set c_prhbt=not(states('sensor.ecodan_ashp_zone_1_cooling_prohibit')|bool)%}{%set wrkg=states('sensor.ecodan_ashp_zone_1_working')|bool%}{%if mode in ['defrosting','frost protect']%}defrosting{%elif ((h_prhbt or c_prhbt) and not(wrkg)) or mode in ['hot water','legionella']%}idle{%else%}{{mode}}{%endif%}",
-  "{%set mode=value_json.SystemOperationMode|lower%}{%set h_prhbt=not(states('sensor.ecodan_ashp_zone_2_heating_prohibit')|bool)%}{%set c_prhbt=not(states('sensor.ecodan_ashp_zone_2_cooling_prohibit')|bool)%}{%set wrkg=states('sensor.ecodan_ashp_zone_2_working')|bool%}{%if mode in ['defrosting','frost protect']%}defrosting{%elif ((h_prhbt or c_prhbt) and not(wrkg)) or mode in ['hot water','legionella']%}idle{%else%}{{mode}}{%endif%}",
+  "{%set mode=value_json.SystemOperationMode|lower%}{%set h_prhbt=not(states('sensor.ecodan_ashp_zone_1_heating_prohibit')|bool(false))%}{%set c_prhbt=not(states('sensor.ecodan_ashp_zone_1_cooling_prohibit')|bool(false))%}{%set wrkg=states('sensor.ecodan_ashp_zone_1_working')|bool(false)%}{%if mode in ['defrosting','frost protect']%}defrosting{%elif ((h_prhbt or c_prhbt) and not(wrkg)) or mode in ['hot water','legionella']%}idle{%else%}{{mode}}{%endif%}",
+  "{%set mode=value_json.SystemOperationMode|lower%}{%set h_prhbt=not(states('sensor.ecodan_ashp_zone_2_heating_prohibit')|bool(false))%}{%set c_prhbt=not(states('sensor.ecodan_ashp_zone_2_cooling_prohibit')|bool(false))%}{%set wrkg=states('sensor.ecodan_ashp_zone_2_working')|bool(false)%}{%if mode in ['defrosting','frost protect']%}defrosting{%elif ((h_prhbt or c_prhbt) and not(wrkg)) or mode in ['hot water','legionella']%}idle{%else%}{{mode}}{%endif%}",
+  "{%set mode=value_json.SystemOperationMode|lower%}{%set h_prhbt=not(states('sensor.ecodan_ashp_zone_1_heating_prohibit')|bool(false))%}{%set c_prhbt=not(states('sensor.ecodan_ashp_zone_1_cooling_prohibit')|bool(false))%}{%set wrkg=states('sensor.ecodan_ashp_zone_1_working')|bool(false)%}{%if mode in ['defrosting','frost protect']%}defrosting{%elif ((h_prhbt or c_prhbt) and not(wrkg)) or mode in ['hot water','legionella']%}idle{%else%}{{mode}}{%endif%}",
+  "{%set mode=value_json.SystemOperationMode|lower%}{%set h_prhbt=not(states('sensor.ecodan_ashp_zone_2_heating_prohibit')|bool(false))%}{%set c_prhbt=not(states('sensor.ecodan_ashp_zone_2_cooling_prohibit')|bool(false))%}{%set wrkg=states('sensor.ecodan_ashp_zone_2_working')|bool(false)%}{%if mode in ['defrosting','frost protect']%}defrosting{%elif ((h_prhbt or c_prhbt) and not(wrkg)) or mode in ['hot water','legionella']%}idle{%else%}{{mode}}{%endif%}",
 };
 
 const char MQTT_SELECT_VALUE_TEMPLATE[][480] PROGMEM = {
@@ -759,8 +759,8 @@ const char MQTT_SENSOR_UNITS[][7] PROGMEM = {
   "°C",
   "kW",
   "Hz",
-  "L/min",
-  "h",
+  "l/min",
+  "hrs",
   "kWh",
   "CoP",
   "C",  //Unused
