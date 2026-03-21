@@ -759,8 +759,8 @@ const char MQTT_SENSOR_UNITS[][7] PROGMEM = {
   "°C",
   "kW",
   "Hz",
-  "l/min",
-  "hrs",
+  "L/min",
+  "h",
   "kWh",
   "CoP",
   "C",  //Unused
