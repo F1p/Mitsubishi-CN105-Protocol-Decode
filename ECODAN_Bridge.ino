@@ -55,7 +55,7 @@
 #include "Ecodan.h"
 #include "Melcloud.h"
 
-String FirmwareVersion = "6.6.0-h4";
+String FirmwareVersion = "6.6.0-h5";
 String LatestFirmwareVersion;
 
 
@@ -1687,7 +1687,7 @@ void StatusReport(void) {
     doc[F("MELCloud_Status")] = "Adapter Disconnected";
   }
   doc[F("MELCloud_Write_Blocking")] = unitSettings.BlockWriteFromMELCloud;
-  strftime(TmBuffer, sizeof(TmBuffer), "%FT%TZ", &HeatPump.Status.DateTimeStamp);
+  strftime(TmBuffer, sizeof(TmBuffer), "%FT%T", &HeatPump.Status.DateTimeStamp);
   doc[F("FTCTime")] = TmBuffer;
 
 
