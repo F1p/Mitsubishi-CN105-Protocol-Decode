@@ -271,7 +271,276 @@ const char MQTT_MDI_ICONS[][30] PROGMEM = {
   "mdi:water-opacity"  //100
 };
 
+// Italian
+/*
+const char MQTT_SENSOR_NAME[][45] PROGMEM = {
+  "Stato Bridge",
+  "Versione Firmware",
+  "Segnale WiFi Bridge",
+  "Versione FTC",
+  "Modo Operativo Sistema",
+  "Temp. Ritorno Riscaldatore",         //5
+  "Temp. Mandata Riscaldatore",
+  "Temperatura Esterna",
+  "Sbrinamento",
+  "Potenza Uscita Pompa Calore",
+  "Frequenza Compressore",              // 10
+  "Portata",
+  "Ore Funzionamento",
+  "Temp. Massima Mandata",
+  "Temp. Minima Mandata",
+  "Temp. Mandata Caldaia",              //15
+  "Temp. Ritorno Caldaia",
+  "Temp. Serbatoio Miscela",
+  "Temperatura Refrigerante",
+  "Riscaldatore Immersione",
+  "Riscaldatore Integrativo 1",         //20
+  "Pompa Acqua 1",
+  "Pompa Acqua 2",
+  "Valvola a Tre Vie 1",
+  "Valvola a Tre Vie 2",
+  "Temperatura ACS",                    //25
+  "Temp. ACS Superiore",
+  "Inibizione ACS",
+  "ACS in Funzione",
+  "Modo Controllo ACS",
+  "Setpoint Legionella",                //30
+  "Caduta Temp. Max ACS",
+  "Fase Riscaldamento ACS",
+  "Temp. Mandata Zona 1",
+  "Temp. Ritorno Zona 1",
+  "Temp. Mandata Zona 2",               //35
+  "Temp. Ritorno Zona 2",
+  "Zona 1 in Funzione",
+  "Zona 2 in Funzione",
+  "Riscald. Consumato Ieri",
+  "Riscald. Prodotto Ieri",             //40
+  "Raffredd. Consumato Ieri",
+  "Raffredd. Prodotto Ieri",
+  "ACS Consumato Ieri",
+  "ACS Prodotto Ieri",
+  "Energia Tot. Consumata Ieri",        //45
+  "Energia Tot. Prodotta Ieri",
+  "CoP Riscaldamento Ieri",
+  "CoP Raffreddamento Ieri",
+  "CoP ACS Ieri",
+  "CoP Totale Ieri",                    //50
+  "Codice Errore Refrigerante",
+  "Codice Errore",
+  "Codice Guasto",
+  "DeltaT Mandata Ritorno",
+  "Potenza Riscald. Calcolata",         //55
+  "Potenza Raffredd. Calcolata",
+  "Riscaldamento in Corso",
+  "Raffreddamento in Corso",
+  "Inibizione Riscald. Zona 1",
+  "Inibizione Raffredd. Zona 1",        //60
+  "Inibizione Riscald. Zona 2",
+  "Inibizione Raffredd. Zona 2",
+  "Setpoint Mandata Zona 1",
+  "Setpoint Mandata Zona 2",
+  "Consenso Termostato Est. Z1",        //65
+  "Consenso Termostato Est. Z2",
+  "Consenso Termostato Esterno",
+  "Pompa Acqua 4",
+  "Pompa Acqua 3",
+  "Pompa Acqua 13",                    // 70
+  "Potenza Assorbita PdC",
+  "Potenza Assorbita Calcolata",
+  "Versione Software FTC",
+  "Boost ACS",
+  "Step Valvola Miscelatrice",          //75
+  "Temperatura CPU Bridge",
+  "Riscaldatore Integrativo 2",
+  "CoP Istantaneo",
+  "Temp. Liquido Refrig. TH3",
+  "Numero Avvii Compressore",
+  "Temperatura Scarico TH4",
+  "Temperatura Sottoraffredd.",
+  "Temperatura Dissipatore TH8",
+  "Temp. Liq. Scambiatore TH6",
+  "Velocità Ventola 1",
+  "Velocità Ventola 2",
+  "Valvola LEV A",
+  "Valvola LEV B",
+  "Temp. Ingresso Acqua TH32",
+  "Potenza ACS Prod. Calcolata",
+  "Potenza ACS Ass. Calcolata",
+  "Potenza Riscald. Prod. Calc.",
+  "Potenza Riscald. Ass. Calc.",
+  "Potenza Raffredd. Ass. Calc.",
+  "Temperatura Surriscald.",
+  "Stato Protez. Ciclo Breve",
+  "Versione SW Unità Esterna",
+  "Stato Adattatore MELCloud",
+  "Config. Dip Switch (1-1 a 7-8)",
+  "Velocità PWM Pompa Acqua 1",
+  "Temp. Ingresso Salamoia",
+  "Temp. Uscita Salamoia",
+  "CoP Totale Oggi",
 
+  "Termostato ACS",
+  "Termostato Zona 1",                  //80
+  "Termostato Zona 2",
+  "Termostato Mandata Zona 1",
+  "Termostato Mandata Zona 2",
+
+  "Boost ACS Rapido",
+  "Alimentazione Sistema",              //85
+  "Modo Vacanza",
+  "Modo Controllo Server",
+  "Inibizione ACS",
+  "Inibizione Riscald. Zona 1",
+  "Inibizione Raffredd. Zona 1",        //90
+  "Inibizione Riscald. Zona 2",
+  "Inibizione Raffredd. Zona 2",
+  "Boost ACS",
+  "Protezione Ciclo Breve",
+  "MELCloud Sola Lettura",
+
+  "Modo ACS",
+  "Modo Riscald/Raffredd Zona 1",       //95
+  "Modo Riscald/Raffredd Zona 2",
+  "Taglia Unità Esterna (kW)",
+  "Percentuale Glicole",
+  "Aggiornamento Firmware"
+};
+*/
+// Spanish
+/*const char MQTT_SENSOR_NAME[][45] PROGMEM = {
+  "Estado del Bridge",
+  "Versión del Firmware",
+  "Señal WiFi del Bridge",
+  "Versión FTC",
+  "Modo de Operación del Sistema",
+  "Temp. Retorno Calefactor",           //5
+  "Temp. Impulsión Calefactor",
+  "Temperatura Exterior",
+  "Desescarche",
+  "Potencia de Salida Bomba Calor",
+  "Frecuencia del Compresor",           // 10
+  "Caudal",
+  "Horas de Funcionamiento",
+  "Temp. Máx de Impulsión",
+  "Temp. Mín de Impulsión",
+  "Temp. Impulsión Caldera",            //15
+  "Temp. Retorno Caldera",
+  "Temp. Tanque de Mezcla",
+  "Temperatura Refrigerante",
+  "Calentador de Inmersión",
+  "Calentador de Apoyo 1",              //20
+  "Bomba de Agua 1",
+  "Bomba de Agua 2",
+  "Válvula de Tres Vías 1",
+  "Válvula de Tres Vías 2",
+  "Temperatura ACS",                    //25
+  "Temp. ACS Superior",
+  "Prohibir ACS",
+  "ACS en Funcionamiento",
+  "Modo Control ACS",
+  "Consigna Legionela",                 //30
+  "Caída Máx Temp. ACS",
+  "Fase Calentamiento ACS",
+  "Temp. Impulsión Zona 1",
+  "Temp. Retorno Zona 1",
+  "Temp. Impulsión Zona 2",             //35
+  "Temp. Retorno Zona 2",
+  "Zona 1 Activa",
+  "Zona 2 Activa",
+  "Calefacción Consumida Ayer",
+  "Calefacción Entregada Ayer",         //40
+  "Refrigeración Consumida Ayer",
+  "Refrigeración Entregada Ayer",
+  "ACS Consumido Ayer",
+  "ACS Entregado Ayer",
+  "Energía Total Consumida Ayer",       //45
+  "Energía Total Entregada Ayer",
+  "COP Calefacción Ayer",
+  "COP Refrigeración Ayer",
+  "COP ACS Ayer",
+  "COP Total Ayer",                     //50
+  "Cód. Fallo Refrigerante",
+  "Código de Error",
+  "Código de Fallo",
+  "DeltaT Impulsión/Retorno",
+  "Potencia Calor Computada",           //55
+  "Potencia Frío Computada",
+  "Calefacción en Marcha",
+  "Refrigeración en Marcha",
+  "Prohibir Calefacción Zona 1",
+  "Prohibir Refrigeración Zona 1",      //60
+  "Prohibir Calefacción Zona 2",
+  "Prohibir Refrigeración Zona 2",
+  "Consigna Impulsión Zona 1",
+  "Consigna Impulsión Zona 2",
+  "Demanda Termostato Ext. Zona 1",     //65
+  "Demanda Termostato Ext. Zona 2",
+  "Demanda Termostato Ext. Exterior",
+  "Bomba de Agua 4",
+  "Bomba de Agua 3",
+  "Bomba de Agua 13",                   // 70
+  "Potencia Entrada Bomba Calor",
+  "Potencia Entrada Computada",
+  "Versión Software FTC",
+  "Refuerzo ACS",
+  "Paso Válvula Mezcladora",            //75
+  "Temp. CPU del Bridge",
+  "Calentador de Apoyo 2",
+  "COP Instantáneo",
+  "Temp. Líquido Refrigerante TH3",
+  "Cantidad Arranques Compresor",
+  "Temp. de Descarga TH4",
+  "Temp. de Subenfriamiento",
+  "Temp. del Disipador TH8",
+  "Temp. Líquido Intercambiador TH6",
+  "Velocidad Ventilador 1",
+  "Velocidad Ventilador 2",
+  "Válvula LEV A",
+  "Válvula LEV B",
+  "Temp. Entrada de Agua TH32",
+  "Potencia ACS Entregada Comp.",
+  "Potencia ACS Consumida Comp.",
+  "Potencia Calor Entregada Comp.",
+  "Potencia Calor Consumida Comp.",
+  "Potencia Frío Consumida Comp.",
+  "Temp. de Recalentamiento",
+  "Estado Protección Ciclo Corto",
+  "Versión Software Unidad Ext.",
+  "Estado Adaptador MELCloud",
+  "Config. Dip Switch (1-1 a 7-8)",
+  "Velocidad PWM Bomba Agua 1",
+  "Temp. Entrada Salmuera",
+  "Temp. Salida Salmuera",
+  "COP Total Hoy",
+
+  "Termostato ACS",
+  "Termostato Zona 1",                  //80
+  "Termostato Zona 2",
+  "Termostato Impulsión Zona 1",
+  "Termostato Impulsión Zona 2",
+
+  "Refuerzo ACS Rápido",
+  "Encendido del Sistema",              //85
+  "Modo Vacaciones",
+  "Modo Control Servidor",
+  "Prohibir ACS",
+  "Prohibir Calefacción Zona 1",
+  "Prohibir Refrigeración Zona 1",      //90
+  "Prohibir Calefacción Zona 2",
+  "Prohibir Refrigeración Zona 2",
+  "Refuerzo ACS",
+  "Protección Ciclo Corto",
+  "MELCloud Solo Lectura",
+
+  "Modo ACS",
+  "Modo Frío/Calor Zona 1",             //95
+  "Modo Frío/Calor Zona 2",
+  "Potencia Unidad Ext. (kW)",
+  "Concentración Glicol",
+  "Actualización de Firmware"
+};*/
+
+ // English
 const char MQTT_SENSOR_NAME[][45] PROGMEM = {
   "Bridge Status",
   "Firmware Version",
@@ -404,6 +673,142 @@ const char MQTT_SENSOR_NAME[][45] PROGMEM = {
   "Glycol Strength",
   "Firmware Update"
 };
+
+
+/* // Dutch
+const char MQTT_SENSOR_NAME[][45] PROGMEM = {
+  "Bridge Status",
+  "Firmware Versie",
+  "Bridge WiFi Signaal",
+  "FTC Versie",
+  "Systeem Bedrijfsmodus",
+  "Retourtemperatuur Verwarming",  //5
+  "Aanvoertemperatuur Verwarming",
+  "Buitentemperatuur",
+  "Ontdooien",
+  "Warmtepomp Vermogen",
+  "Compressor Frequentie",  // 10
+  "Debiet",
+  "Bedrijfsuren",
+  "Max Aanvoertemperatuur",
+  "Min Aanvoertemperatuur",
+  "Aanvoertemperatuur Ketel",  //15
+  "Retourtemperatuur Ketel",
+  "Mengtank Temperatuur",
+  "Koudemiddel Temperatuur",
+  "Elektrisch Element",
+  "Bijverwarming 1",  //20
+  "Waterpomp 1",
+  "Waterpomp 2",
+  "Driewegklep 1",
+  "Driewegklep 2",
+  "SWW Temperatuur",  //25
+  "SWW Temperatuur Boven",
+  "SWW Blokkeren",
+  "SWW Actief",
+  "SWW Regelmodus",
+  "Legionella Instelwaarde",  //30
+  "SWW Max Temperatuurdal",
+  "SWW Verwarmingsfase",
+  "Zone 1 Aanvoertemperatuur",
+  "Zone 1 Retourtemperatuur",
+  "Zone 2 Aanvoertemperatuur",  //35
+  "Zone 2 Retourtemperatuur",
+  "Zone 1 Actief",
+  "Zone 2 Actief",
+  "Verbruikt Verwarmen Gisteren",
+  "Geleverd Verwarmen Gisteren",  //40
+  "Verbruikt Koelen Gisteren",
+  "Geleverd Koelen Gisteren",
+  "Verbruikt SWW Gisteren",
+  "Geleverd SWW Gisteren",
+  "Totaal Verbruikt Gisteren",  //45
+  "Totaal Geleverd Gisteren",
+  "CoP Verwarmen Gisteren",
+  "CoP Koelen Gisteren",
+  "CoP SWW Gisteren",
+  "Totaal CoP Gisteren",  //50
+  "Koudemiddel Foutcode",
+  "Foutcode",
+  "Storingscode",
+  "DeltaT Aanvoer Retour",
+  "Berekend Verwarmingsvermogen",  //55
+  "Berekend Koelvermogen",
+  "Verwarmen Actief",
+  "Koelen Actief",
+  "Zone 1 Verwarmen Blokkeren",
+  "Zone 1 Koelen Blokkeren",  //60
+  "Zone 2 Verwarmen Blokkeren",
+  "Zone 2 Koelen Blokkeren",
+  "Zone 1 Aanvoer Instelwaarde",
+  "Zone 2 Aanvoer Instelwaarde",
+  "Zone 1 Ext Thermostaat Vraag",  //65
+  "Zone 2 Ext Thermostaat Vraag",
+  "Buiten Ext Thermostaat Vraag",
+  "Waterpomp 4",
+  "Waterpomp 3",
+  "Waterpomp 13",  // 70
+  "Warmtepomp Opgenomen Vermogen",
+  "Berekend Opgenomen Vermogen",
+  "FTC Software Versie",
+  "SWW Boost",
+  "Mengklep Stap",  //75
+  "Bridge CPU Temperatuur",
+  "Bijverwarming 2",
+  "Actuele CoP",
+  "Vloeibaar Koudemiddel Temp TH3",
+  "Aantal Compressor Starts",
+  "Persgastemperatuur TH4",
+  "Subcooling Temperatuur",
+  "Koellichaam Temperatuur TH8",
+  "Platenwisselaar Vloeistof TH6",
+  "Ventilator 1 Snelheid",
+  "Ventilator 2 Snelheid",
+  "Klep LEV A",
+  "Klep LEV B",
+  "Waterinlaattemperatuur TH32",
+  "Berekend SWW Vermogen",
+  "Berekend Opgenomen SWW Vermgen",
+  "Berekend Verwarming Vermogen",
+  "Berekend Opgen Verw Vermogen",
+  "Berekend Opgen Koel Vermogen",
+  "Oververhitting Temperatuur",
+  "Korte Cyclus Bescherming",
+  "Buitenunit Software Versie",
+  "MELCloud Adapter Status",
+  "Dip Switch Config (1-1 tot 7-8)",
+  "Waterpomp 1 PWM Snelheid",
+  "Brine Inlaattemperatuur",
+  "Brine Uitlaattemperatuur",
+  "Totaal CoP Vandaag",
+
+  "SWW Thermostaat",
+  "Zone 1 Thermostaat",  //80
+  "Zone 2 Thermostaat",
+  "Zone 1 Aanvoer Thermostaat",
+  "Zone 2 Aanvoer Thermostaat",
+
+  "Snelle SWW Boost",
+  "Systeem Ingeschakeld",  //85
+  "Vakantiemodus",
+  "Server Regelmodus",
+  "SWW Blokkeren",
+  "Zone 1 Verwarmen Blokkeren",
+  "Zone 1 Koelen Blokkeren",  //90
+  "Zone 2 Verwarmen Blokkeren",
+  "Zone 2 Koelen Blokkeren",
+  "SWW Boost",
+  "Korte Cyclus Bescherming",
+  "MELCloud Alleen Lezen",
+
+  "SWW Modus",
+  "Bedrijfsmodus Verw/Koel Zone 1",  //95
+  "Bedrijfsmodus Verw/Koel Zone 2",
+  "Buitenunit Vermogen (kW)",
+  "Glycol Concentratie",
+  "Firmware Update"
+};
+*/
 
 const char MQTT_TOPIC[][34] PROGMEM = {
   "/LWT",                               //0
