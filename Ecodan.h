@@ -26,6 +26,7 @@ class ECODAN : public ECODANDECODER {
 public:
   ECODAN(void);
   void Process(void);
+  void Connect(void);
   void Disconnect(void);
   void SetStream(Stream *HeatPumpStream);
   void TriggerStatusStateMachine(void);
@@ -54,7 +55,8 @@ public:
   void WriteMELCloudCMD(uint8_t cmd);
   void WriteServiceCodeCMD(int cmd);
   bool SVCPopulated, PauseStateMachine;
-
+  bool PrevConnected;
+  
 protected:
 
 private:
@@ -69,7 +71,6 @@ private:
 
   MessageStruct TXMessage;
   Stream *DeviceStream;
-  void Connect(void);
   void printCurrentTime(void);
   void printTransferMsg(int length);
 };

@@ -21,6 +21,7 @@ extern ESPTelnet TelnetServer;
 #include "Debug.h"
 
 uint8_t MELCloudInit3[] = { 0xfc, 0x7a, 0x02, 0x7a, 0x01, 0x00, 0x09 };
+uint8_t MELCloudInit4[] = { 0xfc, 0x7a, 0x01, 0x30, 0x01, 0x00, 0x54 };
 uint8_t MELCloudInit6[] = { 0x02, 0xff, 0xff, 0x80, 0x00, 0x00, 0x0A, 0x01, 0x00, 0x40, 0x00, 0x00, 0x06, 0x02, 0x7A, 0x00, 0x00, 0xB5 };
 uint8_t MELCloudInit7[] = { 0x02, 0xff, 0xff, 0x81, 0x00, 0x00, 0x00, 0x81 };
 
@@ -46,7 +47,7 @@ void MELCLOUD::Process(void) {
     c = DeviceStream->read();
 
     if (c == 0)
-      DEBUG_PRINT("__, ");
+      DEBUG_PRINT("00, ");
     else {
       if (c < 0x10) DEBUG_PRINT("0");
       DEBUG_PRINT(String(c, HEX));
@@ -74,7 +75,7 @@ void MELCLOUD::ReplyStatus(uint8_t TargetMessage) {
 
   DEBUG_PRINT("[Bridge > MEL] ");
 
-  if ((TargetMessage == 0x32) || (TargetMessage == 0x33) || (TargetMessage == 0x34) || (TargetMessage == 0x35)) {
+  if ((TargetMessage == 0x32) | (TargetMessage == 0x33) | (TargetMessage == 0x34) | (TargetMessage == 0x35)) {
     MELCLOUDDECODER::CreateBlankTxMessage(SET_RESPONSE, 0x10);
   } else if (TargetMessage == 0xC9) {
     MELCLOUDDECODER::CreateBlankTxMessage(EXCONNECT_RESPONSE, 0x10);
@@ -236,10 +237,6 @@ void MELCLOUD::ReplyStatus(uint8_t TargetMessage) {
     for (int i = 1; i < 16; i++) {
       MELCLOUDDECODER::SetPayloadByte(Array0xa2[i], i);
     }
-  } else if (TargetMessage == 0xA3) {
-    for (int i = 1; i < 16; i++) {
-      MELCLOUDDECODER::SetPayloadByte(Array0xa3[i], i);
-    }
   } else if ((TargetMessage == 0x32) | (TargetMessage == 0x33) | (TargetMessage == 0x34) | (TargetMessage == 0x35)) {
     MELCLOUDDECODER::SetPayloadByte(0x00, 0);  // Ok Message reply to writes
   } else if (TargetMessage == 0xC9) {
@@ -264,10 +261,19 @@ void MELCLOUD::ReplyStatus(uint8_t TargetMessage) {
 }
 
 
-void MELCLOUD::Connect(void) {
-  DEBUG_PRINTLN("[Bridge > MEL] Connecting to MELCloud Device...");
+void MELCLOUD::ConnectA2W(void) {
+  DEBUG_PRINTLN("[Bridge > MEL] Connecting to MELCloud Device as A2W...");
   FirstReadAfterConnect = true;
+  MELCLOUDDECODER::SetTypeA2W();
   DeviceStream->write(MELCloudInit3, 7);
+  DeviceStream->flush();
+  Process();
+}
+
+void MELCLOUD::ConnectA2A(void) {
+  DEBUG_PRINTLN("[Bridge > MEL] Connecting to MELCloud Device as A2A...");
+  MELCLOUDDECODER::SetTypeA2A();
+  DeviceStream->write(MELCloudInit4, 7);
   DeviceStream->flush();
   Process();
 }

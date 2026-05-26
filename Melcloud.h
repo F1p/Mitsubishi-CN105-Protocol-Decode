@@ -29,7 +29,8 @@ public:
   MELCLOUD(void);
   void Process(void);
   void SetStream(Stream *MELCloudStream);
-  void Connect(void);
+  void ConnectA2W(void);
+  void ConnectA2A(void);
   void MELNegotiate1(void);
   void MELNegotiate2(void);
   void ReplyStatus(uint8_t TargetMessage);

@@ -90,6 +90,8 @@ void ECODAN::Process(void) {
       msbetweenmsg = millis() - lastmsgdispatchedMillis;
       DEBUG_PRINTLN();
       Connected = true;
+      DEBUG_PRINTLN("A2W Connected!");      
+      PrevConnected = true;
     }
   }
 }
@@ -342,10 +344,6 @@ void ECODAN::SetDHWMode(String *Mode) {
 
 
 void ECODAN::ForceDHW(uint8_t OnOff) {
-  uint8_t Buffer[COMMANDSIZE];
-  uint8_t CommandSize = 0;
-  uint8_t i;
-
   ECODANDECODER::EncodeForcedDHW(OnOff);
   if (cmd_queue_length < 10) {
     cmd_queue_length++;
