@@ -65,10 +65,10 @@ String LatestFirmwareVersion;
 bool update_in_progress = false;
 
 #ifdef ARDUINO_M5STACK_ATOMS3
-String DeviceType = "Gen2";
+String OTADeviceType = "Gen2";
 #endif
 #ifdef ARDUINO_WT32_ETH01
-String DeviceType = "Ethernet";
+String OTADeviceType = "Ethernet";
 #endif
 
 #ifdef ESP8266  // Define the Witty ESP8266 Serial Pins
@@ -2521,12 +2521,12 @@ void CheckForOTAUpdates(void) {
 }
 
 void InstallOTAUpdates(void) {
-  DEBUG_PRINT(F("Starting Update - Downloading from "));                                                                      // Publish the update in progress status
-  update_in_progress = true;                                                                                                  // Set the flag for discovery again
-  UpdateReport();                                                                                                             // Publish that an update has started
-  String TargetURL = "https://witty.house/ecodanbridge/ECODAN_Bridge_" + DeviceType + "_v" + LatestFirmwareVersion + ".bin";  // Form the Target URL
-  DEBUG_PRINTLN(TargetURL);                                                                                                   // Print Target Download URL
-  HttpsOTA.begin(TargetURL.c_str(), ISGR_root_ca);                                                                            // Begin the update
+  DEBUG_PRINT(F("Starting Update - Downloading from "));                                                                         // Publish the update in progress status
+  update_in_progress = true;                                                                                                     // Set the flag for discovery again
+  UpdateReport();                                                                                                                // Publish that an update has started
+  String TargetURL = "https://witty.house/ecodanbridge/ECODAN_Bridge_" + OTADeviceType + "_v" + LatestFirmwareVersion + ".bin";  // Form the Target URL
+  DEBUG_PRINTLN(TargetURL);                                                                                                      // Print Target Download URL
+  HttpsOTA.begin(TargetURL.c_str(), ISGR_root_ca);                                                                               // Begin the update
 }
 
 

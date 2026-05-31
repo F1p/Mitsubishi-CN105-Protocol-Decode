@@ -199,11 +199,6 @@ void ACDECODER::Process0x04(uint8_t *Buffer, ACStatus *Status) {
     Array0x04[i] = Buffer[i];
   }
 
-  CompressorFrequency = Buffer[1];
-
-  Status->CompressorFrequency = CompressorFrequency;
-
-
   // AC
   //TBD
 }
