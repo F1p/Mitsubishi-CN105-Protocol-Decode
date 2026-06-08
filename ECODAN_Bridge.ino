@@ -60,7 +60,7 @@
 #include "AC.h"
 #include "Melcloud.h"
 
-String FirmwareVersion = "7.0.3";
+String FirmwareVersion = "7.0.4";
 String LatestFirmwareVersion;
 bool update_in_progress = false;
 
@@ -2177,9 +2177,7 @@ void PublishAllACReports(void) {
   FlashGreenLED();
   DEBUG_PRINTLN(F("MQTT Published!"));
   AC.ConnectMEL();
-  delay(1000);  
-  //AC.ConnectMEL2();
-  //delay(1000);
+  AC.TriggerStatusStateMachine();
 }
 
 void FastPublish(void) {

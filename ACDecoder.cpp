@@ -308,15 +308,16 @@ void ACDECODER::EncodeSetpoint(uint8_t setting, bool floatMode) {
   // Sample Data
   // fc, 41, 01, 30, 10, 01, 04, __, __, __, 02, __, __, __, __, __, __, __, __, __, __, 77,  // 29C
   // [MEL > Bridge] fc, 41, 01, 30, 10, 01, 04, 00, 00, 00, 0e, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 6b, CS OK  // 17C
-  
+  // [MELCloud Write] fc, 41, 01, 30, 10, 01, 04, 00, 00, 03, 0e, 00, 00, 00, 00, 00, 00, 00, 03, 00, 00, 65, CS OK
+
 
 
   TxMessage.Payload[0] = 0x01;
   TxMessage.Payload[1] = 0x04;  // Temp
   if (floatMode) {
-    TxMessage.Payload[14] = setting;
+    TxMessage.Payload[5] = setting;
   } else {
-    TxMessage.Payload[5] = (int)setting;
+    TxMessage.Payload[14] = (int)setting;
   }
 }
 

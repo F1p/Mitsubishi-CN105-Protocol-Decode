@@ -628,7 +628,7 @@ void readSettingsFromConfig() {
 #endif
         Config["device"]["sw_version"] = FirmwareVersion;
       } else {  // Otherwise post just identifier
-        Config["device"]["identifiers"] = WiFiHostname;
+        Config["device"]["ids"] = WiFiHostname;
       }
 
       // Every one has a unique_id and name
@@ -652,7 +652,7 @@ void readSettingsFromConfig() {
 
       // Climate
       if (i >= 104 && i < 109) {
-        Config["default_entity_id"] = String(MQTT_OBJECT_ID[i - 104]);
+        Config["def_ent_id"] = String(MQTT_OBJECT_ID[i - 104]);
         if (i >= 104 && i < 107) {
           Config["curr_temp_t"] = BASETOPIC + String(MQTT_TOPIC[i - 100]);
           Config["curr_temp_tpl"] = String(MQTT_SENSOR_VALUE_TEMPLATE[25]);
@@ -784,21 +784,21 @@ void readSettingsFromConfig() {
       // Add Availability Topics
       if (i >= 105) {
         if (i >= 113 && i < 118) {  // Server Control Mode Interlocks
-          Config["availability"]["t"] = BASETOPIC + String(MQTT_TOPIC[8]);
-          Config["availability"]["val_tpl"] = String(MQTT_SENSOR_VALUE_TEMPLATE[110]);
-          Config["availability"]["pl_avail"] = ITEM_ON;
-          Config["availability"]["pl_not_avail"] = ITEM_OFF;
+          Config["avty"]["t"] = BASETOPIC + String(MQTT_TOPIC[8]);
+          Config["avty"]["val_tpl"] = String(MQTT_SENSOR_VALUE_TEMPLATE[110]);
+          Config["avty"]["pl_avail"] = ITEM_ON;
+          Config["avty"]["pl_not_avail"] = ITEM_OFF;
         } else if (i >= 107 && i < 109) {  // Flow Op Mode Interlocks on Climate & Number
-          Config["availability"]["t"] = BASETOPIC + String(MQTT_TOPIC[i - 102]);
-          Config["availability"]["val_tpl"] = String(MQTT_NUMBER_AVAIL_TEMPLATE[0]);
+          Config["avty"]["t"] = BASETOPIC + String(MQTT_TOPIC[i - 102]);
+          Config["avty"]["val_tpl"] = String(MQTT_NUMBER_AVAIL_TEMPLATE[0]);
         } else if (i == 120) {  // Interlock MELCloud Read Only with Adapter Status Not Disconnected
-          Config["availability"]["t"] = BASETOPIC + String(MQTT_TOPIC[1]);
-          Config["availability"]["val_tpl"] = String(MQTT_NUMBER_AVAIL_TEMPLATE[2]);
+          Config["avty"]["t"] = BASETOPIC + String(MQTT_TOPIC[1]);
+          Config["avty"]["val_tpl"] = String(MQTT_NUMBER_AVAIL_TEMPLATE[2]);
         } else if (i == 123) {  // Interlock Zone2 Mode with Complex 2 Zone only
-          Config["availability"]["t"] = BASETOPIC + String(MQTT_TOPIC[9]);
-          Config["availability"]["val_tpl"] = String(MQTT_NUMBER_AVAIL_TEMPLATE[1]);
+          Config["avty"]["t"] = BASETOPIC + String(MQTT_TOPIC[9]);
+          Config["avty"]["val_tpl"] = String(MQTT_NUMBER_AVAIL_TEMPLATE[1]);
         } else {  // Everything else LWT
-          Config["availability"]["t"] = BASETOPIC + String(MQTT_TOPIC[0]);
+          Config["avty"]["t"] = BASETOPIC + String(MQTT_TOPIC[0]);
         }
       }
 
@@ -987,7 +987,7 @@ void readSettingsFromConfig() {
 
       // Add Availability Topics
       if (i >= 11) {
-        Config["availability"]["t"] = BASETOPIC + String(MQTT_TOPIC[0]);
+        Config["avty"]["t"] = BASETOPIC + String(MQTT_TOPIC[0]);
       }
 
       char Buffer_Payload[4096];
