@@ -43,14 +43,5 @@ extern uint8_t Array0x34[16];
 extern uint8_t Array0x35[16];
 extern uint8_t BufferArray[11][17];
 
-
-
-extern uint8_t ACArray0x01[16];
-extern uint8_t ACArray0x02[16];
-extern uint8_t ACArray0x03[16];
-extern uint8_t ACArray0x04[16];
-extern uint8_t ACArray0x05[16];
-extern uint8_t ACArray0x06[16];
-extern uint8_t ACArray0x09[16];
 extern uint8_t ACWriteArray0x01[16];
 extern uint8_t ACBufferArray[11][17];

@@ -31,7 +31,7 @@ public:
   void SetStream(Stream *MELCloudStream);
   void ConnectA2W(void);
   void ConnectA2A(void);
-  void MELNegotiate1(void);
+  void MELNegotiate1(bool A2A);
   void MELNegotiate2(void);
   void ReplyStatus(uint8_t TargetMessage);
   uint8_t UpdateComplete(void);

@@ -674,6 +674,23 @@ const char MQTT_SENSOR_NAME[][45] PROGMEM = {
   "Firmware Update"
 };
 
+const char MQTT_AC_SENSOR_NAME[][45] PROGMEM = {
+  "Bridge Status",
+  "Firmware Version",
+  "Bridge WiFi Signal",
+  "Compressor Frequency",  // 10
+  "iSee",
+  "Timer Mode",
+  "On Minutes Set",
+  "On Minutes Remaining",
+  "Off MinutesSet",
+  "Off Minutes Remaining",
+  "Room Temperature",
+  "Room Thermostat",
+  "System Power",
+  "Firmware Update"
+};
+
 const char MQTT_TOPIC[][34] PROGMEM = {
   "/LWT",                               //0
   "/Status/WiFiStatus",                 //1
@@ -1165,6 +1182,24 @@ const char MQTT_SENSOR_VALUE_TEMPLATE[][154] PROGMEM = {
   "{{ value_json.ShortCycleProtectionEnabled }}",
   "{{ value_json.MELCloud_Write_Blocking }}",
   "{{ value_json.HeatingControlMode }}",
+  "{{ value_json.latest_version }}"
+};
+
+
+const char MQTT_AC_SENSOR_VALUE_TEMPLATE[][154] PROGMEM = {
+  "{{ value if value is defined else 'Unknown' }}",
+  "{{ value_json.Firmware }}",
+  "{{ value_json.RSSI }}",
+  
+  "{{ value_json.compressorFreq }}",
+  "{{ value_json.iSee }}",
+  "{{ value_json.timermode }}",
+  "{{ value_json.onMinsSet }}",
+  "{{ value_json.onMinsRemain }}",
+  "{{ value_json.offMinsSet }}",
+  "{{ value_json.offMinsRemain }}",
+  "{{ value_json.RoomTemp }}",
+
   "{{ value_json.latest_version }}"
 };
 

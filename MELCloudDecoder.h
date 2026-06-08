@@ -6,11 +6,10 @@
 #include <string.h>
 #include "EcodanDecoder.h"  // To get some of the definitions
 
-
 typedef struct _MelCloudMessgeStruct {
   uint8_t SyncByte;
   uint8_t PacketType;
-  uint8_t Preamble[PREAMBLESIZE];
+  uint8_t Preamble[4];
   uint8_t PayloadSize;
   uint8_t Payload[MAXDATABLOCKSIZE];
   uint8_t Checksum;
@@ -46,13 +45,13 @@ private:
   void WriteTypeA2W(MelCloudStatus *Status);
   void WriteTypeA2A(MelCloudStatus *Status);
 
-  uint8_t Preamble[PREAMBLESIZE];
+  uint8_t Preamble[4];
 
   uint8_t CheckForSyncMsg1(MessageStruct *Message, uint8_t c);
   uint8_t CheckForSyncMsg2(MessageStruct *Message, uint8_t c);
   uint8_t BuildRxMessage(MessageStruct *Message, uint8_t c, MelCloudStatus *Status);
 
-  void CreateBlankMessageTemplate(MessageStruct *Message, uint8_t PacketType, uint8_t PayloadSize);
+  void CreateBlankMessageTemplate(MessageStruct *Message, uint8_t PacketType, uint8_t PayloadSize, MelCloudStatus *Status);
   uint8_t PrepareCommand(MessageStruct *Message, uint8_t *Buffer, MelCloudStatus *Status);
 
   uint8_t CheckSum(uint8_t *Buffer, uint8_t len);

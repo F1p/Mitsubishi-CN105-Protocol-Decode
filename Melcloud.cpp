@@ -20,10 +20,14 @@
 extern ESPTelnet TelnetServer;
 #include "Debug.h"
 
-uint8_t MELCloudInit3[] = { 0xfc, 0x7a, 0x02, 0x7a, 0x01, 0x00, 0x09 };
-uint8_t MELCloudInit4[] = { 0xfc, 0x7a, 0x01, 0x30, 0x01, 0x00, 0x54 };
-uint8_t MELCloudInit6[] = { 0x02, 0xff, 0xff, 0x80, 0x00, 0x00, 0x0A, 0x01, 0x00, 0x40, 0x00, 0x00, 0x06, 0x02, 0x7A, 0x00, 0x00, 0xB5 };
-uint8_t MELCloudInit7[] = { 0x02, 0xff, 0xff, 0x81, 0x00, 0x00, 0x00, 0x81 };
+uint8_t MELCloudInit3[] = { 0xfc, 0x7a, 0x02, 0x7a, 0x01, 0x00, 0x09 };                                                                    // A2W Specific
+uint8_t MELCloudInit4[] = { 0xfc, 0x7a, 0x01, 0x30, 0x01, 0x00, 0x54 };                                                                    // A2A Specific
+uint8_t MELCloudInit5[] = { 0x02, 0xff, 0xff, 0x80, 0x00, 0x00, 0x0A, 0x01, 0x00, 0x40, 0x00, 0x00, 0x06, 0x01, 0x30, 0x00, 0x00, 0x00 };  // A2A Specific
+uint8_t MELCloudInit6[] = { 0x02, 0xff, 0xff, 0x80, 0x00, 0x00, 0x0A, 0x01, 0x00, 0x40, 0x00, 0x00, 0x06, 0x02, 0x7A, 0x00, 0x00, 0xB5 };  // A2W Specific
+uint8_t MELCloudInit7[] = { 0x02, 0xff, 0xff, 0x81, 0x00, 0x00, 0x00, 0x81 };                                                              // General
+
+
+
 
 bool PrintMELStart = false;
 bool FirstReadAfterConnect = false;
@@ -75,7 +79,7 @@ void MELCLOUD::ReplyStatus(uint8_t TargetMessage) {
 
   DEBUG_PRINT("[Bridge > MEL] ");
 
-  if ((TargetMessage == 0x32) | (TargetMessage == 0x33) | (TargetMessage == 0x34) | (TargetMessage == 0x35)) {
+  if ((TargetMessage == 0x32) | (TargetMessage == 0x33) | (TargetMessage == 0x34) | (TargetMessage == 0x35) | (TargetMessage == 0x40)) {
     MELCLOUDDECODER::CreateBlankTxMessage(SET_RESPONSE, 0x10);
   } else if (TargetMessage == 0xC9) {
     MELCLOUDDECODER::CreateBlankTxMessage(EXCONNECT_RESPONSE, 0x10);
@@ -237,7 +241,7 @@ void MELCLOUD::ReplyStatus(uint8_t TargetMessage) {
     for (int i = 1; i < 16; i++) {
       MELCLOUDDECODER::SetPayloadByte(Array0xa2[i], i);
     }
-  } else if ((TargetMessage == 0x32) | (TargetMessage == 0x33) | (TargetMessage == 0x34) | (TargetMessage == 0x35)) {
+  } else if ((TargetMessage == 0x32) | (TargetMessage == 0x33) | (TargetMessage == 0x34) | (TargetMessage == 0x35) | (TargetMessage == 0x40)) {
     MELCLOUDDECODER::SetPayloadByte(0x00, 0);  // Ok Message reply to writes
   } else if (TargetMessage == 0xC9) {
     for (int i = 1; i < 16; i++) {
@@ -279,9 +283,13 @@ void MELCLOUD::ConnectA2A(void) {
 }
 
 
-void MELCLOUD::MELNegotiate1(void) {
+void MELCLOUD::MELNegotiate1(bool A2A) {
   DEBUG_PRINTLN("[Bridge > MEL] Negotiating First with MELCloud Device...");
-  DeviceStream->write(MELCloudInit6, 18);
+  if (A2A) {
+    DeviceStream->write(MELCloudInit5, 18);
+  } else {
+    DeviceStream->write(MELCloudInit6, 18);
+  }
   DeviceStream->flush();
   Process();
 }

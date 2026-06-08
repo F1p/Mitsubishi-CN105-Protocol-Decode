@@ -1,5 +1,9 @@
 #include "MELCloudDecoder.h"
 #include <cstdio>
+#include <ESPTelnet.h>
+extern ESPTelnet TelnetServer;
+#include "Debug.h"
+
 
 
 MELCLOUDDECODER::MELCLOUDDECODER(void) {
@@ -141,7 +145,7 @@ uint8_t MELCLOUDDECODER::Process(uint8_t c) {
     } else if (RxMessage.PacketType == SET_RESPONSE) {
       WriteOK(RxMessage.Payload, &Status);
     } else if (RxMessage.PacketType == SET_REQUEST) {
-      switch (RxMessage.Payload[0]) {        
+      switch (RxMessage.Payload[0]) {
         case 0x01:
           ProcessAC0x01(RxMessage.Payload, &Status);
           break;
@@ -289,7 +293,7 @@ uint8_t MELCLOUDDECODER::BuildRxMessage(MessageStruct *Message, uint8_t c, MelCl
           case EXCONNECT_RESPONSE:
             break;
           default:
-            //Serial.println("Unknown PacketType");
+            DEBUG_PRINTLN("Unknown PacketType");
             BufferPos = 0;
             return false;  // Unknown Packet Type
         }
@@ -297,11 +301,14 @@ uint8_t MELCLOUDDECODER::BuildRxMessage(MessageStruct *Message, uint8_t c, MelCl
 
       case 2:
         if (c != Preamble[0] && Status->A2WDevice) {
-          //Serial.println("Preamble 1 Error A2W");
+          DEBUG_PRINTLN("Preamble 1 Error A2W");
           BufferPos = 0;
           return false;
         } else if (c != Preamble[2] && Status->A2ADevice) {
-          //Serial.println("Preamble 1 Error A2A");
+          DEBUG_PRINT("Preamble 1 Error A2A: ");
+          DEBUG_PRINT(Preamble[2]);
+          DEBUG_PRINT("!=");
+          DEBUG_PRINTLN(c);
           BufferPos = 0;
           return false;
         }
@@ -309,11 +316,12 @@ uint8_t MELCLOUDDECODER::BuildRxMessage(MessageStruct *Message, uint8_t c, MelCl
 
       case 3:
         if (c != Preamble[1] && Status->A2WDevice) {
-          //Serial.println("Preamble 2 Error A2W");
+          DEBUG_PRINTLN("Preamble 2 Error A2W");
           BufferPos = 0;
           return false;
         } else if (c != Preamble[3] && Status->A2ADevice) {
-          //Serial.println("Preamble 2 Error A2A");
+          DEBUG_PRINT("Preamble 2 Error A2A: ");
+          DEBUG_PRINTLN(c);
           BufferPos = 0;
           return false;
         }
@@ -322,7 +330,7 @@ uint8_t MELCLOUDDECODER::BuildRxMessage(MessageStruct *Message, uint8_t c, MelCl
       case 4:
         PayloadSize = c;
         if (c > MAXDATABLOCKSIZE) {
-          //Serial.println("Oversize Payload");
+          DEBUG_PRINTLN("Oversize Payload");
           BufferPos = 0;
           return false;
         }
@@ -338,7 +346,7 @@ uint8_t MELCLOUDDECODER::BuildRxMessage(MessageStruct *Message, uint8_t c, MelCl
     Buffer[BufferPos] = c;
     BufferPos = 0;
     if (CheckSum(Buffer, PayloadSize + HEADERSIZE) == c) {
-      //Serial.println("CS OK");
+      DEBUG_PRINTLN("CS OK");
       Message->SyncByte = Buffer[0];
       Message->PacketType = Buffer[1];
 
@@ -355,7 +363,7 @@ uint8_t MELCLOUDDECODER::BuildRxMessage(MessageStruct *Message, uint8_t c, MelCl
       memcpy(Message->Payload, &Buffer[5], Message->PayloadSize);
       return true;
     } else {
-      //Serial.println("Checksum Fail");
+      //DEBUG_PRINTLN("Checksum Fail");
       return false;
     }
   }
@@ -523,7 +531,7 @@ void MELCLOUDDECODER::ProcessAC0x01(uint8_t *Buffer, MelCloudStatus *Status) {
     ACWriteArray0x01[i] = Buffer[i];
   }
   Status->ReplyNow = true;
-  Status->ActiveMessage = 0x40; // Use 0x40 as AC 0x01
+  Status->ActiveMessage = 0x40;  // Use 0x40 as AC 0x01
 }
 void MELCLOUDDECODER::Process0x32(uint8_t *Buffer, MelCloudStatus *Status) {
   for (int i = 1; i < 16; i++) {
@@ -579,10 +587,10 @@ void MELCLOUDDECODER::WriteOK(uint8_t *Buffer, MelCloudStatus *Status) {
 
 
 void MELCLOUDDECODER::CreateBlankTxMessage(uint8_t PacketType, uint8_t PayloadSize) {
-  CreateBlankMessageTemplate(&TxMessage, PacketType, PayloadSize);
+  CreateBlankMessageTemplate(&TxMessage, PacketType, PayloadSize, &Status);
 }
 
-void MELCLOUDDECODER::CreateBlankMessageTemplate(MessageStruct *Message, uint8_t PacketType, uint8_t PayloadSize) {
+void MELCLOUDDECODER::CreateBlankMessageTemplate(MessageStruct *Message, uint8_t PacketType, uint8_t PayloadSize, MelCloudStatus *Status) {
   uint8_t i;
 
   memset((void *)Message, 0, sizeof(MessageStruct));
@@ -591,7 +599,11 @@ void MELCLOUDDECODER::CreateBlankMessageTemplate(MessageStruct *Message, uint8_t
   Message->PacketType = PacketType;
   Message->PayloadSize = PayloadSize;
   for (i = 0; i < PREAMBLESIZE; i++) {
-    Message->Preamble[i] = Preamble[i];
+    if (Status->A2WDevice) {
+      Message->Preamble[i] = Preamble[i];
+    } else if (Status->A2ADevice) {
+      Message->Preamble[i] = Preamble[i + 2];
+    }
   }
 }
 
@@ -635,7 +647,7 @@ uint8_t MELCLOUDDECODER::PrepareCommand(MessageStruct *Message, uint8_t *Buffer,
 void MELCLOUDDECODER::SetTypeA2W(void) {
   WriteTypeA2W(&Status);
 }
-void MELCLOUDDECODER::WriteTypeA2W(MelCloudStatus *Status){
+void MELCLOUDDECODER::WriteTypeA2W(MelCloudStatus *Status) {
   Status->A2WDevice = true;
   Status->A2ADevice = false;
 }
@@ -643,7 +655,7 @@ void MELCLOUDDECODER::WriteTypeA2W(MelCloudStatus *Status){
 void MELCLOUDDECODER::SetTypeA2A(void) {
   WriteTypeA2A(&Status);
 }
-void MELCLOUDDECODER::WriteTypeA2A(MelCloudStatus *Status){
+void MELCLOUDDECODER::WriteTypeA2A(MelCloudStatus *Status) {
   Status->A2ADevice = true;
   Status->A2WDevice = false;
 }

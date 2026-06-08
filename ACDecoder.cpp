@@ -5,14 +5,7 @@
 extern ESPTelnet TelnetServer;
 #include "Debug.h"
 
-uint8_t ACArray0x01[] = {};
-uint8_t ACArray0x02[] = {};
-uint8_t ACArray0x03[] = {};
-uint8_t ACArray0x04[] = {};
-uint8_t ACArray0x05[] = {};
-uint8_t ACArray0x06[] = {};
-uint8_t ACArray0x09[] = {};
-uint8_t ACWriteArray0x01[] = {}; // Write CMDs
+uint8_t ACWriteArray0x01[] = {};  // Write CMDs
 
 uint8_t ACBufferArray[][17] = { {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {} };
 
@@ -50,6 +43,21 @@ uint8_t ACDECODER::Process(uint8_t c) {
           break;
         case 0x09:
           Process0x09(RxMessage.Payload, &Status);
+          break;
+        case 0x15:
+          Process0x15(RxMessage.Payload, &Status);
+          break;
+        case 0x16:
+          Process0x16(RxMessage.Payload, &Status);
+          break;
+        case 0x17:
+          Process0x09(RxMessage.Payload, &Status);
+          break;
+        case 0x18:
+          Process0x18(RxMessage.Payload, &Status);
+          break;
+        case 0x19:
+          Process0x19(RxMessage.Payload, &Status);
           break;
       }
     } else if (RxMessage.PacketType == SET_RESPONSE) {
@@ -167,8 +175,8 @@ void ACDECODER::Process0x02(uint8_t *Buffer, ACStatus *Status) {
   }
 
   Status->SystemPowerMode = Buffer[3];
-  Status->isee = Buffer[4];
-  Status->Mode = Buffer[4];
+  Status->isee = Buffer[4] > 0x08 ? true : false;
+  Status->Buffer04 = Buffer[4];
   Status->fan = Buffer[6];
   Status->vane = Buffer[7];
   Status->wideVane = Buffer[10];
@@ -177,9 +185,9 @@ void ACDECODER::Process0x02(uint8_t *Buffer, ACStatus *Status) {
     int temp = Buffer[11];
     temp -= 128;
     Status->Temperature = (float)temp / 2;
+    Status->tempMode = true; // FloatMode
   } else {
     Status->Temperature = Buffer[5];
-    Status->tempMode = true;
   }
 }
 
@@ -188,7 +196,15 @@ void ACDECODER::Process0x03(uint8_t *Buffer, ACStatus *Status) {
     Array0x03[i] = Buffer[i];
   }
 
-  Status->RoomTemp = Buffer[6];
+  Status->RoomTemp = Buffer[3];
+  if (Buffer[6] != 0x00) {
+    int temp = Buffer[6];
+    temp -= 128;
+    Status->RoomTempFloat = (float)temp / 2;
+  } else {
+    Status->RoomTemp = Buffer[3];
+    Status->RmtempMode = true;
+  }
 }
 
 
@@ -224,15 +240,46 @@ void ACDECODER::Process0x06(uint8_t *Buffer, ACStatus *Status) {
   }
 
   // AC Packet
-
-  uint8_t CompressorFrequency;
-  CompressorFrequency = Buffer[3];
-  Status->CompressorFrequency = CompressorFrequency;
+  Status->CompressorFrequency = Buffer[3];
+  Status->Operating = Buffer[4];
 }
 
 
 
 void ACDECODER::Process0x09(uint8_t *Buffer, ACStatus *Status) {
+  for (int i = 1; i < 16; i++) {
+    Array0x09[i] = Buffer[i];
+  }
+}
+
+void ACDECODER::Process0x15(uint8_t *Buffer, ACStatus *Status) {
+  for (int i = 1; i < 16; i++) {
+    Array0x15[i] = Buffer[i];
+  }
+}
+
+void ACDECODER::Process0x16(uint8_t *Buffer, ACStatus *Status) {
+  for (int i = 1; i < 16; i++) {
+    Array0x16[i] = Buffer[i];
+  }
+}
+
+void ACDECODER::Process0x17(uint8_t *Buffer, ACStatus *Status) {
+  for (int i = 1; i < 16; i++) {
+    Array0x17[i] = Buffer[i];
+  }
+}
+
+void ACDECODER::Process0x18(uint8_t *Buffer, ACStatus *Status) {
+  for (int i = 1; i < 16; i++) {
+    Array0x18[i] = Buffer[i];
+  }
+}
+
+void ACDECODER::Process0x19(uint8_t *Buffer, ACStatus *Status) {
+  for (int i = 1; i < 16; i++) {
+    Array0x19[i] = Buffer[i];
+  }
 }
 
 
@@ -240,6 +287,8 @@ void ACDECODER::Process0x09(uint8_t *Buffer, ACStatus *Status) {
 void ACDECODER::EncodePower(uint8_t OnOff) {
   // Sample Data
   // fc, 41, 01, 30, 10, 01, 01, __, __, __, __, __, __, __, __, __, __, __, __, __, __, 7c,
+  //[MEL > Bridge] fc, 41, 01, 30, 10, 01, 01, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 7c, CS OK (Off)
+
 
   TxMessage.Payload[0] = 0x01;
   TxMessage.Payload[1] = 0x01;   // Power
@@ -258,6 +307,9 @@ void ACDECODER::EncodeSetMode(uint8_t setting) {
 void ACDECODER::EncodeSetpoint(uint8_t setting, bool floatMode) {
   // Sample Data
   // fc, 41, 01, 30, 10, 01, 04, __, __, __, 02, __, __, __, __, __, __, __, __, __, __, 77,  // 29C
+  // [MEL > Bridge] fc, 41, 01, 30, 10, 01, 04, 00, 00, 00, 0e, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 6b, CS OK  // 17C
+  
+
 
   TxMessage.Payload[0] = 0x01;
   TxMessage.Payload[1] = 0x04;  // Temp
@@ -302,6 +354,7 @@ void ACDECODER::EncodeRemoteTemperature(float RemoteTemperature) {
   prepareSetPacket(packet, PACKET_LEN);
 
   packet[5] = 0x07;
+  Status->tempMode
   if (setting > 0) {
     packet[6] = 0x01;
     setting = setting * 2;
@@ -321,7 +374,12 @@ void ACDECODER::EncodeRemoteTemperature(float RemoteTemperature) {
 
 
 void ACDECODER::EncodeMELCloud(uint8_t cmd) {
-  TxMessage.Payload[0] = cmd;
+  if (cmd == 0x40) {
+    TxMessage.Payload[0] = 0x01;
+  } else {
+    TxMessage.Payload[0] = cmd;
+  }
+  
   for (int i = 1; i < 16; i++) {
     if (cmd == 0x40) {
       TxMessage.Payload[i] = ACWriteArray0x01[i];

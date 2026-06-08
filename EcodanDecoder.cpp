@@ -16,6 +16,10 @@
 */
 #include "EcodanDecoder.h"
 #include <cstdio>
+#include <ESPTelnet.h>
+extern ESPTelnet TelnetServer;
+#include "Debug.h"
+
 
 uint8_t Array0x01[] = {};
 uint8_t Array0x02[] = {};
@@ -239,7 +243,7 @@ uint8_t ECODANDECODER::BuildRxMessage(MessageStruct *Message, uint8_t c) {
           case EXCONNECT_RESPONSE:
             break;
           default:
-            //Serial.println("Unknown PacketType");
+            //DEBUG_PRINTLN("Unknown PacketType");
             BufferPos = 0;
             return false;  // Unknown Packet Type
         }
@@ -247,7 +251,7 @@ uint8_t ECODANDECODER::BuildRxMessage(MessageStruct *Message, uint8_t c) {
 
       case 2:
         if (c != Preamble[0]) {
-          //Serial.println("Preamble 1 Error");
+          //DEBUG_PRINTLN("Preamble 1 Error");
           BufferPos = 0;
           return false;
         }
@@ -255,7 +259,7 @@ uint8_t ECODANDECODER::BuildRxMessage(MessageStruct *Message, uint8_t c) {
 
       case 3:
         if (c != Preamble[1]) {
-          //Serial.println("Preamble 1 Error");
+          //DEBUG_PRINTLN("Preamble 1 Error");
           BufferPos = 0;
           return false;
         }
@@ -264,7 +268,7 @@ uint8_t ECODANDECODER::BuildRxMessage(MessageStruct *Message, uint8_t c) {
       case 4:
         PayloadSize = c;
         if (c > MAXDATABLOCKSIZE) {
-          //Serial.println("Oversize Payload");
+          //DEBUG_PRINTLN("Oversize Payload");
           BufferPos = 0;
           return false;
         }
@@ -283,7 +287,7 @@ uint8_t ECODANDECODER::BuildRxMessage(MessageStruct *Message, uint8_t c) {
     Buffer[BufferPos] = c;
     BufferPos = 0;
     if (CheckSum(Buffer, PayloadSize + HEADERSIZE) == c) {
-      //Serial.println("CS OK");
+      //DEBUG_PRINTLN("CS OK");
       Message->SyncByte = Buffer[0];
       Message->PacketType = Buffer[1];
       Message->Preamble[0] = Buffer[2];
@@ -293,7 +297,7 @@ uint8_t ECODANDECODER::BuildRxMessage(MessageStruct *Message, uint8_t c) {
       memcpy(Message->Payload, &Buffer[5], Message->PayloadSize);
       return true;
     } else {
-      //Serial.println("Checksum Fail");
+      //DEBUG_PRINTLN("Checksum Fail");
       return false;
     }
   }

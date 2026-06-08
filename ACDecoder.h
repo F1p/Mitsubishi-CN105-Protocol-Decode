@@ -43,9 +43,10 @@ typedef struct _ACMessageStruct {
 typedef struct _ACStatus {
 
   //From Message 0x02
-  uint8_t SystemPowerMode, isee, Mode, Temperature, fan, vane, wideVane, RoomTemp, CompressorFrequency;
+  uint8_t SystemPowerMode, Buffer04, Mode, Temperature, fan, vane, wideVane, RoomTemp, CompressorFrequency, Operating;
   uint8_t Timermode, onMinutesSet, onMinutesRemaining, offMinutesSet, offMinutesRemaining;
-  bool tempMode;
+  bool tempMode, RmtempMode, isee;
+  float RoomTempFloat;
 
   // From Message 0x61
   bool Write_To_Ecodan_OK;
@@ -103,6 +104,11 @@ private:
   void Process0x05(uint8_t *Payload, ACStatus *Status);
   void Process0x06(uint8_t *Payload, ACStatus *Status);
   void Process0x09(uint8_t *Payload, ACStatus *Status);
+  void Process0x15(uint8_t *Payload, ACStatus *Status);
+  void Process0x16(uint8_t *Payload, ACStatus *Status);
+  void Process0x17(uint8_t *Payload, ACStatus *Status);
+  void Process0x18(uint8_t *Payload, ACStatus *Status);
+  void Process0x19(uint8_t *Payload, ACStatus *Status);
 
   void WriteOK(uint8_t *Payload, ACStatus *Status);
 };

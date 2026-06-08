@@ -6,16 +6,28 @@ extern ESPTelnet TelnetServer;
 
 // Initialisation Commands
 uint8_t Init5[] = { 0xfc, 0x5a, 0x01, 0x30, 0x02, 0xca, 0x01, 0xa8 };  // Air to Air Connect
+//uint8_t Init6[] = { 0xfc, 0x5a, 0x01, 0x30, 0x02, 0xca, 0x02, 0xa7 };  // Air to Air Disconnect
+uint8_t Init7[] = { 0xfc, 0x5b, 0x01, 0x30, 0x01, 0xcd, 0xa6 };  // Info Request?
 
-#define NUMBER_COMMANDS 7
+uint8_t Init8[] = { 0x02, 0xff, 0xff, 0x81, 0x00, 0x00, 0x00, 0x81 };  // MEL Connect Type 1 (Air to Air Connect Test)
+//uint8_t Init9[] = { 0x02, 0xff, 0xff, 0x01, 0x00, 0x00, 0x01, 0x00, 0x00 };  // MEL Connect Type 2 (Air to Air Connect Test)
+
+
+#define NUMBER_COMMANDS 13
 int ACActiveCommand[] = {
-  0x00,  //
+  0x00,  // Start
   0x02,  // request a settings packet - RQST_PKT_SETTINGS
   0x03,  // request the current room temp - RQST_PKT_ROOM_TEMP
   0x06,  // request status - RQST_PKT_STATUS
   0x04,  // unknown
   0x05,  // request the timers - RQST_PKT_TIMERS
-  0x09   // request standby mode (maybe?) RQST_PKT_STANDBY
+  0x09,  // request standby mode (maybe?) RQST_PKT_STANDBY
+  0x15,  // request standby mode (maybe?) RQST_PKT_STANDBY
+  0x16,  // request standby mode (maybe?) RQST_PKT_STANDBY
+  0x17,  // request standby mode (maybe?) RQST_PKT_STANDBY
+  0x18,  // request standby mode (maybe?) RQST_PKT_STANDBY
+  0x19,  // request standby mode (maybe?) RQST_PKT_STANDBY
+  0x00   // End
 };
 
 unsigned long AClastmsgdispatchedMillis = 0;  // variable for comparing millis counter
@@ -175,6 +187,25 @@ void AC::Connect(void) {
   Process();
 }
 
+void AC::ConnectMEL(void) {
+  DEBUG_PRINTLN(F("AC MELCloud Simulation 1..."));
+  DeviceStream->write(Init7, 7);
+  DeviceStream->flush();
+  Process();
+}
+/*void AC::ConnectMEL1(void) {
+  DEBUG_PRINTLN(F("AC MELCloud Simulation 1..."));
+  DeviceStream->write(Init8, 8);
+  DeviceStream->flush();
+  Process();
+}
+ void AC::ConnectMEL2(void) {
+  DEBUG_PRINTLN(F("AC MELCloud Simulation 2..."));
+  DeviceStream->write(Init9, 9);
+  DeviceStream->flush();
+  Process();
+}*/
+
 uint8_t AC::HeatPumpConnected(void) {
   return Connected;
 }
@@ -263,10 +294,9 @@ void AC::SetWideVane(const char* setting) {
 
 
 void AC::SetSystemPowerMode(bool setting) {
-  if(setting){
+  if (setting) {
     ACDECODER::EncodePower(1);
-  }
-  else{
+  } else {
     ACDECODER::EncodePower(0);
   }
 

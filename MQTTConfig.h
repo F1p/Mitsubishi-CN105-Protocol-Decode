@@ -167,7 +167,7 @@ String MQTTCommand2AC = MQTT_2_COMMAND_AC;
 
 char snprintbuffer[41] = "";
 char DeviceID[15] = "";
-const char ClientPrefix[14] = "EcodanBridge-";
+const char ClientPrefix[14] = "MitsiBridge-";
 char WiFiHostname[40] = "";
 
 
@@ -244,7 +244,12 @@ void readSettingsFromConfig() {
                 strcpy(mqttSettings.baseTopic, doc[mqttSettings.wm_mqtt_basetopic_identifier]);
                 MQTT_BASETOPIC = mqttSettings.baseTopic;
               }
+            } else {  // For upgrading from <6.0.0, create the entry
+              strcpy(mqttSettings.baseTopic, mqttSettings.deviceId);
+              MQTT_BASETOPIC = mqttSettings.baseTopic;
+              shouldSaveConfig = true;  // Save config after exit to update the file
             }
+            
             // MQTT Stream 2
             if (doc.containsKey(mqttSettings.wm_mqtt2_hostname_identifier)) {
               if ((strlen(doc[mqttSettings.wm_mqtt2_hostname_identifier]) > 0) && ((strlen(doc[mqttSettings.wm_mqtt2_hostname_identifier]) + 1) <= hostname_max_length)) {
@@ -341,6 +346,8 @@ void readSettingsFromConfig() {
         snprintf(DeviceID, deviceId_max_length, (String(ESP.getEfuseMac(), HEX)).c_str());
 #endif
         strcpy(mqttSettings.deviceId, DeviceID);
+        strcpy(mqttSettings.baseTopic, mqttSettings.deviceId);
+        MQTT_BASETOPIC = mqttSettings.baseTopic;
         strcpy(mqttSettings.baseTopic2, DeviceID);  // Base topic 2 defaults to deviceID
       }
     } else {
@@ -374,6 +381,7 @@ void readSettingsFromConfig() {
     MQTT_COMMAND_ZONE2 = MQTT_COMMAND + "/Zone2";
     MQTT_COMMAND_HOTWATER = MQTT_COMMAND + "/HotWater";
     MQTT_COMMAND_SYSTEM = MQTT_COMMAND + "/System";
+    MQTT_COMMAND_AC = MQTT_COMMAND + "/AC";
 
     MQTT_COMMAND_ZONE1_FLOW_SETPOINT = MQTT_COMMAND_ZONE1 + "/FlowSetpoint";
     MQTT_COMMAND_ZONE1_NOMODE_SETPOINT = MQTT_COMMAND_ZONE1 + "/ThermostatSetpoint";
@@ -428,6 +436,7 @@ void readSettingsFromConfig() {
     MQTTCommandSystemService = MQTT_COMMAND_SYSTEM_SERVICE;
     MQTTCommandSystemCompCurve = MQTT_COMMAND_SYSTEM_COMPCURVE;
     MQTTCommandSystemActvCtrl = MQTT_COMMAND_SYSTEM_ACTV_CTRL;
+    MQTTCommandAC = MQTT_COMMAND_AC;
   }
 
 
@@ -529,7 +538,7 @@ void readSettingsFromConfig() {
     // Reset Wifi settings for testing
     //wifiManager.resetSettings();
     //wifiManager.setDebugOutput(true);
-    wifiManager.setTitle("Ecodan Bridge");
+    wifiManager.setTitle("Mitsibushi Bridge");
 
     // Set or Update the values
     custom_device_id.setValue(mqttSettings.deviceId, deviceId_max_length);
@@ -574,7 +583,7 @@ void readSettingsFromConfig() {
 
 #ifndef ARDUINO_WT32_ETH01
     wifiManager.setConfigPortalTimeout(600);  // Timeout before launching the config portal (WiFi Only)
-    if (!wifiManager.autoConnect("Ecodan Bridge AP")) {
+    if (!wifiManager.autoConnect("Mitsibushi Bridge AP")) {
       DEBUG_PRINTLN(F("Failed to connect and hit timeout"));
     } else {
       DEBUG_PRINTLN(F("WiFi Connected!"));
@@ -848,17 +857,17 @@ void readSettingsFromConfig() {
 #endif
         Config["device"]["sw_version"] = FirmwareVersion;
       } else {  // Otherwise post just identifier
-        Config["device"]["identifiers"] = WiFiHostname;
+        Config["device"]["ids"] = WiFiHostname;
       }
 
       // Every one has a unique_id and name
-      Config["uniq_id"] = String(MQTT_SENSOR_UNIQUE_ID[i]) + ChipID;
-      Config["name"] = String(MQTT_SENSOR_NAME[i]);
+      Config["uniq_id"] = String(MQTT_DISCOVERY_OBJ_ID[i]) + ChipID;
+      Config["name"] = String(MQTT_AC_SENSOR_NAME[i]);
 
 
-      // Sensors
-      if (i >= 0 && i < 12) {
-        // Compressor Freq, isee, Timermode, onMinutesSet, onMinutesRemaining, offMinutesSet, offMinutesRemaining, Room Temperature
+      // Sensors (Generic)
+      if (i >= 0 && i < 3) {
+        // Status, Firmware Update, WiFi Signal
 
         Config["stat_t"] = BASETOPIC + String(MQTT_TOPIC[MQTT_TOPIC_POS[i]]);                               // Needs a positioner
         if (MQTT_UNITS_POS[i] > 0) {                                                                        // If there is a unit
@@ -866,21 +875,39 @@ void readSettingsFromConfig() {
           if (MQTT_UNITS_POS[i] < 8) { Config["dev_cla"] = String(MQTT_DEVICE_CLASS[MQTT_UNITS_POS[i]]); }  // Device classes only exist for some units
           if (MQTT_UNITS_POS[i] != 7) { Config["stat_cla"] = "measurement"; }                               // Only some can be measurement
         }
-        Config["val_tpl"] = String(MQTT_SENSOR_VALUE_TEMPLATE[i]);
+        Config["val_tpl"] = String(MQTT_AC_SENSOR_VALUE_TEMPLATE[i]);
         Config["icon"] = String(MQTT_MDI_ICONS[i]);
 
         MQTT_DISCOVERY_TOPIC = String(MQTT_DISCOVERY_TOPICS[0]);
       }
+      if (i >= 3 && i < 11) {
+        // Compressor Freq, isee, Timermode, onMinutesSet, onMinutesRemaining, offMinutesSet, offMinutesRemaining, Room Temperature
+
+        Config["stat_t"] = BASETOPIC + String("/Status/AC");      // Needs a positioner
+        if (i == 3) {                                             // If there is a unit
+          Config["unit_of_meas"] = String(MQTT_SENSOR_UNITS[4]);  // Publish Units
+        } else if (i == 10) {
+          Config["unit_of_meas"] = String(MQTT_SENSOR_UNITS[2]);  // Publish Units
+        }
+
+        Config["val_tpl"] = String(MQTT_AC_SENSOR_VALUE_TEMPLATE[i]);
+        Config["icon"] = String(MQTT_MDI_ICONS[i]);
+
+
+        MQTT_DISCOVERY_TOPIC = String(MQTT_DISCOVERY_TOPICS[0]);
+      }
+
 
       // Climate
-      if (i >= 12 && i < 13) {
-        Config["default_entity_id"] = String(MQTT_OBJECT_ID[i - 104]);
-        Config["curr_temp_t"] = BASETOPIC + String("/Command/AC");
-        Config["curr_temp_tpl"] = String("{{ value_json.RoomTemp if (value_json is defined and value_json.RoomTemp is defined and value_json.RoomTemp|int > 1.00) }}");
-        Config["temp_cmd_t"] = BASETOPIC + String("/Command/AC");
-        Config["temp_stat_t"] = BASETOPIC + String("/Status/AC");
-        Config["temp_stat_tpl"] = String("{% if (value_json is defined and value_json.SetpointTemp is defined) %}{% if (value_json.SetpointTemp|int >= 16.00 and value_json.SetpointTemp|int <= 31.00) %}{{ value_json.SetpointTemp }}{% elif (value_json.SetpointTemp|int < 16.00) %}16.00{% elif (value_json.SetpointTemp|int > 31.00) %}31.00{% endif %}{% else %}22.00{% endif %}");
+      if (i == 11) {
+        Config["default_entity_id"] = String(MQTT_OBJECT_ID[1]);
+        Config["curr_temp_t"] = BASETOPIC + String("/Status/AC");  // Shortened from curr_temp_topic
+        Config["curr_temp_tpl"] = "{{ value_json.RoomTemp if (value_json is defined and value_json.RoomTemp is defined and value_json.RoomTemp|int > 1) }}";
 
+        Config["temp_cmd_t"] = BASETOPIC + String("/Command/AC");  // Shortened from temperature_command_topic
+        Config["temp_cmd_tpl"] = "{\"SetTempSetpoint\": {{ value }}}";
+        Config["temp_stat_t"] = BASETOPIC + String("/Status/AC");  // Shortened from temperature_state_topic
+        Config["temp_stat_tpl"] = "{% if (value_json is defined and value_json.SetpointTemp is defined) %}{% if (value_json.SetpointTemp|int >= 16 and value_json.SetpointTemp|int <= 31) %}{{ value_json.SetpointTemp }}{% else %}22{% endif %}{% else %}22{% endif %}";
 
         Config["temp_unit"] = String(MQTT_SENSOR_UNITS[9]);
         Config["max_temp"] = 31;
@@ -888,7 +915,8 @@ void readSettingsFromConfig() {
         Config["temp_step"] = 1;
         Config["precision"] = 1;
         Config["init"] = 16;
-        Config["act_t"] = BASETOPIC + String("/Status/AC");
+
+        Config["act_t"] = BASETOPIC + String("/Status/AC");  // Shortened from action_topic
         Config["act_tpl"] = String("{{ value_json.action if (value_json is defined and value_json.action is defined and value_json.action|length) else 'idle' }}");
 
         Config["modes"][0] = "heat_cool";
@@ -897,9 +925,9 @@ void readSettingsFromConfig() {
         Config["modes"][3] = "heat";
         Config["modes"][4] = "fan_only";
         Config["modes"][5] = "off";
-        Config["mode_cmd_t"] = BASETOPIC + String("/Command/AC");
+        Config["mode_cmd_t"] = BASETOPIC + String("/Command/AC");  // Shortened from mode_command_topic
         Config["mode_cmd_tpl"] = "{\"SetMode\": \"{{ value }}\"}";
-        Config["mode_stat_t"] = BASETOPIC + String("/Status/AC");
+        Config["mode_stat_t"] = BASETOPIC + String("/Status/AC");  // Shortened from mode_state_topic
         Config["mode_stat_tpl"] = String("{{ value_json.mode if (value_json is defined and value_json.mode is defined and value_json.mode|length) else 'off' }}");
 
         Config["swing_modes"][0] = "AUTO";
@@ -909,9 +937,9 @@ void readSettingsFromConfig() {
         Config["swing_modes"][4] = "4";
         Config["swing_modes"][5] = "5";
         Config["swing_modes"][6] = "SWING";
-        Config["swing_mode_cmd_t"] = BASETOPIC + String("/Command/AC");
-        Config["swing_mode_cmd_tpl"] = "{\"SetMode\": \"{{ value }}\"}";
-        Config["swing_mode_stat_t"] = BASETOPIC + String("/Status/AC");
+        Config["swing_mode_cmd_t"] = BASETOPIC + String("/Command/AC");  // Shortened from swing_mode_command_topic
+        Config["swing_mode_cmd_tpl"] = "{\"SetVane\": \"{{ value }}\"}";
+        Config["swing_mode_stat_t"] = BASETOPIC + String("/Status/AC");  // Shortened from swing_mode_state_topic
         Config["swing_mode_stat_tpl"] = String("{{ value_json.Vane if (value_json is defined and value_json.Vane is defined and value_json.Vane|length) else 'AUTO' }}");
 
         Config["fan_modes"][0] = "auto";
@@ -920,36 +948,35 @@ void readSettingsFromConfig() {
         Config["fan_modes"][3] = "middle";
         Config["fan_modes"][4] = "medium";
         Config["fan_modes"][5] = "high";
-        Config["fan_mode_cmd_t"] = BASETOPIC + String("/Command/AC");
-        Config["fan_mode_cmd_tpl"] = "{\"SetMode\": \"{{ value }}\"}";
-        Config["fan_mode_stat_t"] = BASETOPIC + String("/Status/AC");
+        Config["fan_mode_cmd_t"] = BASETOPIC + String("/Command/AC");  // Shortened from fan_mode_command_topic
+        Config["fan_mode_cmd_tpl"] = "{\"SetFanSpeed\": \"{{ value }}\"}";
+        Config["fan_mode_stat_t"] = BASETOPIC + String("/Status/AC");  // Shortened from fan_mode_state_topic
         Config["fan_mode_stat_tpl"] = String("{{ value_json.Fan if (value_json is defined and value_json.Fan is defined and value_json.Fan|length) else 'AUTO' }}");
-
-        Config["temperature_unit"] = String("C");
 
         MQTT_DISCOVERY_TOPIC = String(MQTT_DISCOVERY_TOPICS[1]);
       }
 
       // Switches
-      if (i >= 13 && i < 14) {
+      if (i == 12) {
         // Power
         Config["stat_t"] = BASETOPIC + String("/Status/AC");
         Config["val_tpl"] = String("{{ value_json.power }}");
         Config["cmd_t"] = BASETOPIC + String("/Command/AC");
-        Config["state_on"] = true;
-        Config["state_off"] = false;
-        Config["payload_on"] = "ON";
-        Config["payload_off"] = "OFF";
+        Config["cmd_tpl"] = "{\"systempower\":{{'true' if value else 'false'}}}";
+        Config["state_on"] = "ON";
+        Config["state_off"] = "OFF";
+        Config["payload_on"] = true;
+        Config["payload_off"] = false;
         Config["icon"] = String(MQTT_MDI_ICONS[85]);
 
         MQTT_DISCOVERY_TOPIC = String(MQTT_DISCOVERY_TOPICS[2]);
       }
 
       // Update
-      if (i == 15) {
+      if (i == 13) {
         Config["stat_t"] = BASETOPIC + String(MQTT_TOPIC[34]);
         Config["dev_cla"] = String(MQTT_DEVICE_CLASS[8]);
-        Config["l_ver_t"] = BASETOPIC + String(MQTT_TOPIC[34]);
+        Config["l_ver_t"] = "{{ value_json.latest_version }}";
 #ifdef ARDUINO_M5STACK_ATOMS3
         Config["cmd_t"] = BASETOPIC + String(MQTT_TOPIC[33]);
         Config["pl_inst"] = "995";
@@ -959,11 +986,11 @@ void readSettingsFromConfig() {
       }
 
       // Add Availability Topics
-      if (i >= 12) {
+      if (i >= 11) {
         Config["availability"]["t"] = BASETOPIC + String(MQTT_TOPIC[0]);
       }
 
-      char Buffer_Payload[2048];
+      char Buffer_Payload[4096];
       size_t buf_size = serializeJson(Config, Buffer_Payload);
       Buffer_Topic = MQTT_DISCOVERY_TOPIC + ChipID + String(MQTT_DISCOVERY_OBJ_ID[i]) + String(MQTT_DISCOVERY_TOPICS[5]);
 
@@ -1148,6 +1175,7 @@ void readSettingsFromConfig() {
     MQTT_2_STATUS_WIFISTATUS = MQTT_2_STATUS + "/WiFiStatus";
     MQTT_2_STATUS_CURVE = MQTT_2_STATUS + "/CompCurve";
     MQTT_2_STATUS_ACTV_CTRL = MQTT_2_STATUS + "/ActiveControl";
+    MQTT_2_STATUS_AC =  MQTT_2_STATUS + "/AC";
     MQTT_2_STATUS_WIFISTATUS_UPDATE = MQTT_2_STATUS_WIFISTATUS + "/Update";
 
     MQTT_2_COMMAND_ZONE1 = MQTT_2_COMMAND + "/Zone1";

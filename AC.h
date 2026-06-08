@@ -34,17 +34,22 @@ public:
   void WriteMELCloudCMD(uint8_t cmd);
 
   void Connect(void);
+  void ConnectMEL(void);
+  //void ConnectMEL1(void);
+  //void ConnectMEL2(void);
   bool PauseStateMachine;
   bool PrevConnected;
   
   const uint8_t POWER[2] = { 0x00, 0x01 };
   const char* POWER_MAP[2] = { "OFF", "ON" };
   const uint8_t MODE[5] = { 0x01, 0x02, 0x03, 0x07, 0x08 };
-  const char* MODE_MAP[5] = { "HEAT", "DRY", "COOL", "FAN", "AUTO" };
+  const char* MODE_MAP[5] = { "heat", "dry", "cool", "fan", "auto" };
+  const char* MODE_HA_MAP[5] = { "heating", "drying", "cooling", "fan", "idle" };
   const uint8_t TEMP[16] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f };
   const int TEMP_MAP[16] = { 31, 30, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16 };
   const uint8_t FAN[6] = { 0x00, 0x01, 0x02, 0x03, 0x05, 0x06 };
   const char* FAN_MAP[6] = { "AUTO", "QUIET", "1", "2", "3", "4" };
+  const char* FAN_HA_MAP[6] = { "auto", "diffuse", "low", "middle", "medium", "high" };
   const uint8_t VANE[7] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x07 };
   const char* VANE_MAP[7] = { "AUTO", "1", "2", "3", "4", "5", "SWING" };
   const uint8_t WIDEVANE[7] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x08, 0x0c };
