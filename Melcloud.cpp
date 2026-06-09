@@ -45,6 +45,7 @@ void MELCLOUD::Process(void) {
 
   while (DeviceStream->available()) {
     if (!PrintMELStart) {
+      printCurrentTime();
       DEBUG_PRINT("[MEL > Bridge] ");
       PrintMELStart = true;
     }
@@ -76,12 +77,13 @@ void MELCLOUD::ReplyStatus(uint8_t TargetMessage) {
   uint8_t Buffer[COMMANDSIZE];
   uint8_t CommandSize;
   uint8_t i;
-
+  
+  printCurrentTime();
   DEBUG_PRINT("[Bridge > MEL] ");
 
   if ((TargetMessage == 0x32) | (TargetMessage == 0x33) | (TargetMessage == 0x34) | (TargetMessage == 0x35) | (TargetMessage == 0x40)) {
     MELCLOUDDECODER::CreateBlankTxMessage(SET_RESPONSE, 0x10);
-  } else if (TargetMessage == 0xC9) {
+  } else if ((TargetMessage == 0xC9) | (TargetMessage == 0xCD)) {
     MELCLOUDDECODER::CreateBlankTxMessage(EXCONNECT_RESPONSE, 0x10);
   } else {
     MELCLOUDDECODER::CreateBlankTxMessage(GET_RESPONSE, 0x10);
@@ -243,7 +245,7 @@ void MELCLOUD::ReplyStatus(uint8_t TargetMessage) {
     }
   } else if ((TargetMessage == 0x32) | (TargetMessage == 0x33) | (TargetMessage == 0x34) | (TargetMessage == 0x35) | (TargetMessage == 0x40)) {
     MELCLOUDDECODER::SetPayloadByte(0x00, 0);  // Ok Message reply to writes
-  } else if (TargetMessage == 0xC9) {
+  } else if ((TargetMessage == 0xC9) | (TargetMessage == 0xCD)) {
     for (int i = 1; i < 16; i++) {
       MELCLOUDDECODER::SetPayloadByte(Array0xc9[i], i);
     }
@@ -266,6 +268,7 @@ void MELCLOUD::ReplyStatus(uint8_t TargetMessage) {
 
 
 void MELCLOUD::ConnectA2W(void) {
+  printCurrentTime();
   DEBUG_PRINTLN("[Bridge > MEL] Connecting to MELCloud Device as A2W...");
   FirstReadAfterConnect = true;
   MELCLOUDDECODER::SetTypeA2W();
@@ -275,6 +278,7 @@ void MELCLOUD::ConnectA2W(void) {
 }
 
 void MELCLOUD::ConnectA2A(void) {
+  printCurrentTime();
   DEBUG_PRINTLN("[Bridge > MEL] Connecting to MELCloud Device as A2A...");
   MELCLOUDDECODER::SetTypeA2A();
   DeviceStream->write(MELCloudInit4, 7);
@@ -284,6 +288,7 @@ void MELCLOUD::ConnectA2A(void) {
 
 
 void MELCLOUD::MELNegotiate1(bool A2A) {
+  printCurrentTime();
   DEBUG_PRINTLN("[Bridge > MEL] Negotiating First with MELCloud Device...");
   if (A2A) {
     DeviceStream->write(MELCloudInit5, 18);
@@ -296,6 +301,7 @@ void MELCLOUD::MELNegotiate1(bool A2A) {
 
 
 void MELCLOUD::MELNegotiate2(void) {
+  printCurrentTime();
   DEBUG_PRINTLN("[Bridge > MEL] Negotiating Second with MELCloud Device...");
   DeviceStream->write(MELCloudInit7, 8);
   DeviceStream->flush();
@@ -314,4 +320,16 @@ uint8_t MELCLOUD::UpdateComplete(void) {
 
 uint8_t MELCLOUD::Lastmsbetweenmsg(void) {
   return msbetweenmsg;
+}
+
+void MELCLOUD::printCurrentTime(void) {
+  time_t now;
+  struct tm timeinfo;
+  char TimeBuffer[32];
+
+  time(&now);
+  localtime_r(&now, &timeinfo);
+
+  strftime(TimeBuffer, sizeof(TimeBuffer), "%F %T -> ", &timeinfo);
+  DEBUG_PRINT(TimeBuffer);
 }

@@ -63,7 +63,13 @@ uint8_t ACDECODER::Process(uint8_t c) {
     } else if (RxMessage.PacketType == SET_RESPONSE) {
       WriteOK(RxMessage.Payload, &Status);
     } else if (RxMessage.PacketType == CONNECT_RESPONSE) {
-    }
+    } else if (RxMessage.PacketType == GET_ABOUT_RESPONSE) {
+      switch (RxMessage.Payload[0]) {
+        case 0xcd:
+          Process0xCD(RxMessage.Payload, &Status);
+          break;
+      }
+    } 
   }
   return ReturnValue;
 }
@@ -174,6 +180,8 @@ void ACDECODER::Process0x02(uint8_t *Buffer, ACStatus *Status) {
     Array0x02[i] = Buffer[i];
   }
 
+  //fc, 62, 01, 30, 10, 02, 00, 00, 01, 03, 0d, 00, 00, 00, 00, 85, a4, 46, 00, 00, 00, db, 
+
   Status->SystemPowerMode = Buffer[3];
   Status->isee = Buffer[4] > 0x08 ? true : false;
   Status->Buffer04 = Buffer[4];
@@ -196,6 +204,8 @@ void ACDECODER::Process0x03(uint8_t *Buffer, ACStatus *Status) {
     Array0x03[i] = Buffer[i];
   }
 
+  //fc, 62, 01, 30, 10, 03, 00, 00, 06, 00, c2, a0, a0, fe, 42, 00, 14, 85, 3d, 00, 00, 3c,
+
   Status->RoomTemp = Buffer[3];
   if (Buffer[6] != 0x00) {
     int temp = Buffer[6];
@@ -209,14 +219,13 @@ void ACDECODER::Process0x03(uint8_t *Buffer, ACStatus *Status) {
 
 
 void ACDECODER::Process0x04(uint8_t *Buffer, ACStatus *Status) {
-  uint8_t CompressorFrequency;
 
   for (int i = 1; i < 16; i++) {
     Array0x04[i] = Buffer[i];
   }
 
   // AC
-  //TBD
+  // fc, 62, 01, 30, 10, 04, 00, 00, 00, 80, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, d9,
 }
 
 
@@ -240,6 +249,8 @@ void ACDECODER::Process0x06(uint8_t *Buffer, ACStatus *Status) {
   }
 
   // AC Packet
+  // fc, 62, 01, 30, 10, 06, 00, 00, 00, 01, 02, 4c, 4c, 36, 00, 00, 42, 00, 00, 00, 00, 44,
+  //                                 [F] [O] []  []  []  []          []
   Status->CompressorFrequency = Buffer[3];
   Status->Operating = Buffer[4];
 }
@@ -281,6 +292,16 @@ void ACDECODER::Process0x19(uint8_t *Buffer, ACStatus *Status) {
     Array0x19[i] = Buffer[i];
   }
 }
+
+void ACDECODER::Process0xCD(uint8_t *Buffer, ACStatus *Status) {
+  // Sample Data
+  // fc, 7b, 01, 30, 10, cd, a0, be, a0, be, a0, be, 04, 11, 02, ff, ff, 00, 00, 00, 00, 48, CS OK
+
+  for (int i = 1; i < 16; i++) {
+    Array0xc9[i] = Buffer[i];
+  }
+}
+
 
 
 

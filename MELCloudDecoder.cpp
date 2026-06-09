@@ -138,8 +138,11 @@ uint8_t MELCLOUDDECODER::Process(uint8_t c) {
       }
     } else if (RxMessage.PacketType == EXCONNECT_REQUEST) {
       switch (RxMessage.Payload[0]) {
-        case 0xc9:
+        case 0xc9:  // A2W
           Process0xC9(RxMessage.Payload, &Status);
+          break;
+        case 0xcd:  // A2A
+          Process0xCD(RxMessage.Payload, &Status);
           break;
       }
     } else if (RxMessage.PacketType == SET_RESPONSE) {
@@ -525,6 +528,10 @@ void MELCLOUDDECODER::Process0xA3(uint8_t *Buffer, MelCloudStatus *Status) {
 void MELCLOUDDECODER::Process0xC9(uint8_t *Buffer, MelCloudStatus *Status) {
   Status->ReplyNow = true;
   Status->ActiveMessage = 0xC9;
+}
+void MELCLOUDDECODER::Process0xCD(uint8_t *Buffer, MelCloudStatus *Status) {
+  Status->ReplyNow = true;
+  Status->ActiveMessage = 0xCD;
 }
 void MELCLOUDDECODER::ProcessAC0x01(uint8_t *Buffer, MelCloudStatus *Status) {
   for (int i = 1; i < 16; i++) {

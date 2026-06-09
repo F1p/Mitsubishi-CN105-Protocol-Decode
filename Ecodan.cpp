@@ -253,9 +253,9 @@ void ECODAN::WriteStateMachine(void) {
     DEBUG_PRINTLN();
 
     WriteInProgress = true;
-  } else {
+  } /*else {
     PauseStateMachine = false;
-  }
+  }*/
 }
 
 

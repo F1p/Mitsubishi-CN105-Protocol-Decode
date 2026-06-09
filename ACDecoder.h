@@ -109,6 +109,7 @@ private:
   void Process0x17(uint8_t *Payload, ACStatus *Status);
   void Process0x18(uint8_t *Payload, ACStatus *Status);
   void Process0x19(uint8_t *Payload, ACStatus *Status);
+  void Process0xCD(uint8_t *Payload, ACStatus *Status);
 
   void WriteOK(uint8_t *Payload, ACStatus *Status);
 };

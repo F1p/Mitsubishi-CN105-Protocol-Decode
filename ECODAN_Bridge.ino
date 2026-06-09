@@ -60,7 +60,7 @@
 #include "AC.h"
 #include "Melcloud.h"
 
-String FirmwareVersion = "7.0.4";
+String FirmwareVersion = "7.0.7";
 String LatestFirmwareVersion;
 bool update_in_progress = false;
 
@@ -460,7 +460,7 @@ void setup() {
   AC.Status.RmtempMode = false;
   CheckForOTAUpdates();
   CalculateCompCurve();
-  //HeatPumpKeepAlive();
+  HeatPumpKeepAlive();
   for (int i = 0; i < OAT_Window_Size; i++) { OAT_readings[i] = 0; }
 }
 
@@ -527,7 +527,7 @@ void loop() {
       cmd_queue_position = 1;
       cmd_queue_length = 0;
       CurrentWriteAttempt = 0;
-      PostWriteTrigger = true;  // Allows 1s to pass, then restarts read operation
+      PostWriteTrigger = true;  // Allows 10s to pass, then restarts read operation
       postwrpreviousMillis = millis();
     }                                                                  // Dequeue the last message that was written
     if (MQTTReconnect() || MQTT2Reconnect()) { PublishAllReports(); }  // Publish update to the MQTT Topics
@@ -539,7 +539,7 @@ void loop() {
       cmd_queue_position = 1;  // All commands written, reset
       cmd_queue_length = 0;
       CurrentWriteAttempt = 0;
-      PostWriteTrigger = true;  // Allows 1s to pass, then restarts read operation
+      PostWriteTrigger = true;  // Allows 10s to pass, then restarts read operation
       postwrpreviousMillis = millis();
     }
   }
@@ -554,7 +554,7 @@ void loop() {
       ac_cmd_queue_position = 1;
       ac_cmd_queue_length = 0;
       ACCurrentWriteAttempt = 0;
-      PostWriteTrigger = true;  // Allows 1s to pass, then restarts read operation
+      PostWriteTrigger = true;  // Allows 10s to pass, then restarts read operation
       postwrpreviousMillis = millis();
     }                                                                    // Dequeue the last message that was written
     if (MQTTReconnect() || MQTT2Reconnect()) { PublishAllACReports(); }  // Publish update to the MQTT Topics
@@ -566,7 +566,7 @@ void loop() {
       ac_cmd_queue_position = 1;  // All commands written, reset
       ac_cmd_queue_length = 0;
       ACCurrentWriteAttempt = 0;
-      PostWriteTrigger = true;  // Allows 1s to pass, then restarts read operation
+      PostWriteTrigger = true;  // Allows 10s to pass, then restarts read operation
       postwrpreviousMillis = millis();
     }
   }
@@ -574,6 +574,7 @@ void loop() {
 
   // -- Read Operation Restart -- //
   if ((PostWriteTrigger) && (millis() - postwrpreviousMillis >= 10000)) {  // Allow 10s to pass before re-starting reads for FTC to process
+    printCurrentTime();
     DEBUG_PRINTLN(F("Restarting Read Operations"));
     HeatPump.PauseStateMachine = false;
     AC.PauseStateMachine = false;
@@ -909,13 +910,13 @@ void HeatPumpKeepAlive(void) {
 
   ftcpreviousMillis = millis();
   if (AC.HeatPumpConnected()) {
-    //DEBUG_PRINTLN("Trigger AC Status State Machine");
+    DEBUG_PRINTLN("Trigger AC Status State Machine");
     AC.TriggerStatusStateMachine();
   } else {
     DEBUG_PRINTLN("AC Disconnected");
   }
   if (HeatPump.HeatPumpConnected()) {
-    //DEBUG_PRINTLN("Trigger A2W Status State Machine");
+    DEBUG_PRINTLN("Trigger A2W Status State Machine");
     HeatPump.TriggerStatusStateMachine();
   } else {
     DEBUG_PRINTLN("A2W Disconnected");
@@ -1004,7 +1005,7 @@ void MELCloudQueryReplyEngine(void) {
   } else if (MELCloud.Status.MELRequest2) {
     MELCloud.MELNegotiate2();  // Reply to the connect request
     MELCloud.Status.MELRequest2 = false;
-    MELCloud_Adapter_Connected = true;  // Mark as in use
+    MELCloud_Adapter_Connected = true;          // Mark as in use
   } else if (MELCloud.Status.MEL_HB_Request) {  // Reply to the MELCloud Heartbeat
     MELCloud.ReplyStatus(0x34);
     MELCloud.Status.MEL_HB_Request = false;
@@ -1425,8 +1426,8 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
 
       if (doc["systempower"].is<bool>()) {
         bool systempower = doc["systempower"];
-        DEBUG_PRINTLN("System Power Adjustment");
         AC.SetSystemPowerMode(systempower);
+        AC.Status.SystemPowerMode = systempower ? 0x01 : 0x00;
       }
       if (doc["SetMode"].is<const char*>()) {
         AC.SetMode(doc["SetMode"]);
@@ -1443,6 +1444,8 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
       if (doc["SetTempSetpoint"].is<float>()) {
         AC.SetTempSetpoint(doc["SetTempSetpoint"], AC.Status.tempMode);
       }
+
+      //PublishAllACReports();
     }
   }
 }
@@ -2113,7 +2116,7 @@ void ACReport(void) {
 
 
 
-  doc[F("Fan")] = String(AC.lookupByteMapValue(AC.FAN_HA_MAP, AC.FAN, 6, AC.Status.fan));
+  doc[F("Fan")] = AC.lookupByteMapValue(AC.FAN_HA_MAP, AC.FAN, 6, AC.Status.fan);
   doc[F("Vane")] = AC.lookupByteMapValue(AC.VANE_MAP, AC.VANE, 7, AC.Status.vane);
   doc[F("wideVane")] = AC.lookupByteMapValue(AC.WIDEVANE_MAP, AC.WIDEVANE, 7, AC.Status.wideVane & 0x0F);
   doc[F("iSee")] = AC.Status.isee;
@@ -2134,8 +2137,6 @@ void ACReport(void) {
   doc[F("HB_ID")] = Heart_Value;
 
   serializeJson(doc, Buffer);
-  serializeJson(doc, DEBUGPORT);
-  DEBUG_PRINTLN();
   MQTTClient1.publish(MQTT_STATUS_AC.c_str(), Buffer, false);
   MQTTClient2.publish(MQTT_2_STATUS_AC.c_str(), Buffer, false);
 }
@@ -2176,8 +2177,9 @@ void PublishAllACReports(void) {
   StatusReport();
   FlashGreenLED();
   DEBUG_PRINTLN(F("MQTT Published!"));
-  AC.ConnectMEL();
-  AC.TriggerStatusStateMachine();
+  //AC.ConnectMEL();
+  //delay(1000);
+  //AC.TriggerStatusStateMachine();
 }
 
 void FastPublish(void) {

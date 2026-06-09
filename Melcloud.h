@@ -43,6 +43,8 @@ private:
   uint8_t UpdateFlag;
   uint8_t Connected;
   uint8_t msbetweenmsg;
+  
+  void printCurrentTime(void);
 
   MessageStruct TXMessage;
   Stream *DeviceStream;

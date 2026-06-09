@@ -7,26 +7,20 @@ extern ESPTelnet TelnetServer;
 // Initialisation Commands
 uint8_t Init5[] = { 0xfc, 0x5a, 0x01, 0x30, 0x02, 0xca, 0x01, 0xa8 };  // Air to Air Connect
 //uint8_t Init6[] = { 0xfc, 0x5a, 0x01, 0x30, 0x02, 0xca, 0x02, 0xa7 };  // Air to Air Disconnect
-uint8_t Init7[] = { 0xfc, 0x5b, 0x01, 0x30, 0x01, 0xcd, 0xa6 };  // Info Request?
+uint8_t Init7[] = { 0xfc, 0x5b, 0x01, 0x30, 0x01, 0xcd, 0xa6 };  // Info Request 1
+uint8_t Init10[] = { 0xfc, 0x5b, 0x01, 0x30, 0x01, 0xce, 0xa5 }; // Info Request 2
+
 
 uint8_t Init8[] = { 0x02, 0xff, 0xff, 0x81, 0x00, 0x00, 0x00, 0x81 };  // MEL Connect Type 1 (Air to Air Connect Test)
 //uint8_t Init9[] = { 0x02, 0xff, 0xff, 0x01, 0x00, 0x00, 0x01, 0x00, 0x00 };  // MEL Connect Type 2 (Air to Air Connect Test)
 
 
-#define NUMBER_COMMANDS 13
+#define NUMBER_COMMANDS 50
 int ACActiveCommand[] = {
-  0x00,  // Start
-  0x02,  // request a settings packet - RQST_PKT_SETTINGS
-  0x03,  // request the current room temp - RQST_PKT_ROOM_TEMP
-  0x06,  // request status - RQST_PKT_STATUS
-  0x04,  // unknown
-  0x05,  // request the timers - RQST_PKT_TIMERS
-  0x09,  // request standby mode (maybe?) RQST_PKT_STANDBY
-  0x15,  // request standby mode (maybe?) RQST_PKT_STANDBY
-  0x16,  // request standby mode (maybe?) RQST_PKT_STANDBY
-  0x17,  // request standby mode (maybe?) RQST_PKT_STANDBY
-  0x18,  // request standby mode (maybe?) RQST_PKT_STANDBY
-  0x19,  // request standby mode (maybe?) RQST_PKT_STANDBY
+  0x00,
+  0x02, 0x03, 0x06, 0x04, 0x05, 0x09, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 
+  0x02, 0x03, 0x06, 0x04, 0x05, 0x09, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 
+  0x02, 0x03, 0x06, 0x04, 0x05, 0x09, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 
   0x00   // End
 };
 
@@ -74,7 +68,7 @@ void AC::Process(void) {
       DEBUG_PRINTLN();
       Connected = true;
       PrevConnected = true;
-      DEBUG_PRINTLN("AC Connected!");
+      //DEBUG_PRINTLN("AC Connected!");
     }
   }
 }
@@ -97,7 +91,7 @@ void AC::TriggerStatusStateMachine(void) {
 void AC::StopStateMachine(void) {
   if (CurrentMessage != 0) {
     printCurrentTime();
-    DEBUG_PRINTLN(F("Pausing Heat Pump Read Operation to AC"));
+    DEBUG_PRINTLN(F("Pausing Read Operation to AC"));
     PauseStateMachine = true;
   }
 }
@@ -151,11 +145,13 @@ void AC::WriteStateMachine(void) {
   if (ac_cmd_queue_length > 0 && ac_cmd_queue_length < 11) {
     ACCurrentWriteAttempt++;
     StopStateMachine();
+    printCurrentTime();
     DEBUG_PRINT(F("Writing msg at position: "));
     DEBUG_PRINT(ac_cmd_queue_position);
     DEBUG_PRINT(F(", attempt: "));
     DEBUG_PRINTLN(ACCurrentWriteAttempt);
 
+    printCurrentTime();
     DEBUG_PRINT(F("[Bridge > AC] "));
     ACDECODER::CreateBlankTxMessage(ACDECODER::ReturnNextCommandType(ac_cmd_queue_position), 0x10);
     ACDECODER::EncodeNextCommand(ac_cmd_queue_position);
@@ -173,9 +169,11 @@ void AC::WriteStateMachine(void) {
     DEBUG_PRINTLN();
 
     ACWriteInProgress = true;
-  } else {
+  } /*else {
+    printCurrentTime();
+    DEBUG_PRINTLN(F("Removing Read Pause [Loc1]"));
     PauseStateMachine = false;
-  }
+  }*/
 }
 
 
@@ -188,8 +186,8 @@ void AC::Connect(void) {
 }
 
 void AC::ConnectMEL(void) {
-  DEBUG_PRINTLN(F("AC MELCloud Simulation 1..."));
-  DeviceStream->write(Init7, 7);
+  DEBUG_PRINTLN(F("AC MELCloud Simulation 2..."));
+  DeviceStream->write(Init10, 7);
   DeviceStream->flush();
   Process();
 }
