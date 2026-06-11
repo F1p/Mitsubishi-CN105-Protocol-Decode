@@ -69,7 +69,7 @@ uint8_t ACDECODER::Process(uint8_t c) {
           Process0xCD(RxMessage.Payload, &Status);
           break;
       }
-    } 
+    }
   }
   return ReturnValue;
 }
@@ -180,23 +180,28 @@ void ACDECODER::Process0x02(uint8_t *Buffer, ACStatus *Status) {
     Array0x02[i] = Buffer[i];
   }
 
-  //fc, 62, 01, 30, 10, 02, 00, 00, 01, 03, 0d, 00, 00, 00, 00, 85, a4, 46, 00, 00, 00, db, 
+  //fc, 62, 01, 30, 10, 02, 00, 00, 01, 03, 0d, 00, 00, 00, 00, 85, a4, 46, 00, 00, 00, db,
+  //                                [3] [4][5]                 [10][11][12]
 
-  Status->SystemPowerMode = Buffer[3];
-  Status->isee = Buffer[4] > 0x08 ? true : false;
-  Status->Buffer04 = Buffer[4];
-  Status->fan = Buffer[6];
-  Status->vane = Buffer[7];
-  Status->wideVane = Buffer[10];
-
-  if (Buffer[11] != 0x00) {
+  Status->SystemPowerMode = Buffer[3];             // Power
+  Status->isee = Buffer[4] > 0x08 ? true : false;  // Op Mode
+  Status->Buffer04 = Buffer[4];                    // Op Mode
+  //Status->legacyTargetTemp = Buffer[5];               // Legacy Target Temperature
+  Status->fan = Buffer[6];             // Fan Speed
+  Status->vane = Buffer[7];            // Vertical Vane
+  Status->remoteProhibit = Buffer[8];  // Remote Prohibit
+  Status->wideVane = Buffer[10];       // Horizonal Vane
+  if (Buffer[11] != 0x00) {            // Target Temperature
     int temp = Buffer[11];
     temp -= 128;
     Status->Temperature = (float)temp / 2;
-    Status->tempMode = true; // FloatMode
+    Status->tempMode = true;  // FloatMode
   } else {
     Status->Temperature = Buffer[5];
   }
+  //Buffer[12];                                         // (UNCONFIRMED) Target Humidity
+  //Buffer[13];                                         // (UNCONFIRMED) Power Saving Mode
+  //Buffer[14];                                         // Airflow control mode (i-See) E.g MSZ-LN25VG2W
 }
 
 void ACDECODER::Process0x03(uint8_t *Buffer, ACStatus *Status) {
@@ -205,16 +210,18 @@ void ACDECODER::Process0x03(uint8_t *Buffer, ACStatus *Status) {
   }
 
   //fc, 62, 01, 30, 10, 03, 00, 00, 06, 00, c2, a0, a0, fe, 42, 00, 14, 85, 3d, 00, 00, 3c,
+  //                                [3] [4][5]  [6] [7] [8] [9][10][11][12][13]
 
-  Status->RoomTemp = Buffer[3];
+  Status->OAT = (Buffer[5] - 128) / 2;  // Outdoor Unit Temperature (value-128)/2
   if (Buffer[6] != 0x00) {
     int temp = Buffer[6];
     temp -= 128;
-    Status->RoomTempFloat = (float)temp / 2;
+    Status->RoomTempFloat = (float)temp / 2;  // Current Temperature
   } else {
-    Status->RoomTemp = Buffer[3];
+    Status->RoomTemp = Buffer[3];  // Current Temperature
     Status->RmtempMode = true;
   }
+  Status->Runtime = Buffer[11] + Buffer[12] + Buffer[13];  // Runtime Appears to be minutes the unit was active.
 }
 
 
@@ -226,6 +233,12 @@ void ACDECODER::Process0x04(uint8_t *Buffer, ACStatus *Status) {
 
   // AC
   // fc, 62, 01, 30, 10, 04, 00, 00, 00, 80, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, d9,
+  //                                 [3] [4][5]  [6] [7] [8] [9][10][11][12][13]
+
+  Status->ErrCode1 = Buffer[4];
+  Status->ErrCode2 = Buffer[5];
+  Status->FltCode1 = Buffer[6];
+  Status->FltCode2 = Buffer[7];
 }
 
 
@@ -235,10 +248,14 @@ void ACDECODER::Process0x05(uint8_t *Buffer, ACStatus *Status) {
     Array0x05[i] = Buffer[i];
   }
 
+  //fc, 62, 01, 30, 10, 05, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 58, CS OK
+  //                                [3] [4][5]  [6] [7] [8] [9][10][11][12][13]
+
+
   Status->Timermode = Buffer[3];
   Status->onMinutesSet = Buffer[4];
-  Status->onMinutesRemaining = Buffer[6];
   Status->offMinutesSet = Buffer[5];
+  Status->onMinutesRemaining = Buffer[6];
   Status->offMinutesRemaining = Buffer[7];
 }
 
@@ -250,9 +267,17 @@ void ACDECODER::Process0x06(uint8_t *Buffer, ACStatus *Status) {
 
   // AC Packet
   // fc, 62, 01, 30, 10, 06, 00, 00, 00, 01, 02, 4c, 4c, 36, 00, 00, 42, 00, 00, 00, 00, 44,
-  //                                 [F] [O] []  []  []  []          []
+  //                                [3] [4][5]  [6] [7] [8] [9][10][11][12][13]
+
   Status->CompressorFrequency = Buffer[3];
   Status->Operating = Buffer[4];
+
+  Status->InputPower = ((float)ExtractUInt16(Buffer, 5) / 1000);
+  Status->InputPower1 = Buffer[5];  // Input Power (W)
+  Status->InputPower2 = Buffer[6];  // Input Power (W)
+  Status->LifePower = ((float)ExtractUInt16(Buffer, 7) / 100);
+  Status->LifePower1 = Buffer[7];  // Input Power (100Wh) Lifetime
+  Status->LifePower2 = Buffer[8];  // Input Power (100Wh) Lifetime
 }
 
 
@@ -261,6 +286,12 @@ void ACDECODER::Process0x09(uint8_t *Buffer, ACStatus *Status) {
   for (int i = 1; i < 16; i++) {
     Array0x09[i] = Buffer[i];
   }
+
+  //fc, 62, 01, 30, 10, 09, 00, 00, 00, 02, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 52, CS OK
+  //                                [3] [4][5]  [6] [7] [8] [9][10][11][12][13]
+  Status->Status = Buffer[3];     // Status Flags (0x00 Normal, 0x01 Filter Service, 0x02 Defrost, 0x04 Preheat, 0x08 Standby)
+  Status->FanActual = Buffer[4];  // Actual Fan Speed (Not set)
+  Status->AutoMode = Buffer[5];   // Auto Mode
 }
 
 void ACDECODER::Process0x15(uint8_t *Buffer, ACStatus *Status) {
@@ -318,7 +349,9 @@ void ACDECODER::EncodePower(uint8_t OnOff) {
 
 void ACDECODER::EncodeSetMode(uint8_t setting) {
   // Sample Data
-  //fc, 41, 01, 30, 10, 01, 06, __, __, 01, 02, __, __, __, __, __, __, __, __, __, __, 74, // Mode Auto
+  //fc, 41, 01, 30, 10, 01, 02, 00, 01, 07, 00, 00, 00, 00, 00, 00, 00, 00, 05, 00, 00, 6e, // fan
+  //Payload Wipe
+  PayloadWipe();
 
   TxMessage.Payload[0] = 0x01;
   TxMessage.Payload[1] = 0x02;  // Mode
@@ -401,11 +434,17 @@ void ACDECODER::EncodeMELCloud(uint8_t cmd) {
   } else {
     TxMessage.Payload[0] = cmd;
   }
-  
+
   for (int i = 1; i < 16; i++) {
     if (cmd == 0x40) {
       TxMessage.Payload[i] = ACWriteArray0x01[i];
     }
+  }
+}
+
+void ACDECODER::PayloadWipe(void) {
+  for (int i = 0; i < 16; i++) {
+    TxMessage.Payload[i] = 0;
   }
 }
 
@@ -491,4 +530,10 @@ uint8_t ACDECODER::CheckSum(uint8_t *Buffer, uint8_t len) {
 
 bool ACDECODER::IS_BIT_SET(uint8_t value, uint8_t bit) {
   return (((value) & (1U << (bit))) != 0);
+}
+
+
+uint16_t ACDECODER::ExtractUInt16(uint8_t *Buffer, uint8_t Index) {
+  uint16_t Value = (Buffer[Index] << 8) + Buffer[Index + 1];
+  return Value;
 }

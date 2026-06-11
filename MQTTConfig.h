@@ -249,7 +249,7 @@ void readSettingsFromConfig() {
               MQTT_BASETOPIC = mqttSettings.baseTopic;
               shouldSaveConfig = true;  // Save config after exit to update the file
             }
-            
+
             // MQTT Stream 2
             if (doc.containsKey(mqttSettings.wm_mqtt2_hostname_identifier)) {
               if ((strlen(doc[mqttSettings.wm_mqtt2_hostname_identifier]) > 0) && ((strlen(doc[mqttSettings.wm_mqtt2_hostname_identifier]) + 1) <= hostname_max_length)) {
@@ -842,7 +842,7 @@ void readSettingsFromConfig() {
     JsonDocument Config;
 
     // Publish all the discovery topics
-    for (int i = 0; i < 14; i++) {
+    for (int i = 0; i < 27; i++) {
 
       if (i == 0) {  // If the first topic
         Config["device"]["ids"] = WiFiHostname;
@@ -880,14 +880,18 @@ void readSettingsFromConfig() {
 
         MQTT_DISCOVERY_TOPIC = String(MQTT_DISCOVERY_TOPICS[0]);
       }
-      if (i >= 3 && i < 11) {
+      if (i >= 3 && i < 24) {
         // Compressor Freq, isee, Timermode, onMinutesSet, onMinutesRemaining, offMinutesSet, offMinutesRemaining, Room Temperature
 
         Config["stat_t"] = BASETOPIC + String("/Status/AC");      // Needs a positioner
         if (i == 3) {                                             // If there is a unit
           Config["unit_of_meas"] = String(MQTT_SENSOR_UNITS[4]);  // Publish Units
-        } else if (i == 10) {
+        } else if (i == 10 || i == 18) {
           Config["unit_of_meas"] = String(MQTT_SENSOR_UNITS[2]);  // Publish Units
+        } else if (i == 13) {
+          Config["unit_of_meas"] = String(MQTT_SENSOR_UNITS[3]);  // Publish Units
+        } else if (i == 14) {
+          Config["unit_of_meas"] = String(MQTT_SENSOR_UNITS[7]);  // Publish Units
         }
 
         Config["val_tpl"] = String(MQTT_AC_SENSOR_VALUE_TEMPLATE[i]);
@@ -899,7 +903,7 @@ void readSettingsFromConfig() {
 
 
       // Climate
-      if (i == 11) {
+      if (i == 24) {
         Config["default_entity_id"] = String(MQTT_OBJECT_ID[1]);
         Config["curr_temp_t"] = BASETOPIC + String("/Status/AC");  // Shortened from curr_temp_topic
         Config["curr_temp_tpl"] = "{{ value_json.RoomTemp if (value_json is defined and value_json.RoomTemp is defined and value_json.RoomTemp|int > 1) }}";
@@ -919,12 +923,11 @@ void readSettingsFromConfig() {
         Config["act_t"] = BASETOPIC + String("/Status/AC");  // Shortened from action_topic
         Config["act_tpl"] = String("{{ value_json.action if (value_json is defined and value_json.action is defined and value_json.action|length) else 'idle' }}");
 
-        Config["modes"][0] = "heat_cool";
+        Config["modes"][0] = "auto";
         Config["modes"][1] = "cool";
         Config["modes"][2] = "dry";
         Config["modes"][3] = "heat";
         Config["modes"][4] = "fan_only";
-        Config["modes"][5] = "off";
         Config["mode_cmd_t"] = BASETOPIC + String("/Command/AC");  // Shortened from mode_command_topic
         Config["mode_cmd_tpl"] = "{\"SetMode\": \"{{ value }}\"}";
         Config["mode_stat_t"] = BASETOPIC + String("/Status/AC");  // Shortened from mode_state_topic
@@ -957,12 +960,12 @@ void readSettingsFromConfig() {
       }
 
       // Switches
-      if (i == 12) {
+      if (i == 25) {
         // Power
         Config["stat_t"] = BASETOPIC + String("/Status/AC");
         Config["val_tpl"] = String("{{ value_json.power }}");
         Config["cmd_t"] = BASETOPIC + String("/Command/AC");
-        Config["cmd_tpl"] = "{\"systempower\":{{'true' if value else 'false'}}}";
+        Config["cmd_tpl"] = "{\"systempower\":{{ value|lower }}}";
         Config["state_on"] = "ON";
         Config["state_off"] = "OFF";
         Config["payload_on"] = true;
@@ -973,7 +976,7 @@ void readSettingsFromConfig() {
       }
 
       // Update
-      if (i == 13) {
+      if (i == 26) {
         Config["stat_t"] = BASETOPIC + String(MQTT_TOPIC[34]);
         Config["dev_cla"] = String(MQTT_DEVICE_CLASS[8]);
         Config["l_ver_t"] = "{{ value_json.latest_version }}";
@@ -986,7 +989,7 @@ void readSettingsFromConfig() {
       }
 
       // Add Availability Topics
-      if (i >= 11) {
+      if (i >= 24) {
         Config["avty"]["t"] = BASETOPIC + String(MQTT_TOPIC[0]);
       }
 
@@ -1175,7 +1178,7 @@ void readSettingsFromConfig() {
     MQTT_2_STATUS_WIFISTATUS = MQTT_2_STATUS + "/WiFiStatus";
     MQTT_2_STATUS_CURVE = MQTT_2_STATUS + "/CompCurve";
     MQTT_2_STATUS_ACTV_CTRL = MQTT_2_STATUS + "/ActiveControl";
-    MQTT_2_STATUS_AC =  MQTT_2_STATUS + "/AC";
+    MQTT_2_STATUS_AC = MQTT_2_STATUS + "/AC";
     MQTT_2_STATUS_WIFISTATUS_UPDATE = MQTT_2_STATUS_WIFISTATUS + "/Update";
 
     MQTT_2_COMMAND_ZONE1 = MQTT_2_COMMAND + "/Zone1";

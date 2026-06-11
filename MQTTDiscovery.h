@@ -686,6 +686,21 @@ const char MQTT_AC_SENSOR_NAME[][45] PROGMEM = {
   "Off MinutesSet",
   "Off Minutes Remaining",
   "Room Temperature",
+  "Error Code",
+  "Fault Code",
+  "Input Power",
+  "Lifetime Power",
+  "Fan Actual Speed",
+  "Auto Mode",
+  "Remote Prohibit",
+  "Outside Air Temperature",
+  "Runtime",
+  "Filter Change",
+  "Defrost",
+  "Preheat",
+  "Standby",
+
+
   "Room Thermostat",
   "System Power",
   "Firmware Update"
@@ -1199,6 +1214,20 @@ const char MQTT_AC_SENSOR_VALUE_TEMPLATE[][154] PROGMEM = {
   "{{ value_json.offMinsSet }}",
   "{{ value_json.offMinsRemain }}",
   "{{ value_json.RoomTemp }}",
+
+  "{{ value_json.ErrCode }}",
+  "{{ value_json.FltCode }}",
+  "{{ value_json.InPwr }}",
+  "{{ value_json.LPwr }}",
+  "{{ value_json.FAct }}",
+  "{{ value_json.Auto }}",
+  "{{ value_json.RPhbt }}",
+  "{{ value_json.OAT }}",
+  "{{ value_json.Rtme }}",
+  "{{ value_json.fltr }}",
+  "{{ value_json.dfrst }}",
+  "{{ value_json.prht }}",
+  "{{ value_json.sby }}",
 
   "{{ value_json.latest_version }}"
 };

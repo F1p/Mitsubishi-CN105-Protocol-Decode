@@ -60,7 +60,7 @@
 #include "AC.h"
 #include "Melcloud.h"
 
-String FirmwareVersion = "7.0.7";
+String FirmwareVersion = "7.0.11";
 String LatestFirmwareVersion;
 bool update_in_progress = false;
 
@@ -1425,23 +1425,29 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
       ACWriteInProgress = true;
 
       if (doc["systempower"].is<bool>()) {
+        DEBUG_PRINTLN("SetPower");
         bool systempower = doc["systempower"];
         AC.SetSystemPowerMode(systempower);
         AC.Status.SystemPowerMode = systempower ? 0x01 : 0x00;
       }
       if (doc["SetMode"].is<const char*>()) {
+        DEBUG_PRINTLN("SetMode");
         AC.SetMode(doc["SetMode"]);
       }
       if (doc["SetFanSpeed"].is<const char*>()) {
+        DEBUG_PRINTLN("SetFan");
         AC.SetFanSpeed(doc["SetFanSpeed"]);
       }
       if (doc["SetVane"].is<const char*>()) {
+        DEBUG_PRINTLN("SetVane");
         AC.SetVane(doc["SetVane"]);
       }
       if (doc["SetWideVane"].is<const char*>()) {
+        DEBUG_PRINTLN("SetWideVane");
         AC.SetWideVane(doc["SetWideVane"]);
       }
       if (doc["SetTempSetpoint"].is<float>()) {
+        DEBUG_PRINTLN("SetTempSetpoint");
         AC.SetTempSetpoint(doc["SetTempSetpoint"], AC.Status.tempMode);
       }
 
@@ -1839,6 +1845,12 @@ void AdvancedTwoReport(void) {
 
   int ErrorCode = ((String(HeatPump.Status.ErrCode1, HEX)).toInt() * 100) + (String(HeatPump.Status.ErrCode2, HEX)).toInt();
 
+  if (ErrorCode == 8000 || ErrorCode == 0) {
+    doc[F("ErrCode")] = String("Normal");
+  } else {
+    doc[F("ErrCode")] = ErrorCode;
+  }
+
   doc[F("SvrControlMode")] = HeatPump.Status.SvrControlMode;
   doc[F("WaterPump2")] = OFF_ON_String[HeatPump.Status.WaterPump2];
   doc[F("WaterPump4")] = OFF_ON_String[HeatPump.Status.WaterPump4];
@@ -1851,11 +1863,6 @@ void AdvancedTwoReport(void) {
   doc[F("ThreeWayValve2")] = HeatPump.Status.ThreeWayValve2;
   doc[F("RefrigeFltCode")] = RefrigeFltCodeString[HeatPump.Status.RefrigeFltCode];
 
-  if (ErrorCode == 8000 || ErrorCode == 0) {
-    doc[F("ErrCode")] = String("Normal");
-  } else {
-    doc[F("ErrCode")] = ErrorCode;
-  }
 
   String FltCodeString = String(FltCodeLetterOne[HeatPump.Status.FltCode1]) + String(FltCodeLetterTwo[HeatPump.Status.FltCode2]);
   if (FltCodeString == "A0") {
@@ -2102,6 +2109,37 @@ void ACReport(void) {
   JsonDocument doc;
   char Buffer[2048];
 
+
+
+  int ErrorCode = ((String(AC.Status.ErrCode1, HEX)).toInt() * 100) + (String(AC.Status.ErrCode2, HEX)).toInt();
+
+  if (ErrorCode == 8000 || ErrorCode == 0) {
+    doc[F("ErrCode")] = String("Normal");
+  } else {
+    doc[F("ErrCode")] = ErrorCode;
+  }
+
+
+  String FltCodeString = String(FltCodeLetterOne[HeatPump.Status.FltCode1]) + String(FltCodeLetterTwo[HeatPump.Status.FltCode2]);
+  if (FltCodeString == "A0") {
+    doc[F("FltCode")] = String("Normal");
+  } else {
+    doc[F("FltCode")] = String(FltCodeString);
+  }
+  
+  doc[F("InPwr")] = AC.Status.InputPower;
+  doc[F("LPwr")] = AC.Status.LifePower;
+  
+  doc[F("InPwr1")] = AC.Status.InputPower1;
+  doc[F("InPwr2")] = AC.Status.InputPower2;
+  doc[F("LPwr1")] = AC.Status.LifePower1;
+  doc[F("LPwr2")] = AC.Status.LifePower2;
+
+  doc[F("Status")] = AC.Status.Status;
+  doc[F("FAct")] = AC.Status.FanActual;
+  doc[F("Auto")] = AC.Status.AutoMode;
+
+
   if (AC.Status.RmtempMode) {
     doc[F("RoomTemp")] = AC.lookupByteMapValue(AC.ROOM_TEMP_MAP, AC.ROOM_TEMP, 32, AC.Status.RoomTemp);
   } else {
@@ -2114,6 +2152,14 @@ void ACReport(void) {
     doc[F("SetpointTemp")] = AC.Status.Temperature;
   }
 
+  doc[F("RPhbt")] = AC.Status.remoteProhibit;
+  doc[F("OAT")] = AC.Status.OAT;
+  doc[F("Rtme")] = AC.Status.Runtime;
+
+  doc[F("fltr")] = (AC.Status.Status == 0x01);
+  doc[F("dfrst")] = (AC.Status.Status == 0x02);
+  doc[F("prht")] = (AC.Status.Status == 0x04);
+  doc[F("sby")] = (AC.Status.Status == 0x08);
 
 
   doc[F("Fan")] = AC.lookupByteMapValue(AC.FAN_HA_MAP, AC.FAN, 6, AC.Status.fan);

@@ -42,11 +42,28 @@ typedef struct _ACMessageStruct {
 
 typedef struct _ACStatus {
 
-  //From Message 0x02
-  uint8_t SystemPowerMode, Buffer04, Mode, Temperature, fan, vane, wideVane, RoomTemp, CompressorFrequency, Operating;
+  // From Message 0x02
+  uint8_t SystemPowerMode, fan, vane, remoteProhibit, wideVane, Buffer04;
+  float Temperature;
+  bool tempMode, isee;
+
+  // From Message 0x03
+  float OAT, RoomTempFloat;
+  bool RmtempMode;
+  uint8_t RoomTemp, Runtime;
+
+  // From Message 0x04
+  uint8_t ErrCode1, ErrCode2, FltCode1, FltCode2;
+
+  // From Message 0x05
   uint8_t Timermode, onMinutesSet, onMinutesRemaining, offMinutesSet, offMinutesRemaining;
-  bool tempMode, RmtempMode, isee;
-  float RoomTempFloat;
+
+  // From Message 0x06
+  float InputPower, LifePower;
+  uint8_t CompressorFrequency, Operating, InputPower1, InputPower2, LifePower1, LifePower2;
+
+  // From Message 0x09
+  uint8_t Status, FanActual, AutoMode;
 
   // From Message 0x61
   bool Write_To_Ecodan_OK;
@@ -74,6 +91,7 @@ public:
   void EncodeRemoteTemperature(float setting);
 
   void EncodeMELCloud(uint8_t cmd);
+  void PayloadWipe(void);
   void TransfertoBuffer(uint8_t msgtype, uint8_t bufferposition);
   uint8_t ReturnNextCommandType(uint8_t bufferposition);
   void EncodeNextCommand(uint8_t bufferposition);
@@ -112,6 +130,7 @@ private:
   void Process0xCD(uint8_t *Payload, ACStatus *Status);
 
   void WriteOK(uint8_t *Payload, ACStatus *Status);
+  uint16_t ExtractUInt16(uint8_t *Buffer, uint8_t Index);
 };
 
 
