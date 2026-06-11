@@ -945,7 +945,7 @@ void readSettingsFromConfig() {
         Config["swing_mode_stat_t"] = BASETOPIC + String("/Status/AC");  // Shortened from swing_mode_state_topic
         Config["swing_mode_stat_tpl"] = String("{{ value_json.Vane }}");
 
-        if (AC.Status.SupportsHozVane == 2) {                            // Optional Support
+        if (AC.Status.SupportsHozVane) {  // Optional Support
           Config["swing_h_modes"][0] = "<<";
           Config["swing_h_modes"][1] = "<";
           Config["swing_h_modes"][2] = "|";

@@ -60,7 +60,7 @@
 #include "AC.h"
 #include "Melcloud.h"
 
-String FirmwareVersion = "7.0.15";
+String FirmwareVersion = "7.0.16";
 String LatestFirmwareVersion;
 bool update_in_progress = false;
 
