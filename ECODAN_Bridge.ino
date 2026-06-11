@@ -60,7 +60,7 @@
 #include "AC.h"
 #include "Melcloud.h"
 
-String FirmwareVersion = "7.0.11";
+String FirmwareVersion = "7.0.15";
 String LatestFirmwareVersion;
 bool update_in_progress = false;
 
@@ -376,6 +376,7 @@ extern int CurrentWriteAttempt;
 extern int ACCurrentWriteAttempt;
 byte NormalHWBoostOperating = 0;
 uint8_t FTCVersionLastLoop = 0;
+uint8_t ACC9LastLoop = 0;
 uint8_t FrequencyLastLoop = 0;
 double cumulativeEnergyToday[6] = { 0, 0, 0, 0, 0, 0 };      // Format: Heating Consumed, Cooling Consumed, DHW Consumed, Heating Delivered, Cooling Delivered, DHW Delivered
 double cumulativeEnergyYesterday[6] = { 0, 0, 0, 0, 0, 0 };  // Format: Heating Consumed, Cooling Consumed, DHW Consumed, Heating Delivered, Cooling Delivered, DHW Delivered
@@ -453,11 +454,13 @@ void setup() {
   HttpsOTA.onHttpEvent(HttpEvent);
 #endif
 
-  HeatPump.Status.Write_To_Ecodan_OK = false;
-  AC.Status.Write_To_Ecodan_OK = false;
-  HeatPump.Status.HasAnsweredDips = false;
-  AC.Status.tempMode = false;
-  AC.Status.RmtempMode = false;
+  // Reset HeatPump flags
+  HeatPump.Status.Write_To_Ecodan_OK = HeatPump.Status.HasAnsweredDips = false;
+
+  // Reset AC flags
+  AC.Status.Write_To_Ecodan_OK = AC.Status.tempMode = AC.Status.RmtempMode =
+    AC.Status.C9 = AC.Status.CD = AC.Status.CE = false;
+
   CheckForOTAUpdates();
   CalculateCompCurve();
   HeatPumpKeepAlive();
@@ -728,13 +731,18 @@ void loop() {
   if (HeatPump.Status.Defrost == 0 && (millis() - postdfpreviousMillis >= 360000)) { inDefrostWindow = false; }  // End Defrost Window
 
 
-
+  // -- Dynamic HA Adjustment -- //
   // -- FTC7 + R290 Outdoor Limit Adjustments -- //
   if (FTCVersionLastLoop != HeatPump.Status.FTCVersion && HeatPump.Status.RefrigerantType == 2) {  // Dynamic Update HA limit for FTC7
     if (MQTTReconnect()) { PublishDiscoveryTopics(1, MQTT_BASETOPIC); }
     if (MQTT2Reconnect()) { PublishDiscoveryTopics(2, MQTT_BASETOPIC); }
   }
+  if (ACC9LastLoop != AC.Status.C9 && AC.Status.SupportsHozVane) {                                 // Dynamic Vane & Fan Speeds
+    if (MQTTReconnect()) { PublishA2ADiscoveryTopics(1, MQTT_BASETOPIC); }
+    if (MQTT2Reconnect()) { PublishA2ADiscoveryTopics(2, MQTT_BASETOPIC); }
+  }
   FTCVersionLastLoop = HeatPump.Status.FTCVersion;  // On FTC version capture, if criteria met then change
+  ACC9LastLoop = AC.Status.C9;
 
 
   // -- Outdoor Triggers on Outdoor Unit Change -- //
@@ -935,6 +943,9 @@ void HeatPumpQueryStateEngine(void) {
     }
     if (AC.UpdateComplete()) {
       //DEBUG_PRINTLN(F("AC Update Complete"));
+      if (!AC.Status.C9) { AC.GetVersion(0xC9); }   // 0xC9
+      if (!AC.Status.CD) { AC.GetVersion(0xCD); }   // 0xCD
+      if (!AC.Status.CE) { AC.GetVersion(0xCE); }   // 0xCE - Unknown at the moment who/when this should be requested
       FTCLoopSpeed = millis() - ftcpreviousMillis;  // Loop Speed End
       PublishAllACReports();
     }
@@ -986,17 +997,18 @@ void MELCloudQueryReplyEngine(void) {
     } else if (MELCloud.Status.ActiveMessage == 0x28 && !MELCloud.Status.MEL_Online) {  // For other requests, low
       Array0x28[11] = 0;                                                                // Set the FTC Bit
     }
-    MELCloud.ReplyStatus(MELCloud.Status.ActiveMessage);  // Reply with the OK Message to MELCloud
+    if (MELCloud.Status.ActiveMessage == 0xCE && !AC.Status.CE) { return; }  // Intercept and return
+    MELCloud.ReplyStatus(MELCloud.Status.ActiveMessage);                     // Reply with the OK Message to MELCloud
     MELCloud.Status.ReplyNow = false;
     if (MELCloud.Status.ActiveMessage == 0x32 || MELCloud.Status.ActiveMessage == 0x33 || MELCloud.Status.ActiveMessage == 0x34 || MELCloud.Status.ActiveMessage == 0x35) {  // The write commands for A2W
       if (!unitSettings.BlockWriteFromMELCloud) { HeatPump.WriteMELCloudCMD(MELCloud.Status.ActiveMessage); }
-    } else if (MELCloud.Status.ActiveMessage == 0x40) {  // A2A Write Commands
+    } else if (MELCloud.Status.ActiveMessage == 0x40 || MELCloud.Status.ActiveMessage == 0x3F) {  // A2A Write Commands
       if (!unitSettings.BlockWriteFromMELCloud) { AC.WriteMELCloudCMD(MELCloud.Status.ActiveMessage); }
     }
   } else if ((HeatPump.PrevConnected) && (MELCloud.Status.ConnectRequest) && (HeatPump.Status.FTCVersion != 0) && HeatPump.Status.HasAnsweredDips) {
     MELCloud.ConnectA2W();  // Reply to the connect request
     MELCloud.Status.ConnectRequest = false;
-  } else if (AC.PrevConnected && MELCloud.Status.ConnectRequest) {
+  } else if (AC.PrevConnected && MELCloud.Status.ConnectRequest && AC.Status.C9) {
     MELCloud.ConnectA2A();  // Reply to the connect request
     MELCloud.Status.ConnectRequest = false;
   } else if (MELCloud.Status.MELRequest1) {
@@ -1064,8 +1076,14 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
       CheckForOTAUpdates();
 #endif
     } else if (Payload.toInt() == 993) {
-      DEBUG_PRINTLN(F("Requested FTC Version Information"));
-      HeatPump.GetFTCVersion();
+      DEBUG_PRINTLN(F("Requested FTC/AC Version Information"));
+      if (HeatPump.PrevConnected) {
+        HeatPump.GetFTCVersion();
+      } else if (AC.PrevConnected) {
+        AC.GetVersion(0xC9);
+        AC.GetVersion(0xCD);
+        AC.GetVersion(0xCE);
+      }
     } else if (Payload.toInt() == 992) {
       DEBUG_PRINT(F("Short Cycle Protection: "));
       if (!unitSettings.shortcycleprotectionenabled) {
@@ -2126,12 +2144,12 @@ void ACReport(void) {
   } else {
     doc[F("FltCode")] = String(FltCodeString);
   }
-  
+
   doc[F("InPwr")] = AC.Status.InputPower;
   doc[F("LPwr")] = AC.Status.LifePower;
-  
-  doc[F("InPwr1")] = AC.Status.InputPower1;
-  doc[F("InPwr2")] = AC.Status.InputPower2;
+
+  //doc[F("InPwr1")] = AC.Status.InputPower1;
+  //doc[F("InPwr2")] = AC.Status.InputPower2;
   doc[F("LPwr1")] = AC.Status.LifePower1;
   doc[F("LPwr2")] = AC.Status.LifePower2;
 
@@ -2180,6 +2198,7 @@ void ACReport(void) {
   doc[F("onMinsRemain")] = AC.Status.onMinutesRemaining;
   doc[F("offMinsSet")] = AC.Status.offMinutesSet;
   doc[F("offMinsRemain")] = AC.Status.offMinutesRemaining;
+  doc[F("HasHozVane")] = AC.Status.SupportsHozVane;
   doc[F("HB_ID")] = Heart_Value;
 
   serializeJson(doc, Buffer);
@@ -2223,9 +2242,6 @@ void PublishAllACReports(void) {
   StatusReport();
   FlashGreenLED();
   DEBUG_PRINTLN(F("MQTT Published!"));
-  //AC.ConnectMEL();
-  //delay(1000);
-  //AC.TriggerStatusStateMachine();
 }
 
 void FastPublish(void) {
@@ -2574,6 +2590,7 @@ bool getOATRunningAverage(float newOAT) {
 
   return false;
 }
+
 
 
 void updateEnergyMeter(double currentPowerKW, int mode) {

@@ -291,6 +291,7 @@ public:
   uint8_t Process(uint8_t c);
 
   void CreateBlankTxMessage(uint8_t PacketType, uint8_t PayloadSize);
+  void PayloadWipe(void);
   void SetPayloadByte(uint8_t Data, uint8_t Location);
   uint8_t PrepareTxCommand(uint8_t *Buffer);
   void EncodePower(uint8_t Power);

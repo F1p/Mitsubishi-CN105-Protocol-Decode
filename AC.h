@@ -34,9 +34,7 @@ public:
   void WriteMELCloudCMD(uint8_t cmd);
 
   void Connect(void);
-  void ConnectMEL(void);
-  //void ConnectMEL1(void);
-  //void ConnectMEL2(void);
+  void GetVersion(uint8_t type);
   bool PauseStateMachine;
   bool PrevConnected;
   
@@ -49,7 +47,7 @@ public:
   const int TEMP_MAP[16] = { 31, 30, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16 };
   const uint8_t FAN[6] = { 0x00, 0x01, 0x02, 0x03, 0x05, 0x06 };
   const char* FAN_MAP[6] = { "AUTO", "QUIET", "1", "2", "3", "4" };
-  const char* FAN_HA_MAP[6] = { "auto", "diffuse", "low", "middle", "medium", "high" };
+  const char* FAN_HA_MAP[6] = { "AUTO", "QUIET", "1", "2", "3", "4" };
   const uint8_t VANE[7] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x07 };
   const char* VANE_MAP[7] = { "AUTO", "1", "2", "3", "4", "5", "SWING" };
   const uint8_t WIDEVANE[7] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x08, 0x0c };

@@ -68,6 +68,12 @@ typedef struct _ACStatus {
   // From Message 0x61
   bool Write_To_Ecodan_OK;
 
+  // From Messages C9, CD and CE
+  bool CD, CE, C9;
+
+  // From Message 0xC9
+  bool SupportsHozVane, FanBitA, FanBitB, FanBitC;
+
   // AC Flag
   bool Is_AC;
 
@@ -90,6 +96,7 @@ public:
   void EncodeWideVane(uint8_t setting);
   void EncodeRemoteTemperature(float setting);
 
+  void EncodeVersion(uint8_t type);
   void EncodeMELCloud(uint8_t cmd);
   void PayloadWipe(void);
   void TransfertoBuffer(uint8_t msgtype, uint8_t bufferposition);
@@ -127,7 +134,9 @@ private:
   void Process0x17(uint8_t *Payload, ACStatus *Status);
   void Process0x18(uint8_t *Payload, ACStatus *Status);
   void Process0x19(uint8_t *Payload, ACStatus *Status);
+  void Process0xC9(uint8_t *Payload, ACStatus *Status);
   void Process0xCD(uint8_t *Payload, ACStatus *Status);
+  void Process0xCE(uint8_t *Payload, ACStatus *Status);
 
   void WriteOK(uint8_t *Payload, ACStatus *Status);
   uint16_t ExtractUInt16(uint8_t *Buffer, uint8_t Index);

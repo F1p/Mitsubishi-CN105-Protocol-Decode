@@ -845,19 +845,19 @@ void readSettingsFromConfig() {
     for (int i = 0; i < 27; i++) {
 
       if (i == 0) {  // If the first topic
-        Config["device"]["ids"] = WiFiHostname;
-        Config["device"]["mf"] = "F1p";
-        Config["device"]["model"] = ChipModel;
-        Config["device"]["sn"] = ChipID;
-        Config["device"]["name"] = "Mitsibushi A2A ASHP";
+        Config["dev"]["ids"] = WiFiHostname;
+        Config["dev"]["mf"] = "F1p";
+        Config["dev"]["model"] = ChipModel;
+        Config["dev"]["sn"] = ChipID;
+        Config["dev"]["name"] = "Mitsibushi A2A ASHP";
 #ifdef ARDUINO_WT32_ETH01
-        Config["device"]["cu"] = "http://" + ETH.localIP().toString() + ":80";
+        Config["dev"]["cu"] = "http://" + ETH.localIP().toString() + ":80";
 #else
-      Config["device"]["cu"] = "http://" + WiFi.localIP().toString() + ":80";
+      Config["dev"]["cu"] = "http://" + WiFi.localIP().toString() + ":80";
 #endif
-        Config["device"]["sw_version"] = FirmwareVersion;
+        Config["dev"]["sw_version"] = FirmwareVersion;
       } else {  // Otherwise post just identifier
-        Config["device"]["ids"] = WiFiHostname;
+        Config["dev"]["ids"] = WiFiHostname;
       }
 
       // Every one has a unique_id and name
@@ -906,7 +906,7 @@ void readSettingsFromConfig() {
       if (i == 24) {
         Config["default_entity_id"] = String(MQTT_OBJECT_ID[1]);
         Config["curr_temp_t"] = BASETOPIC + String("/Status/AC");  // Shortened from curr_temp_topic
-        Config["curr_temp_tpl"] = "{{ value_json.RoomTemp if (value_json is defined and value_json.RoomTemp is defined and value_json.RoomTemp|int > 1) }}";
+        Config["curr_temp_tpl"] = "{{ value_json.RoomTemp }}";
 
         Config["temp_cmd_t"] = BASETOPIC + String("/Command/AC");  // Shortened from temperature_command_topic
         Config["temp_cmd_tpl"] = "{\"SetTempSetpoint\": {{ value }}}";
@@ -921,7 +921,7 @@ void readSettingsFromConfig() {
         Config["init"] = 16;
 
         Config["act_t"] = BASETOPIC + String("/Status/AC");  // Shortened from action_topic
-        Config["act_tpl"] = String("{{ value_json.action if (value_json is defined and value_json.action is defined and value_json.action|length) else 'idle' }}");
+        Config["act_tpl"] = String("{{ value_json.action }}");
 
         Config["modes"][0] = "auto";
         Config["modes"][1] = "cool";
@@ -931,7 +931,7 @@ void readSettingsFromConfig() {
         Config["mode_cmd_t"] = BASETOPIC + String("/Command/AC");  // Shortened from mode_command_topic
         Config["mode_cmd_tpl"] = "{\"SetMode\": \"{{ value }}\"}";
         Config["mode_stat_t"] = BASETOPIC + String("/Status/AC");  // Shortened from mode_state_topic
-        Config["mode_stat_tpl"] = String("{{ value_json.mode if (value_json is defined and value_json.mode is defined and value_json.mode|length) else 'off' }}");
+        Config["mode_stat_tpl"] = String("{{ value_json.mode }}");
 
         Config["swing_modes"][0] = "AUTO";
         Config["swing_modes"][1] = "1";
@@ -943,14 +943,28 @@ void readSettingsFromConfig() {
         Config["swing_mode_cmd_t"] = BASETOPIC + String("/Command/AC");  // Shortened from swing_mode_command_topic
         Config["swing_mode_cmd_tpl"] = "{\"SetVane\": \"{{ value }}\"}";
         Config["swing_mode_stat_t"] = BASETOPIC + String("/Status/AC");  // Shortened from swing_mode_state_topic
-        Config["swing_mode_stat_tpl"] = String("{{ value_json.Vane if (value_json is defined and value_json.Vane is defined and value_json.Vane|length) else 'AUTO' }}");
+        Config["swing_mode_stat_tpl"] = String("{{ value_json.Vane }}");
 
-        Config["fan_modes"][0] = "auto";
-        Config["fan_modes"][1] = "diffuse";
-        Config["fan_modes"][2] = "low";
-        Config["fan_modes"][3] = "middle";
-        Config["fan_modes"][4] = "medium";
-        Config["fan_modes"][5] = "high";
+        if (AC.Status.SupportsHozVane == 2) {                            // Optional Support
+          Config["swing_h_modes"][0] = "<<";
+          Config["swing_h_modes"][1] = "<";
+          Config["swing_h_modes"][2] = "|";
+          Config["swing_h_modes"][3] = ">";
+          Config["swing_h_modes"][4] = ">>";
+          Config["swing_h_modes"][5] = "<>";
+          Config["swing_h_modes"][6] = "SWING";
+          Config["swing_h_mode_cmd_t"] = BASETOPIC + String("/Command/AC");  // Shortened from swing_mode_command_topic
+          Config["swing_h_mode_cmd_tpl"] = "{\"SetWideVane\": \"{{ value }}\"}";
+          Config["swing_h_mode_stat_t"] = BASETOPIC + String("/Status/AC");  // Shortened from swing_mode_state_topic
+          Config["swing_h_mode_stat_tpl"] = String("{{ value_json.wideVane }}");
+        }
+
+        Config["fan_modes"][0] = "AUTO";
+        Config["fan_modes"][1] = "QUIET";
+        Config["fan_modes"][2] = "1";
+        Config["fan_modes"][3] = "2";
+        Config["fan_modes"][4] = "3";
+        Config["fan_modes"][5] = "4";
         Config["fan_mode_cmd_t"] = BASETOPIC + String("/Command/AC");  // Shortened from fan_mode_command_topic
         Config["fan_mode_cmd_tpl"] = "{\"SetFanSpeed\": \"{{ value }}\"}";
         Config["fan_mode_stat_t"] = BASETOPIC + String("/Status/AC");  // Shortened from fan_mode_state_topic
@@ -987,6 +1001,9 @@ void readSettingsFromConfig() {
         Config["rel_u"] = "https://github.com/F1p/Mitsubishi-CN105-Protocol-Decode/releases/latest";
         MQTT_DISCOVERY_TOPIC = String(MQTT_DISCOVERY_TOPICS[6]);
       }
+
+      // Wide Vane
+
 
       // Add Availability Topics
       if (i >= 24) {

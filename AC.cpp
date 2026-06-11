@@ -7,12 +7,7 @@ extern ESPTelnet TelnetServer;
 // Initialisation Commands
 uint8_t Init5[] = { 0xfc, 0x5a, 0x01, 0x30, 0x02, 0xca, 0x01, 0xa8 };  // Air to Air Connect
 //uint8_t Init6[] = { 0xfc, 0x5a, 0x01, 0x30, 0x02, 0xca, 0x02, 0xa7 };  // Air to Air Disconnect
-uint8_t Init7[] = { 0xfc, 0x5b, 0x01, 0x30, 0x01, 0xcd, 0xa6 };  // Info Request 1
-uint8_t Init10[] = { 0xfc, 0x5b, 0x01, 0x30, 0x01, 0xce, 0xa5 }; // Info Request 2
 
-
-uint8_t Init8[] = { 0x02, 0xff, 0xff, 0x81, 0x00, 0x00, 0x00, 0x81 };  // MEL Connect Type 1 (Air to Air Connect Test)
-//uint8_t Init9[] = { 0x02, 0xff, 0xff, 0x01, 0x00, 0x00, 0x01, 0x00, 0x00 };  // MEL Connect Type 2 (Air to Air Connect Test)
 
 
 #define NUMBER_COMMANDS 50
@@ -185,24 +180,31 @@ void AC::Connect(void) {
   Process();
 }
 
-void AC::ConnectMEL(void) {
-  DEBUG_PRINTLN(F("AC MELCloud Simulation 2..."));
-  DeviceStream->write(Init10, 7);
+
+void AC::GetVersion(uint8_t type) {
+  uint8_t Buffer[COMMANDSIZE];
+  uint8_t CommandSize = 0;
+  uint8_t i;
+
+  printCurrentTime();
+  DEBUG_PRINT(F("[Bridge > AC] "));
+  StopStateMachine();
+  ACDECODER::CreateBlankTxMessage(0x5B, 0x01);
+  ACDECODER::EncodeVersion(type);
+  CommandSize = ACDECODER::PrepareTxCommand(Buffer);
+  DeviceStream->write(Buffer, CommandSize);
+  AClastmsgdispatchedMillis = millis();
   DeviceStream->flush();
-  Process();
+
+  for (i = 0; i < CommandSize; i++) {
+    if (Buffer[i] < 0x10) DEBUG_PRINT(F("0"));
+    DEBUG_PRINT(String(Buffer[i], HEX));
+    DEBUG_PRINT(F(", "));
+    Buffer[i] = 0x00;
+  }
+  DEBUG_PRINTLN();
 }
-/*void AC::ConnectMEL1(void) {
-  DEBUG_PRINTLN(F("AC MELCloud Simulation 1..."));
-  DeviceStream->write(Init8, 8);
-  DeviceStream->flush();
-  Process();
-}
- void AC::ConnectMEL2(void) {
-  DEBUG_PRINTLN(F("AC MELCloud Simulation 2..."));
-  DeviceStream->write(Init9, 9);
-  DeviceStream->flush();
-  Process();
-}*/
+
 
 uint8_t AC::HeatPumpConnected(void) {
   return Connected;

@@ -144,6 +144,9 @@ uint8_t MELCLOUDDECODER::Process(uint8_t c) {
         case 0xcd:  // A2A
           Process0xCD(RxMessage.Payload, &Status);
           break;
+        case 0xce:  // A2A
+          Process0xCE(RxMessage.Payload, &Status);
+          break;
       }
     } else if (RxMessage.PacketType == SET_RESPONSE) {
       WriteOK(RxMessage.Payload, &Status);
@@ -151,6 +154,9 @@ uint8_t MELCLOUDDECODER::Process(uint8_t c) {
       switch (RxMessage.Payload[0]) {
         case 0x01:
           ProcessAC0x01(RxMessage.Payload, &Status);
+          break;
+        case 0x30: 
+          ProcessAC0x30(RxMessage.Payload, &Status);
           break;
         case 0x32:
           Process0x32(RxMessage.Payload, &Status);
@@ -533,12 +539,23 @@ void MELCLOUDDECODER::Process0xCD(uint8_t *Buffer, MelCloudStatus *Status) {
   Status->ReplyNow = true;
   Status->ActiveMessage = 0xCD;
 }
+void MELCLOUDDECODER::Process0xCE(uint8_t *Buffer, MelCloudStatus *Status) {
+  Status->ReplyNow = true;
+  Status->ActiveMessage = 0xCE;
+}
 void MELCLOUDDECODER::ProcessAC0x01(uint8_t *Buffer, MelCloudStatus *Status) {
   for (int i = 1; i < 16; i++) {
     ACWriteArray0x01[i] = Buffer[i];
   }
   Status->ReplyNow = true;
   Status->ActiveMessage = 0x40;  // Use 0x40 as AC 0x01
+}
+void MELCLOUDDECODER::ProcessAC0x30(uint8_t *Buffer, MelCloudStatus *Status) {
+  for (int i = 1; i < 16; i++) {
+    ACWriteArray0x30[i] = Buffer[i];
+  }
+  Status->ReplyNow = true;
+  Status->ActiveMessage = 0x30;
 }
 void MELCLOUDDECODER::Process0x32(uint8_t *Buffer, MelCloudStatus *Status) {
   for (int i = 1; i < 16; i++) {

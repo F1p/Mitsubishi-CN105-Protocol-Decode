@@ -1120,6 +1120,14 @@ void ECODANDECODER::CreateBlankTxMessage(uint8_t PacketType, uint8_t PayloadSize
   CreateBlankMessageTemplate(&TxMessage, PacketType, PayloadSize);
 }
 
+
+void ECODANDECODER::PayloadWipe(void) {
+  for (int i = 0; i < 16; i++) {
+    TxMessage.Payload[i] = 0;
+  }
+}
+
+
 void ECODANDECODER::CreateBlankMessageTemplate(MessageStruct *Message, uint8_t PacketType, uint8_t PayloadSize) {
   uint8_t i;
 

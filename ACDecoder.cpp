@@ -6,6 +6,9 @@ extern ESPTelnet TelnetServer;
 #include "Debug.h"
 
 uint8_t ACWriteArray0x01[] = {};  // Write CMDs
+uint8_t ACWriteArray0x30[] = {};
+uint8_t Array0xcd[] = {};
+uint8_t Array0xce[] = {};
 
 uint8_t ACBufferArray[][17] = { {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {} };
 
@@ -67,6 +70,12 @@ uint8_t ACDECODER::Process(uint8_t c) {
       switch (RxMessage.Payload[0]) {
         case 0xcd:
           Process0xCD(RxMessage.Payload, &Status);
+          break;
+        case 0xce:
+          Process0xCE(RxMessage.Payload, &Status);
+          break;
+        case 0xc9:
+          Process0xC9(RxMessage.Payload, &Status);
           break;
       }
     }
@@ -328,11 +337,40 @@ void ACDECODER::Process0xCD(uint8_t *Buffer, ACStatus *Status) {
   // Sample Data
   // fc, 7b, 01, 30, 10, cd, a0, be, a0, be, a0, be, 04, 11, 02, ff, ff, 00, 00, 00, 00, 48, CS OK
 
+  Status->CD = true; // Arbitary to know its been read at least once
+
+
+  for (int i = 1; i < 16; i++) {
+    Array0xcd[i] = Buffer[i];
+  }
+}
+
+void ACDECODER::Process0xCE(uint8_t *Buffer, ACStatus *Status) {
+  // Sample Data
+  // [AC > Bridge] fc, 7b, 01, 30, 10, ce, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 76, CS OK
+  
+  Status->CE = true; // Arbitary to know its been read at least once
+
+  for (int i = 1; i < 16; i++) {
+    Array0xce[i] = Buffer[i];
+  }
+}
+
+
+void ACDECODER::Process0xC9(uint8_t *Buffer, ACStatus *Status) {
+  // Sample Data
+  // fc, 7b, 01, 30, 10, c9, 03, 00, 20, 00, 14, 07, f5, 8c, 25, a0, be, 94, be, a0, be, 89, CS OK
+
+  Status->C9 = true; // Arbitary to know its been read at least once
+  Status->SupportsHozVane = ((Buffer[7] & 0x40) == 0x40);
+  Status->FanBitA = ((Buffer[7] & 0x10) == 0x10);
+  Status->FanBitB = ((Buffer[7] & 0x10) == 0x10);
+  Status->FanBitC = ((Buffer[7] & 0x10) == 0x10);
+  
   for (int i = 1; i < 16; i++) {
     Array0xc9[i] = Buffer[i];
   }
 }
-
 
 
 
@@ -341,7 +379,7 @@ void ACDECODER::EncodePower(uint8_t OnOff) {
   // fc, 41, 01, 30, 10, 01, 01, __, __, __, __, __, __, __, __, __, __, __, __, __, __, 7c,
   //[MEL > Bridge] fc, 41, 01, 30, 10, 01, 01, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 7c, CS OK (Off)
 
-
+  PayloadWipe();
   TxMessage.Payload[0] = 0x01;
   TxMessage.Payload[1] = 0x01;   // Power
   TxMessage.Payload[3] = OnOff;  // On/Off
@@ -351,8 +389,8 @@ void ACDECODER::EncodeSetMode(uint8_t setting) {
   // Sample Data
   //fc, 41, 01, 30, 10, 01, 02, 00, 01, 07, 00, 00, 00, 00, 00, 00, 00, 00, 05, 00, 00, 6e, // fan
   //Payload Wipe
-  PayloadWipe();
 
+  PayloadWipe();
   TxMessage.Payload[0] = 0x01;
   TxMessage.Payload[1] = 0x02;  // Mode
   TxMessage.Payload[4] = setting;
@@ -365,7 +403,7 @@ void ACDECODER::EncodeSetpoint(uint8_t setting, bool floatMode) {
   // [MELCloud Write] fc, 41, 01, 30, 10, 01, 04, 00, 00, 03, 0e, 00, 00, 00, 00, 00, 00, 00, 03, 00, 00, 65, CS OK
 
 
-
+  PayloadWipe();
   TxMessage.Payload[0] = 0x01;
   TxMessage.Payload[1] = 0x04;  // Temp
   if (floatMode) {
@@ -380,6 +418,7 @@ void ACDECODER::EncodeFanSpeed(uint8_t setting) {
   // Sample Data
   //fc, 41, 01, 30, 10, 01, 04, __, __, __, 02, __, __, __, __, __, __, __, __, __, __, 77,
 
+  PayloadWipe();
   TxMessage.Payload[0] = 0x01;
   TxMessage.Payload[1] = 0x08;  // Fan
   TxMessage.Payload[6] = setting;
@@ -388,6 +427,7 @@ void ACDECODER::EncodeFanSpeed(uint8_t setting) {
 void ACDECODER::EncodeVane(uint8_t setting) {
   // Sample Data
 
+  PayloadWipe();
   TxMessage.Payload[0] = 0x01;
   TxMessage.Payload[1] = 0x10;  // Vane
   TxMessage.Payload[7] = setting;
@@ -396,10 +436,19 @@ void ACDECODER::EncodeVane(uint8_t setting) {
 void ACDECODER::EncodeWideVane(uint8_t setting) {
   // Sample Data
   //fc, 41, 01, 30, 10, 01, 10, __, __, __, __, __, __, __, __, __, __, __, __, __, __, 6d,
+
+  // [MEL > Bridge] fc, 41, 01, 30, 10, 30, 3f, 00, 08, 18, 0c, 10, df, 00, 00, 00, 00, 00, 00, 00, 00    // UNKNOWN TYPE?
+
+
+  // [MEL > Bridge] fc, 41, 01, 30, 10, 01, 00, 01, 01, 03, 00, 00, 00, 00, 00, 00, 00, 00, 02, 00, 00, 76, CS OK
+  //[MEL > Bridge] fc, 41, 01, 30, 10, 01, 00, 01, 01, 03, 00, 00, 00, 00, 00, 00, 00, 00, 04, 00, 00, 74, CS OK
+  //                                                                                        []
+
+
   TxMessage.Payload[0] = 0x01;
   TxMessage.Payload[1] = 0x00;
   TxMessage.Payload[2] = 0x01;
-  TxMessage.Payload[5] = setting;
+  TxMessage.Payload[13] = setting;
 }
 
 
@@ -427,6 +476,13 @@ void ACDECODER::EncodeRemoteTemperature(float RemoteTemperature) {
 }
 
 
+void ACDECODER::EncodeVersion(uint8_t type) {
+  // Get FTC Version
+  PayloadWipe();
+  TxMessage.Payload[0] = type;
+  //TxMessage.Payload[1] = 0x5F;
+}
+
 
 void ACDECODER::EncodeMELCloud(uint8_t cmd) {
   if (cmd == 0x40) {
@@ -438,6 +494,9 @@ void ACDECODER::EncodeMELCloud(uint8_t cmd) {
   for (int i = 1; i < 16; i++) {
     if (cmd == 0x40) {
       TxMessage.Payload[i] = ACWriteArray0x01[i];
+    }
+    else if (cmd = 0x30) {      
+      TxMessage.Payload[i] = ACWriteArray0x30[i];
     }
   }
 }
