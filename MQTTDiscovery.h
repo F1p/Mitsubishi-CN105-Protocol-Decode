@@ -271,8 +271,341 @@ const char MQTT_MDI_ICONS[][30] PROGMEM = {
   "mdi:water-opacity"  //100
 };
 
+#ifdef LANG_DE
+const char MQTT_SENSOR_NAME[][65] PROGMEM = {
+  "Bridge-Status",                   // Bridge Status
+  "Firmware-Version",                // Firmware Version
+  "Bridge WLAN-Signal",              // Bridge WiFi Signal
+  "FTC-Version",                     // FTC Version
+  "System-Betriebsart",              // System Operation Mode
+  "Heizung Rücklauftemperatur",      // Heater Return Temperature //5
+  "Heizung Vorlauftemperatur",       // Heater Flow Temperature
+  "Außentemperatur",                 // Outside Temperature
+  "Abtauung",                        // Defrost
+  "Wärmepumpen-Abgabeleistung",      // Heat Pump Output Power
+  "Kompressorfrequenz",              // Compressor Frequency // 10
+  "Durchflussrate",                  // Flow Rate
+  "Betriebsstunden",                 // Run Hours
+  "Max. Vorlauftemperatur",          // Max Flow Temperature
+  "Min. Vorlauftemperatur",          // Min Flow Temperature
+  "Kessel Vorlauftemperatur",        // Boiler Flow Temperature //15
+  "Kessel Rücklauftemperatur",       // Boiler Return Temperature
+  "Mischbehälter-Temperatur",        // Mixing Tank Temperature
+  "Kältemitteltemperatur",           // Refrigerant Temperature
+  "Eintauchheizkörper (WW)",         // Immersion Heater
+  "Zusatzheizung 1",                 // Booster Heater 1 //20
+  "Wasserpumpe 1",                   // Water Pump 1
+  "Wasserpumpe 2",                   // Water Pump 2
+  "Drei-Wege-Ventil 1",              // Three Way Valve 1
+  "Drei-Wege-Ventil 2",              // Three Way Valve 2
+  "Warmwassertemperatur",            // DHW Temperature //25
+  "Warmwassertemperatur oben",       // DHW Temperature Upper
+  "Warmwasser sperren",              // Prohibit DHW
+  "Warmwasserbereitung läuft",       // DHW Running
+  "Warmwasser-Regelungsart",         // DHW Control Mode
+  "Legionellen-Sollwert",            // Legionella Setpoint //30
+  "WW Max. Temperaturabfall",        // DHW Max Temperature Drop
+  "Warmwasser-Heizphase",            // DHW Heating Phase
+  "Zone 1 Vorlauftemperatur",        // Zone 1 Flow Temperature
+  "Zone 1 Rücklauftemperatur",       // Zone 1 Return Temperature
+  "Zone 2 Vorlauftemperatur",        // Zone 2 Flow Temperature //35
+  "Zone 2 Rücklauftemperatur",       // Zone 2 Return Temperature
+  "Zone 1 aktiv",                    // Zone 1 Working
+  "Zone 2 aktiv",                    // Zone 2 Working
+  "Heizungsverbrauch gestern",       // Consumed Heating Yesterday
+  "Heizungserzeugung gestern",       // Delivered Heating Yesterday //40
+  "Kühlverbrauch gestern",           // Consumed Cooling Yesterday
+  "Kühlerzeugung gestern",           // Delivered Cooling Yesterday
+  "Warmwasserverbrauch gestern",     // Consumed DHW Yesterday
+  "Warmwassererzeugung gestern",     // Delivered DHW Yesterday
+  "Gesamtenergieverbrauch gestern",  // Total Consumed Energy Yesterday //45
+  "Gesamtenergieerzeugung gestern",   // Total Delivered Energy Yesterday
+  "Heizung CoP gestern",             // Heating CoP Yesterday
+  "Kühlung CoP gestern",             // Cooling CoP Yesterday
+  "Warmwasser CoP gestern",          // DHW CoP Yesterday
+  "Gesamt-CoP gestern",              // Total CoP Yesterday //50
+  "Kältemittel-Fehlercode",          // Refrigerant Fault Code
+  "Fehlercode",                      // Error Code
+  "Störungscode",                    // Fault Code
+  "Spreizung Vor-/Rücklauf (DeltaT)",// Flow Return DeltaT
+  "Berechnete Heiz-Abgabeleistung",  // Computed Heat Output Power //55
+  "Berechnete Kühl-Abgabeleistung",  // Computed Cool Output Power
+  "Heizbetrieb läuft",               // Heating Running
+  "Kühlbetrieb läuft",               // Cooling Running
+  "Zone 1 Heizsperre",               // Zone 1 Heating Prohibit
+  "Zone 1 Kühlsperre",               // Zone 1 Cooling Prohibit //60
+  "Zone 2 Heizsperre",               // Zone 2 Heating Prohibit
+  "Zone 2 Kühlsperre",               // Zone 2 Cooling Prohibit
+  "Zone 1 Vorlauf-Sollwert",         // Zone 1 Flow Setpoint
+  "Zone 2 Vorlauf-Sollwert",         // Zone 2 Flow Setpoint
+  "Zone 1 Ext. Thermostatanforderung",// Zone 1 Ext Thermostat Demand //65
+  "Zone 2 Ext. Thermostatanforderung",// Zone 2 Ext Thermostat Demand
+  "Außen Ext. Thermostatanforderung",// Outside Ext Thermostat Demand
+  "Wasserpumpe 4",                   // Water Pump 4
+  "Wasserpumpe 3",                   // Water Pump 3
+  "Wasserpumpe 13",                  // Water Pump 13 // 70
+  "Wärmepumpen-Aufnahmeleistung",    // Heat Pump Input Power
+  "Berechnete Aufnahmeleistung",     // Computed Input Power
+  "FTC-Softwareversion",             // FTC Software Version
+  "Warmwasser-Boost",                // DHW Boost
+  "Mischventil-Stufe",               // Mixing Valve Step //75
+  "Bridge CPU-Temperatur",           // Bridge CPU Temperature
+  "Zusatzheizung 2",                 // Booster Heater 2
+  "Aktueller CoP",                   // Instant CoP
+  "Flüssigkältemittel-Temperatur TH3",// Refrigerant Liquid Temperature TH3
+  "Kompressor Startanzahl",          // Compressor Start Quantity
+  "Heißgastemperatur TH4",           // Discharge Temperature TH4
+  "Unterkühlungstemperatur",         // Subcool Temperature
+  "Kühlkörpertemperatur TH8",        // Heatsink Temperature TH8
+  "Plattenwärmetauscher Flüssigtemp. TH6", // Plate Hex Liquid Temperature TH6
+  "Lüfter 1 Drehzahl",               // Fan 1 Speed
+  "Lüfter 2 Drehzahl",               // Fan 2 Speed
+  "Ventil LEV A",                    // Valve LEV A
+  "Ventil LEV B",                    // Valve LEV B
+  "Wassereinlasstemperatur TH32",    // Water Inlet Temperature TH32
+  "Berechnete WW-Abgabeleistung",    // Computed DHW Output Power
+  "Berechnete WW-Aufnahmeleistung",   // Computed DHW Input Power
+  "Berechnete Heiz-Abgabeleistung",  // Computed Heating Output Power
+  "Berechnete Heiz-Aufnahmeleistung", // Computed Heating Input Power
+  "Berechnete Kühl-Aufnahmeleistung", // Computed Cooling Input Power
+  "Überhitzungstemperatur",          // Superheat Temperature
+  "Taktungsschutz-Status",           // Short Cycle Protection State
+  "Außengerät-Softwareversion",      // Outdoor Unit Software Version
+  "MELCloud-Adapterstatus",          // MELCloud Adapter Status
+  "DIP-Schalter-Konfiguration (1-1 bis 7-8)", // Dip Switch Configuration
+  "Wasserpumpe 1 PWM-Drehzahl",      // Water Pump 1 PWM Speed
+  "Sole-Einlasstemperatur",          // Brine Inlet Temperature
+  "Sole-Auslasstemperatur",          // Brine Outlet Temperature
+  "Gesamt-CoP heute",                // Total CoP Today
+
+  "Warmwasserthermostat",            // DHW Thermostat
+  "Zone 1 Thermostat",               // Zone 1 Thermostat //80
+  "Zone 2 Thermostat",               // Zone 2 Thermostat
+  "Zone 1 Vorlaufthermostat",        // Zone 1 Flow Thermostat
+  "Zone 2 Vorlaufthermostat",        // Zone 2 Flow Thermostat
+
+  "Schneller WW-Boost",              // Fast DHW Boost
+  "Systemleistung",                  // System Power //85
+  "Urlaubsmodus",                    // Holiday Mode
+  "Server-Steuerungsmodus",          // Server Control Mode
+  "Warmwasser sperren",              // Prohibit DHW
+  "Zone 1 Heizsperre",               // Prohibit Zone 1 Heating
+  "Zone 1 Kühlsperre",               // Prohibit Zone 1 Cooling //90
+  "Zone 2 Heizsperre",               // Prohibit Zone 2 Heating
+  "Zone 2 Kühlsperre",               // Prohibit Zone 2 Cooling
+  "Warmwasser-Boost",                // DHW Boost
+  "Taktungsschutz",                  // Short Cycle Protection
+  "MELCloud Nur Lesen",              // MELCloud Read Only
+
+  "Warmwassermodus",                 // DHW Mode
+  "Heiz-/Kühlbetriebsart Zone 1",    // Heating/Cooling Operation Mode Zone 1 //95
+  "Heiz-/Kühlbetriebsart Zone 2",    // Heating/Cooling Operation Mode Zone 2
+  "Leistung Außengerät (kW)",        // Outdoor Unit Size (kW)
+  "Glykolkonzentration",             // Glycol Strength
+  "Firmware-Update"                  // Firmware Update
+};
+
+const char MQTT_AC_SENSOR_NAME[][45] PROGMEM = {
+  "Bridge-Status",
+  "Firmware-Version",
+  "Bridge WLAN-Signal",
+  "Kompressorfrequenz",  // 10
+  "iSee",
+  "Timer-Modus",
+  "Einschaltzeit Min (Soll)",
+  "Einschaltzeit Min (Rest)",
+  "Ausschaltzeit Min (Soll)",
+  "Ausschaltzeit Min (Rest)",
+  "Raumtemperatur",
+  "Fehlercode",
+  "Störungscode",
+  "Eingangsleistung",
+  "Gesamtleistung",
+  "Ist-Lüfterdrehzahl",
+  "Automatikmodus",
+  "Fernbedienung Sperre",
+  "Außentemperatur",
+  "Laufzeit",
+  "Filter wechseln",
+  "Abtauen",
+  "Vorheizen",
+  "Standby",
+
+  "Raumthermostat",
+  "Systemleistung",
+  "Firmware-Update"
+};
+
+
+// Finnish
+#elif defined(LANG_FI)
+const char MQTT_SENSOR_NAME[][65] PROGMEM = {
+  "Sillan tila",                     // Bridge Status
+  "Laiteohjelmiston versio",          // Firmware Version
+  "Sillan WiFi-signaali",            // Bridge WiFi Signal
+  "FTC-versio",                      // FTC Version
+  "Järjestelmän toimintatila",       // System Operation Mode
+  "Lämmityksen paluulämpötila",      // Heater Return Temperature //5
+  "Lämmityksen menolämpötila",       // Heater Flow Temperature
+  "Ulkolämpötila",                   // Outside Temperature
+  "Sulatustoiminto",                 // Defrost
+  "Lämpöpumpun antoteho",            // Heat Pump Output Power
+  "Kompressorin taajuus",            // Compressor Frequency // 10
+  "Virtausnopeus",                   // Flow Rate
+  "Käyttötunnit",                    // Run Hours
+  "Maksimi menolämpötila",           // Max Flow Temperature
+  "Minimi menolämpötila",            // Min Flow Temperature
+  "Kattilan menolämpötila",          // Boiler Flow Temperature //15
+  "Kattilan paluulämpötila",         // Boiler Return Temperature
+  "Varaajan lämpötila",              // Mixing Tank Temperature
+  "Kylmäaineen lämpötila",           // Refrigerant Temperature
+  "Sähkövastus (LKV)",               // Immersion Heater
+  "Lisälämmitin 1",                  // Booster Heater 1 //20
+  "Vesipumppu 1",                    // Water Pump 1
+  "Vesipumppu 2",                    // Water Pump 2
+  "Kolmitieventtiili 1",             // Three Way Valve 1
+  "Kolmitieventtiili 2",             // Three Way Valve 2
+  "LKV-lämpötila",                   // DHW Temperature //25
+  "LKV-lämpötila yläosa",            // DHW Temperature Upper
+  "Estä LKV",                        // Prohibit DHW
+  "LKV-lämmitys käynnissä",          // DHW Running
+  "LKV-ohjaustila",                  // DHW Control Mode
+  "Legionellatoiminnon asetusarvo",  // Legionella Setpoint //30
+  "LKV suurin lämpötilan pudotus",   // DHW Max Temperature Drop
+  "LKV-lämmitysvaihe",               // DHW Heating Phase
+  "Vyöhyke 1 menolämpötila",         // Zone 1 Flow Temperature
+  "Vyöhyke 1 paluulämpötila",        // Zone 1 Return Temperature
+  "Vyöhyke 2 menolämpötila",         // Zone 2 Flow Temperature //35
+  "Vyöhyke 2 paluulämpötila",        // Zone 2 Return Temperature
+  "Vyöhyke 1 käytössä",              // Zone 1 Working
+  "Vyöhyke 2 käytössä",              // Zone 2 Working
+  "Kulutettu lämmitys eilen",        // Consumed Heating Yesterday
+  "Tuotettu lämmitys eilen",         // Delivered Heating Yesterday //40
+  "Kulutettu jäähdytys eilen",       // Consumed Cooling Yesterday
+  "Tuotettu jäähdytys eilen",        // Delivered Cooling Yesterday
+  "Kulutettu LKV eilen",             // Consumed DHW Yesterday
+  "Tuotettu LKV eilen",              // Delivered DHW Yesterday
+  "Kokonaisenergiankulutus eilen",   // Total Consumed Energy Yesterday //45
+  "Kokonaisenergiantuotto eilen",    // Total Delivered Energy Yesterday
+  "Lämmityksen CoP eilen",           // Heating CoP Yesterday
+  "Jäähdytyksen CoP eilen",          // Cooling CoP Yesterday
+  "LKV CoP eilen",                   // DHW CoP Yesterday
+  "Kokonais-CoP eilen",              // Total CoP Yesterday //50
+  "Kylmäainepiirin vikakoodi",       // Refrigerant Fault Code
+  "Virhekoodi",                      // Error Code
+  "Vikakoodi",                       // Fault Code
+  "Meno- ja paluun erotus (DeltaT)", // Flow Return DeltaT
+  "Laskettu lämmityksen antoteho",   // Computed Heat Output Power //55
+  "Laskettu jäähdytyksen antoteho",  // Computed Cool Output Power
+  "Lämmitys käynnissä",              // Heating Running
+  "Jäähdytys käynnissä",             // Cooling Running
+  "Vyöhyke 1 lämmityksen esto",      // Zone 1 Heating Prohibit
+  "Vyöhyke 1 jäähdytyksen esto",     // Zone 1 Cooling Prohibit //60
+  "Vyöhyke 2 lämmityksen esto",      // Zone 2 Heating Prohibit
+  "Vyöhyke 2 jäähdytyksen esto",     // Zone 2 Cooling Prohibit
+  "Vyöhyke 1 menoveden asetusarvo",  // Zone 1 Flow Setpoint
+  "Vyöhyke 2 menoveden asetusarvo",  // Zone 2 Flow Setpoint
+  "Vyöhyke 1 ulkoisen term. pyyntö", // Zone 1 Ext Thermostat Demand //65
+  "Vyöhyke 2 ulkoisen term. pyyntö", // Zone 2 Ext Thermostat Demand
+  "Ulkoisen termostaatin pyyntö",    // Outside Ext Thermostat Demand
+  "Vesipumppu 4",                    // Water Pump 4
+  "Vesipumppu 3",                    // Water Pump 3
+  "Vesipumppu 13",                   // Water Pump 13 // 70
+  "Lämpöpumpun ottoteho",            // Heat Pump Input Power
+  "Laskettu ottoteho",               // Computed Input Power
+  "FTC-ohjelmistoversio",            // FTC Software Version
+  "LKV-tehostus",                    // DHW Boost
+  "Sekoitusventtiilin asento",       // Mixing Valve Step //75
+  "Sillan CPU-lämpötila",            // Bridge CPU Temperature
+  "Lisälämmitin 2",                  // Booster Heater 2
+  "Hetkellinen CoP",                 // Instant CoP
+  "Nestemäisen kylmäaineen lämpötila TH3", // Refrigerant Liquid Temperature TH3
+  "Kompressorin käynnistykset",      // Compressor Start Quantity
+  "Kuumakaasun lämpötila TH4",       // Discharge Temperature TH4
+  "Alijäähtymislämpötila",           // Subcool Temperature
+  "Jäähdytysprofiilin lämpötila TH8", // Heatsink Temperature TH8
+  "Levylämmönsiirtimen nestelämpötila TH6", // Plate Hex Liquid Temperature TH6
+  "Puhaltimen 1 nopeus",             // Fan 1 Speed
+  "Puhaltimen 2 nopeus",             // Fan 2 Speed
+  "Venttiili LEV A",                 // Valve LEV A
+  "Venttiili LEV B",                 // Valve LEV B
+  "Tuloveden lämpötila TH32",        // Water Inlet Temperature TH32
+  "Laskettu LKV-antoteho",           // Computed DHW Output Power
+  "Laskettu LKV-ottoteho",           // Computed DHW Input Power
+  "Laskettu lämmityksen antoteho",   // Computed Heating Output Power
+  "Laskettu lämmityksen ottoteho",   // Computed Heating Input Power
+  "Laskettu jäähdytyksen ottoteho",  // Computed Cooling Input Power
+  "Tulistuslämpötila",               // Superheat Temperature
+  "Lyhyen kierron suojatila",        // Short Cycle Protection State
+  "Ulkoyksikön ohjelmistoversio",    // Outdoor Unit Software Version
+  "MELCloud-sovittimen tila",        // MELCloud Adapter Status
+  "DIP-kytkinten asetukset (1-1 - 7-8)", // Dip Switch Configuration (Switch 1-1 to 7-8)
+  "Vesipumpun 1 PWM-nopeus",         // Water Pump 1 PWM Speed
+  "Keruupiirin tulolämpötila",       // Brine Inlet Temperature
+  "Keruupiirin lähtölämpötila",      // Brine Outlet Temperature
+  "Kokonais-CoP tänään",             // Total CoP Today
+
+  "LKV-termostaatti",                // DHW Thermostat
+  "Vyöhykkeen 1 termostaatti",       // Zone 1 Thermostat //80
+  "Vyöhykkeen 2 termostaatti",       // Zone 2 Thermostat
+  "Vyöhykkeen 1 virtaustermostaatti",// Zone 1 Flow Thermostat
+  "Vyöhykkeen 2 virtaustermostaatti",// Zone 2 Flow Thermostat
+
+  "Nopea LKV-tehostus",              // Fast DHW Boost
+  "Järjestelmän virta",              // System Power //85
+  "Lomatila",                        // Holiday Mode
+  "Palvelimen ohjaustila",           // Server Control Mode
+  "Estä LKV",                        // Prohibit DHW
+  "Estä vyöhykkeen 1 lämmitys",      // Prohibit Zone 1 Heating
+  "Estä vyöhykkeen 1 jäähdytys",     // Prohibit Zone 1 Cooling //90
+  "Estä vyöhykkeen 2 lämmitys",      // Prohibit Zone 2 Heating
+  "Estä vyöhykkeen 2 jäähdytys",     // Prohibit Zone 2 Cooling
+  "LKV-tehostus",                    // DHW Boost
+  "Lyhyen kierron suojaus",          // Short Cycle Protection
+  "MELCloud Vain luku",              // MELCloud Read Only
+
+  "LKV-tila",                        // DHW Mode
+  "Lämmitys-/jäähdytystila Vyöhyke 1", // Heating/Cooling Operation Mode Zone 1 //95
+  "Lämmitys-/jäähdytystila Vyöhyke 2", // Heating/Cooling Operation Mode Zone 2
+  "Ulkoyksikön koko (kW)",           // Outdoor Unit Size (kW)
+  "Glykolipitoisuus",                // Glycol Strength
+  "Laiteohjelmiston päivitys"        // Firmware Update
+};
+
+const char MQTT_AC_SENSOR_NAME[][45] PROGMEM = {
+  "Sillan tila",
+  "Laiteohjelmiston versio",
+  "Sillan Wi-Fi-signaali",
+  "Kompressorin taajuus",  // 10
+  "iSee",
+  "Ajastintila",
+  "Asetetut minuutit (Päällä)",
+  "Jäljellä olevat minuutit (Päällä)",
+  "Asetetut minuutit (Pois)",
+  "Jäljellä olevat minuutit (Pois)",
+  "Huonelämpötila",
+  "Virhekoodi",
+  "Vikaloodi",
+  "Ottoteho",
+  "Kokonaiskulutus",
+  "Tuulettimen todellinen nopeus",
+  "Automaattitila",
+  "Kaukosäätimen esto",
+  "Ulkolämpötila",
+  "Käyntiaika",
+  "Suodattimen vaihto",
+  "Sulatus",
+  "Esilämmitys",
+  "Valmiustila",
+
+  "Huonetermostaatti",
+  "Järjestelmän teho",
+  "Laiteohjelmiston päivitys"
+};
+
+
 // Italian
-/*
+#elif defined(LANG_IT)
 const char MQTT_SENSOR_NAME[][45] PROGMEM = {
   "Stato Bridge",
   "Versione Firmware",
@@ -405,9 +738,41 @@ const char MQTT_SENSOR_NAME[][45] PROGMEM = {
   "Percentuale Glicole",
   "Aggiornamento Firmware"
 };
-*/
+
+const char MQTT_AC_SENSOR_NAME[][45] PROGMEM = {
+  "Stato Bridge",
+  "Versione Firmware",
+  "Segnale WiFi Bridge",
+  "Frequenza Compressore",  // 10
+  "iSee",
+  "Modalità Timer",
+  "Minuti Accensione Impostati",
+  "Minuti Accensione Rimanenti",
+  "Minuti Spegnimento Impostati",
+  "Minuti Spegnimento Rimanenti",
+  "Temperatura Ambiente",
+  "Codice Errore",
+  "Codice Guasto",
+  "Potenza Assorbita",
+  "Energia Totale",
+  "Velocità Effettiva Ventola",
+  "Modalità Auto",
+  "Inibisci Telecomando",
+  "Temperatura Esterna",
+  "Tempo di Funzionamento",
+  "Cambio Filtro",
+  "Sbrinamento",
+  "Preriscaldamento",
+  "Standby",
+
+  "Termostato Ambiente",
+  "Potenza di Sistema",
+  "Aggiornamento Firmware"
+};
+
 // Spanish
-/*const char MQTT_SENSOR_NAME[][45] PROGMEM = {
+#elif defined(LANG_ES)
+const char MQTT_SENSOR_NAME[][45] PROGMEM = {
   "Estado del Bridge",
   "Versión del Firmware",
   "Señal WiFi del Bridge",
@@ -539,8 +904,41 @@ const char MQTT_SENSOR_NAME[][45] PROGMEM = {
   "Concentración Glicol",
   "Actualización de Firmware"
 };
-*/
+
+const char MQTT_AC_SENSOR_NAME[][45] PROGMEM = {
+  "Estado del Bridge",
+  "Versión de Firmware",
+  "Señal WiFi del Bridge",
+  "Frecuencia del Compresor",  // 10
+  "iSee",
+  "Modo Temporizador",
+  "Minutos Encendido Prog.",
+  "Minutos Encendido Rest.",
+  "Minutos Apagado Prog.",
+  "Minutos Apagado Rest.",
+  "Temperatura Ambiente",
+  "Código de Errore",
+  "Código de Fallo",
+  "Potencia de Entrada",
+  "Energía Total",
+  "Velocidad Real Ventilador",
+  "Modo Automático",
+  "Bloqueo de Mando",
+  "Temperatura Exterior",
+  "Tiempo de Funcionamiento",
+  "Cambio de Filtro",
+  "Desescarche",
+  "Precalentamiento",
+  "Standby",
+
+  "Termostato Ambiente",
+  "Potencia del Sistema",
+  "Actualización de Firmware"
+};
+
+
  // English
+#elif defined(LANG_EN)
 const char MQTT_SENSOR_NAME[][45] PROGMEM = {
   "Bridge Status",
   "Firmware Version",
@@ -674,6 +1072,7 @@ const char MQTT_SENSOR_NAME[][45] PROGMEM = {
   "Firmware Update"
 };
 
+
 const char MQTT_AC_SENSOR_NAME[][45] PROGMEM = {
   "Bridge Status",
   "Firmware Version",
@@ -705,6 +1104,345 @@ const char MQTT_AC_SENSOR_NAME[][45] PROGMEM = {
   "System Power",
   "Firmware Update"
 };
+
+// French
+#elif defined(LANG_FR)
+const char MQTT_SENSOR_NAME[][45] PROGMEM = {
+  "Statut de la passerelle",
+  "Version du firmware",
+  "Signal WiFi de la passerelle",
+  "Version FTC",
+  "Mode de fonctionnement système",
+  "Température retour chauffage",  //5
+  "Température départ chauffage",
+  "Température extérieure",
+  "Dégivrage",
+  "Puissance restituée PAC",
+  "Fréquence du compresseur",  // 10
+  "Débit",
+  "Heures de fonctionnement",
+  "Température départ max",
+  "Température départ min",
+  "Température départ chaudière",  //15
+  "Température retour chaudière",
+  "Température ballon de mélange",
+  "Température du réfrigérant",
+  "Thermoplongeur",
+  "Réchauffeur de boucle 1",  //20
+  "Pompe à eau 1",
+  "Pompe à eau 2",
+  "Vanne trois voies 1",
+  "Vanne trois voies 2",
+  "Température ECS",  //25
+  "Température haute ECS",
+  "Interdiction ECS",
+  "ECS en cours",
+  "Mode de régulation ECS",
+  "Consigne anti-légionellose",  //30
+  "Chute de temp maximale ECS",
+  "Phase de chauffe ECS",
+  "Température départ Zone 1",
+  "Température retour Zone 1",
+  "Température départ Zone 2",  //35
+  "Température retour Zone 2",
+  "Zone 1 active",
+  "Zone 2 active",
+  "Énergie chauffage consommée hier",
+  "Énergie chauffage restituée hier",  //40
+  "Énergie refroidissement conso hier",
+  "Énergie refroidissement rest hier",
+  "Énergie ECS consommée hier",
+  "Énergie ECS restituée hier",
+  "Énergie totale consommée hier",  //45
+  "Énergie totale restituée hier",
+  "COP chauffage hier",
+  "COP refroidissement hier",
+  "COP ECS hier",
+  "COP total hier",  //50
+  "Code défaut réfrigérant",
+  "Code d'erreur",
+  "Code de défaut",
+  "DeltaT départ retour",
+  "Puis. restituée calculée chaud",  //55
+  "Puis. restituée calculée froid",
+  "Chauffage en cours",
+  "Refroidissement en cours",
+  "Interdiction chauffage Zone 1",
+  "Interdiction froid Zone 1",  //60
+  "Interdiction chauffage Zone 2",
+  "Interdiction froid Zone 2",
+  "Consigne de départ Zone 1",
+  "Consigne de départ Zone 2",
+  "Demande thermostat ext Zone 1",  //65
+  "Demande thermostat ext Zone 2",
+  "Demande thermostat ext extér",
+  "Pompe à eau 4",
+  "Pompe à eau 3",
+  "Pompe à eau 13",  // 70
+  "Puissance absorbée PAC",
+  "Puissance absorbée calculée",
+  "Version logiciel FTC",
+  "Boost ECS",
+  "Pas de la vanne mélangeuse",  //75
+  "Température CPU passerelle",
+  "Réchauffeur de boucle 2",
+  "COP instantané",
+  "Temp liquide réfrigérant TH3",
+  "Nombre de démarrages compresseur",
+  "Température de refoulement TH4",
+  "Température de sous-refroidis.",
+  "Température dissipateur TH8",
+  "Temp liquide échangeur plaques TH6",
+  "Vitesse ventilateur 1",
+  "Vitesse ventilateur 2",
+  "Vanne LEV A",
+  "Vanne LEV B",
+  "Température entrée d'eau TH32",
+  "Puis. restituée calculée ECS",
+  "Puissance absorbée calculée ECS",
+  "Puis. calculée restituée chaud",
+  "Puis. calculée absorbée chaud",
+  "Puis. calculée absorbée froid",
+  "Température de surchauffe",
+  "État protect. cycle court",
+  "Version logiciel unité ext",
+  "Statut adaptateur MELCloud",
+  "Config Dip Switch (1-1 à 7-8)",
+  "Vitesse PWM pompe à eau 1",
+  "Température entrée eau glycolée",
+  "Température sortie eau glycolée",
+  "COP total aujourd'hui",
+
+  "Thermostat ECS",
+  "Thermostat Zone 1",  //80
+  "Thermostat Zone 2",
+  "Thermostat de départ Zone 1",
+  "Thermostat de départ Zone 2",
+
+  "Boost ECS rapide",
+  "Alimentation système",  //85
+  "Mode vacances",
+  "Mode contrôle serveur",
+  "Interdire ECS",
+  "Interdire chauffage Zone 1",
+  "Interdire refroidissement Zone 1",  //90
+  "Interdire chauffage Zone 2",
+  "Interdire refroidissement Zone 2",
+  "Boost ECS active",
+  "Protection cycle court",
+  "MELCloud lecture seule",
+
+  "Mode ECS",
+  "Mode fonct. chaud/froid Zone 1",  //95
+  "Mode fonct. chaud/froid Zone 2",
+  "Puissance unité ext (kW)",
+  "Taux de glycol",
+  "Mise à jour du firmware"
+};
+
+const char MQTT_AC_SENSOR_NAME[][45] PROGMEM = {
+  "État du Bridge",
+  "Version du Firmware",
+  "Signal WiFi du Bridge",
+  "Fréquence Compresseur",  // 10
+  "iSee",
+  "Mode Minuterie",
+  "Minutes Marche Définies",
+  "Minutes Marche Restantes",
+  "Minutes Arrêt Définies",
+  "Minutes Arrêt Restantes",
+  "Température Ambiante",
+  "Code Erreur",
+  "Code Défaut",
+  "Puissance Absorbée",
+  "Énergie Totale",
+  "Vitesse Réelle Ventilo",
+  "Mode Automatique",
+  "Verrouillage Télécommande",
+  "Température Extérieure",
+  "Temps de Fonctionnement",
+  "Changement Filtre",
+  "Dégivrage",
+  "Préchauffage",
+  "Standby",
+
+  "Thermostat Ambiant",
+  "Puissance Système",
+  "Mise à Jour Firmware"
+};
+
+
+ // Dutch
+#elif defined(LANG_NL)
+const char MQTT_SENSOR_NAME[][45] PROGMEM = {
+  "Bridge Status",
+  "Firmware Versie",
+  "Bridge WiFi Signaal",
+  "FTC Versie",
+  "Systeem Bedrijfsmodus",
+  "Retourtemperatuur Verwarming",  //5
+  "Aanvoertemperatuur Verwarming",
+  "Buitentemperatuur",
+  "Ontdooien",
+  "Warmtepomp Vermogen",
+  "Compressor Frequentie",  // 10
+  "Debiet",
+  "Bedrijfsuren",
+  "Max Aanvoertemperatuur",
+  "Min Aanvoertemperatuur",
+  "Aanvoertemperatuur Ketel",  //15
+  "Retourtemperatuur Ketel",
+  "Mengtank Temperatuur",
+  "Koudemiddel Temperatuur",
+  "Elektrisch Element",
+  "Bijverwarming 1",  //20
+  "Waterpomp 1",
+  "Waterpomp 2",
+  "Driewegklep 1",
+  "Driewegklep 2",
+  "SWW Temperatuur",  //25
+  "SWW Temperatuur Boven",
+  "SWW Blokkeren",
+  "SWW Actief",
+  "SWW Regelmodus",
+  "Legionella Instelwaarde",  //30
+  "SWW Max Temperatuurdal",
+  "SWW Verwarmingsfase",
+  "Zone 1 Aanvoertemperatuur",
+  "Zone 1 Retourtemperatuur",
+  "Zone 2 Aanvoertemperatuur",  //35
+  "Zone 2 Retourtemperatuur",
+  "Zone 1 Actief",
+  "Zone 2 Actief",
+  "Verbruikt Verwarmen Gisteren",
+  "Geleverd Verwarmen Gisteren",  //40
+  "Verbruikt Koelen Gisteren",
+  "Geleverd Koelen Gisteren",
+  "Verbruikt SWW Gisteren",
+  "Geleverd SWW Gisteren",
+  "Totaal Verbruikt Gisteren",  //45
+  "Totaal Geleverd Gisteren",
+  "CoP Verwarmen Gisteren",
+  "CoP Koelen Gisteren",
+  "CoP SWW Gisteren",
+  "Totaal CoP Gisteren",  //50
+  "Koudemiddel Foutcode",
+  "Foutcode",
+  "Storingscode",
+  "DeltaT Aanvoer Retour",
+  "Berekend Verwarmingsvermogen",  //55
+  "Berekend Koelvermogen",
+  "Verwarmen Actief",
+  "Koelen Actief",
+  "Zone 1 Verwarmen Blokkeren",
+  "Zone 1 Koelen Blokkeren",  //60
+  "Zone 2 Verwarmen Blokkeren",
+  "Zone 2 Koelen Blokkeren",
+  "Zone 1 Aanvoer Instelwaarde",
+  "Zone 2 Aanvoer Instelwaarde",
+  "Zone 1 Ext Thermostaat Vraag",  //65
+  "Zone 2 Ext Thermostaat Vraag",
+  "Buiten Ext Thermostaat Vraag",
+  "Waterpomp 4",
+  "Waterpomp 3",
+  "Waterpomp 13",  // 70
+  "Warmtepomp Opgenomen Vermogen",
+  "Berekend Opgenomen Vermogen",
+  "FTC Software Versie",
+  "SWW Boost",
+  "Mengklep Stap",  //75
+  "Bridge CPU Temperatuur",
+  "Bijverwarming 2",
+  "Actuele CoP",
+  "Vloeibaar Koudemiddel Temp TH3",
+  "Aantal Compressor Starts",
+  "Persgastemperatuur TH4",
+  "Subcooling Temperatuur",
+  "Koellichaam Temperatuur TH8",
+  "Platenwisselaar Vloeistof TH6",
+  "Ventilator 1 Snelheid",
+  "Ventilator 2 Snelheid",
+  "Klep LEV A",
+  "Klep LEV B",
+  "Waterinlaattemperatuur TH32",
+  "Berekend SWW Vermogen",
+  "Berekend Opgenomen SWW Vermgen",
+  "Berekend Verwarming Vermogen",
+  "Berekend Opgen Verw Vermogen",
+  "Berekend Opgen Koel Vermogen",
+  "Oververhitting Temperatuur",
+  "Korte Cyclus Bescherming",
+  "Buitenunit Software Versie",
+  "MELCloud Adapter Status",
+  "Dip Switch Config (1-1 tot 7-8)",
+  "Waterpomp 1 PWM Snelheid",
+  "Brine Inlaattemperatuur",
+  "Brine Uitlaattemperatuur",
+  "Totaal CoP Vandaag",
+
+  "SWW Thermostaat",
+  "Zone 1 Thermostaat",  //80
+  "Zone 2 Thermostaat",
+  "Zone 1 Aanvoer Thermostaat",
+  "Zone 2 Aanvoer Thermostaat",
+
+  "Snelle SWW Boost",
+  "Systeem Ingeschakeld",  //85
+  "Vakantiemodus",
+  "Server Regelmodus",
+  "SWW Blokkeren",
+  "Zone 1 Verwarmen Blokkeren",
+  "Zone 1 Koelen Blokkeren",  //90
+  "Zone 2 Verwarmen Blokkeren",
+  "Zone 2 Koelen Blokkeren",
+  "SWW Boost",
+  "Korte Cyclus Bescherming",
+  "MELCloud Alleen Lezen",
+
+  "SWW Modus",
+  "Bedrijfsmodus Verw/Koel Zone 1",  //95
+  "Bedrijfsmodus Verw/Koel Zone 2",
+  "Buitenunit Vermogen (kW)",
+  "Glycol Concentratie",
+  "Firmware Update"
+};
+
+const char MQTT_AC_SENSOR_NAME[][45] PROGMEM = {
+  "Bridge-status",
+  "Firmware-versie",
+  "Bridge wifi-signaal",
+  "Compressorfrequentie",  // 10
+  "iSee",
+  "Timer-modus",
+  "Inschakeltijd ingesteld",
+  "Inschakeltijd resterend",
+  "Uitschakeltijd ingesteld",
+  "Uitschakeltijd resterend",
+  "Kamertemperatuur",
+  "Foutcode",
+  "Storingscode",
+  "Ingangsvermogen",
+  "Totale energie",
+  "Actuele ventilator-snelh.",
+  "Automatische modus",
+  "Afstandsbediening blokk.",
+  "Buitentemperatuur",
+  "Bedrijfstijd",
+  "Filter vervangen",
+  "Ontdooien",
+  "Voorverwarmen",
+  "Standby",
+
+  "Ruimtethermostaat",
+  "Systeemvermogen",
+  "Firmware-update"
+};
+
+#endif
+
+
+
+
 
 const char MQTT_TOPIC[][34] PROGMEM = {
   "/LWT",                               //0

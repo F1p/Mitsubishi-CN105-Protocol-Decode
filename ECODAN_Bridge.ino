@@ -17,6 +17,9 @@
 /* ESP32 AtomS3 Lite (ESP32S3 Dev Module)    / Core 3.1.1 / Flash 8M with SPIFFS (3MB APP / 1.5MB SPIFFS)                  */
 /* ESP32 Ethernet WT32-ETH01                 / Core 3.1.1 / Flash 4MB (1.9MB APP / 180KB SPIFFS)                           */
 
+#define LANG_EN
+
+
 
 #if defined(ESP8266) || defined(ESP32)  // ESP32 or ESP8266 Compatiability
 
@@ -515,8 +518,8 @@ void loop() {
   // -- Config Saver -- //
   if (shouldSaveConfig) {
     saveConfig();
-    CalculateCompCurve();  // Reload the Comp Curve
-  }                        // Handles WiFiManager Settings Changes
+    CalculateCompCurve();       // Reload the Comp Curve
+  }  // Handles WiFiManager Settings Changes
 
   // -- Heat Pump Write Command Handler -- //
   if (HeatPump.Status.Write_To_Ecodan_OK && WriteInProgress) {  // A write command is executing
