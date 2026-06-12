@@ -60,7 +60,7 @@
 #include "AC.h"
 #include "Melcloud.h"
 
-String FirmwareVersion = "7.0.16";
+String FirmwareVersion = "7.0.17";
 String LatestFirmwareVersion;
 bool update_in_progress = false;
 
@@ -737,7 +737,7 @@ void loop() {
     if (MQTTReconnect()) { PublishDiscoveryTopics(1, MQTT_BASETOPIC); }
     if (MQTT2Reconnect()) { PublishDiscoveryTopics(2, MQTT_BASETOPIC); }
   }
-  if (ACC9LastLoop != AC.Status.C9 && AC.Status.SupportsHozVane) {                                 // Dynamic Vane & Fan Speeds
+  if (ACC9LastLoop != AC.Status.C9 && AC.Status.SupportsHozVane) {  // Dynamic Vane & Fan Speeds
     if (MQTTReconnect()) { PublishA2ADiscoveryTopics(1, MQTT_BASETOPIC); }
     if (MQTT2Reconnect()) { PublishA2ADiscoveryTopics(2, MQTT_BASETOPIC); }
   }
@@ -1446,30 +1446,41 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
         DEBUG_PRINTLN("SetPower");
         bool systempower = doc["systempower"];
         AC.SetSystemPowerMode(systempower);
-        AC.Status.SystemPowerMode = systempower ? 0x01 : 0x00;
+        AC.Status.SystemPowerMode = systempower ? 0x01 : 0x00;  // Optimistic HA
       }
       if (doc["SetMode"].is<const char*>()) {
         DEBUG_PRINTLN("SetMode");
         AC.SetMode(doc["SetMode"]);
+        AC.Status.Buffer04 = AC.MODE[AC.lookupByteMapIndex(AC.MODE_MAP, 5, doc["SetMode"])];  // Optimistic HA
       }
       if (doc["SetFanSpeed"].is<const char*>()) {
         DEBUG_PRINTLN("SetFan");
         AC.SetFanSpeed(doc["SetFanSpeed"]);
+        AC.Status.fan = AC.FAN[AC.lookupByteMapIndex(AC.FAN_MAP, 6, doc["SetFanSpeed"])];  // Optimistic HA
       }
       if (doc["SetVane"].is<const char*>()) {
         DEBUG_PRINTLN("SetVane");
         AC.SetVane(doc["SetVane"]);
+        AC.Status.vane = AC.VANE[AC.lookupByteMapIndex(AC.VANE_MAP, 7, doc["SetVane"])];  // Optimistic HA
       }
       if (doc["SetWideVane"].is<const char*>()) {
         DEBUG_PRINTLN("SetWideVane");
         AC.SetWideVane(doc["SetWideVane"]);
+        AC.Status.wideVane = AC.WIDEVANE[AC.lookupByteMapIndex(AC.WIDEVANE_MAP, 7, doc["SetWideVane"])];  // Optimistic HA
       }
       if (doc["SetTempSetpoint"].is<float>()) {
         DEBUG_PRINTLN("SetTempSetpoint");
         AC.SetTempSetpoint(doc["SetTempSetpoint"], AC.Status.tempMode);
+
+        // Optimistic HA
+        if (AC.Status.tempMode) {
+          AC.Status.RoomTemp = (AC.lookupByteMapIndex(AC.TEMP_MAP, 16, doc["SetTempSetpoint"]), AC.Status.tempMode);
+        } else {
+          AC.Status.RoomTempFloat = ((doc["SetTempSetpoint"].as<float>() * 2) + 128);
+        }
       }
 
-      //PublishAllACReports();
+      PublishAllACReports();
     }
   }
 }
