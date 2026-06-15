@@ -63,7 +63,7 @@
 #include "AC.h"
 #include "Melcloud.h"
 
-String FirmwareVersion = "7.0.17";
+String FirmwareVersion = "7.0.18";
 String LatestFirmwareVersion;
 bool update_in_progress = false;
 
@@ -160,8 +160,10 @@ int OAT_total = 0;
 float OAT_average = 0;
 bool OAT_isFull = false;
 bool inDefrostWindow = false;
+bool A2APrevConnectedLastLoop = false;
+bool A2WPrevConnectedLastLoop = false;
 
-#ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack AtomS3
+#ifdef ESP32  // Define the M5Stack AtomS3
 const char* ISGR_root_ca =
   "-----BEGIN CERTIFICATE-----\n"
   "MIIFazCCA1OgAwIBAgIRAIIQz7DSQONZRGPgu2OCiwAwDQYJKoZIhvcNAQELBQAw\n"
@@ -213,7 +215,7 @@ struct MqttSettings {
   char user[user_max_length] = "Username";
   char password[password_max_length] = "Password";
   char port[port_max_length] = "1883";
-  char baseTopic[basetopic_max_length] = "Ecodan/ASHP";
+  char baseTopic[basetopic_max_length] = "ASHP";
   char wm_mqtt_hostname_identifier[14] = "mqtt_hostname";
   char wm_mqtt_user_identifier[10] = "mqtt_user";
   char wm_mqtt_password_identifier[14] = "mqtt_password";
@@ -225,7 +227,7 @@ struct MqttSettings {
   char user2[user_max_length] = "Username";
   char password2[password_max_length] = "Password";
   char port2[port_max_length] = "1883";
-  char baseTopic2[basetopic_max_length] = "Ecodan/ASHP";
+  char baseTopic2[basetopic_max_length] = "ASHP";
   char wm_mqtt2_hostname_identifier[15] = "mqtt2_hostname";
   char wm_mqtt2_user_identifier[11] = "mqtt2_user";
   char wm_mqtt2_password_identifier[15] = "mqtt2_password";
@@ -287,7 +289,7 @@ WiFiManagerParameter custom_mqtt_server("server", "<b>Required</b> Primary MQTT 
 WiFiManagerParameter custom_mqtt_user("user", "Primary MQTT Username", "TEMP", user_max_length);
 WiFiManagerParameter custom_mqtt_pass("pass", "Primary MQTT Password", "TEMP", password_max_length);
 WiFiManagerParameter custom_mqtt_port("port", "Primary MQTT Server Port (Default: 1883)", "TEMP", port_max_length);
-WiFiManagerParameter custom_mqtt_basetopic("basetopic", "Primary MQTT Base Topic<br><font size='0.8em'>Modify if you have multiple heat pumps connecting to the same MQTT server</font>", "TEMP", basetopic_max_length);
+WiFiManagerParameter custom_mqtt_basetopic("basetopic", "Primary MQTT Base Topic<br><font size='0.8em'>A unique topic name</font>", "TEMP", basetopic_max_length);
 WiFiManagerParameter custom_mqtt2_server("server2", "<hr><b>Optional</b> Secondary MQTT Server<br><font size='0.8em'>You can send data to a second MQTT broker, <b>leave default or blank if not in use</b></font>", "TEMP", hostname_max_length);
 WiFiManagerParameter custom_mqtt2_user("user2", "Secondary MQTT Username", "TEMP", user_max_length);
 WiFiManagerParameter custom_mqtt2_pass("pass2", "Secondary MQTT Password", "TEMP", password_max_length);
@@ -324,7 +326,7 @@ void CalculateCompCurve(void);
 void FastPublish(void);
 void dhw_flow_follower(void);
 
-#ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack AtomS3
+#ifdef ESP32  // Define the M5Stack AtomS3
 void CheckForOTAUpdates(void);
 #endif
 
@@ -336,7 +338,7 @@ TimerCallBack HeatPumpQuery5(1000, WriteStateEngine);         // Set to 1000ms (
 TimerCallBack HeatPumpQuery6(2000, FastPublish);              // Publish some reports at a faster rate
 TimerCallBack HeatPumpQuery7(300000, CalculateCompCurve);     // Calculate the Compensation Curve based on latest data   //300000 = 5min
 
-#ifdef ARDUINO_M5STACK_ATOMS3                               // Define the M5Stack AtomS3
+#ifdef ESP32                                                // Define the M5Stack AtomS3
 TimerCallBack HeatPumpQuery8(3600000, CheckForOTAUpdates);  // Set check period to 1hr
 #endif
 
@@ -453,7 +455,7 @@ void setup() {
 
   MDNS.begin("heatpump");
   MDNS.addService("http", "tcp", 80);
-#ifdef ARDUINO_M5STACK_ATOMS3
+#ifdef ESP32
   HttpsOTA.onHttpEvent(HttpEvent);
 #endif
 
@@ -462,7 +464,7 @@ void setup() {
 
   // Reset AC flags
   AC.Status.Write_To_Ecodan_OK = AC.Status.tempMode = AC.Status.RmtempMode =
-    AC.Status.C9 = AC.Status.CD = AC.Status.CE = false;
+    AC.Status.C9 = AC.Status.CD = AC.Status.CE = HeatPump.PrevConnected = AC.PrevConnected = false;
 
   CheckForOTAUpdates();
   CalculateCompCurve();
@@ -483,7 +485,7 @@ void loop() {
   HeatPumpQuery5.Process();
   HeatPumpQuery6.Process();
   HeatPumpQuery7.Process();
-#ifdef ARDUINO_M5STACK_ATOMS3
+#ifdef ESP32
   HeatPumpQuery8.Process();
 #endif
   HeatPumpQuery9.Process();
@@ -518,8 +520,8 @@ void loop() {
   // -- Config Saver -- //
   if (shouldSaveConfig) {
     saveConfig();
-    CalculateCompCurve();       // Reload the Comp Curve
-  }  // Handles WiFiManager Settings Changes
+    CalculateCompCurve();  // Reload the Comp Curve
+  }                        // Handles WiFiManager Settings Changes
 
   // -- Heat Pump Write Command Handler -- //
   if (HeatPump.Status.Write_To_Ecodan_OK && WriteInProgress) {  // A write command is executing
@@ -738,14 +740,27 @@ void loop() {
   // -- FTC7 + R290 Outdoor Limit Adjustments -- //
   if (FTCVersionLastLoop != HeatPump.Status.FTCVersion && HeatPump.Status.RefrigerantType == 2) {  // Dynamic Update HA limit for FTC7
     if (MQTTReconnect()) { PublishDiscoveryTopics(1, MQTT_BASETOPIC); }
-    if (MQTT2Reconnect()) { PublishDiscoveryTopics(2, MQTT_BASETOPIC); }
+    if (MQTT2Reconnect()) { PublishDiscoveryTopics(2, MQTT_2_BASETOPIC); }
   }
   if (ACC9LastLoop != AC.Status.C9 && AC.Status.SupportsHozVane) {  // Dynamic Vane & Fan Speeds
     if (MQTTReconnect()) { PublishA2ADiscoveryTopics(1, MQTT_BASETOPIC); }
-    if (MQTT2Reconnect()) { PublishA2ADiscoveryTopics(2, MQTT_BASETOPIC); }
+    if (MQTT2Reconnect()) { PublishA2ADiscoveryTopics(2, MQTT_2_BASETOPIC); }
   }
   FTCVersionLastLoop = HeatPump.Status.FTCVersion;  // On FTC version capture, if criteria met then change
   ACC9LastLoop = AC.Status.C9;
+
+
+  // -- Auto Discovery Trigger -- //
+  if (HeatPump.PrevConnected && !A2WPrevConnectedLastLoop) {
+    if (MQTTReconnect()) { PublishDiscoveryTopics(1, MQTT_BASETOPIC); }
+    if (MQTT2Reconnect()) { PublishDiscoveryTopics(2, MQTT_2_BASETOPIC); }
+  }
+  if (AC.PrevConnected && !A2APrevConnectedLastLoop) {
+    if (MQTTReconnect()) { PublishA2ADiscoveryTopics(1, MQTT_BASETOPIC); }
+    if (MQTT2Reconnect()) { PublishA2ADiscoveryTopics(2, MQTT_2_BASETOPIC); }
+  }
+  A2WPrevConnectedLastLoop = HeatPump.PrevConnected;
+  A2APrevConnectedLastLoop = AC.PrevConnected;
 
 
   // -- Outdoor Triggers on Outdoor Unit Change -- //
@@ -887,13 +902,13 @@ void HeatPumpKeepAlive(void) {
 
       DEBUG_PRINTLN("Connecting to A2W Devices...");
       HeatPump.Connect();
-      delay(500);
+      delay(1000);
       HeatPump.Process();
 
       if (!HeatPump.HeatPumpConnected()) {  // If the A2W Request was not successful
         DEBUG_PRINTLN("Connecting to A2A Devices...");
         AC.Connect();
-        delay(500);
+        delay(1000);
         AC.Process();
       }
 
@@ -906,13 +921,13 @@ void HeatPumpKeepAlive(void) {
 
       DEBUG_PRINTLN("Connecting to A2W Devices...");
       HeatPump.Connect();
-      delay(500);
+      delay(1000);
       HeatPump.Process();
 
       if (!HeatPump.HeatPumpConnected()) {  // If the A2W Request was not successful
         DEBUG_PRINTLN("Connecting to A2A Devices...");
         AC.Connect();
-        delay(500);
+        delay(1000);
         AC.Process();
       }
     }
@@ -1068,14 +1083,14 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
     } else if (Payload.toInt() == 995) {
       DEBUG_PRINTLN(F("Requested Bridge Firmware Update"));
       if (NormalHWBoostOperating != 1 && LatestFirmwareVersion != FirmwareVersion) {
-#ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack AtomS3
+#ifdef ESP32  // Define the M5Stack AtomS3
         InstallOTAUpdates();
 #endif
       }  // Skip OTA updates when running Norm DHW or this status would be lost mid-run
     } else if (Payload.toInt() == 994) {
       DEBUG_PRINTLN(F("Requested Bridge Latest Firmware Available"));
       DEBUG_PRINTLN(F(": UNAVAILABLE"));
-#ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack AtomS3
+#ifdef ESP32  // Define the M5Stack AtomS3
       CheckForOTAUpdates();
 #endif
     } else if (Payload.toInt() == 993) {
@@ -2630,7 +2645,7 @@ void updateEnergyMeter(double currentPowerKW, int mode) {
   *lastTimestamp = currentTime;
 }
 
-#ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack AtomS3
+#ifdef ESP32  // Define the M5Stack AtomS3
 
 void CheckForOTAUpdates(void) {
   printCurrentTime();

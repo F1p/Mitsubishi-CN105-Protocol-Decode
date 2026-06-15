@@ -346,7 +346,8 @@ void readSettingsFromConfig() {
         snprintf(DeviceID, deviceId_max_length, (String(ESP.getEfuseMac(), HEX)).c_str());
 #endif
         strcpy(mqttSettings.deviceId, DeviceID);
-        strcpy(mqttSettings.baseTopic, mqttSettings.deviceId);
+        strcpy(mqttSettings.baseTopic, "ASHP/");
+        strcat(mqttSettings.baseTopic, mqttSettings.deviceId);
         MQTT_BASETOPIC = mqttSettings.baseTopic;
         strcpy(mqttSettings.baseTopic2, DeviceID);  // Base topic 2 defaults to deviceID
       }
@@ -1070,8 +1071,10 @@ void readSettingsFromConfig() {
     delay(10);
     if (HeatPump.PrevConnected) {
       PublishDiscoveryTopics(1, MQTT_BASETOPIC);
+      DEBUG_PRINTLN("A2W Discovery Published!");
     } else if (AC.PrevConnected) {
       PublishA2ADiscoveryTopics(1, MQTT_BASETOPIC);
+      DEBUG_PRINTLN("A2A Discovery Published!");
     }
 
 

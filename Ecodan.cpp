@@ -78,7 +78,7 @@ void ECODAN::Process(void) {
     c = DeviceStream->read();
 
     if (c == 0)
-      DEBUG_PRINT(F("__, "));
+      DEBUG_PRINT(F("00, "));
     else {
       if (c < 0x10) DEBUG_PRINT(F("0"));
       DEBUG_PRINT(String(c, HEX));
@@ -88,9 +88,9 @@ void ECODAN::Process(void) {
     if (ECODANDECODER::Process(c)) {
       ProcessFlag = false;
       msbetweenmsg = millis() - lastmsgdispatchedMillis;
-      DEBUG_PRINTLN();
+      //DEBUG_PRINTLN();
       Connected = true;
-      DEBUG_PRINTLN("A2W Connected!");      
+      //DEBUG_PRINTLN("A2W Connected!");      
       PrevConnected = true;
     }
   }
@@ -261,7 +261,7 @@ void ECODAN::WriteStateMachine(void) {
 
 
 void ECODAN::Connect(void) {
-  DEBUG_PRINTLN(F("Connecting to Heat Pump..."));
+  //DEBUG_PRINTLN(F("Connecting to Heat Pump..."));
   DeviceStream->write(Init3, 8);
   DeviceStream->flush();
   Process();

@@ -174,7 +174,7 @@ void AC::WriteStateMachine(void) {
 
 
 void AC::Connect(void) {
-  DEBUG_PRINTLN(F("Connecting to AC..."));
+  //DEBUG_PRINTLN(F("Connecting to AC..."));
   DeviceStream->write(Init5, 8);
   DeviceStream->flush();
   Process();
