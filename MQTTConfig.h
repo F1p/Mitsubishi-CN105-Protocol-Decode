@@ -1,4 +1,4 @@
-String MQTT_BASETOPIC = "Ecodan/ASHP";
+String MQTT_BASETOPIC = "ASHP";
 
 String MQTT_LWT = MQTT_BASETOPIC + "/LWT";
 String MQTT_STATUS = MQTT_BASETOPIC + "/Status";
@@ -167,8 +167,10 @@ String MQTTCommand2AC = MQTT_2_COMMAND_AC;
 
 char snprintbuffer[41] = "";
 char DeviceID[15] = "";
-const char ClientPrefix[14] = "MitsiBridge-";
+const char ClientPrefixA2W[14] = "EcodanBridge-";  // Keep Static for A2W users updating from < v7 to prevent new device creation
+const char ClientPrefixA2A[14] = "MitsiBridge-";   // Add new for A2A
 char WiFiHostname[40] = "";
+char MQTTIDs[40] = "";
 
 
 
@@ -347,9 +349,12 @@ void readSettingsFromConfig() {
 #endif
         strcpy(mqttSettings.deviceId, DeviceID);
         strcpy(mqttSettings.baseTopic, "ASHP/");
-        strcat(mqttSettings.baseTopic, mqttSettings.deviceId);
-        MQTT_BASETOPIC = mqttSettings.baseTopic;
+        strcat(mqttSettings.baseTopic, DeviceID);
         strcpy(mqttSettings.baseTopic2, DeviceID);  // Base topic 2 defaults to deviceID
+
+        MQTT_BASETOPIC = mqttSettings.baseTopic;
+        MQTT_2_BASETOPIC = mqttSettings.baseTopic2;
+        shouldSaveConfig = true;  // Save config after exit to update the file
       }
     } else {
       DEBUG_PRINTLN(F("Failed to mount File System"));
@@ -571,7 +576,7 @@ void readSettingsFromConfig() {
     //defaults to 8%
     //wifiManager.setMinimumSignalQuality(50);
 
-    snprintf(WiFiHostname, 40, "%s%s", ClientPrefix, mqttSettings.deviceId);
+    snprintf(WiFiHostname, 40, "%s%s", ClientPrefixA2A, mqttSettings.deviceId);
     WiFi.hostname(WiFiHostname);
 #ifdef ESP8266                         // Define the Witty ESP8266 Ports
     digitalWrite(Blue_RGB_LED, HIGH);  // Turn the Blue LED On
@@ -589,12 +594,17 @@ void readSettingsFromConfig() {
     } else {
       DEBUG_PRINTLN(F("WiFi Connected!"));
     }
+#else
+  //WiFi.mode(WIFI_OFF);  // Disable WiFi on Ethernet Module (unsupported)
 #endif
   }
 
 
 
   void PublishDiscoveryTopics(uint8_t MQTTStream, String BASETOPIC) {
+
+    // Compile Name
+    snprintf(MQTTIDs, 40, "%s%s", ClientPrefixA2W, mqttSettings.deviceId);
 
     // Compile Topics
     String MQTT_DISCOVERY_TOPIC, Buffer_Topic;
@@ -769,18 +779,18 @@ void readSettingsFromConfig() {
         MQTT_DISCOVERY_TOPIC = String(MQTT_DISCOVERY_TOPICS[4]);
       }
 
-      // Update
+#ifdef ESP32
+      // Update only on ESP32
       if (i == 126) {
         Config["stat_t"] = BASETOPIC + String(MQTT_TOPIC[34]);
         Config["dev_cla"] = String(MQTT_DEVICE_CLASS[8]);
-        Config["l_ver_t"] = BASETOPIC + String(MQTT_TOPIC[34]);
-#ifdef ARDUINO_M5STACK_ATOMS3
+        Config["l_ver_t"] = "{{ value_json.latest_version }}";
         Config["cmd_t"] = BASETOPIC + String(MQTT_TOPIC[33]);
         Config["pl_inst"] = "995";
-#endif
         Config["rel_u"] = "https://github.com/F1p/Mitsubishi-CN105-Protocol-Decode/releases/latest";
         MQTT_DISCOVERY_TOPIC = String(MQTT_DISCOVERY_TOPICS[6]);
       }
+#endif
 
       // Add Availability Topics
       if (i >= 105) {
@@ -819,11 +829,13 @@ void readSettingsFromConfig() {
     }
 
     // Generate Publish Message
-    DEBUG_PRINTLN(F("Published Discovery Topics!"));
+    DEBUG_PRINTLN("A2W Discovery Published!");
   }
 
 
   void PublishA2ADiscoveryTopics(uint8_t MQTTStream, String BASETOPIC) {
+
+    snprintf(MQTTIDs, 40, "%s%s", ClientPrefixA2A, mqttSettings.deviceId);
 
     // Compile Topics
     String MQTT_DISCOVERY_TOPIC, Buffer_Topic;
@@ -846,7 +858,7 @@ void readSettingsFromConfig() {
     for (int i = 0; i < 27; i++) {
 
       if (i == 0) {  // If the first topic
-        Config["dev"]["ids"] = WiFiHostname;
+        Config["dev"]["ids"] = MQTTIDs;
         Config["dev"]["mf"] = "F1p";
         Config["dev"]["model"] = ChipModel;
         Config["dev"]["sn"] = ChipID;
@@ -858,7 +870,7 @@ void readSettingsFromConfig() {
 #endif
         Config["dev"]["sw_version"] = FirmwareVersion;
       } else {  // Otherwise post just identifier
-        Config["dev"]["ids"] = WiFiHostname;
+        Config["dev"]["ids"] = MQTTIDs;
       }
 
       // Every one has a unique_id and name
@@ -877,7 +889,7 @@ void readSettingsFromConfig() {
           if (MQTT_UNITS_POS[i] != 7) { Config["stat_cla"] = "measurement"; }                               // Only some can be measurement
         }
         Config["val_tpl"] = String(MQTT_AC_SENSOR_VALUE_TEMPLATE[i]);
-        Config["icon"] = String(MQTT_MDI_ICONS[i]);
+        Config["icon"] = String(MQTT_MDI_ICONS_AC[i]);
 
         MQTT_DISCOVERY_TOPIC = String(MQTT_DISCOVERY_TOPICS[0]);
       }
@@ -896,7 +908,7 @@ void readSettingsFromConfig() {
         }
 
         Config["val_tpl"] = String(MQTT_AC_SENSOR_VALUE_TEMPLATE[i]);
-        Config["icon"] = String(MQTT_MDI_ICONS[i]);
+        Config["icon"] = String(MQTT_MDI_ICONS_AC[i]);
 
 
         MQTT_DISCOVERY_TOPIC = String(MQTT_DISCOVERY_TOPICS[0]);
@@ -985,25 +997,24 @@ void readSettingsFromConfig() {
         Config["state_off"] = "OFF";
         Config["payload_on"] = true;
         Config["payload_off"] = false;
-        Config["icon"] = String(MQTT_MDI_ICONS[85]);
+        Config["icon"] = String(MQTT_MDI_ICONS_AC[23]);
 
         MQTT_DISCOVERY_TOPIC = String(MQTT_DISCOVERY_TOPICS[2]);
       }
 
+
+#ifdef ESP32
       // Update
       if (i == 26) {
         Config["stat_t"] = BASETOPIC + String(MQTT_TOPIC[34]);
         Config["dev_cla"] = String(MQTT_DEVICE_CLASS[8]);
         Config["l_ver_t"] = "{{ value_json.latest_version }}";
-#ifdef ARDUINO_M5STACK_ATOMS3
         Config["cmd_t"] = BASETOPIC + String(MQTT_TOPIC[33]);
         Config["pl_inst"] = "995";
-#endif
         Config["rel_u"] = "https://github.com/F1p/Mitsubishi-CN105-Protocol-Decode/releases/latest";
         MQTT_DISCOVERY_TOPIC = String(MQTT_DISCOVERY_TOPICS[6]);
       }
-
-      // Wide Vane
+#endif
 
 
       // Add Availability Topics
@@ -1027,7 +1038,7 @@ void readSettingsFromConfig() {
     }
 
     // Generate Publish Message
-    DEBUG_PRINTLN(F("Published A2A Discovery Topics!"));
+    DEBUG_PRINTLN("A2A Discovery Published!");
   }
 
   void initializeMQTTClient1() {
@@ -1071,10 +1082,8 @@ void readSettingsFromConfig() {
     delay(10);
     if (HeatPump.PrevConnected) {
       PublishDiscoveryTopics(1, MQTT_BASETOPIC);
-      DEBUG_PRINTLN("A2W Discovery Published!");
     } else if (AC.PrevConnected) {
       PublishA2ADiscoveryTopics(1, MQTT_BASETOPIC);
-      DEBUG_PRINTLN("A2A Discovery Published!");
     }
 
 

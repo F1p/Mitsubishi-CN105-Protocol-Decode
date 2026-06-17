@@ -155,7 +155,7 @@ uint8_t MELCLOUDDECODER::Process(uint8_t c) {
         case 0x01:
           ProcessAC0x01(RxMessage.Payload, &Status);
           break;
-        case 0x30: 
+        case 0x30:
           ProcessAC0x30(RxMessage.Payload, &Status);
           break;
         case 0x32:
@@ -646,15 +646,8 @@ uint8_t MELCLOUDDECODER::PrepareCommand(MessageStruct *Message, uint8_t *Buffer,
 
   Buffer[0] = Message->SyncByte;
   Buffer[1] = Message->PacketType;
-
-  if (Status->A2ADevice) {
-    Buffer[2] = Message->Preamble[0];
-    Buffer[3] = Message->Preamble[1];
-  } else {
-    Buffer[2] = Message->Preamble[2];
-    Buffer[3] = Message->Preamble[3];
-  }
-
+  Buffer[2] = Message->Preamble[0];
+  Buffer[3] = Message->Preamble[1];
   Buffer[4] = Message->PayloadSize;
 
   memcpy(&Buffer[5], Message->Payload, Message->PayloadSize);

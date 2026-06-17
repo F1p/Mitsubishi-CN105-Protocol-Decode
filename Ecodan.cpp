@@ -88,9 +88,9 @@ void ECODAN::Process(void) {
     if (ECODANDECODER::Process(c)) {
       ProcessFlag = false;
       msbetweenmsg = millis() - lastmsgdispatchedMillis;
-      //DEBUG_PRINTLN();
+      DEBUG_PRINTLN();
+      if (!Connected) { DEBUG_PRINTLN("A2W Connected!"); }
       Connected = true;
-      //DEBUG_PRINTLN("A2W Connected!");      
       PrevConnected = true;
     }
   }
@@ -261,9 +261,10 @@ void ECODAN::WriteStateMachine(void) {
 
 
 void ECODAN::Connect(void) {
-  //DEBUG_PRINTLN(F("Connecting to Heat Pump..."));
+  DEBUG_PRINTLN("Connecting to A2W Devices...");
   DeviceStream->write(Init3, 8);
   DeviceStream->flush();
+  delay(1000);  // Await Reply
   Process();
 }
 

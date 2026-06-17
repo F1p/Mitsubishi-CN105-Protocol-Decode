@@ -19,51 +19,67 @@
 
 #define LANG_EN
 
+#if defined(ESP8266) || defined(ESP32)
 
-
-#if defined(ESP8266) || defined(ESP32)  // ESP32 or ESP8266 Compatiability
-
-#include <FS.h>  // Define File System First
+// ==========================================
+// 1. FILE SYSTEM & CORE LIBRARIES
+// ==========================================
+#include <FS.h>
 #include <LittleFS.h>
+#include <ArduinoJson.h>
+#include <PubSubClient.h>
+#include <WiFiManager.h>
+#include <ESPTelnet.h>
+
+// ==========================================
+// 2. ESP8266 SPECIFIC
+// ==========================================
 #ifdef ESP8266
 #include <ESP8266WiFi.h>
 #include <ESP8266mDNS.h>
 #include <ESP8266WebServer.h>
-//#include <ESP8266HTTPClient.h>
 #include <SoftwareSerial.h>
 #include <sys/time.h>
 #endif
+
+// ==========================================
+// 3. ESP32 SPECIFIC (Standard & WT32 Ethernet)
+// ==========================================
 #ifdef ESP32
 #include <WiFi.h>
-#include <WiFiClientSecure.h>
-#include <HTTPClient.h>
-#ifndef ARDUINO_WT32_ETH01
-#include <AsyncTCP.h>  // Disable for WT32
-#endif
 #include <WebServer.h>
 #include <ESPmDNS.h>
+#include <HTTPClient.h>
 #include <HTTPUpdate.h>
-#endif
+#include <WiFiClientSecure.h>
+#include "HttpsOTAUpdate.h"
+
 #ifdef ARDUINO_WT32_ETH01
-#include <ETH.h>
 #include <Arduino.h>
+#include <ETH.h>
 #endif
 
+// ==========================================
+// 4. ASYNC WEB SERVER (Excluded for WT32)
+// ==========================================
 #ifndef ARDUINO_WT32_ETH01
-#define WEBSERVER_H "fix confict"  // Disable for WT32
-#include <ESPAsyncWebServer.h>     // Disable for WT32
+// If ESPAsyncWebServer conflicts with WebServer.h on your setup,
+// ensure your libraries are updated rather than using macro hacks.
+#include <AsyncTCP.h>
+#include <ESPAsyncWebServer.h>
 #endif
-#include <WiFiManager.h>
-#include <PubSubClient.h>
-#include <ArduinoJson.h>
-#include <ESPTelnet.h>
-#include <HTTPUpdate.h>
-#include "HttpsOTAUpdate.h"
+#endif
+
+// ==========================================
+// 5. LOCAL PROJECT HEADERS
+// ==========================================
 #include "Ecodan.h"
 #include "AC.h"
 #include "Melcloud.h"
 
-String FirmwareVersion = "7.0.18";
+#endif  // ESP8266 || ESP32
+
+String FirmwareVersion = "7.0.20";
 String LatestFirmwareVersion;
 bool update_in_progress = false;
 
@@ -267,8 +283,11 @@ struct UnitSettings {
   float z2_room_temperature = 0;
 };
 
+#ifdef ESP32
 HTTPClient http;
 WiFiClientSecure NetworkClient;  // Encryption Support
+#endif
+
 MqttSettings mqttSettings;
 UnitSettings unitSettings;
 ECODAN HeatPump;
@@ -466,7 +485,10 @@ void setup() {
   AC.Status.Write_To_Ecodan_OK = AC.Status.tempMode = AC.Status.RmtempMode =
     AC.Status.C9 = AC.Status.CD = AC.Status.CE = HeatPump.PrevConnected = AC.PrevConnected = false;
 
+#ifdef ESP32
   CheckForOTAUpdates();
+#endif
+
   CalculateCompCurve();
   HeatPumpKeepAlive();
   for (int i = 0; i < OAT_Window_Size; i++) { OAT_readings[i] = 0; }
@@ -505,7 +527,7 @@ void loop() {
   wifiManager.process();
 
 
-
+#ifdef ESP32
   otastatus = HttpsOTA.status();
   if (otastatus == HTTPS_OTA_SUCCESS) {
     printCurrentTime();
@@ -515,7 +537,7 @@ void loop() {
     printCurrentTime();
     DEBUG_PRINTLN(F("Firmware Update Failed"));
   }
-
+#endif
 
   // -- Config Saver -- //
   if (shouldSaveConfig) {
@@ -885,6 +907,14 @@ void loop() {
     lastResetDay = HeatPump.Status.DateTimeStamp.tm_mday;                            // Mark this day as completed
   }
 
+  // -- MELCloud Timeout -- //
+  if (MELCloud_Adapter_Connected) {
+    if (millis() - MELCloud.LastMELCloudMessage() >= 60000) { MELCloud_Adapter_Connected = false; }  // If there is no MELCloud Message for 60s consider it disconnected
+  } else {
+    if (MELCloud.Connected) { MELCloud_Adapter_Connected = true; }  // If a MELCloud Message appears, set true again
+  }
+
+
   // -- CPU Loop Time End -- //
   CPULoopSpeed = micros() - looppreviousMicros;  // Loop Speed End Monitor
 }
@@ -896,21 +926,21 @@ void HeatPumpKeepAlive(void) {
     if (CableConnected) {
       DEBUG_PRINTLN("Trying to connect via Proxy Circuit Board");
       HEATPUMP_STREAM.begin(SERIAL_BAUD, SERIAL_CONFIG, FTCProxy_RxPin, FTCProxy_TxPin);  // Rx, Tx
-      HeatPump.SetStream(&HEATPUMP_STREAM);
-      AC.SetStream(&HEATPUMP_STREAM);
+      HeatPump.SetStream(&HEATPUMP_STREAM); // Set & Connect
+      AC.SetStream(&HEATPUMP_STREAM);       // Set & Connect
       CableConnected = false;
 
-      DEBUG_PRINTLN("Connecting to A2W Devices...");
+      /*
       HeatPump.Connect();
       delay(1000);
       HeatPump.Process();
 
       if (!HeatPump.HeatPumpConnected()) {  // If the A2W Request was not successful
-        DEBUG_PRINTLN("Connecting to A2A Devices...");
         AC.Connect();
         delay(1000);
         AC.Process();
       }
+      */
 
     } else {
       DEBUG_PRINTLN("Trying to connect via Cable");
@@ -918,18 +948,23 @@ void HeatPumpKeepAlive(void) {
       HeatPump.SetStream(&HEATPUMP_STREAM);
       AC.SetStream(&HEATPUMP_STREAM);
       CableConnected = true;
-
-      DEBUG_PRINTLN("Connecting to A2W Devices...");
+      /*
       HeatPump.Connect();
       delay(1000);
       HeatPump.Process();
 
       if (!HeatPump.HeatPumpConnected()) {  // If the A2W Request was not successful
-        DEBUG_PRINTLN("Connecting to A2A Devices...");
         AC.Connect();
         delay(1000);
         AC.Process();
       }
+      */
+    }
+#else
+    // For WT32 Ethernet and ESP8266 Devices switching between A2A and A2W Connect Messages
+    HeatPump.Connect();
+    if (!HeatPump.HeatPumpConnected()) {  // If the A2W Request was not successful
+      AC.Connect();
     }
 #endif
   }
@@ -2033,8 +2068,8 @@ void StatusReport(void) {
   serializeJson(doc, Buffer);
   MQTTClient1.publish(MQTT_STATUS_WIFISTATUS.c_str(), Buffer, false);
   MQTTClient2.publish(MQTT_2_STATUS_WIFISTATUS.c_str(), Buffer, false);
-  MQTTClient1.publish(MQTT_LWT.c_str(), "online");
-  MQTTClient2.publish(MQTT_2_LWT.c_str(), "online");
+  MQTTClient1.publish(MQTT_LWT.c_str(), "online", true);
+  MQTTClient2.publish(MQTT_2_LWT.c_str(), "online", true);
 }
 
 void UpdateReport(void) {
@@ -2739,6 +2774,4 @@ void onEvent(arduino_event_id_t event) {
     default: break;
   }
 }
-#endif
-
 #endif

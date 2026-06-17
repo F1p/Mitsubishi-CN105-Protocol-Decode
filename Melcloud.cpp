@@ -28,9 +28,9 @@ uint8_t MELCloudInit7[] = { 0x02, 0xff, 0xff, 0x81, 0x00, 0x00, 0x00, 0x81 };   
 
 
 
-
 bool PrintMELStart = false;
 bool FirstReadAfterConnect = false;
+unsigned long lastMELCloudMillis = 0;
 
 MELCLOUD::MELCLOUD(void)
   : MELCLOUDDECODER() {
@@ -63,6 +63,7 @@ void MELCLOUD::Process(void) {
       DEBUG_PRINTLN();
       PrintMELStart = false;
       Connected = true;
+      lastMELCloudMillis = millis();
     }
   }
 }
@@ -227,6 +228,10 @@ uint8_t MELCLOUD::UpdateComplete(void) {
 
 uint8_t MELCLOUD::Lastmsbetweenmsg(void) {
   return msbetweenmsg;
+}
+
+unsigned long MELCLOUD::LastMELCloudMessage(void){
+  return lastMELCloudMillis;
 }
 
 void MELCLOUD::printCurrentTime(void) {

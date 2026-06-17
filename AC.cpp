@@ -61,6 +61,7 @@ void AC::Process(void) {
       ProcessFlag = false;
       msbetweenmsg = millis() - AClastmsgdispatchedMillis;
       DEBUG_PRINTLN();
+      if (!Connected) { DEBUG_PRINTLN("A2A Connected!"); }
       Connected = true;
       PrevConnected = true;
       //DEBUG_PRINTLN("AC Connected!");
@@ -174,9 +175,10 @@ void AC::WriteStateMachine(void) {
 
 
 void AC::Connect(void) {
-  //DEBUG_PRINTLN(F("Connecting to AC..."));
+  DEBUG_PRINTLN("Connecting to A2A Devices...");
   DeviceStream->write(Init5, 8);
   DeviceStream->flush();
+  delay(1000);  // Await Reply
   Process();
 }
 

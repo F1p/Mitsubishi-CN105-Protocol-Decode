@@ -36,12 +36,13 @@ public:
   void ReplyStatus(uint8_t TargetMessage);
   uint8_t UpdateComplete(void);
   uint8_t Lastmsbetweenmsg(void);
+  unsigned long LastMELCloudMessage(void);
+  uint8_t Connected;
 
 protected:
 
 private:
   uint8_t UpdateFlag;
-  uint8_t Connected;
   uint8_t msbetweenmsg;
   
   void printCurrentTime(void);
