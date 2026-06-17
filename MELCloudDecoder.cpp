@@ -155,6 +155,9 @@ uint8_t MELCLOUDDECODER::Process(uint8_t c) {
         case 0x01:
           ProcessAC0x01(RxMessage.Payload, &Status);
           break;
+        case 0x07:
+          ProcessAC0x07(RxMessage.Payload, &Status);
+          break;
         case 0x30:
           ProcessAC0x30(RxMessage.Payload, &Status);
           break;
@@ -549,6 +552,13 @@ void MELCLOUDDECODER::ProcessAC0x01(uint8_t *Buffer, MelCloudStatus *Status) {
   }
   Status->ReplyNow = true;
   Status->ActiveMessage = 0x40;  // Use 0x40 as AC 0x01
+}
+void MELCLOUDDECODER::ProcessAC0x07(uint8_t *Buffer, MelCloudStatus *Status) {
+  for (int i = 1; i < 16; i++) {
+    ACWriteArray0x07[i] = Buffer[i];
+  }
+  Status->ReplyNow = true;
+  Status->ActiveMessage = 0x41;  // Use 0x41 as AC 0x07 MHK Thermostat Write
 }
 void MELCLOUDDECODER::ProcessAC0x30(uint8_t *Buffer, MelCloudStatus *Status) {
   for (int i = 1; i < 16; i++) {

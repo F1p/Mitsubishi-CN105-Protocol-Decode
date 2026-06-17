@@ -22,7 +22,7 @@
 #if defined(ESP8266) || defined(ESP32)
 
 // ==========================================
-// 1. FILE SYSTEM & CORE LIBRARIES
+// FILE SYSTEM & CORE LIBRARIES
 // ==========================================
 #include <FS.h>
 #include <LittleFS.h>
@@ -32,7 +32,7 @@
 #include <ESPTelnet.h>
 
 // ==========================================
-// 2. ESP8266 SPECIFIC
+// ESP8266 SPECIFIC
 // ==========================================
 #ifdef ESP8266
 #include <ESP8266WiFi.h>
@@ -43,7 +43,7 @@
 #endif
 
 // ==========================================
-// 3. ESP32 SPECIFIC (Standard & WT32 Ethernet)
+// ESP32 SPECIFIC (AtomS3 & WT32 Ethernet)
 // ==========================================
 #ifdef ESP32
 #include <WiFi.h>
@@ -60,7 +60,7 @@
 #endif
 
 // ==========================================
-// 4. ASYNC WEB SERVER (Excluded for WT32)
+// ASYNC WEB SERVER (Excluded for WT32)
 // ==========================================
 #ifndef ARDUINO_WT32_ETH01
 // If ESPAsyncWebServer conflicts with WebServer.h on your setup,
@@ -71,15 +71,17 @@
 #endif
 
 // ==========================================
-// 5. LOCAL PROJECT HEADERS
+// LOCAL PROJECT HEADERS
 // ==========================================
 #include "Ecodan.h"
 #include "AC.h"
 #include "Melcloud.h"
 
+
+
 #endif  // ESP8266 || ESP32
 
-String FirmwareVersion = "7.0.21";
+String FirmwareVersion = "7.0.22";
 String LatestFirmwareVersion;
 bool update_in_progress = false;
 
@@ -358,7 +360,7 @@ TimerCallBack HeatPumpQuery6(2000, FastPublish);              // Publish some re
 TimerCallBack HeatPumpQuery7(300000, CalculateCompCurve);     // Calculate the Compensation Curve based on latest data   //300000 = 5min
 
 #ifdef ESP32                                                // Define the M5Stack AtomS3
-TimerCallBack HeatPumpQuery8(3600000, CheckForOTAUpdates);  // Set check period to 1hr
+TimerCallBack HeatPumpQuery8(7200000, CheckForOTAUpdates);  // Set check period to 1hr
 #endif
 
 TimerCallBack HeatPumpQuery9(30000, dhw_flow_follower);  // 30s DHW Flow Setpoint Follower
@@ -926,8 +928,8 @@ void HeatPumpKeepAlive(void) {
     if (CableConnected) {
       DEBUG_PRINTLN("Trying to connect via Proxy Circuit Board");
       HEATPUMP_STREAM.begin(SERIAL_BAUD, SERIAL_CONFIG, FTCProxy_RxPin, FTCProxy_TxPin);  // Rx, Tx
-      HeatPump.SetStream(&HEATPUMP_STREAM); // Set & Connect
-      AC.SetStream(&HEATPUMP_STREAM);       // Set & Connect
+      HeatPump.SetStream(&HEATPUMP_STREAM);                                               // Set & Connect
+      AC.SetStream(&HEATPUMP_STREAM);                                                     // Set & Connect
       CableConnected = false;
 
       /*
@@ -1055,7 +1057,7 @@ void MELCloudQueryReplyEngine(void) {
     MELCloud.Status.ReplyNow = false;
     if (MELCloud.Status.ActiveMessage == 0x32 || MELCloud.Status.ActiveMessage == 0x33 || MELCloud.Status.ActiveMessage == 0x34 || MELCloud.Status.ActiveMessage == 0x35) {  // The write commands for A2W
       if (!unitSettings.BlockWriteFromMELCloud) { HeatPump.WriteMELCloudCMD(MELCloud.Status.ActiveMessage); }
-    } else if (MELCloud.Status.ActiveMessage == 0x40 || MELCloud.Status.ActiveMessage == 0x3F) {  // A2A Write Commands
+    } else if (MELCloud.Status.ActiveMessage == 0x40 || MELCloud.Status.ActiveMessage == 0x41 || MELCloud.Status.ActiveMessage == 0x3F) {  // A2A Write Commands
       if (!unitSettings.BlockWriteFromMELCloud) { AC.WriteMELCloudCMD(MELCloud.Status.ActiveMessage); }
     }
   } else if ((HeatPump.PrevConnected) && (MELCloud.Status.ConnectRequest) && (HeatPump.Status.FTCVersion != 0) && HeatPump.Status.HasAnsweredDips) {

@@ -1,4 +1,3 @@
-
 #include "ACDecoder.h"
 #include <cstdio>
 #include <ESPTelnet.h>
@@ -6,6 +5,7 @@ extern ESPTelnet TelnetServer;
 #include "Debug.h"
 
 uint8_t ACWriteArray0x01[] = {};  // Write CMDs
+uint8_t ACWriteArray0x07[] = {};
 uint8_t ACWriteArray0x30[] = {};
 uint8_t Array0xcd[] = {};
 uint8_t Array0xce[] = {};
@@ -339,7 +339,7 @@ void ACDECODER::Process0xCD(uint8_t *Buffer, ACStatus *Status) {
   // fc, 7b, 01, 30, 10, cd, a0, be, a0, be, a0, be, 84, 11, 00, b4, 0a, 00, 00, 00, 00, 0a, CS OK with No Wide Vane
   //                                                 [7]     [9][10][11]
 
-  Status->CD = true; // Arbitary to know its been read at least once
+  Status->CD = true;  // Arbitary to know its been read at least once
 
   for (int i = 1; i < 16; i++) {
     Array0xcd[i] = Buffer[i];
@@ -348,7 +348,6 @@ void ACDECODER::Process0xCD(uint8_t *Buffer, ACStatus *Status) {
 
   //Status->SupportsHozVane = !(Buffer[7] & 0x80);
   Status->SupportsHozVane = true;
-  
 }
 
 void ACDECODER::Process0xCE(uint8_t *Buffer, ACStatus *Status) {
@@ -356,8 +355,8 @@ void ACDECODER::Process0xCE(uint8_t *Buffer, ACStatus *Status) {
   // [AC > Bridge] fc, 7b, 01, 30, 10, ce, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 76, CS OK
   //               fc, 7b, 01, 30, 10, ce, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 76, CS OK
 
-  
-  Status->CE = true; // Arbitary to know its been read at least once
+
+  Status->CE = true;  // Arbitary to know its been read at least once
 
   for (int i = 1; i < 16; i++) {
     Array0xce[i] = Buffer[i];
@@ -370,11 +369,11 @@ void ACDECODER::Process0xC9(uint8_t *Buffer, ACStatus *Status) {
   // fc, 7b, 01, 30, 10, c9, 03, 00, 20, 00, 14, 07, f5, 8c, 25, a0, be, 94, be, a0, be, 89, CS OK
   // fc, 7b, 01, 30, 10, c9, 03, 00, 20, 00, 14, 07, f5, 8c, 25, a0, be, 94, be, a0, be, 89 (AP15)
 
-  Status->C9 = true; // Arbitary to know its been read at least once
+  Status->C9 = true;  // Arbitary to know its been read at least once
   Status->FanBitA = ((Buffer[7] & 0x10) == 0x10);
   Status->FanBitB = ((Buffer[7] & 0x10) == 0x10);
   Status->FanBitC = ((Buffer[7] & 0x10) == 0x10);
-  
+
   for (int i = 1; i < 16; i++) {
     Array0xc9[i] = Buffer[i];
   }
@@ -495,6 +494,8 @@ void ACDECODER::EncodeVersion(uint8_t type) {
 void ACDECODER::EncodeMELCloud(uint8_t cmd) {
   if (cmd == 0x40) {
     TxMessage.Payload[0] = 0x01;
+  } else if (cmd == 0x41) {
+    TxMessage.Payload[0] = 0x07;
   } else {
     TxMessage.Payload[0] = cmd;
   }
@@ -502,8 +503,9 @@ void ACDECODER::EncodeMELCloud(uint8_t cmd) {
   for (int i = 1; i < 16; i++) {
     if (cmd == 0x40) {
       TxMessage.Payload[i] = ACWriteArray0x01[i];
-    }
-    else if (cmd = 0x30) {      
+    } else if (cmd = 0x41) {
+      TxMessage.Payload[i] = ACWriteArray0x07[i];
+    } else if (cmd = 0x30) {
       TxMessage.Payload[i] = ACWriteArray0x30[i];
     }
   }
