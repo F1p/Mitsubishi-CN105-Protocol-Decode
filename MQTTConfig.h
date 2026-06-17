@@ -627,7 +627,7 @@ void readSettingsFromConfig() {
     for (int i = 0; i < discovery_topics; i++) {
 
       if (i == 0) {  // If the first topic
-        Config["device"]["ids"] = WiFiHostname;
+        Config["device"]["ids"] = MQTTIDs;
         Config["device"]["mf"] = "F1p";
         Config["device"]["model"] = ChipModel;
         Config["device"]["sn"] = ChipID;
@@ -639,7 +639,7 @@ void readSettingsFromConfig() {
 #endif
         Config["device"]["sw_version"] = FirmwareVersion;
       } else {  // Otherwise post just identifier
-        Config["device"]["ids"] = WiFiHostname;
+        Config["device"]["ids"] = MQTTIDs;
       }
 
       // Every one has a unique_id and name
