@@ -81,7 +81,7 @@
 
 #endif  // ESP8266 || ESP32
 
-String FirmwareVersion = "7.0.22";
+String FirmwareVersion = "7.0.23";
 String LatestFirmwareVersion;
 bool update_in_progress = false;
 

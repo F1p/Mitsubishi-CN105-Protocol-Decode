@@ -152,13 +152,13 @@ uint8_t MELCLOUDDECODER::Process(uint8_t c) {
       WriteOK(RxMessage.Payload, &Status);
     } else if (RxMessage.PacketType == SET_REQUEST) {
       switch (RxMessage.Payload[0]) {
-        case 0x01:
+        case 0x01:  // A2A
           ProcessAC0x01(RxMessage.Payload, &Status);
           break;
-        case 0x07:
+        case 0x07:  // A2A
           ProcessAC0x07(RxMessage.Payload, &Status);
           break;
-        case 0x30:
+        case 0x30:  //A2W
           ProcessAC0x30(RxMessage.Payload, &Status);
           break;
         case 0x32:
@@ -173,6 +173,8 @@ uint8_t MELCLOUDDECODER::Process(uint8_t c) {
         case 0x35:
           Process0x35(RxMessage.Payload, &Status);
           break;
+        //default:  // Any Unknown Write Types
+        //  ProcessUnkWrite(RxMessage.Payload, &Status);
       }
     } else if (RxMessage.PacketType == CONNECT_REQUEST) {
       Process0x5A(RxMessage.Payload, &Status);
@@ -604,6 +606,14 @@ void MELCLOUDDECODER::Process0x35(uint8_t *Buffer, MelCloudStatus *Status) {
   Status->ReplyNow = true;
   Status->ActiveMessage = 0x35;
 }
+/*void MELCLOUDDECODER::ProcessUnkWrite(uint8_t *Buffer, MelCloudStatus *Status) {
+  for (int i = 1; i < 16; i++) {
+    ArrayFlexible[i] = Buffer[i];
+  }
+  Status->ReplyNow = true;
+  Status->ActiveMessage = Buffer[0];
+}*/
+
 void MELCLOUDDECODER::Process0xFF(uint8_t *Buffer, MelCloudStatus *Status, uint8_t type) {
   if (type == 0) {
     Status->MELRequest1 = true;  // Type 1

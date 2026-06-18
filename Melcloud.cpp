@@ -128,9 +128,9 @@ void MELCLOUD::ReplyStatus(uint8_t TargetMessage) {
       }
       break;
 
-    case 0x32 ... 0x35:                             // A2W
-    case 0x40:                                      // A2A
-      MELCLOUDDECODER::SetPayloadByte(0x00, 0);     // For A2W set Byte 0 for the reply format
+    case 0x32 ... 0x35:  // A2W
+    case 0x40 ... 0x41:  // A2A
+      MELCLOUDDECODER::SetPayloadByte(0x00, 0);  // For A2W set Byte 0 for the reply format
       break;
 
     default:
@@ -214,7 +214,7 @@ uint8_t MELCLOUD::Lastmsbetweenmsg(void) {
   return msbetweenmsg;
 }
 
-unsigned long MELCLOUD::LastMELCloudMessage(void){
+unsigned long MELCLOUD::LastMELCloudMessage(void) {
   return lastMELCloudMillis;
 }
 
