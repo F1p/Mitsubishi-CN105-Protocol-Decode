@@ -1,6 +1,6 @@
-# Mitsubishi Ecodan Air-to-Water Bridge for CN105 to MQTT
+# Mitsubishi Ecodan Air-to-Air and Air-to-Water Bridge for CN105 to MQTT
 
-This software is to communicate with the Mitsubishi Ecodan FTC controller over the CN105 connector (As used for MELCloud or the MELCOBEMS Procon A1M Mini)
+This software is to communicate with the Mitsubishi Ecodan FTC controller or AC Unit over the CN105 connector (As used for MELCloud, MHK2 or the MELCOBEMS Procon A1M Mini)
 
 ![installed device](https://github.com/F1p/Mitsubishi-CN105-Protocol-Decode/blob/master/documentation/images/Bridge.jpg?raw=true)
 
