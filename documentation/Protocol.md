@@ -10,12 +10,18 @@ Serial, 2400, 8, E, 1
 | Header | Payload | Checksum |
 |--------|---------|----------|
 | 5 Bytes | 16 Bytes | 1 Byte |
-## Header
+## Header (A2W & A2A)
 | Sync Byte | Packet Type | Uknown | Unknown | Payload Size |
 |---|---|--|---|---|
 | 0xfc | Type | 0x02 | 0x7a | Length |
+| 0xfc | Type | 0x01 | 0x30 | Length |
 ### Sync Byte 
 0xfc
+
+
+
+# Air to Water
+
 ### Packet Types
 | Value | Packet Type      | Direction      |
 |-------|------------------|----------------|
@@ -37,6 +43,11 @@ Payload Size (Bytes)
 | Command | x | x | x | x | x | x | x | x | x | x  | x  |  x |  x |  x |  x |CHK |
 ## Checksum
 Checksum = 0xfc - Sum ( PacketBytes[0..20]) ;
+
+
+
+
+
 # Set Request - Packet Type 0x41
 ## Available Commands 
 Active commands so far identified.
@@ -486,3 +497,54 @@ Responses so far identified.
       134: QAHV1A
       135: QAHV1B
       144: PWFY1
+
+
+
+
+
+# Air to Air
+
+# Get Request - Packet Type 0x42
+
+### 0x02 - Settings
+|   0   | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
+|-------|---|---|---|---|---|---|---|---|---|----|----|----|----|----|----|----|
+| 0x02  |   |   |P | i  | t |m |f |v   |  wv |   |    | t  |    |    |    |    |   
+* P: System Power
+* i: iSee
+* m: Mode
+* f: Fan
+* v: Vane
+* wv: Wide Vane
+* t: Temperature (Byte 5 or 11 depending on Type)
+
+
+### 0x03 - Temperatures
+|   0   | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
+|-------|---|---|---|---|---|---|---|---|---|----|----|----|----|----|----|----|
+| 0x03  |   |   |   |   |   | RT |   |   |   |    |    |    |    |    |    |    |   
+* RT: Room Temperature
+
+### 0x04 - 
+|   0   | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
+|-------|---|---|---|---|---|---|---|---|---|----|----|----|----|----|----|----|
+| 0x04  |  |   |   |   |   |   |   |   |   |    |    |    |    |    |    |    |   
+* 
+
+### 0x05 - Timers
+|   0   | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
+|-------|---|---|---|---|---|---|---|---|---|----|----|----|----|----|----|----|
+| 0x05  |  |   |   |   |   |   |   |   |   |    |    |    |    |    |    |    |   
+
+
+### 0x06 - Frequency
+|   0   | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
+|-------|---|---|---|---|---|---|---|---|---|----|----|----|----|----|----|----|
+| 0x06  |  |   | F  |   |   |   |   |   |   |    |    |    |    |    |    |    |   
+* F = Compressor Frequency
+
+
+### 0x09 - 
+|   0   | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
+|-------|---|---|---|---|---|---|---|---|---|----|----|----|----|----|----|----|
+| 0x09  |  |   |   |   |   |   |   |   |   |    |    |    |    |    |    |    |   

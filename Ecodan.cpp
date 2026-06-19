@@ -1,19 +1,3 @@
-/*
-    Copyright (C) <2020>  <Mike Roberts>
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
 #include "Ecodan.h"
 
 #include <ESPTelnet.h>
@@ -78,7 +62,7 @@ void ECODAN::Process(void) {
     c = DeviceStream->read();
 
     if (c == 0)
-      DEBUG_PRINT(F("__, "));
+      DEBUG_PRINT(F("00, "));
     else {
       if (c < 0x10) DEBUG_PRINT(F("0"));
       DEBUG_PRINT(String(c, HEX));
@@ -89,7 +73,9 @@ void ECODAN::Process(void) {
       ProcessFlag = false;
       msbetweenmsg = millis() - lastmsgdispatchedMillis;
       DEBUG_PRINTLN();
+      if (!Connected) { DEBUG_PRINTLN("A2W Connected!"); }
       Connected = true;
+      PrevConnected = true;
     }
   }
 }
@@ -251,17 +237,18 @@ void ECODAN::WriteStateMachine(void) {
     DEBUG_PRINTLN();
 
     WriteInProgress = true;
-  } else {
+  } /*else {
     PauseStateMachine = false;
-  }
+  }*/
 }
 
 
 
 void ECODAN::Connect(void) {
-  DEBUG_PRINTLN(F("Connecting to Heat Pump..."));
+  DEBUG_PRINTLN("Connecting to A2W Devices...");
   DeviceStream->write(Init3, 8);
   DeviceStream->flush();
+  delay(1000);  // Await Reply
   Process();
 }
 
@@ -342,10 +329,6 @@ void ECODAN::SetDHWMode(String *Mode) {
 
 
 void ECODAN::ForceDHW(uint8_t OnOff) {
-  uint8_t Buffer[COMMANDSIZE];
-  uint8_t CommandSize = 0;
-  uint8_t i;
-
   ECODANDECODER::EncodeForcedDHW(OnOff);
   if (cmd_queue_length < 10) {
     cmd_queue_length++;

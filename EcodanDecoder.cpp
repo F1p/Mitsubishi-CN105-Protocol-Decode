@@ -1,21 +1,9 @@
-/*
-    Copyright (C) <2020>  <Mike Roberts>
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
 #include "EcodanDecoder.h"
 #include <cstdio>
+#include <ESPTelnet.h>
+extern ESPTelnet TelnetServer;
+#include "Debug.h"
+
 
 uint8_t Array0x01[] = {};
 uint8_t Array0x02[] = {};
@@ -239,7 +227,7 @@ uint8_t ECODANDECODER::BuildRxMessage(MessageStruct *Message, uint8_t c) {
           case EXCONNECT_RESPONSE:
             break;
           default:
-            //Serial.println("Unknown PacketType");
+            //DEBUG_PRINTLN("Unknown PacketType");
             BufferPos = 0;
             return false;  // Unknown Packet Type
         }
@@ -247,7 +235,7 @@ uint8_t ECODANDECODER::BuildRxMessage(MessageStruct *Message, uint8_t c) {
 
       case 2:
         if (c != Preamble[0]) {
-          //Serial.println("Preamble 1 Error");
+          //DEBUG_PRINTLN("Preamble 1 Error");
           BufferPos = 0;
           return false;
         }
@@ -255,7 +243,7 @@ uint8_t ECODANDECODER::BuildRxMessage(MessageStruct *Message, uint8_t c) {
 
       case 3:
         if (c != Preamble[1]) {
-          //Serial.println("Preamble 1 Error");
+          //DEBUG_PRINTLN("Preamble 1 Error");
           BufferPos = 0;
           return false;
         }
@@ -264,7 +252,7 @@ uint8_t ECODANDECODER::BuildRxMessage(MessageStruct *Message, uint8_t c) {
       case 4:
         PayloadSize = c;
         if (c > MAXDATABLOCKSIZE) {
-          //Serial.println("Oversize Payload");
+          //DEBUG_PRINTLN("Oversize Payload");
           BufferPos = 0;
           return false;
         }
@@ -283,7 +271,7 @@ uint8_t ECODANDECODER::BuildRxMessage(MessageStruct *Message, uint8_t c) {
     Buffer[BufferPos] = c;
     BufferPos = 0;
     if (CheckSum(Buffer, PayloadSize + HEADERSIZE) == c) {
-      //Serial.println("CS OK");
+      //DEBUG_PRINTLN("CS OK");
       Message->SyncByte = Buffer[0];
       Message->PacketType = Buffer[1];
       Message->Preamble[0] = Buffer[2];
@@ -293,7 +281,7 @@ uint8_t ECODANDECODER::BuildRxMessage(MessageStruct *Message, uint8_t c) {
       memcpy(Message->Payload, &Buffer[5], Message->PayloadSize);
       return true;
     } else {
-      //Serial.println("Checksum Fail");
+      //DEBUG_PRINTLN("Checksum Fail");
       return false;
     }
   }
@@ -1115,6 +1103,14 @@ float ECODANDECODER::ExtractUInt8_v5(uint8_t *Buffer, uint8_t Index) {
 void ECODANDECODER::CreateBlankTxMessage(uint8_t PacketType, uint8_t PayloadSize) {
   CreateBlankMessageTemplate(&TxMessage, PacketType, PayloadSize);
 }
+
+
+void ECODANDECODER::PayloadWipe(void) {
+  for (int i = 0; i < 16; i++) {
+    TxMessage.Payload[i] = 0;
+  }
+}
+
 
 void ECODANDECODER::CreateBlankMessageTemplate(MessageStruct *Message, uint8_t PacketType, uint8_t PayloadSize) {
   uint8_t i;

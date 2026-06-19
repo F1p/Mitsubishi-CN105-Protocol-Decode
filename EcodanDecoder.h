@@ -1,21 +1,3 @@
-/*
-    Copyright (C) <2020>  <Mike Roberts>
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
 #ifndef ECODANDECODER_h
 #define ECODANDECODER_h
 
@@ -291,6 +273,7 @@ public:
   uint8_t Process(uint8_t c);
 
   void CreateBlankTxMessage(uint8_t PacketType, uint8_t PayloadSize);
+  void PayloadWipe(void);
   void SetPayloadByte(uint8_t Data, uint8_t Location);
   uint8_t PrepareTxCommand(uint8_t *Buffer);
   void EncodePower(uint8_t Power);

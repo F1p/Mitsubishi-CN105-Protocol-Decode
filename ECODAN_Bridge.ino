@@ -17,47 +17,80 @@
 /* ESP32 AtomS3 Lite (ESP32S3 Dev Module)    / Core 3.1.1 / Flash 8M with SPIFFS (3MB APP / 1.5MB SPIFFS)                  */
 /* ESP32 Ethernet WT32-ETH01                 / Core 3.1.1 / Flash 4MB (1.9MB APP / 180KB SPIFFS)                           */
 
+#define LANG_EN
 
-#if defined(ESP8266) || defined(ESP32)  // ESP32 or ESP8266 Compatiability
+#if defined(ESP8266) || defined(ESP32)
 
-#include <FS.h>  // Define File System First
+// ==========================================
+// FILE SYSTEM & CORE LIBRARIES
+// ==========================================
+#include <FS.h>
 #include <LittleFS.h>
+#include <ArduinoJson.h>
+#include <PubSubClient.h>
+#include <WiFiManager.h>
+#include <ESPTelnet.h>
+
+// ==========================================
+// ESP8266 SPECIFIC
+// ==========================================
 #ifdef ESP8266
 #include <ESP8266WiFi.h>
 #include <ESP8266mDNS.h>
 #include <ESP8266WebServer.h>
-//#include <ESP8266HTTPClient.h>
 #include <SoftwareSerial.h>
 #include <sys/time.h>
 #endif
+
+// ==========================================
+// ESP32 SPECIFIC (AtomS3 & WT32 Ethernet)
+// ==========================================
 #ifdef ESP32
 #include <WiFi.h>
-#include <HTTPClient.h>
-#ifndef ARDUINO_WT32_ETH01
-#include <AsyncTCP.h>  // Disable for WT32
-#endif
 #include <WebServer.h>
 #include <ESPmDNS.h>
-#endif
+#include <HTTPClient.h>
+#include <HTTPUpdate.h>
+#include <WiFiClientSecure.h>
+#include "HttpsOTAUpdate.h"
+
 #ifdef ARDUINO_WT32_ETH01
-#include <ETH.h>
 #include <Arduino.h>
+#include <ETH.h>
 #endif
 
+// ==========================================
+// ASYNC WEB SERVER (Excluded for WT32)
+// ==========================================
 #ifndef ARDUINO_WT32_ETH01
-#define WEBSERVER_H "fix confict"  // Disable for WT32
-#include <ESPAsyncWebServer.h>     // Disable for WT32
+// If ESPAsyncWebServer conflicts with WebServer.h on your setup,
+// ensure your libraries are updated rather than using macro hacks.
+#include <AsyncTCP.h>
+#include <ESPAsyncWebServer.h>
 #endif
-#include <WiFiManager.h>
-#include <PubSubClient.h>
-#include <ArduinoJson.h>
-#include <ESPTelnet.h>
+#endif
+
+// ==========================================
+// LOCAL PROJECT HEADERS
+// ==========================================
 #include "Ecodan.h"
+#include "AC.h"
 #include "Melcloud.h"
 
-String FirmwareVersion = "6.6.0-h5";
-String LatestFirmwareVersion;
 
+
+#endif  // ESP8266 || ESP32
+
+String FirmwareVersion = "7.0.23";
+String LatestFirmwareVersion;
+bool update_in_progress = false;
+
+#ifdef ARDUINO_M5STACK_ATOMS3
+String OTADeviceType = "Gen2";
+#endif
+#ifdef ARDUINO_WT32_ETH01
+String OTADeviceType = "Ethernet";
+#endif
 
 #ifdef ESP8266  // Define the Witty ESP8266 Serial Pins
 #define HEATPUMP_STREAM SwSerial1
@@ -145,6 +178,46 @@ int OAT_total = 0;
 float OAT_average = 0;
 bool OAT_isFull = false;
 bool inDefrostWindow = false;
+bool A2APrevConnectedLastLoop = false;
+bool A2WPrevConnectedLastLoop = false;
+
+#ifdef ESP32  // Define the M5Stack AtomS3
+const char* ISGR_root_ca =
+  "-----BEGIN CERTIFICATE-----\n"
+  "MIIFazCCA1OgAwIBAgIRAIIQz7DSQONZRGPgu2OCiwAwDQYJKoZIhvcNAQELBQAw\n"
+  "TzELMAkGA1UEBhMCVVMxKTAnBgNVBAoTIEludGVybmV0IFNlY3VyaXR5IFJlc2Vh\n"
+  "cmNoIEdyb3VwMRUwEwYDVQQDEwxJU1JHIFJvb3QgWDEwHhcNMTUwNjA0MTEwNDM4\n"
+  "WhcNMzUwNjA0MTEwNDM4WjBPMQswCQYDVQQGEwJVUzEpMCcGA1UEChMgSW50ZXJu\n"
+  "ZXQgU2VjdXJpdHkgUmVzZWFyY2ggR3JvdXAxFTATBgNVBAMTDElTUkcgUm9vdCBY\n"
+  "MTCCAiIwDQYJKoZIhvcNAQEBBQADggIPADCCAgoCggIBAK3oJHP0FDfzm54rVygc\n"
+  "h77ct984kIxuPOZXoHj3dcKi/vVqbvYATyjb3miGbESTtrFj/RQSa78f0uoxmyF+\n"
+  "0TM8ukj13Xnfs7j/EvEhmkvBioZxaUpmZmyPfjxwv60pIgbz5MDmgK7iS4+3mX6U\n"
+  "A5/TR5d8mUgjU+g4rk8Kb4Mu0UlXjIB0ttov0DiNewNwIRt18jA8+o+u3dpjq+sW\n"
+  "T8KOEUt+zwvo/7V3LvSye0rgTBIlDHCNAymg4VMk7BPZ7hm/ELNKjD+Jo2FR3qyH\n"
+  "B5T0Y3HsLuJvW5iB4YlcNHlsdu87kGJ55tukmi8mxdAQ4Q7e2RCOFvu396j3x+UC\n"
+  "B5iPNgiV5+I3lg02dZ77DnKxHZu8A/lJBdiB3QW0KtZB6awBdpUKD9jf1b0SHzUv\n"
+  "KBds0pjBqAlkd25HN7rOrFleaJ1/ctaJxQZBKT5ZPt0m9STJEadao0xAH0ahmbWn\n"
+  "OlFuhjuefXKnEgV4We0+UXgVCwOPjdAvBbI+e0ocS3MFEvzG6uBQE3xDk3SzynTn\n"
+  "jh8BCNAw1FtxNrQHusEwMFxIt4I7mKZ9YIqioymCzLq9gwQbooMDQaHWBfEbwrbw\n"
+  "qHyGO0aoSCqI3Haadr8faqU9GY/rOPNk3sgrDQoo//fb4hVC1CLQJ13hef4Y53CI\n"
+  "rU7m2Ys6xt0nUW7/vGT1M0NPAgMBAAGjQjBAMA4GA1UdDwEB/wQEAwIBBjAPBgNV\n"
+  "HRMBAf8EBTADAQH/MB0GA1UdDgQWBBR5tFnme7bl5AFzgAiIyBpY9umbbjANBgkq\n"
+  "hkiG9w0BAQsFAAOCAgEAVR9YqbyyqFDQDLHYGmkgJykIrGF1XIpu+ILlaS/V9lZL\n"
+  "ubhzEFnTIZd+50xx+7LSYK05qAvqFyFWhfFQDlnrzuBZ6brJFe+GnY+EgPbk6ZGQ\n"
+  "3BebYhtF8GaV0nxvwuo77x/Py9auJ/GpsMiu/X1+mvoiBOv/2X/qkSsisRcOj/KK\n"
+  "NFtY2PwByVS5uCbMiogziUwthDyC3+6WVwW6LLv3xLfHTjuCvjHIInNzktHCgKQ5\n"
+  "ORAzI4JMPJ+GslWYHb4phowim57iaztXOoJwTdwJx4nLCgdNbOhdjsnvzqvHu7Ur\n"
+  "TkXWStAmzOVyyghqpZXjFaH3pO3JLF+l+/+sKAIuvtd7u+Nxe5AW0wdeRlN8NwdC\n"
+  "jNPElpzVmbUq4JUagEiuTDkHzsxHpFKVK7q4+63SM1N95R1NbdWhscdCb+ZAJzVc\n"
+  "oyi3B43njTOQ5yOf+1CceWxG1bQVs5ZufpsMljq4Ui0/1lvh+wjChP4kqKOJ2qxq\n"
+  "4RgqsahDYVvTH9w7jXbyLeiNdd8XM2w9U/t7y0Ff/9yi0GE44Za4rF2LN9d11TPA\n"
+  "mRGunUHBcnWEvgJBQl9nJEiU0Zsnvgc/ubhPgXRR4Xq37Z0j4r7g1SgEEzwxA57d\n"
+  "emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=\n"
+  "-----END CERTIFICATE-----\n";
+
+static HttpsOTAStatus_t otastatus;
+#endif
+
 
 // The extra parameters to be configured (can be either global or just in the setup)
 // After connecting, parameter.getValue() will get you the configured value
@@ -160,7 +233,7 @@ struct MqttSettings {
   char user[user_max_length] = "Username";
   char password[password_max_length] = "Password";
   char port[port_max_length] = "1883";
-  char baseTopic[basetopic_max_length] = "Ecodan/ASHP";
+  char baseTopic[basetopic_max_length] = "ASHP";
   char wm_mqtt_hostname_identifier[14] = "mqtt_hostname";
   char wm_mqtt_user_identifier[10] = "mqtt_user";
   char wm_mqtt_password_identifier[14] = "mqtt_password";
@@ -172,7 +245,7 @@ struct MqttSettings {
   char user2[user_max_length] = "Username";
   char password2[password_max_length] = "Password";
   char port2[port_max_length] = "1883";
-  char baseTopic2[basetopic_max_length] = "Ecodan/ASHP";
+  char baseTopic2[basetopic_max_length] = "ASHP";
   char wm_mqtt2_hostname_identifier[15] = "mqtt2_hostname";
   char wm_mqtt2_user_identifier[11] = "mqtt2_user";
   char wm_mqtt2_password_identifier[15] = "mqtt2_password";
@@ -212,11 +285,16 @@ struct UnitSettings {
   float z2_room_temperature = 0;
 };
 
-//HTTPClient http;
+#ifdef ESP32
+HTTPClient http;
+WiFiClientSecure NetworkClient;  // Encryption Support
+#endif
+
 MqttSettings mqttSettings;
 UnitSettings unitSettings;
 ECODAN HeatPump;
 MELCLOUD MELCloud;
+AC AC;
 #ifdef ESP8266
 SoftwareSerial SwSerial1;
 SoftwareSerial SwSerial2;
@@ -232,7 +310,7 @@ WiFiManagerParameter custom_mqtt_server("server", "<b>Required</b> Primary MQTT 
 WiFiManagerParameter custom_mqtt_user("user", "Primary MQTT Username", "TEMP", user_max_length);
 WiFiManagerParameter custom_mqtt_pass("pass", "Primary MQTT Password", "TEMP", password_max_length);
 WiFiManagerParameter custom_mqtt_port("port", "Primary MQTT Server Port (Default: 1883)", "TEMP", port_max_length);
-WiFiManagerParameter custom_mqtt_basetopic("basetopic", "Primary MQTT Base Topic (Default: Ecodan/ASHP)<br><font size='0.8em'>Modify if you have multiple heat pumps connecting to the same MQTT server</font>", "TEMP", basetopic_max_length);
+WiFiManagerParameter custom_mqtt_basetopic("basetopic", "Primary MQTT Base Topic<br><font size='0.8em'>A unique topic name</font>", "TEMP", basetopic_max_length);
 WiFiManagerParameter custom_mqtt2_server("server2", "<hr><b>Optional</b> Secondary MQTT Server<br><font size='0.8em'>You can send data to a second MQTT broker, <b>leave default or blank if not in use</b></font>", "TEMP", hostname_max_length);
 WiFiManagerParameter custom_mqtt2_user("user2", "Secondary MQTT Username", "TEMP", user_max_length);
 WiFiManagerParameter custom_mqtt2_pass("pass2", "Secondary MQTT Password", "TEMP", password_max_length);
@@ -249,7 +327,7 @@ WiFiManager wifiManager;
 
 
 void HeatPumpQueryStateEngine(void);
-void HeatPumpWriteStateEngine(void);
+void WriteStateEngine(void);
 void MELCloudQueryReplyEngine(void);
 void HeatPumpQuerySVCEngine(void);
 void HeatPumpKeepAlive(void);
@@ -264,19 +342,27 @@ void EnergyReport(void);
 void StatusReport(void);
 void CompCurveReport(void);
 void ActiveControlReport(void);
+void ACReport(void);
 void CalculateCompCurve(void);
 void FastPublish(void);
 void dhw_flow_follower(void);
-//void CheckForOTAUpdates(void);
 
-TimerCallBack HeatPumpQuery1(400, HeatPumpQueryStateEngine);   // Set to 400ms (Safe), 320-350ms best time between messages
-TimerCallBack HeatPumpQuery2(30000, HeatPumpKeepAlive);        // Set to 20-30s for heat pump query frequency
-TimerCallBack HeatPumpQuery3(30000, handleMQTTState);          // Re-connect attempt timer if MQTT is not online
-TimerCallBack HeatPumpQuery4(30000, handleMQTT2State);         // Re-connect attempt timer if MQTT Stream 2 is not online
-TimerCallBack HeatPumpQuery5(1000, HeatPumpWriteStateEngine);  // Set to 1000ms (Safe), 320-350ms best time between messages
-TimerCallBack HeatPumpQuery6(2000, FastPublish);               // Publish some reports at a faster rate
-TimerCallBack HeatPumpQuery7(300000, CalculateCompCurve);      // Calculate the Compensation Curve based on latest data   //300000 = 5min
-//TimerCallBack HeatPumpQuery8(3600000, CheckForOTAUpdates);     // Set check period to 1hr
+#ifdef ESP32  // Define the M5Stack AtomS3
+void CheckForOTAUpdates(void);
+#endif
+
+TimerCallBack HeatPumpQuery1(400, HeatPumpQueryStateEngine);  // Set to 400ms (Safe), 320-350ms best time between messages
+TimerCallBack HeatPumpQuery2(30000, HeatPumpKeepAlive);       // Set to 20-30s for heat pump query frequency
+TimerCallBack HeatPumpQuery3(30000, handleMQTTState);         // Re-connect attempt timer if MQTT is not online
+TimerCallBack HeatPumpQuery4(30000, handleMQTT2State);        // Re-connect attempt timer if MQTT Stream 2 is not online
+TimerCallBack HeatPumpQuery5(1000, WriteStateEngine);         // Set to 1000ms (Safe), 320-350ms best time between messages
+TimerCallBack HeatPumpQuery6(2000, FastPublish);              // Publish some reports at a faster rate
+TimerCallBack HeatPumpQuery7(300000, CalculateCompCurve);     // Calculate the Compensation Curve based on latest data   //300000 = 5min
+
+#ifdef ESP32                                                // Define the M5Stack AtomS3
+TimerCallBack HeatPumpQuery8(7200000, CheckForOTAUpdates);  // Set check period to 1hr
+#endif
+
 TimerCallBack HeatPumpQuery9(30000, dhw_flow_follower);  // 30s DHW Flow Setpoint Follower
 
 unsigned long looppreviousMicros = 0;            // variable for comparing millis counter
@@ -308,10 +394,15 @@ unsigned long CompressorPeriodDurations[2] = { 0, 0 };           // Last 2 Compr
 
 extern int cmd_queue_length;
 extern int cmd_queue_position;
+extern int ac_cmd_queue_length;
+extern int ac_cmd_queue_position;
 extern bool WriteInProgress;
+extern bool ACWriteInProgress;
 extern int CurrentWriteAttempt;
+extern int ACCurrentWriteAttempt;
 byte NormalHWBoostOperating = 0;
 uint8_t FTCVersionLastLoop = 0;
+uint8_t ACC9LastLoop = 0;
 uint8_t FrequencyLastLoop = 0;
 double cumulativeEnergyToday[6] = { 0, 0, 0, 0, 0, 0 };      // Format: Heating Consumed, Cooling Consumed, DHW Consumed, Heating Delivered, Cooling Delivered, DHW Delivered
 double cumulativeEnergyYesterday[6] = { 0, 0, 0, 0, 0, 0 };  // Format: Heating Consumed, Cooling Consumed, DHW Consumed, Heating Delivered, Cooling Delivered, DHW Delivered
@@ -328,6 +419,7 @@ void setup() {
 
   HEATPUMP_STREAM.begin(SERIAL_BAUD, SERIAL_CONFIG, FTCCable_RxPin, FTCCable_TxPin);  // Rx, Tx
   HeatPump.SetStream(&HEATPUMP_STREAM);
+  AC.SetStream(&HEATPUMP_STREAM);
   MEL_STREAM.begin(SERIAL_BAUD, SERIAL_CONFIG, MEL_RxPin, MEL_TxPin);  // Rx, Tx
   MELCloud.SetStream(&MEL_STREAM);
 
@@ -384,10 +476,21 @@ void setup() {
 
   MDNS.begin("heatpump");
   MDNS.addService("http", "tcp", 80);
+#ifdef ESP32
+  HttpsOTA.onHttpEvent(HttpEvent);
+#endif
 
-  HeatPump.Status.Write_To_Ecodan_OK = false;
-  HeatPump.Status.HasAnsweredDips = false;
-  //CheckForOTAUpdates();
+  // Reset HeatPump flags
+  HeatPump.Status.Write_To_Ecodan_OK = HeatPump.Status.HasAnsweredDips = false;
+
+  // Reset AC flags
+  AC.Status.Write_To_Ecodan_OK = AC.Status.tempMode = AC.Status.RmtempMode =
+    AC.Status.C9 = AC.Status.CD = AC.Status.CE = HeatPump.PrevConnected = AC.PrevConnected = false;
+
+#ifdef ESP32
+  CheckForOTAUpdates();
+#endif
+
   CalculateCompCurve();
   HeatPumpKeepAlive();
   for (int i = 0; i < OAT_Window_Size; i++) { OAT_readings[i] = 0; }
@@ -406,19 +509,37 @@ void loop() {
   HeatPumpQuery5.Process();
   HeatPumpQuery6.Process();
   HeatPumpQuery7.Process();
-  //HeatPumpQuery8.Process();
+#ifdef ESP32
+  HeatPumpQuery8.Process();
+#endif
   HeatPumpQuery9.Process();
 
   MELCloudQueryReplyEngine();
   MQTTClient1.loop();
   MQTTClient2.loop();
   TelnetServer.loop();
-  HeatPump.Process();
+
+  if (HeatPump.PrevConnected) {
+    HeatPump.Process();
+  } else if (AC.PrevConnected) {
+    AC.Process();
+  }
+
   MELCloud.Process();
   wifiManager.process();
 
 
-
+#ifdef ESP32
+  otastatus = HttpsOTA.status();
+  if (otastatus == HTTPS_OTA_SUCCESS) {
+    printCurrentTime();
+    DEBUG_PRINTLN(F("Firmware updated successfully - Rebooting..."));
+    ESP.restart();
+  } else if (otastatus == HTTPS_OTA_FAIL) {
+    printCurrentTime();
+    DEBUG_PRINTLN(F("Firmware Update Failed"));
+  }
+#endif
 
   // -- Config Saver -- //
   if (shouldSaveConfig) {
@@ -438,7 +559,7 @@ void loop() {
       cmd_queue_position = 1;
       cmd_queue_length = 0;
       CurrentWriteAttempt = 0;
-      PostWriteTrigger = true;  // Allows 1s to pass, then restarts read operation
+      PostWriteTrigger = true;  // Allows 10s to pass, then restarts read operation
       postwrpreviousMillis = millis();
     }                                                                  // Dequeue the last message that was written
     if (MQTTReconnect() || MQTT2Reconnect()) { PublishAllReports(); }  // Publish update to the MQTT Topics
@@ -450,15 +571,45 @@ void loop() {
       cmd_queue_position = 1;  // All commands written, reset
       cmd_queue_length = 0;
       CurrentWriteAttempt = 0;
-      PostWriteTrigger = true;  // Allows 1s to pass, then restarts read operation
+      PostWriteTrigger = true;  // Allows 10s to pass, then restarts read operation
+      postwrpreviousMillis = millis();
+    }
+  }
+  if (AC.Status.Write_To_Ecodan_OK && ACWriteInProgress) {  // A write command is executing
+    DEBUG_PRINTLN(F("Write OK!"));                          // Pause normal processsing until complete
+    AC.Status.Write_To_Ecodan_OK = false;                   // Set back to false
+    ACWriteInProgress = false;                              // Set back to false
+    if (ac_cmd_queue_length > ac_cmd_queue_position) {      // If the queue has items
+      ac_cmd_queue_position++;                              // Increment the position
+      ACCurrentWriteAttempt = 0;                            //
+    } else {                                                // All commands written, reset
+      ac_cmd_queue_position = 1;
+      ac_cmd_queue_length = 0;
+      ACCurrentWriteAttempt = 0;
+      PostWriteTrigger = true;  // Allows 10s to pass, then restarts read operation
+      postwrpreviousMillis = millis();
+    }                                                                    // Dequeue the last message that was written
+    if (MQTTReconnect() || MQTT2Reconnect()) { PublishAllACReports(); }  // Publish update to the MQTT Topics
+  } else if ((ACWriteInProgress) && (ACCurrentWriteAttempt > 10)) {      // After 10 attempts to write
+    if (ac_cmd_queue_length > ac_cmd_queue_position) {
+      ac_cmd_queue_position++;  // Skip this write + Increment the position
+      ACCurrentWriteAttempt = 0;
+    } else {
+      ac_cmd_queue_position = 1;  // All commands written, reset
+      ac_cmd_queue_length = 0;
+      ACCurrentWriteAttempt = 0;
+      PostWriteTrigger = true;  // Allows 10s to pass, then restarts read operation
       postwrpreviousMillis = millis();
     }
   }
 
+
   // -- Read Operation Restart -- //
   if ((PostWriteTrigger) && (millis() - postwrpreviousMillis >= 10000)) {  // Allow 10s to pass before re-starting reads for FTC to process
+    printCurrentTime();
     DEBUG_PRINTLN(F("Restarting Read Operations"));
     HeatPump.PauseStateMachine = false;
+    AC.PauseStateMachine = false;
     PostWriteTrigger = false;
   }
 
@@ -609,13 +760,31 @@ void loop() {
   if (HeatPump.Status.Defrost == 0 && (millis() - postdfpreviousMillis >= 360000)) { inDefrostWindow = false; }  // End Defrost Window
 
 
-
+  // -- Dynamic HA Adjustment -- //
   // -- FTC7 + R290 Outdoor Limit Adjustments -- //
   if (FTCVersionLastLoop != HeatPump.Status.FTCVersion && HeatPump.Status.RefrigerantType == 2) {  // Dynamic Update HA limit for FTC7
     if (MQTTReconnect()) { PublishDiscoveryTopics(1, MQTT_BASETOPIC); }
-    if (MQTT2Reconnect()) { PublishDiscoveryTopics(2, MQTT_BASETOPIC); }
+    if (MQTT2Reconnect()) { PublishDiscoveryTopics(2, MQTT_2_BASETOPIC); }
+  }
+  if (ACC9LastLoop != AC.Status.C9 && AC.Status.SupportsHozVane) {  // Dynamic Vane & Fan Speeds
+    if (MQTTReconnect()) { PublishA2ADiscoveryTopics(1, MQTT_BASETOPIC); }
+    if (MQTT2Reconnect()) { PublishA2ADiscoveryTopics(2, MQTT_2_BASETOPIC); }
   }
   FTCVersionLastLoop = HeatPump.Status.FTCVersion;  // On FTC version capture, if criteria met then change
+  ACC9LastLoop = AC.Status.C9;
+
+
+  // -- Auto Discovery Trigger -- //
+  if (HeatPump.PrevConnected && !A2WPrevConnectedLastLoop) {
+    if (MQTTReconnect()) { PublishDiscoveryTopics(1, MQTT_BASETOPIC); }
+    if (MQTT2Reconnect()) { PublishDiscoveryTopics(2, MQTT_2_BASETOPIC); }
+  }
+  if (AC.PrevConnected && !A2APrevConnectedLastLoop) {
+    if (MQTTReconnect()) { PublishA2ADiscoveryTopics(1, MQTT_BASETOPIC); }
+    if (MQTT2Reconnect()) { PublishA2ADiscoveryTopics(2, MQTT_2_BASETOPIC); }
+  }
+  A2WPrevConnectedLastLoop = HeatPump.PrevConnected;
+  A2APrevConnectedLastLoop = AC.PrevConnected;
 
 
   // -- Outdoor Triggers on Outdoor Unit Change -- //
@@ -740,66 +909,140 @@ void loop() {
     lastResetDay = HeatPump.Status.DateTimeStamp.tm_mday;                            // Mark this day as completed
   }
 
+  // -- MELCloud Timeout -- //
+  if (MELCloud_Adapter_Connected) {
+    if (millis() - MELCloud.LastMELCloudMessage() >= 60000) { MELCloud_Adapter_Connected = false; }  // If there is no MELCloud Message for 60s consider it disconnected
+  } else {
+    if (MELCloud.Connected) { MELCloud_Adapter_Connected = true; }  // If a MELCloud Message appears, set true again
+  }
+
+
   // -- CPU Loop Time End -- //
   CPULoopSpeed = micros() - looppreviousMicros;  // Loop Speed End Monitor
 }
 
 void HeatPumpKeepAlive(void) {
-  if (!HeatPump.HeatPumpConnected()) {
-    DEBUG_PRINTLN(F("Heat Pump Disconnected"));
+  if (!HeatPump.HeatPumpConnected() && !AC.HeatPumpConnected()) {
 #ifdef ARDUINO_M5STACK_ATOMS3
     // Swap to the other pins and test the connection
     if (CableConnected) {
-      DEBUG_PRINTLN(F("Trying to connect via Proxy Circuit Board"));
+      DEBUG_PRINTLN("Trying to connect via Proxy Circuit Board");
       HEATPUMP_STREAM.begin(SERIAL_BAUD, SERIAL_CONFIG, FTCProxy_RxPin, FTCProxy_TxPin);  // Rx, Tx
-      HeatPump.SetStream(&HEATPUMP_STREAM);
+      HeatPump.SetStream(&HEATPUMP_STREAM);                                               // Set & Connect
+      AC.SetStream(&HEATPUMP_STREAM);                                                     // Set & Connect
       CableConnected = false;
+
+      /*
+      HeatPump.Connect();
+      delay(1000);
+      HeatPump.Process();
+
+      if (!HeatPump.HeatPumpConnected()) {  // If the A2W Request was not successful
+        AC.Connect();
+        delay(1000);
+        AC.Process();
+      }
+      */
+
     } else {
-      DEBUG_PRINTLN(F("Trying to connect via Cable"));
+      DEBUG_PRINTLN("Trying to connect via Cable");
       HEATPUMP_STREAM.begin(SERIAL_BAUD, SERIAL_CONFIG, FTCCable_RxPin, FTCCable_TxPin);  // Rx, Tx
       HeatPump.SetStream(&HEATPUMP_STREAM);
+      AC.SetStream(&HEATPUMP_STREAM);
       CableConnected = true;
+      /*
+      HeatPump.Connect();
+      delay(1000);
+      HeatPump.Process();
+
+      if (!HeatPump.HeatPumpConnected()) {  // If the A2W Request was not successful
+        AC.Connect();
+        delay(1000);
+        AC.Process();
+      }
+      */
+    }
+#else
+    // For WT32 Ethernet and ESP8266 Devices switching between A2A and A2W Connect Messages
+    HeatPump.Connect();
+    if (!HeatPump.HeatPumpConnected()) {  // If the A2W Request was not successful
+      AC.Connect();
     }
 #endif
   }
+
   ftcpreviousMillis = millis();
-  HeatPump.TriggerStatusStateMachine();
-}
-
-void HeatPumpQueryStateEngine(void) {
-
-  if (cmd_queue_length == 0) {      // If there is no commands awaiting written
-    HeatPump.StatusStateMachine();  // Full Read trigged by CurrentMessage
+  if (AC.HeatPumpConnected()) {
+    DEBUG_PRINTLN("Trigger AC Status State Machine");
+    AC.TriggerStatusStateMachine();
+  } else {
+    DEBUG_PRINTLN("AC Disconnected");
+  }
+  if (HeatPump.HeatPumpConnected()) {
+    DEBUG_PRINTLN("Trigger A2W Status State Machine");
+    HeatPump.TriggerStatusStateMachine();
+  } else {
+    DEBUG_PRINTLN("A2W Disconnected");
   }
 
-  // Call Once Full Update is complete
-  if (HeatPump.UpdateComplete()) {
-    DEBUG_PRINTLN(F("Update Complete"));
-    FTCLoopSpeed = millis() - ftcpreviousMillis;  // Loop Speed End
+  if (MQTTReconnect()) { StatusReport(); }
+}
 
-    if (HeatPump.Status.FTCVersion == 0) { HeatPump.GetFTCVersion(); }
-    if (!HeatPump.Status.HasAnsweredDips) {
-      if (MQTTReconnect() || MQTT2Reconnect()) {
-        StatusReport();
-        CalculateCompCurve();
-      }
-    } else {
-      HeatPump.SVCUpdateComplete();
-      HeatPump.StatusSVCMachine();  // Call service codes
-      if (MQTTReconnect() || MQTT2Reconnect()) {
-        PublishAllReports();
+
+void HeatPumpQueryStateEngine(void) {
+  //DEBUG_PRINTLN("HeatPumpQueryStateEngine");
+  if (AC.PrevConnected) {
+    if (cmd_queue_length == 0) {  // If there is no commands awaiting written
+      //DEBUG_PRINTLN("AC Status State Machine");
+      AC.StatusStateMachine();  // Full Read trigged by CurrentMessage
+    }
+    if (AC.UpdateComplete()) {
+      //DEBUG_PRINTLN(F("AC Update Complete"));
+      if (!AC.Status.C9) { AC.GetVersion(0xC9); }   // 0xC9
+      if (!AC.Status.CD) { AC.GetVersion(0xCD); }   // 0xCD
+      if (!AC.Status.CE) { AC.GetVersion(0xCE); }   // 0xCE - Unknown at the moment who/when this should be requested
+      FTCLoopSpeed = millis() - ftcpreviousMillis;  // Loop Speed End
+      PublishAllACReports();
+    }
+  } else if (HeatPump.PrevConnected) {
+    if (cmd_queue_length == 0) {      // If there is no commands awaiting written
+      HeatPump.StatusStateMachine();  // Full Read trigged by CurrentMessage
+    }
+    // Call Once Full Update is complete
+    if (HeatPump.UpdateComplete()) {
+      //DEBUG_PRINTLN(F("FTC Update Complete"));
+      FTCLoopSpeed = millis() - ftcpreviousMillis;  // Loop Speed End
+
+      if (HeatPump.Status.FTCVersion == 0) { HeatPump.GetFTCVersion(); }
+      if (!HeatPump.Status.HasAnsweredDips) {
+        if (MQTTReconnect()) {
+          StatusReport();
+          CalculateCompCurve();
+        }
+      } else {
+        HeatPump.SVCUpdateComplete();
+        HeatPump.StatusSVCMachine();  // Call service codes
+        if (MQTTReconnect()) {
+          PublishAllReports();
+        }
       }
     }
   }
 }
+
 
 void HeatPumpQuerySVCEngine(void) {
   HeatPump.StatusSVCMachine();
 }
 
-void HeatPumpWriteStateEngine(void) {
-  HeatPump.WriteStateMachine();
+void WriteStateEngine(void) {
+  if (HeatPump.PrevConnected) {
+    HeatPump.WriteStateMachine();
+  } else if (AC.PrevConnected) {
+    AC.WriteStateMachine();
+  }
 }
+
 
 
 void MELCloudQueryReplyEngine(void) {
@@ -809,26 +1052,33 @@ void MELCloudQueryReplyEngine(void) {
     } else if (MELCloud.Status.ActiveMessage == 0x28 && !MELCloud.Status.MEL_Online) {  // For other requests, low
       Array0x28[11] = 0;                                                                // Set the FTC Bit
     }
-    MELCloud.ReplyStatus(MELCloud.Status.ActiveMessage);  // Reply with the OK Message to MELCloud
+    if (MELCloud.Status.ActiveMessage == 0xCE && !AC.Status.CE) { return; }  // Intercept and return
+    MELCloud.ReplyStatus(MELCloud.Status.ActiveMessage);                     // Reply with the OK Message to MELCloud
     MELCloud.Status.ReplyNow = false;
-    if (MELCloud.Status.ActiveMessage == 0x32 || MELCloud.Status.ActiveMessage == 0x33 || MELCloud.Status.ActiveMessage == 0x34 || MELCloud.Status.ActiveMessage == 0x35) {  // The write commands
+    if (MELCloud.Status.ActiveMessage == 0x32 || MELCloud.Status.ActiveMessage == 0x33 || MELCloud.Status.ActiveMessage == 0x34 || MELCloud.Status.ActiveMessage == 0x35) {  // The write commands for A2W
       if (!unitSettings.BlockWriteFromMELCloud) { HeatPump.WriteMELCloudCMD(MELCloud.Status.ActiveMessage); }
+    } else if (MELCloud.Status.ActiveMessage == 0x40 || MELCloud.Status.ActiveMessage == 0x41 || MELCloud.Status.ActiveMessage == 0x3F) {  // A2A Write Commands
+      if (!unitSettings.BlockWriteFromMELCloud) { AC.WriteMELCloudCMD(MELCloud.Status.ActiveMessage); }
     }
-  } else if ((MELCloud.Status.ConnectRequest) && (HeatPump.Status.FTCVersion != 0)) {
-    MELCloud.Connect();  // Reply to the connect request
+  } else if ((HeatPump.PrevConnected) && (MELCloud.Status.ConnectRequest) && (HeatPump.Status.FTCVersion != 0) && HeatPump.Status.HasAnsweredDips) {
+    MELCloud.ConnectA2W();  // Reply to the connect request
+    MELCloud.Status.ConnectRequest = false;
+  } else if (AC.PrevConnected && MELCloud.Status.ConnectRequest && AC.Status.C9) {
+    MELCloud.ConnectA2A();  // Reply to the connect request
     MELCloud.Status.ConnectRequest = false;
   } else if (MELCloud.Status.MELRequest1) {
-    MELCloud.MELNegotiate1();  // Reply to the connect request
+    MELCloud.MELNegotiate1(AC.PrevConnected);  // Reply to the connect request
     MELCloud.Status.MELRequest1 = false;
   } else if (MELCloud.Status.MELRequest2) {
-    MELCloud.MELNegotiate2();  // Reply to the connect request (MELCloud Only)
+    MELCloud.MELNegotiate2();  // Reply to the connect request
     MELCloud.Status.MELRequest2 = false;
+    MELCloud_Adapter_Connected = true;          // Mark as in use
   } else if (MELCloud.Status.MEL_HB_Request) {  // Reply to the MELCloud Heartbeat
     MELCloud.ReplyStatus(0x34);
     MELCloud.Status.MEL_HB_Request = false;
-    MELCloud_Adapter_Connected = true;  // Mark as in use
   }
 }
+
 
 void MQTTonDisconnect(void* response) {
   DEBUG_PRINTLN(F("MQTT Disconnect"));
@@ -867,13 +1117,28 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
       unitSettings.BlockWriteFromMELCloud = false;
       shouldSaveConfig = true;
       StatusReport();
+    } else if (Payload.toInt() == 995) {
+      DEBUG_PRINTLN(F("Requested Bridge Firmware Update"));
+      if (NormalHWBoostOperating != 1 && LatestFirmwareVersion != FirmwareVersion) {
+#ifdef ESP32  // Define the M5Stack AtomS3
+        InstallOTAUpdates();
+#endif
+      }  // Skip OTA updates when running Norm DHW or this status would be lost mid-run
     } else if (Payload.toInt() == 994) {
       DEBUG_PRINTLN(F("Requested Bridge Latest Firmware Available"));
       DEBUG_PRINTLN(F(": UNAVAILABLE"));
-      //CheckForOTAUpdates();
+#ifdef ESP32  // Define the M5Stack AtomS3
+      CheckForOTAUpdates();
+#endif
     } else if (Payload.toInt() == 993) {
-      DEBUG_PRINTLN(F("Requested FTC Version Information"));
-      HeatPump.GetFTCVersion();
+      DEBUG_PRINTLN(F("Requested FTC/AC Version Information"));
+      if (HeatPump.PrevConnected) {
+        HeatPump.GetFTCVersion();
+      } else if (AC.PrevConnected) {
+        AC.GetVersion(0xC9);
+        AC.GetVersion(0xCD);
+        AC.GetVersion(0xCE);
+      }
     } else if (Payload.toInt() == 992) {
       DEBUG_PRINT(F("Short Cycle Protection: "));
       if (!unitSettings.shortcycleprotectionenabled) {
@@ -1220,6 +1485,59 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
     shouldSaveConfig = true;  // Write the data to onboard JSON file so if device reboots it is saved
     ActiveControlReport();
   }
+  // Air to Air Commands
+  else if ((Topic == MQTTCommandAC) || (Topic == MQTTCommand2AC)) {
+    MQTTWriteReceived("MQTT AC Command JSON", 6);
+    JsonDocument doc;
+    DeserializationError error = deserializeJson(doc, Payload);
+    if (error) {
+      DEBUG_PRINT("Failed to read file: ");
+      DEBUG_PRINTLN(error.c_str());
+    } else {
+      // Air to Air (AC) Commands
+      ACWriteInProgress = true;
+
+      if (doc["systempower"].is<bool>()) {
+        DEBUG_PRINTLN("SetPower");
+        bool systempower = doc["systempower"];
+        AC.SetSystemPowerMode(systempower);
+        AC.Status.SystemPowerMode = systempower ? 0x01 : 0x00;  // Optimistic HA
+      }
+      if (doc["SetMode"].is<const char*>()) {
+        DEBUG_PRINTLN("SetMode");
+        AC.SetMode(doc["SetMode"]);
+        AC.Status.Buffer04 = AC.MODE[AC.lookupByteMapIndex(AC.MODE_MAP, 5, doc["SetMode"])];  // Optimistic HA
+      }
+      if (doc["SetFanSpeed"].is<const char*>()) {
+        DEBUG_PRINTLN("SetFan");
+        AC.SetFanSpeed(doc["SetFanSpeed"]);
+        AC.Status.fan = AC.FAN[AC.lookupByteMapIndex(AC.FAN_MAP, 6, doc["SetFanSpeed"])];  // Optimistic HA
+      }
+      if (doc["SetVane"].is<const char*>()) {
+        DEBUG_PRINTLN("SetVane");
+        AC.SetVane(doc["SetVane"]);
+        AC.Status.vane = AC.VANE[AC.lookupByteMapIndex(AC.VANE_MAP, 7, doc["SetVane"])];  // Optimistic HA
+      }
+      if (doc["SetWideVane"].is<const char*>()) {
+        DEBUG_PRINTLN("SetWideVane");
+        AC.SetWideVane(doc["SetWideVane"]);
+        AC.Status.wideVane = AC.WIDEVANE[AC.lookupByteMapIndex(AC.WIDEVANE_MAP, 7, doc["SetWideVane"])];  // Optimistic HA
+      }
+      if (doc["SetTempSetpoint"].is<float>()) {
+        DEBUG_PRINTLN("SetTempSetpoint");
+        AC.SetTempSetpoint(doc["SetTempSetpoint"], AC.Status.tempMode);
+
+        // Optimistic HA
+        if (AC.Status.tempMode) {
+          AC.Status.RoomTemp = (AC.lookupByteMapIndex(AC.TEMP_MAP, 16, doc["SetTempSetpoint"]), AC.Status.tempMode);
+        } else {
+          AC.Status.RoomTempFloat = ((doc["SetTempSetpoint"].as<float>() * 2) + 128);
+        }
+      }
+
+      PublishAllACReports();
+    }
+  }
 }
 
 
@@ -1408,7 +1726,7 @@ void SystemReport(void) {
   } else {
     Outside_Air_Temp = HeatPump.Status.OutsideTemperature;
   }
-  
+
   doc[F("HeaterFlow")] = HeatPump.Status.HeaterOutputFlowTemperature;
   doc[F("HeaterReturn")] = HeatPump.Status.HeaterReturnFlowTemperature;
   doc[F("FlowReturnDeltaT")] = HeatPump.Status.HeaterDeltaT;
@@ -1611,6 +1929,12 @@ void AdvancedTwoReport(void) {
 
   int ErrorCode = ((String(HeatPump.Status.ErrCode1, HEX)).toInt() * 100) + (String(HeatPump.Status.ErrCode2, HEX)).toInt();
 
+  if (ErrorCode == 8000 || ErrorCode == 0) {
+    doc[F("ErrCode")] = String("Normal");
+  } else {
+    doc[F("ErrCode")] = ErrorCode;
+  }
+
   doc[F("SvrControlMode")] = HeatPump.Status.SvrControlMode;
   doc[F("WaterPump2")] = OFF_ON_String[HeatPump.Status.WaterPump2];
   doc[F("WaterPump4")] = OFF_ON_String[HeatPump.Status.WaterPump4];
@@ -1623,11 +1947,6 @@ void AdvancedTwoReport(void) {
   doc[F("ThreeWayValve2")] = HeatPump.Status.ThreeWayValve2;
   doc[F("RefrigeFltCode")] = RefrigeFltCodeString[HeatPump.Status.RefrigeFltCode];
 
-  if (ErrorCode == 8000 || ErrorCode == 0) {
-    doc[F("ErrCode")] = String("Normal");
-  } else {
-    doc[F("ErrCode")] = ErrorCode;
-  }
 
   String FltCodeString = String(FltCodeLetterOne[HeatPump.Status.FltCode1]) + String(FltCodeLetterTwo[HeatPump.Status.FltCode2]);
   if (FltCodeString == "A0") {
@@ -1659,6 +1978,7 @@ void StatusReport(void) {
   char Buffer[2048];
   char TmBuffer[32];
   bool changemade = false;
+  String DeviceType = "None";
 
   doc[F("SSID")] = WiFi.SSID();
   doc[F("RSSI")] = WiFi.RSSI();
@@ -1689,6 +2009,14 @@ void StatusReport(void) {
   doc[F("MELCloud_Write_Blocking")] = unitSettings.BlockWriteFromMELCloud;
   strftime(TmBuffer, sizeof(TmBuffer), "%FT%T", &HeatPump.Status.DateTimeStamp);
   doc[F("FTCTime")] = TmBuffer;
+
+  // Device Type Connected
+  if (HeatPump.PrevConnected) {
+    DeviceType = "A2W";
+  } else if (AC.PrevConnected) {
+    DeviceType = "A2A";
+  }
+  doc[F("DeviceType")] = DeviceType;
 
 
   // Verify Outdoor Unit Size set by selector against outdoor unit Service Code Read and adjust if required
@@ -1742,8 +2070,8 @@ void StatusReport(void) {
   serializeJson(doc, Buffer);
   MQTTClient1.publish(MQTT_STATUS_WIFISTATUS.c_str(), Buffer, false);
   MQTTClient2.publish(MQTT_2_STATUS_WIFISTATUS.c_str(), Buffer, false);
-  MQTTClient1.publish(MQTT_LWT.c_str(), "online");
-  MQTTClient2.publish(MQTT_2_LWT.c_str(), "online");
+  MQTTClient1.publish(MQTT_LWT.c_str(), "online", true);
+  MQTTClient2.publish(MQTT_2_LWT.c_str(), "online", true);
 }
 
 void UpdateReport(void) {
@@ -1752,7 +2080,11 @@ void UpdateReport(void) {
 
   doc[F("installed_version")] = FirmwareVersion;
   doc[F("latest_version")] = LatestFirmwareVersion;
-
+  if (update_in_progress) {
+    doc[F("in_progress")] = true;
+  } else {
+    doc[F("in_progress")] = false;
+  }
   serializeJson(doc, Buffer);
   MQTTClient1.publish(MQTT_STATUS_WIFISTATUS_UPDATE.c_str(), Buffer, false);
   MQTTClient2.publish(MQTT_2_STATUS_WIFISTATUS_UPDATE.c_str(), Buffer, false);
@@ -1856,6 +2188,90 @@ void ActiveControlReport(void) {
   MQTTClient2.publish(MQTT_2_STATUS_ACTV_CTRL.c_str(), Buffer, false);
 }
 
+
+void ACReport(void) {
+  JsonDocument doc;
+  char Buffer[2048];
+
+
+
+  int ErrorCode = ((String(AC.Status.ErrCode1, HEX)).toInt() * 100) + (String(AC.Status.ErrCode2, HEX)).toInt();
+
+  if (ErrorCode == 8000 || ErrorCode == 0) {
+    doc[F("ErrCode")] = String("Normal");
+  } else {
+    doc[F("ErrCode")] = ErrorCode;
+  }
+
+
+  String FltCodeString = String(FltCodeLetterOne[HeatPump.Status.FltCode1]) + String(FltCodeLetterTwo[HeatPump.Status.FltCode2]);
+  if (FltCodeString == "A0") {
+    doc[F("FltCode")] = String("Normal");
+  } else {
+    doc[F("FltCode")] = String(FltCodeString);
+  }
+
+  doc[F("InPwr")] = AC.Status.InputPower;
+  doc[F("LPwr")] = AC.Status.LifePower;
+
+  //doc[F("InPwr1")] = AC.Status.InputPower1;
+  //doc[F("InPwr2")] = AC.Status.InputPower2;
+  doc[F("LPwr1")] = AC.Status.LifePower1;
+  doc[F("LPwr2")] = AC.Status.LifePower2;
+
+  doc[F("Status")] = AC.Status.Status;
+  doc[F("FAct")] = AC.Status.FanActual;
+  doc[F("Auto")] = AC.Status.AutoMode;
+
+
+  if (AC.Status.RmtempMode) {
+    doc[F("RoomTemp")] = AC.lookupByteMapValue(AC.ROOM_TEMP_MAP, AC.ROOM_TEMP, 32, AC.Status.RoomTemp);
+  } else {
+    doc[F("RoomTemp")] = AC.Status.RoomTempFloat;
+  }
+
+  if (!AC.Status.tempMode) {
+    doc[F("SetpointTemp")] = AC.lookupByteMapValue(AC.TEMP_MAP, AC.TEMP, 16, AC.Status.Temperature);
+  } else {
+    doc[F("SetpointTemp")] = AC.Status.Temperature;
+  }
+
+  doc[F("RPhbt")] = AC.Status.remoteProhibit;
+  doc[F("OAT")] = AC.Status.OAT;
+  doc[F("Rtme")] = AC.Status.Runtime;
+
+  doc[F("fltr")] = (AC.Status.Status == 0x01);
+  doc[F("dfrst")] = (AC.Status.Status == 0x02);
+  doc[F("prht")] = (AC.Status.Status == 0x04);
+  doc[F("sby")] = (AC.Status.Status == 0x08);
+
+
+  doc[F("Fan")] = AC.lookupByteMapValue(AC.FAN_HA_MAP, AC.FAN, 6, AC.Status.fan);
+  doc[F("Vane")] = AC.lookupByteMapValue(AC.VANE_MAP, AC.VANE, 7, AC.Status.vane);
+  doc[F("wideVane")] = AC.lookupByteMapValue(AC.WIDEVANE_MAP, AC.WIDEVANE, 7, AC.Status.wideVane & 0x0F);
+  doc[F("iSee")] = AC.Status.isee;
+  doc[F("mode")] = AC.lookupByteMapValue(AC.MODE_MAP, AC.MODE, 5, AC.Status.isee ? (AC.Status.Buffer04 - 0x08) : AC.Status.Buffer04);
+  if (!AC.Status.Operating) {
+    doc[F("action")] = "idle";
+  } else {
+    doc[F("action")] = AC.lookupByteMapValue(AC.MODE_HA_MAP, AC.MODE, 5, AC.Status.isee ? (AC.Status.Buffer04 - 0x08) : AC.Status.Buffer04);
+  }
+  doc[F("compressorFreq")] = AC.Status.CompressorFrequency;
+
+  doc[F("power")] = AC.lookupByteMapValue(AC.POWER_MAP, AC.POWER, 2, AC.Status.SystemPowerMode);
+  doc[F("timermode")] = AC.lookupByteMapValue(AC.TIMER_MODE_MAP, AC.TIMER_MODE, 4, AC.Status.Timermode);
+  doc[F("onMinsSet")] = AC.Status.onMinutesSet;
+  doc[F("onMinsRemain")] = AC.Status.onMinutesRemaining;
+  doc[F("offMinsSet")] = AC.Status.offMinutesSet;
+  doc[F("offMinsRemain")] = AC.Status.offMinutesRemaining;
+  doc[F("HasHozVane")] = AC.Status.SupportsHozVane;
+  doc[F("HB_ID")] = Heart_Value;
+
+  serializeJson(doc, Buffer);
+  MQTTClient1.publish(MQTT_STATUS_AC.c_str(), Buffer, false);
+  MQTTClient2.publish(MQTT_2_STATUS_AC.c_str(), Buffer, false);
+}
+
 void PublishAllReports(void) {
   // Increment the Heatbeat ID Counter
   ++Heart_Value;
@@ -1876,6 +2292,20 @@ void PublishAllReports(void) {
   ActiveControlReport();
   UpdateReport();
 
+  FlashGreenLED();
+  DEBUG_PRINTLN(F("MQTT Published!"));
+}
+
+
+void PublishAllACReports(void) {
+  // Increment the Heatbeat ID Counter
+  ++Heart_Value;
+  if (Heart_Value > Heartbeat_Range) {
+    Heart_Value = 1;
+  }
+
+  ACReport();
+  StatusReport();
   FlashGreenLED();
   DEBUG_PRINTLN(F("MQTT Published!"));
 }
@@ -2126,7 +2556,7 @@ void CalculateCompCurve(void) {
       write_thermostats();
       HeatPump.Status.Zone2FlowTemperatureSetpoint = Z2_CurveFSP;
     }
-    CompCurveReport();
+    if (HeatPump.PrevConnected) { CompCurveReport(); }  // Publish only for A2W
   }
 }
 
@@ -2228,6 +2658,7 @@ bool getOATRunningAverage(float newOAT) {
 }
 
 
+
 void updateEnergyMeter(double currentPowerKW, int mode) {
   unsigned long* lastTimestamp;
 
@@ -2251,36 +2682,65 @@ void updateEnergyMeter(double currentPowerKW, int mode) {
   *lastTimestamp = currentTime;
 }
 
+#ifdef ESP32  // Define the M5Stack AtomS3
 
-/*void CheckForOTAUpdates(void) {
+void CheckForOTAUpdates(void) {
   printCurrentTime();
   DEBUG_PRINT(F("Checking for Firmware Updates..."));
 
-  #ifdef ESP32
-  http.begin(F("https://..."));
-  #endif
-  #ifdef ESP8266
-  http.begin(NetworkClient1, F("https://..."));
-  #endif
-  http.addHeader("User-Agent", mqttSettings.deviceId);
-  int httpCode = http.GET();
+  if (http.begin(F("https://witty.house/ecodanbridge/update.json"), ISGR_root_ca)) {  //HTTPS
+    int httpCode = http.GET();
 
-  if (httpCode == HTTP_CODE_OK) {
-    DEBUG_PRINTLN(F(" OK"));  // HTTP header has been sent and Server response header has been handled
-    String payload = http.getString();
+    if (httpCode == HTTP_CODE_OK) {
+      DEBUG_PRINTLN(F(" OK"));  // HTTP header has been sent and Server response header has been handled
+      String payload = http.getString();
 
-    JsonDocument doc;
-    deserializeJson(doc, payload);
-    String tv = doc["latest_version"];
-    LatestFirmwareVersion = tv.substring(1);
-  } else {  // httpCode will be negative on error
-    DEBUG_PRINT(F(" Failed - Error: "));
-    DEBUG_PRINT(httpCode);
-    DEBUG_PRINTLN(http.errorToString(httpCode));
+      JsonDocument doc;
+      deserializeJson(doc, payload);
+      String tv = doc["version"];
+      LatestFirmwareVersion = tv;
+    } else {  // httpCode will be negative on error
+      DEBUG_PRINT(F(" Failed - Error: "));
+      DEBUG_PRINT(httpCode);
+      DEBUG_PRINTLN(http.errorToString(httpCode));
+    }
+
+    http.end();
+  } else {
+    // http.begin() failing here often points to DNS or CA validation issues.
+    DEBUG_PRINTLN("FAILURE (http.begin() returned null or false).");
+    DEBUG_PRINTLN("Possible causes: Incorrect CA, DNS error, or WiFi issue.");
   }
+}
 
-  http.end();
-}*/
+void InstallOTAUpdates(void) {
+  DEBUG_PRINT(F("Starting Update - Downloading from "));                                                                         // Publish the update in progress status
+  update_in_progress = true;                                                                                                     // Set the flag for discovery again
+  UpdateReport();                                                                                                                // Publish that an update has started
+  String TargetURL = "https://witty.house/ecodanbridge/ECODAN_Bridge_" + OTADeviceType + "_v" + LatestFirmwareVersion + ".bin";  // Form the Target URL
+  DEBUG_PRINTLN(TargetURL);                                                                                                      // Print Target Download URL
+  HttpsOTA.begin(TargetURL.c_str(), ISGR_root_ca);                                                                               // Begin the update
+}
+
+
+void HttpEvent(HttpEvent_t* event) {
+  switch (event->event_id) {
+    case HTTP_EVENT_ERROR: DEBUG_PRINTLN("Http Event Error"); break;
+    case HTTP_EVENT_ON_CONNECTED: DEBUG_PRINTLN("Http Event On Connected"); break;
+    case HTTP_EVENT_HEADER_SENT: DEBUG_PRINTLN("Http Event Header Sent"); break;
+    case HTTP_EVENT_ON_HEADER:
+      DEBUG_PRINT("Http Event On Header, key=");
+      DEBUG_PRINT(event->header_key);
+      DEBUG_PRINT(" value=");
+      DEBUG_PRINTLN(event->header_value);
+      break;
+    case HTTP_EVENT_ON_DATA: break;
+    case HTTP_EVENT_ON_FINISH: DEBUG_PRINTLN("Http Event On Finish"); break;
+    case HTTP_EVENT_DISCONNECTED: DEBUG_PRINTLN("Http Event Disconnected"); break;
+    case HTTP_EVENT_REDIRECT: DEBUG_PRINTLN("Http Event Redirect"); break;
+  }
+}
+#endif
 
 
 #ifdef ARDUINO_WT32_ETH01
@@ -2316,6 +2776,4 @@ void onEvent(arduino_event_id_t event) {
     default: break;
   }
 }
-#endif
-
 #endif
