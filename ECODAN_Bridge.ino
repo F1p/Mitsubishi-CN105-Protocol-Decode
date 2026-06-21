@@ -19,6 +19,7 @@
 
 #define LANG_EN
 
+
 #if defined(ESP8266) || defined(ESP32)
 
 // ==========================================
@@ -83,6 +84,26 @@
 
 String FirmwareVersion = "7.0.23";
 String LatestFirmwareVersion;
+
+// Language for OTA Check
+#if defined(LANG_FR)
+String Language = "_FR";
+#elif defined(LANG_EN)
+String Language = "_EN";
+#elif defined(LANG_DE)
+String Language = "_DE";
+#elif defined(LANG_NL)
+String Language = "_NL";
+#elif defined(LANG_ES)
+String Language = "_ES";
+#elif defined(LANG_IT)
+String Language = "_IT";
+#elif defined(LANG_FI)
+String Language = "_FI";
+#elif defined(LANG_SE)
+String Language = "_SE";
+#endif
+
 bool update_in_progress = false;
 
 #ifdef ARDUINO_M5STACK_ATOMS3
@@ -1988,7 +2009,7 @@ void StatusReport(void) {
 #else
   doc[F("IP")] = WiFi.localIP().toString();
 #endif
-  doc[F("Firmware")] = FirmwareVersion;
+  doc[F("Firmware")] = FirmwareVersion + Language;
 #ifdef ESP32  // Define the M5Stack LED
   doc[F("CPUTemp")] = round2(temperatureRead());
 #endif
@@ -2714,12 +2735,12 @@ void CheckForOTAUpdates(void) {
 }
 
 void InstallOTAUpdates(void) {
-  DEBUG_PRINT(F("Starting Update - Downloading from "));                                                                         // Publish the update in progress status
-  update_in_progress = true;                                                                                                     // Set the flag for discovery again
-  UpdateReport();                                                                                                                // Publish that an update has started
-  String TargetURL = "https://witty.house/ecodanbridge/ECODAN_Bridge_" + OTADeviceType + "_v" + LatestFirmwareVersion + ".bin";  // Form the Target URL
-  DEBUG_PRINTLN(TargetURL);                                                                                                      // Print Target Download URL
-  HttpsOTA.begin(TargetURL.c_str(), ISGR_root_ca);                                                                               // Begin the update
+  DEBUG_PRINT(F("Starting Update - Downloading from "));                                                                                   // Publish the update in progress status
+  update_in_progress = true;                                                                                                               // Set the flag for discovery again
+  UpdateReport();                                                                                                                          // Publish that an update has started
+  String TargetURL = "https://witty.house/ecodanbridge/ECODAN_Bridge_" + OTADeviceType + "_v" + LatestFirmwareVersion + Language + ".bin";  // Form the Target URL
+  DEBUG_PRINTLN(TargetURL);                                                                                                                // Print Target Download URL
+  HttpsOTA.begin(TargetURL.c_str(), ISGR_root_ca);                                                                                         // Begin the update
 }
 
 

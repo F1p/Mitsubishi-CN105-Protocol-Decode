@@ -630,6 +630,171 @@ const char MQTT_AC_SENSOR_NAME[][45] PROGMEM = {
   "Laiteohjelmiston päivitys"
 };
 
+// Swedish
+#elif defined(LANG_SE)
+const char MQTT_SENSOR_NAME[][65] PROGMEM = {
+  "Bryggstatus",                              // Bridge Status
+  "Firmware-version",                        // Firmware Version
+  "Bryggans WiFi-signal",                    // Bridge WiFi Signal
+  "FTC-version",                             // FTC Version
+  "Systemets driftläge",                     // System Operation Mode
+  "Returledningstemperatur värme",           // Heater Return Temperature //5
+  "Framledningstemperatur värme",            // Heater Flow Temperature
+  "Utomhustemperatur",                       // Outside Temperature
+  "Avfrostning",                             // Defrost
+  "Värmepumpens avgivna effekt",             // Heat Pump Output Power
+  "Kompressorfrekvens",                      // Compressor Frequency // 10
+  "Flödeshastighet",                         // Flow Rate
+  "Drifttimmar",                             // Run Hours
+  "Max framledningstemperatur",              // Max Flow Temperature
+  "Min framledningstemperatur",              // Min Flow Temperature
+  "Pannans framledningstemperatur",          // Boiler Flow Temperature //15
+  "Pannans returledningstemperatur",         // Boiler Return Temperature
+  "Arbetstanktemperatur",                    // Mixing Tank Temperature
+  "Köldmedietemperatur",                     // Refrigerant Temperature
+  "Elpatron (VV)",                           // Immersion Heater
+  "Tillsatsvärmare 1",                       // Booster Heater 1 //20
+  "Vattenpump 1",                            // Water Pump 1
+  "Vattenpump 2",                            // Water Pump 2
+  "Trevägsventil 1",                         // Three Way Valve 1
+  "Trevägsventil 2",                         // Three Way Valve 2
+  "VV-temperatur",                           // DHW Temperature //25
+  "VV-temperatur övre del",                  // DHW Temperature Upper
+  "Spärra VV",                               // Prohibit DHW
+  "VV-laddning pågår",                       // DHW Running
+  "VV-styrläge",                             // DHW Control Mode
+  "Börvärde legionellafunktion",             // Legionella Setpoint //30
+  "VV max temperaturfall",                   // DHW Max Temperature Drop
+  "VV-uppvärmningsfas",                      // DHW Heating Phase
+  "Zon 1 framledningstemperatur",            // Zone 1 Flow Temperature
+  "Zon 1 returledningstemperatur",           // Zone 1 Return Temperature
+  "Zon 2 framledningstemperatur",            // Zone 2 Flow Temperature //35
+  "Zon 2 returledningstemperatur",           // Zone 2 Return Temperature
+  "Zon 1 i drift",                           // Zone 1 Working
+  "Zon 2 i drift",                           // Zone 2 Working
+  "Förbrukad värme igår",                    // Consumed Heating Yesterday
+  "Avgiven värme igår",                      // Delivered Heating Yesterday //40
+  "Förbrukad kyla igår",                     // Consumed Cooling Yesterday
+  "Avgiven kyla igår",                       // Delivered Cooling Yesterday
+  "Förbrukad VV igår",                       // Consumed DHW Yesterday
+  "Avgiven VV igår",                         // Delivered DHW Yesterday
+  "Total energiförbrukning igår",            // Total Consumed Energy Yesterday //45
+  "Total avgiven energi igår",               // Total Delivered Energy Yesterday
+  "COP värme igår",                          // Heating CoP Yesterday
+  "COP kyla igår",                           // Cooling CoP Yesterday
+  "COP VV igår",                             // DHW CoP Yesterday
+  "Total-COP igår",                          // Total CoP Yesterday //50
+  "Felkod köldmediekrets",                   // Refrigerant Fault Code
+  "Felkod (Error)",                          // Error Code
+  "Felkod (Fault)",                          // Fault Code
+  "Differens fram-/returledning (DeltaT)",   // Flow Return DeltaT
+  "Beräknad avgiven värmeeffekt",            // Computed Heat Output Power //55
+  "Beräknad avgiven kyleffekt",              // Computed Cool Output Power
+  "Värme pågår",                             // Heating Running
+  "Kyla pågår",                              // Cooling Running
+  "Zon 1 värmespärr",                        // Zone 1 Heating Prohibit
+  "Zon 1 kylspärr",                          // Zone 1 Cooling Prohibit //60
+  "Zon 2 värmespärr",                        // Zone 2 Heating Prohibit
+  "Zon 2 kylspärr",                          // Zone 2 Cooling Prohibit
+  "Zon 1 börvärde framledning",              // Zone 1 Flow Setpoint
+  "Zon 2 börvärde framledning",              // Zone 2 Flow Setpoint
+  "Zon 1 begäran extern termostat",          // Zone 1 Ext Thermostat Demand //65
+  "Zon 2 begäran extern termostat",          // Zone 2 Ext Thermostat Demand
+  "Begäran extern utetermostat",             // Outside Ext Thermostat Demand
+  "Vattenpump 4",                            // Water Pump 4
+  "Vattenpump 3",                            // Water Pump 3
+  "Vattenpump 13",                           // Water Pump 13 // 70
+  "Värmepumpens tillförda effekt",           // Heat Pump Input Power
+  "Beräknad tillförd effekt",                // Computed Input Power
+  "FTC-programvaruversion",                  // FTC Software Version
+  "VV-boost",                                // DHW Boost
+  "Blandningsventilens position",            // Mixing Valve Step //75
+  "Bryggans CPU-temperatur",                 // Bridge CPU Temperature
+  "Tillsatsvärmare 2",                       // Booster Heater 2
+  "Momentant COP",                           // Instant CoP
+  "Vätskeformig köldmedietemp TH3",          // Refrigerant Liquid Temperature TH3
+  "Kompressorstarter",                       // Compressor Start Quantity
+  "Högtrycksgastemperatur TH4",              // Discharge Temperature TH4
+  "Underkylningstemperatur",                 // Subcool Temperature
+  "Kylflänstemperatur TH8",                  // Heatsink Temperature TH8
+  "Plattvärmeväxlare vätsketemp TH6",        // Plate Hex Liquid Temperature TH6
+  "Fläkthastighet 1",                        // Fan 1 Speed
+  "Fläkthastighet 2",                        // Fan 2 Speed
+  "Ventil LEV A",                            // Valve LEV A
+  "Ventil LEV B",                            // Valve LEV B
+  "Inloppsvattentemperatur TH32",            // Water Inlet Temperature TH32
+  "Beräknad avgiven VV-effekt",              // Computed DHW Output Power
+  "Beräknad tillförd VV-effekt",             // Computed DHW Input Power
+  "Beräknad avgiven värmeeffekt",            // Computed Heating Output Power
+  "Beräknad tillförd värmeeffekt",           // Computed Heating Input Power
+  "Beräknad tillförd kyleffekt",             // Computed Cooling Input Power
+  "Överhettningstemperatur",                 // Superheat Temperature
+  "Kortcyklingsskydd status",                // Short Cycle Protection State
+  "Utomhusenhet programvaruversion",         // Outdoor Unit Software Version
+  "MELCloud-adapterstatus",                  // MELCloud Adapter Status
+  "DIP-brytarinställningar (1-1 till 7-8)",  // Dip Switch Configuration (Switch 1-1 to 7-8)
+  "Vattenpump 1 PWM-hastighet",              // Water Pump 1 PWM Speed
+  "Brine-inloppstemperatur",                 // Brine Inlet Temperature
+  "Brine-utloppstemperatur",                 // Brine Outlet Temperature
+  "Total-COP idag",                          // Total CoP Today
+
+  "VV-termostat",                            // DHW Thermostat
+  "Zon 1 termostat",                         // Zone 1 Thermostat //80
+  "Zon 2 termostat",                         // Zone 2 Thermostat
+  "Zon 1 flödestermostat",                   // Zone 1 Flow Thermostat
+  "Zon 2 flödestermostat",                   // Zone 2 Flow Thermostat
+
+  "Snabb VV-boost",                          // Fast DHW Boost
+  "Systemström",                             // System Power //85
+  "Semesterläge",                            // Holiday Mode
+  "Serverstyrläge",                          // Server Control Mode
+  "Spärra VV",                               // Prohibit DHW
+  "Spärra värme Zon 1",                      // Prohibit Zone 1 Heating
+  "Spärra kyla Zon 1",                       // Prohibit Zone 1 Cooling //90
+  "Spärra värme Zon 2",                      // Prohibit Zone 2 Heating
+  "Spärra kyla Zon 2",                       // Prohibit Zone 2 Cooling
+  "VV-boost",                                // DHW Boost
+  "Kortcyklingsskydd",                       // Short Cycle Protection
+  "MELCloud Skrivskyddad",                   // MELCloud Read Only
+
+  "VV-läge",                                 // DHW Mode
+  "Driftläge Värme/Kyla Zon 1",              // Heating/Cooling Operation Mode Zone 1 //95
+  "Driftläge Värme/Kyla Zon 2",              // Heating/Cooling Operation Mode Zone 2
+  "Utomhusenhet storlek (kW)",               // Outdoor Unit Size (kW)
+  "Glykolhalt",                              // Glycol Strength
+  "Firmware-uppdatering"                     // Firmware Update
+};
+
+const char MQTT_AC_SENSOR_NAME[][45] PROGMEM = {
+  "Bryggstatus",
+  "Firmware-version",
+  "Bryggans Wi-Fi-signal",
+  "Kompressorfrekvens",                      // 10
+  "iSee",
+  "Timerläge",
+  "Inställda minuter (På)",
+  "Återstående minuter (På)",
+  "Inställda minuter (Av)",
+  "Återstående minuter (Av)",
+  "Rumstemperatur",
+  "Felkod (Error)",
+  "Felkod (Fault)",
+  "Tillförd effekt",
+  "Total förbrukning",
+  "Faktisk fläktthastighet",
+  "Autoläge",
+  "Spärra fjärrkontroll",
+  "Utomhustemperatur",
+  "Drifttid",
+  "Filterbyte",
+  "Avfrostning",
+  "Förvärmning",
+  "Standbyläge",
+
+  "Rumstermostat",
+  "Systemeffekt",
+  "Firmware-uppdatering"
+};
 
 // Italian
 #elif defined(LANG_IT)
