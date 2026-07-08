@@ -448,7 +448,7 @@ void ACDECODER::EncodeWideVane(uint8_t setting) {
 
 
   // [MEL > Bridge] fc, 41, 01, 30, 10, 01, 00, 01, 01, 03, 00, 00, 00, 00, 00, 00, 00, 00, 02, 00, 00, 76, CS OK
-  //[MEL > Bridge] fc, 41, 01, 30, 10, 01, 00, 01, 01, 03, 00, 00, 00, 00, 00, 00, 00, 00, 04, 00, 00, 74, CS OK
+  // [MEL > Bridge] fc, 41, 01, 30, 10, 01, 00, 01, 01, 03, 00, 00, 00, 00, 00, 00, 00, 00, 04, 00, 00, 74, CS OK
   //                                                                                        []
 
 
@@ -460,26 +460,22 @@ void ACDECODER::EncodeWideVane(uint8_t setting) {
 
 
 void ACDECODER::EncodeRemoteTemperature(float RemoteTemperature) {
-  /*byte packet[PACKET_LEN] = {};
 
-  prepareSetPacket(packet, PACKET_LEN);
+  TxMessage.Payload[0] = 0x07;  // CMD Type
 
-  packet[5] = 0x07;
-  Status->tempMode
-  if (setting > 0) {
-    packet[6] = 0x01;
-    setting = setting * 2;
+  if (RemoteTemperature > 0) {    
+    TxMessage.Payload[1] = 0x01;  // Enabled
+    float setting = RemoteTemperature * 2;
     setting = round(setting);
     setting = setting / 2;
     float temp1 = 3 + ((setting - 10) * 2);
-    packet[7] = (int)temp1;
+    TxMessage.Payload[2] = (int)temp1;
     float temp2 = (setting * 2) + 128;
-    packet[8] = (int)temp2;
+    TxMessage.Payload[3] = (int)temp2;
   } else {
-    packet[6] = 0x00;
-    packet[8] = 0x80;  //MHK1 send 80, even though it could be 00, since ControlByte is 00
+    TxMessage.Payload[1] = 0x00;  // Disabled
+    TxMessage.Payload[3] = 0x80;
   }
-  */
 }
 
 

@@ -30,6 +30,7 @@ public:
   void SetFanSpeed(const char* Speed);
   void SetMode(const char* Mode);
   void SetTempSetpoint(float Setpoint, bool floatMode);
+  void SetRemoteTemp(float Setpoint);
   void SetSystemPowerMode(bool OnOff);
   void WriteMELCloudCMD(uint8_t cmd);
 

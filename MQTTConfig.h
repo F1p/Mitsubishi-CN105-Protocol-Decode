@@ -529,6 +529,13 @@ void readSettingsFromConfig() {
       String input = wifiManager.server->arg("z2setpoint");
       unitSettings.z2_room_setpoint = input.toFloat();
       wifiManager.server->send(200, "text/plain", "success");
+    } else if (wifiManager.server->hasArg("actemp")) {
+      String input = wifiManager.server->arg("actemp");
+      if (unitSettings.ac_remote_room_temp != input.toFloat()) {
+        unitSettings.ac_remote_val_change = true;
+        unitSettings.ac_remote_room_temp = input.toFloat();
+      }
+      wifiManager.server->send(200, "text/plain", "success");
     } else {
       wifiManager.server->send(400, "text/plain", "failed");
     }
@@ -855,7 +862,7 @@ void readSettingsFromConfig() {
     JsonDocument Config;
 
     // Publish all the discovery topics
-    for (int i = 0; i < 27; i++) {
+    for (int i = 0; i < 29; i++) {
 
       if (i == 0) {  // If the first topic
         Config["dev"]["ids"] = MQTTIDs;
@@ -915,7 +922,7 @@ void readSettingsFromConfig() {
       }
 
 
-      // Climate
+      // Main Climate
       if (i == 24) {
         Config["default_entity_id"] = String(MQTT_OBJECT_ID[1]);
         Config["curr_temp_t"] = BASETOPIC + String("/Status/AC");  // Shortened from curr_temp_topic
@@ -987,19 +994,50 @@ void readSettingsFromConfig() {
       }
 
       // Switches
-      if (i == 25) {
-        // Power
-        Config["stat_t"] = BASETOPIC + String("/Status/AC");
-        Config["val_tpl"] = String("{{ value_json.power }}");
-        Config["cmd_t"] = BASETOPIC + String("/Command/AC");
-        Config["cmd_tpl"] = "{\"systempower\":{{ value|lower }}}";
-        Config["state_on"] = "ON";
-        Config["state_off"] = "OFF";
-        Config["payload_on"] = true;
-        Config["payload_off"] = false;
-        Config["icon"] = String(MQTT_MDI_ICONS_AC[23]);
+      if (i == 25 || i == 27) {
+
+        if (i == 25) {  // Power
+          Config["stat_t"] = BASETOPIC + String("/Status/AC");
+          Config["val_tpl"] = String("{{ value_json.power }}");
+          Config["cmd_t"] = BASETOPIC + String("/Command/AC");
+          Config["cmd_tpl"] = "{\"systempower\":{{ value|lower }}}";
+          Config["state_on"] = "ON";
+          Config["state_off"] = "OFF";
+          Config["payload_on"] = true;
+          Config["payload_off"] = false;
+          Config["icon"] = String(MQTT_MDI_ICONS_AC[23]);
+        }
+        // Remote Temperature
+        if (i == 27) {
+          Config["stat_t"] = BASETOPIC + String("/Status/AC");
+          Config["val_tpl"] = String("{{ value_json.RemoteTempOn }}");
+          Config["cmd_t"] = BASETOPIC + String("/Command/AC");
+          Config["cmd_tpl"] = "{\"RemoteTempOn\":{{ value|lower }}}";
+          Config["state_on"] = true;
+          Config["state_off"] = false;
+          Config["payload_on"] = true;
+          Config["payload_off"] = false;
+          Config["icon"] = String(MQTT_MDI_ICONS_AC[10]);
+        }
 
         MQTT_DISCOVERY_TOPIC = String(MQTT_DISCOVERY_TOPICS[2]);
+      }
+
+      // Number (Remote Temp Input)
+      if (i == 28) {
+        Config["min"] = 0;
+        Config["max"] = 50;
+        Config["mode"] = "box";
+        Config["platform"] = "number";
+        Config["step"] = 0.1;
+        Config["unit_of_measurement"] = "°C";
+        Config["cmd_t"] = BASETOPIC + String("/Command/AC");  // Shortened from temperature_command_topic
+        Config["cmd_tpl"] = "{\"SetRemoteTemp\": {{ value }}}";
+        Config["stat_t"] = BASETOPIC + String("/Status/AC");
+        Config["val_tpl"] = String("{{ value_json.RemoteTemp }}");
+        
+        Config["icon"] = String(MQTT_MDI_ICONS[i]);
+        MQTT_DISCOVERY_TOPIC = String(MQTT_DISCOVERY_TOPICS[7]);
       }
 
 
@@ -1016,10 +1054,19 @@ void readSettingsFromConfig() {
       }
 #endif
 
+      // Number Input
+
 
       // Add Availability Topics
       if (i >= 24) {
-        Config["avty"]["t"] = BASETOPIC + String(MQTT_TOPIC[0]);
+        if (i == 28) {  // Custom linked with Remote Thermostat Interlock
+          Config["avty"]["t"] = BASETOPIC + String("/Status/AC");
+          Config["avty"]["val_tpl"] = String("{{ value_json.RemoteTempOn }}");
+          Config["avty"]["pl_avail"] = true;
+          Config["avty"]["pl_not_avail"] = false;
+        } else {
+          Config["avty"]["t"] = BASETOPIC + String(MQTT_TOPIC[0]);
+        }
       }
 
       char Buffer_Payload[4096];

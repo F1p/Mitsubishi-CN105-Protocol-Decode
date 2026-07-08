@@ -82,7 +82,7 @@
 
 #endif  // ESP8266 || ESP32
 
-String FirmwareVersion = "7.0.23";
+String FirmwareVersion = "7.0.25";
 String LatestFirmwareVersion;
 
 // Language for OTA Check
@@ -282,7 +282,7 @@ struct UnitSettings {
   char compcurve_identifier[10] = "compcurve";
   char act_ctrl_sc_identifier[9] = "shortcyc";
   char mel_block_identifier[10] = "melblock";
-  String CompCurve = "{\"base\":{\"zone1\":{\"curve\":[{\"flow\":60,\"outside\":-10},{\"flow\":35,\"outside\":0},{\"flow\":20,\"outside\":15},{\"flow\":10,\"outside\":20}]},\"zone2\":{\"curve\":[{\"flow\":60,\"outside\":-10},{\"flow\":35,\"outside\":0},{\"flow\":20,\"outside\":15}]}},\"zone1\":{\"active\":false,\"manual_offset\":0,\"temp_offset\": 0,\"wind_offset\":0},\"zone2\":{\"active\":false,\"manual_offset\":0,\"temp_offset\": 0,\"wind_offset\":0},\"use_local_outdoor\":true,\"max_flow_overshoot\": 3}";
+  String CompCurve = "{\"base\":{\"zone1\":{\"curve\":[{\"flow\":60,\"outside\":-10},{\"flow\":35,\"outside\":0},{\"flow\":20,\"outside\":15},{\"flow\":10,\"outside\":20}]},\"zone2\":{\"curve\":[{\"flow\":60,\"outside\":-10},{\"flow\":35,\"outside\":0},{\"flow\":20,\"outside\":15}]}},\"zone1\":{\"active\":false,\"manual_offset\":0,\"temp_offset\": 0,\"wind_offset\":0},\"zone2\":{\"active\":false,\"manual_offset\":0,\"temp_offset\": 0,\"wind_offset\":0},\"use_local_outdoor\":true,\"max_flow_overshoot\": 3,\"fixedlockoutduration\": 0}";
   float z1_manual_offset = 0;
   float z1_wind_offset = 0;
   float z1_temp_offset = 0;
@@ -296,6 +296,7 @@ struct UnitSettings {
   bool shortcycleprotectionenabled = false;
   bool BlockWriteFromMELCloud = false;
   float max_flow_overshoot = 3;
+  float fixedlockoutduration = 0;  // 0 = auto
   bool z1_room_influence_active = false;
   bool z2_room_influence_active = false;
   bool z1_use_local_sensor = false;
@@ -304,6 +305,9 @@ struct UnitSettings {
   float z1_room_temperature = 0;
   float z2_room_setpoint = 0;
   float z2_room_temperature = 0;
+  bool RemoteTempOn = false;
+  float ac_remote_room_temp = 0;
+  bool ac_remote_val_change = false;
 };
 
 #ifdef ESP32
@@ -507,6 +511,7 @@ void setup() {
   // Reset AC flags
   AC.Status.Write_To_Ecodan_OK = AC.Status.tempMode = AC.Status.RmtempMode =
     AC.Status.C9 = AC.Status.CD = AC.Status.CE = HeatPump.PrevConnected = AC.PrevConnected = false;
+  AC.Status.SupportsHozVane = true;
 
 #ifdef ESP32
   CheckForOTAUpdates();
@@ -832,11 +837,17 @@ void loop() {
   }
   FrequencyLastLoop = HeatPump.Status.CompressorFrequency;
 
+  // -- AC Webhook Writes -- //
+  if (unitSettings.ac_remote_val_change) {
+    unitSettings.ac_remote_val_change = false;
+    AC.SetRemoteTemp(unitSettings.ac_remote_room_temp);
+  }
 
   // -- Short Cycling Protection -- //
   // Definition of Short Cycle if there is 2 Compressor Periods in less than 20min (Stop > Run > Stop x2)
   if (!ShortCycleProtectionActive && (CompressorPeriodDurations[0] > 0 && CompressorPeriodDurations[1] > 0) && (CompressorPeriodDurations[0] + CompressorPeriodDurations[1] < 1200)) {                                                         // Compressor Period < 20min (6 drops/hr)                                                                                                                                                                  // If enabled, count eq or greater than detection threshold and not active already
     lockoutdurationMillis = map((CompressorPeriodDurations[0] + CompressorPeriodDurations[1]), 0, 1200, 600000, 1200000);                                                                                                                      // 0s Period = 10min lock, 1200s = 20min lockout
+    if (unitSettings.fixedlockoutduration > 0) { lockoutdurationMillis = unitSettings.fixedlockoutduration * 60000; }                                                                                                                          // Overwrite auto calculation if fixed duration is specified
     lockoutpreviousMillis = millis();                                                                                                                                                                                                          // Start the timer
     if (unitSettings.shortcycleprotectionenabled && (!HeatPump.Status.ProhibitHeatingZ1 || !HeatPump.Status.ProhibitCoolingZ1 || !HeatPump.Status.ProhibitHeatingZ2 || !HeatPump.Status.ProhibitCoolingZ2 || !HeatPump.Status.ProhibitDHW)) {  // Check if prohibits are already active
       ShortCycleProtectionActive = true;
@@ -1019,10 +1030,10 @@ void HeatPumpQueryStateEngine(void) {
     }
     if (AC.UpdateComplete()) {
       //DEBUG_PRINTLN(F("AC Update Complete"));
-      if (!AC.Status.C9) { AC.GetVersion(0xC9); }   // 0xC9
-      if (!AC.Status.CD) { AC.GetVersion(0xCD); }   // 0xCD
-      if (!AC.Status.CE) { AC.GetVersion(0xCE); }   // 0xCE - Unknown at the moment who/when this should be requested
-      FTCLoopSpeed = millis() - ftcpreviousMillis;  // Loop Speed End
+      if (!AC.Status.C9) { AC.GetVersion(0xC9); }                  // 0xC9
+      if (!AC.Status.CD && AC.Status.C9) { AC.GetVersion(0xCD); }  // 0xCD is requested after C9
+      if (!AC.Status.CE && AC.Status.C9) { AC.GetVersion(0xCE); }  // 0xCE - Unknown at the moment who/when this should be requested
+      FTCLoopSpeed = millis() - ftcpreviousMillis;                 // Loop Speed End
       PublishAllACReports();
     }
   } else if (HeatPump.PrevConnected) {
@@ -1450,6 +1461,12 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
         ModifyCompCurveState(1, true, 6, unitSettings.max_flow_overshoot);
       }
 
+      // Fixed Lockout Duration (Short Cycle Protection)
+      if (doc["fixedlockoutduration"].is<float>()) {
+        unitSettings.fixedlockoutduration = doc["fixedlockoutduration"];
+        ModifyCompCurveState(1, true, 7, unitSettings.fixedlockoutduration);
+      }
+
       // Adjustments Pre or Post WC Calculation (Float)
       if (doc["zone1"]["manual_offset"].is<float>()) {
         unitSettings.z1_manual_offset = doc["zone1"]["manual_offset"];
@@ -1553,6 +1570,20 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
           AC.Status.RoomTemp = (AC.lookupByteMapIndex(AC.TEMP_MAP, 16, doc["SetTempSetpoint"]), AC.Status.tempMode);
         } else {
           AC.Status.RoomTempFloat = ((doc["SetTempSetpoint"].as<float>() * 2) + 128);
+        }
+      }
+      if (doc["SetRemoteTemp"].is<float>()) {
+        DEBUG_PRINTLN("SetRemoteTemp");
+        AC.SetRemoteTemp(doc["SetRemoteTemp"]);
+        unitSettings.ac_remote_room_temp = doc["SetRemoteTemp"];  // Optimistic HA
+      }
+      if (doc["RemoteTempOn"].is<bool>()) {
+        DEBUG_PRINTLN("RemoteTempOn");
+        unitSettings.RemoteTempOn = doc["RemoteTempOn"];
+        if (!unitSettings.RemoteTempOn) {
+          AC.SetRemoteTemp(0);  // 0 = Off
+        } else {
+          AC.SetRemoteTemp(18); // 18 = Inputting starting figure of 18C
         }
       }
 
@@ -1699,18 +1730,20 @@ void SystemReport(void) {
       if (HeatPump.Status.Defrost != 0) {                                                    // If Defrosting Mode
         EstHeatingInputPower = EstInputPower;                                                // Input Power attributed to Heating & Cooling
         HeatingOutputPower = HeatOutputPower = OutputPower;                                  // Heating is Negative (Extracting heat to defrost)
+        CoolOutputPower = fabsf(OutputPower);                                                // Defrosting is also cooling
       }                                                                                      //
       else if (DHW_Mode) {                                                                   // Not defrosting, hot water mode
         EstDHWInputPower = EstInputPower;                                                    //
         DHWOutputPower = HeatOutputPower = OutputPower;                                      // DHW Output Power is Negative or 0 (could be due to immersion)
       } else {                                                                               // Heating/Cooling Mode
-        if (HeatPump.Status.SystemOperationMode == 2) {                                      // Heating Operating Mode
+        if (HeatPump.Status.HeatCool == 0) {                                                 // Heating Operating Mode (Should not be triggered)
           EstHeatingInputPower = EstInputPower;                                              // Input Power attribution to Heating
-        } else if (HeatPump.Status.SystemOperationMode == 3) {                               // Cooling Operation Mode
+          HeatingOutputPower = HeatOutputPower = OutputPower;                                //
+        } else if (HeatPump.Status.HeatCool == 1) {                                          // Cooling Operation Mode
           EstCoolingInputPower = EstInputPower;                                              // Input Power attribution to Cooling
+          HeatingOutputPower = HeatOutputPower = 0;                                          // Heating is 0
+          CoolOutputPower = fabsf(OutputPower);                                              // Make Cooling Positive Output Power
         }                                                                                    //
-        HeatingOutputPower = HeatOutputPower = OutputPower;                                  // Heating is Negative Output Power
-        CoolOutputPower = fabsf(OutputPower);                                                // Make Cooling Positive Output Power
       }                                                                                      //
     } else if (OutputPower > 0) {                                                            // Heating by HP
       if (DHW_Mode) {                                                                        // DHW Operation Mode via HP
@@ -2190,13 +2223,19 @@ void ActiveControlReport(void) {
 
   doc[F("ShortCycleProtectionEnabled")] = unitSettings.shortcycleprotectionenabled ? 1 : 0;
 
-  if (FlowFollowingActive) { CycleProtectionStatus = "Anti-Stop Flow Temperature Following Active"; }
+  if (FlowFollowingActive || Flow_Inc_Count > 0) { CycleProtectionStatus = "Anti-Stop Flow Temperature Following Active (" + String(Flow_Inc_Count * 0.5) + "C)"; }
   if (DHWFlowFollowingActive) { CycleProtectionStatus = "DHW Flow Temperature Following Active"; }
   if (ShortCycleProtectionActive) { CycleProtectionStatus = "Short Cycle Lockout Active"; }
-  if (!FlowFollowingActive && !DHWFlowFollowingActive && !ShortCycleProtectionActive) { CycleProtectionStatus = "Inactive"; }
+  if ((!FlowFollowingActive && Flow_Inc_Count == 0) && !DHWFlowFollowingActive && !ShortCycleProtectionActive) { CycleProtectionStatus = "Inactive"; }
 
   doc[F("ShortCycleProtectionActive")] = CycleProtectionStatus;
   doc[F("ShortCycleReason")] = ShortCycleReason[ShortCycleCauseNumber];
+
+  if (unitSettings.fixedlockoutduration == 0) {
+    doc[F("FixedShortCycleLockoutDuration")] = String("Disabled (Automatic)");
+  } else {
+    doc[F("FixedShortCycleLockoutDuration")] = unitSettings.fixedlockoutduration;
+  }
   doc[F("ShortCycleLockoutDuration")] = lockoutdurationMillis;
   doc[F("LastCompressorPeriods")][0] = CompressorPeriodDurations[0];
   doc[F("LastCompressorPeriods")][1] = CompressorPeriodDurations[1];
@@ -2256,6 +2295,9 @@ void ACReport(void) {
   } else {
     doc[F("SetpointTemp")] = AC.Status.Temperature;
   }
+
+  doc[F("RemoteTempOn")] = unitSettings.RemoteTempOn;
+  doc[F("RemoteTemp")] = unitSettings.ac_remote_room_temp;
 
   doc[F("RPhbt")] = AC.Status.remoteProhibit;
   doc[F("OAT")] = AC.Status.OAT;
@@ -2475,6 +2517,7 @@ void CalculateCompCurve(void) {
       unitSettings.z2_temp_offset = doc["zone2"]["temp_offset"];
       unitSettings.use_local_outdoor = doc["use_local_outdoor"];
       unitSettings.max_flow_overshoot = doc["max_flow_overshoot"];
+      unitSettings.fixedlockoutduration = doc["fixedlockoutduration"];
 
 
       float OutsideAirTemperature = 0;
@@ -2587,7 +2630,7 @@ float calculateRoomInfluence(float actual, float setpoint, float gain) {
 }
 
 void ModifyCompCurveState(int Zone, bool Active, int ModType, float Value) {
-  // Mod Types: 1 = Activate, 2 = manual_offset, 3 = temp_offset, 4 = wind_offset, 5 = use_local_outdoor, 6 = max_flow_overshoot
+  // Mod Types: 1 = Activate, 2 = manual_offset, 3 = temp_offset, 4 = wind_offset, 5 = use_local_outdoor, 6 = max_flow_overshoot, 7 = fixed lockout duration
   JsonDocument local_stored_doc;                                                           // Variable for the locally decoded JSON
   DeserializationError error = deserializeJson(local_stored_doc, unitSettings.CompCurve);  // Unpack the local stored JSON document
   if (error) {
@@ -2613,6 +2656,8 @@ void ModifyCompCurveState(int Zone, bool Active, int ModType, float Value) {
       local_stored_doc["use_local_outdoor"] = Active;
     } else if (ModType == 6) {
       local_stored_doc["max_flow_overshoot"] = Value;
+    } else if (ModType == 7) {
+      local_stored_doc["fixedlockoutduration"] = Value;
     }
   }
   local_stored_doc.shrinkToFit();
@@ -2735,12 +2780,12 @@ void CheckForOTAUpdates(void) {
 }
 
 void InstallOTAUpdates(void) {
-  DEBUG_PRINT(F("Starting Update - Downloading from "));                                                                                   // Publish the update in progress status
-  update_in_progress = true;                                                                                                               // Set the flag for discovery again
-  UpdateReport();                                                                                                                          // Publish that an update has started
+  DEBUG_PRINT(F("Starting Update - Downloading from "));                                                                                    // Publish the update in progress status
+  update_in_progress = true;                                                                                                                // Set the flag for discovery again
+  UpdateReport();                                                                                                                           // Publish that an update has started
   String TargetURL = "https://witty.house/ecodanbridge/ECODAN_Bridge_" + OTADeviceType + "_v" + LatestFirmwareVersion + Language + ".bin";  // Form the Target URL
-  DEBUG_PRINTLN(TargetURL);                                                                                                                // Print Target Download URL
-  HttpsOTA.begin(TargetURL.c_str(), ISGR_root_ca);                                                                                         // Begin the update
+  DEBUG_PRINTLN(TargetURL);                                                                                                                 // Print Target Download URL
+  HttpsOTA.begin(TargetURL.c_str(), ISGR_root_ca);                                                                                          // Begin the update
 }
 
 

@@ -461,6 +461,8 @@ const char MQTT_AC_SENSOR_NAME[][45] PROGMEM = {
   "Raumthermostat",
   "Systemleistung",
   "Firmware-Update"
+  "Externe Temperatur",
+  "Externen Sensor nutzen"
 };
 
 
@@ -627,7 +629,9 @@ const char MQTT_AC_SENSOR_NAME[][45] PROGMEM = {
 
   "Huonetermostaatti",
   "Järjestelmän teho",
-  "Laiteohjelmiston päivitys"
+  "Laiteohjelmiston päivitys",
+  "Ulkoinen lämpötila",
+  "Käytä etäanturia"
 };
 
 // Swedish
@@ -793,7 +797,9 @@ const char MQTT_AC_SENSOR_NAME[][45] PROGMEM = {
 
   "Rumstermostat",
   "Systemeffekt",
-  "Firmware-uppdatering"
+  "Firmware-uppdatering",
+  "Extern rumstemperatur",
+  "Använd extern givare"
 };
 
 // Italian
@@ -959,7 +965,9 @@ const char MQTT_AC_SENSOR_NAME[][45] PROGMEM = {
 
   "Termostato Ambiente",
   "Potenza di Sistema",
-  "Aggiornamento Firmware"
+  "Aggiornamento Firmware",
+  "Temperatura remota",
+  "Usa sensore remoto"
 };
 
 // Spanish
@@ -1125,7 +1133,9 @@ const char MQTT_AC_SENSOR_NAME[][45] PROGMEM = {
 
   "Termostato Ambiente",
   "Potencia del Sistema",
-  "Actualización de Firmware"
+  "Actualización de Firmware",
+  "Temperatura remota",
+  "Usar sensor remoto"
 };
 
 
@@ -1294,7 +1304,9 @@ const char MQTT_AC_SENSOR_NAME[][45] PROGMEM = {
 
   "Room Thermostat",
   "System Power",
-  "Firmware Update"
+  "Firmware Update",
+  "Remote Room Temperature",
+  "Use Remote Temperature"
 };
 
 // French
@@ -1460,7 +1472,9 @@ const char MQTT_AC_SENSOR_NAME[][45] PROGMEM = {
 
   "Thermostat Ambiant",
   "Puissance Système",
-  "Mise à Jour Firmware"
+  "Mise à Jour Firmware",
+  "Température capteur distant",
+  "Utiliser le capteur distant"
 };
 
 
@@ -1627,12 +1641,12 @@ const char MQTT_AC_SENSOR_NAME[][45] PROGMEM = {
 
   "Ruimtethermostaat",
   "Systeemvermogen",
-  "Firmware-update"
+  "Firmware-update",
+  "Externe temperatuur",
+  "Externe sensor gebruiken"
 };
 
 #endif
-
-
 
 
 
@@ -2169,7 +2183,8 @@ const char MQTT_DISCOVERY_TOPICS[][23] PROGMEM = {
   "homeassistant/climate/",
   "homeassistant/select/",
   "/config",
-  "homeassistant/update/"
+  "homeassistant/update/",
+  "homeassistant/number/"
 };
 
 const char MQTT_DEVICE_CLASS[][17] PROGMEM = {  // Uses same structure as Units - but blank when no match
