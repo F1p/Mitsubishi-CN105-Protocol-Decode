@@ -1309,6 +1309,176 @@ const char MQTT_AC_SENSOR_NAME[][45] PROGMEM = {
   "Use Remote Temperature"
 };
 
+// Polish
+#elif defined(LANG_PL)
+const char MQTT_SENSOR_NAME[][60] PROGMEM = { // Recommended to increase [45] to [60]
+  "Status mostka",
+  "Wersja oprogramowania",
+  "Sygnal WiFi mostka",
+  "Wersja FTC",
+  "Tryb pracy systemu",
+  "Temp. powrotu ogrzewania",  //5
+  "Temp. zasilania ogrzewania",
+  "Temperatura zewnetrzna",
+  "Odszranianie",
+  "Moc wyjsciowa pompy ciepla",
+  "Czestotliwosc sprezarki",  // 10
+  "Przepływ",
+  "Czas pracy (godziny)",
+  "Maks. temp. zasilania",
+  "Min. temp. zasilania",
+  "Temp. zasilania kotla",  //15
+  "Temp. powrotu kotla",
+  "Temperatura zbiornika buforowego",
+  "Temperatura czynnika chlodniczego",
+  "Grzalka zanurzeniowa",
+  "Grzalka wspomagajaca 1",  //20
+  "Pompa wody 1",
+  "Pompa wody 2",
+  "Zawor trojdrozny 1",
+  "Zawor trojdrozny 2",
+  "Temperatura CWU",  //25
+  "Gorna temperatura CWU",
+  "Blokada CWU",
+  "Praca CWU",
+  "Tryb sterowania CWU",
+  "Nastawa dezynfekcji Legionelli",  //30
+  "Maks. spadek temperatury CWU",
+  "Faza grzania CWU",
+  "Temp. zasilania Strefa 1",
+  "Temp. powrotu Strefa 1",
+  "Temp. zasilania Strefa 2",  //35
+  "Temp. powrotu Strefa 2",
+  "Praca Strefy 1",
+  "Praca Strefy 2",
+  "Zuzycie energii ogrzewanie wczoraj",
+  "Dostarczone cieplo wczoraj",  //40
+  "Zuzycie energii chlodzenie wczoraj",
+  "Dostarczone chlodzenie wczoraj",
+  "Zuzycie energii CWU wczoraj",
+  "Dostarczone cieplo CWU wczoraj",
+  "Calkowite zuzycie energii wczoraj",  //45
+  "Calkowita dostarczona energia wczoraj",
+  "COP ogrzewania wczoraj",
+  "COP chlodzenia wczoraj",
+  "COP CWU wczoraj",
+  "Calkowity COP wczoraj",  //50
+  "Kod bledu czynnika chlodniczego",
+  "Kod bledu",
+  "Kod usterki",
+  "DeltaT zasilanie powrot",
+  "Obliczona moc grzewcza wyjsciowa",  //55
+  "Obliczona moc chlodnicza wyjsciowa",
+  "Praca ogrzewania",
+  "Praca chlodzenia",
+  "Blokada ogrzewania Strefa 1",
+  "Blokada chlodzenia Strefa 1",  //60
+  "Blokada ogrzewania Strefa 2",
+  "Blokada chlodzenia Strefa 2",
+  "Nastawa zasilania Strefa 1",
+  "Nastawa zasilania Strefa 2",
+  "Zadanie termostatu zewn. Strefa 1",  //65
+  "Zadanie termostatu zewn. Strefa 2",
+  "Zadanie zewnetrznego termostatu",
+  "Pompa wody 4",
+  "Pompa wody 3",
+  "Pompa wody 13",  // 70
+  "Moc wejsciowa pompy ciepla",
+  "Obliczona moc pobierana",
+  "Wersja oprogramowania FTC",
+  "Szybkie grzanie CWU",
+  "Krok zaworu mieszajacego",  //75
+  "Temperatura CPU mostka",
+  "Grzalka wspomagajaca 2",
+  "Chwilowy COP",
+  "Temp. cieczy czynnika TH3",
+  "Liczba uruchomien sprezarki",
+  "Temperatura tloczenia TH4",
+  "Temperatura dochlodzenia",
+  "Temperatura radiatora TH8",
+  "Temp. cieczy wymiennika płyt. TH6",
+  "Predkosc wentylatora 1",
+  "Predkosc wentylatora 2",
+  "Zawor LEV A",
+  "Zawor LEV B",
+  "Temperatura wlotu wody TH32",
+  "Obliczona moc grzewcza CWU",
+  "Obliczony pobor mocy CWU",
+  "Obliczona moc ogrzewania",
+  "Obliczony pobor mocy ogrzewania",
+  "Obliczony pobor mocy chlodzenia",
+  "Temperatura przegrzania",
+  "Stan ochrony przed krotkim cyklem",
+  "Wersja oprogramowania jedn. zewn.",
+  "Status adaptera MELCloud",
+  "Konfiguracja Dip Switch (1-1 do 7-8)",
+  "Predkosc PWM pompy wody 1",
+  "Temperatura wlotu solanki",
+  "Temperatura wylotu solanki",
+  "Calkowity COP dzisiaj",
+
+  "Termostat CWU",
+  "Termostat Strefa 1",  //80
+  "Termostat Strefa 2",
+  "Termostat zasilania Strefa 1",
+  "Termostat zasilania Strefa 2",
+
+  "Szybkie wspomaganie CWU",
+  "Zasilanie systemu",  //85
+  "Tryb wakacyjny",
+  "Tryb sterowania serwerem",
+  "Blokada CWU",
+  "Blokada ogrzewania Strefa 1",
+  "Blokada chlodzenia Strefa 1",  //90
+  "Blokada ogrzewania Strefa 2",
+  "Blokada chlodzenia Strefa 2",
+  "Wymuszenie CWU",
+  "Ochrona przed krotkim cyklem",
+  "MELCloud tylko do odczytu",
+
+  "Tryb CWU",
+  "Tryb pracy grzanie/chlodzenie Strefa 1",  //95
+  "Tryb pracy grzanie/chlodzenie Strefa 2",
+  "Moc jednostki zewnetrznej (kW)",
+  "Stezenie glikolu",
+  "Aktualizacja oprogramowania"
+};
+
+
+const char MQTT_AC_SENSOR_NAME[][60] PROGMEM = { // Recommended to increase [45] to [60]
+  "Status mostka",
+  "Wersja oprogramowania",
+  "Sygnal WiFi mostka",
+  "Czestotliwosc sprezarki",  // 10
+  "Czujnik iSee",
+  "Tryb timera",
+  "Ustawiony czas wl. (minuty)",
+  "Pozostaly czas wl. (minuty)",
+  "Ustawiony czas wyl. (minuty)",
+  "Pozostaly czas wyl. (minuty)",
+  "Temperatura pokojowa",
+  "Kod bledu",
+  "Kod usterki",
+  "Moc wejsciowa",
+  "Laczne zuzycie energii",
+  "Rzeczywista predkosc wentylatora",
+  "Tryb Auto",
+  "Blokada sterowania zdalnego",
+  "Temperatura powietrza zewn.",
+  "Czas pracy",
+  "Wymiana filtra",
+  "Odszranianie",
+  "Podgrzewanie wstepne",
+  "Tryb czuwania",
+
+
+  "Termostat pokojowy",
+  "Zasilanie systemu",
+  "Aktualizacja oprogramowania",
+  "Zdalna temperatura pokojowa",
+  "Uzyj zdalnego czujnika temperatury"
+};
+
 // French
 #elif defined(LANG_FR)
 const char MQTT_SENSOR_NAME[][45] PROGMEM = {

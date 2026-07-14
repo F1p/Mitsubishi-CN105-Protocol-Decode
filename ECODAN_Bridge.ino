@@ -82,8 +82,6 @@
 
 #endif  // ESP8266 || ESP32
 
-String FirmwareVersion = "7.0.25";
-String LatestFirmwareVersion;
 
 // Language for OTA Check
 #if defined(LANG_FR)
@@ -102,7 +100,14 @@ String Language = "_IT";
 String Language = "_FI";
 #elif defined(LANG_SE)
 String Language = "_SE";
+#elif defined(LANG_PL)
+String Language = "_PL";
+#else
+String Language = "_EN";
 #endif
+
+String FirmwareVersion = "7.0.26" + Language;
+String LatestFirmwareVersion;
 
 bool update_in_progress = false;
 
@@ -587,7 +592,8 @@ void loop() {
       CurrentWriteAttempt = 0;
       PostWriteTrigger = true;  // Allows 10s to pass, then restarts read operation
       postwrpreviousMillis = millis();
-    }                                                                  // Dequeue the last message that was written
+    }  // Dequeue the last message that was written
+    // Note: Re-publishes if SVC is successful
     if (MQTTReconnect() || MQTT2Reconnect()) { PublishAllReports(); }  // Publish update to the MQTT Topics
   } else if ((WriteInProgress) && (CurrentWriteAttempt > 10)) {        // After 10 attempts to write
     if (cmd_queue_length > cmd_queue_position) {
@@ -1567,9 +1573,9 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
 
         // Optimistic HA
         if (AC.Status.tempMode) {
-          AC.Status.RoomTemp = (AC.lookupByteMapIndex(AC.TEMP_MAP, 16, doc["SetTempSetpoint"]), AC.Status.tempMode);
+          AC.Status.Temperature = (AC.lookupByteMapIndex(AC.TEMP_MAP, 16, doc["SetTempSetpoint"]), AC.Status.tempMode);
         } else {
-          AC.Status.RoomTempFloat = ((doc["SetTempSetpoint"].as<float>() * 2) + 128);
+          AC.Status.Temperature = doc["SetTempSetpoint"].as<float>();
         }
       }
       if (doc["SetRemoteTemp"].is<float>()) {
@@ -1583,7 +1589,7 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
         if (!unitSettings.RemoteTempOn) {
           AC.SetRemoteTemp(0);  // 0 = Off
         } else {
-          AC.SetRemoteTemp(18); // 18 = Inputting starting figure of 18C
+          AC.SetRemoteTemp(18);  // 18 = Inputting starting figure of 18C
         }
       }
 

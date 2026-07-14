@@ -219,6 +219,12 @@ Sending the payload to the following endpoints, for either current temperature z
 ![Publish Parameters](https://github.com/F1p/Mitsubishi-CN105-Protocol-Decode/blob/master/documentation/images/shelly_H&t.png)
 
 
+### AC Remote Thermostat Reading
+#For AC Users, you can send "Remote Temperature Sensor" probe readings from 3rd party thermostats, e.g. Shelly H&T to act as your current room temperature within HA or directly using webhooks:
+
+```http://heatpump.local/webhook?actemp=22.1```
+
+
 ### Sending Offsets & Outdoor Temperatures
 
 In a similar way, you can make modification to the Offsets (+/- of the calculated Flow Setpoint) by sending JSON: 
