@@ -82,6 +82,8 @@
 
 #endif  // ESP8266 || ESP32
 
+String FirmwareVersion = "7.0.27";
+String LatestFirmwareVersion;
 
 // Language for OTA Check
 #if defined(LANG_FR)
@@ -106,8 +108,6 @@ String Language = "_PL";
 String Language = "_EN";
 #endif
 
-String FirmwareVersion = "7.0.27" + Language;
-String LatestFirmwareVersion;
 
 bool update_in_progress = false;
 
@@ -569,6 +569,8 @@ void loop() {
   } else if (otastatus == HTTPS_OTA_FAIL) {
     printCurrentTime();
     DEBUG_PRINTLN(F("Firmware Update Failed"));
+    update_in_progress = false;
+    UpdateReport(); // Send MQTT Status out
   }
 #endif
 
