@@ -17,7 +17,7 @@
 /* ESP32 AtomS3 Lite (ESP32S3 Dev Module)    / Core 3.1.1 / Flash 8M with SPIFFS (3MB APP / 1.5MB SPIFFS)                  */
 /* ESP32 Ethernet WT32-ETH01                 / Core 3.1.1 / Flash 4MB (1.9MB APP / 180KB SPIFFS)                           */
 
-#define LANG_EN
+#define LANG_FR
 
 
 #if defined(ESP8266) || defined(ESP32)
@@ -106,7 +106,7 @@ String Language = "_PL";
 String Language = "_EN";
 #endif
 
-String FirmwareVersion = "7.0.26" + Language;
+String FirmwareVersion = "7.0.27" + Language;
 String LatestFirmwareVersion;
 
 bool update_in_progress = false;
@@ -1717,14 +1717,22 @@ void SystemReport(void) {
     Max_Input_Power = HeatPump.Status.InputPower + 1;
   }
 
+  if (HeatPump.Status.ThreeWayValve == 1 || HeatPump.Status.SystemOperationMode == 1 || HeatPump.Status.SystemOperationMode == 6) { DHW_Mode = true; }
 
+  float x = 0;
+  if (HeatPump.Status.HeatCool == 0 || DHW_Mode) {
+    x = ((((((float)HeatPump.Status.CompressorFrequency * 2) * ((float)HeatPump.Status.HeaterOutputFlowTemperature * 0.8)) / 1000) / 2) * UnitSizeFactor);
+  } else if (HeatPump.Status.HeatCool == 1) {
+    float tempDifference = 20.25f - (float)HeatPump.Status.HeaterOutputFlowTemperature;
+    if (tempDifference < 1.0f) { tempDifference = 1.0f; }  // Guard: Prevent negative multipliers if flow temp is 23C or higher in cooling
+    float coolingTempFactor = tempDifference * 4.2f;       // 23C is the zero-effort threshold where cooling requires minimal lift
+    x = ((((((float)HeatPump.Status.CompressorFrequency * 2) * coolingTempFactor) / 1000) / 2) * UnitSizeFactor);
+  }
 
-  float x = ((((((float)HeatPump.Status.CompressorFrequency * 2) * ((float)HeatPump.Status.HeaterOutputFlowTemperature * 0.8)) / 1000) / 2) * UnitSizeFactor);
   EstInputPower = ((x - Min_Input_Power) * (Max_Input_Power - Min_Input_Power) / (Max_Input_Power - Min_Input_Power) + Min_Input_Power);  // Constrain Input Power to FTC Onboard Reading range
   OutputPower = (((float)HeatPump.Status.PrimaryFlowRate / 60) * (float)HeatPump.Status.HeaterDeltaT * unitSettings.GlycolStrength);      // Approx Heat Capacity of Fluid in Use (Carnot Power then 8% removed for losses)
 
 
-  if (HeatPump.Status.ThreeWayValve == 1 || HeatPump.Status.SystemOperationMode == 1 || HeatPump.Status.SystemOperationMode == 6) { DHW_Mode = true; }
   if (HeatPump.Status.ImmersionActive == 1 || HeatPump.Status.Booster1Active == 1 || HeatPump.Status.Booster2Active == 1) {  // Account for Immersion or Booster Instead of HP
     Non_HP_Mode = true;
     if (EstInputPower == 0) { EstInputPower = HeatPump.Status.InputPower; }  // Uses Booster/Immersion Size in MRC
