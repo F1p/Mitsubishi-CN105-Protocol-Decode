@@ -17,7 +17,7 @@
 /* ESP32 AtomS3 Lite (ESP32S3 Dev Module)    / Core 3.1.1 / Flash 8M with SPIFFS (3MB APP / 1.5MB SPIFFS)                  */
 /* ESP32 Ethernet WT32-ETH01                 / Core 3.1.1 / Flash 4MB (1.9MB APP / 180KB SPIFFS)                           */
 
-#define LANG_FR
+#define LANG_EN
 
 
 #if defined(ESP8266) || defined(ESP32)
@@ -110,6 +110,7 @@ String Language = "_EN";
 
 
 bool update_in_progress = false;
+String update_summary = "";
 
 #ifdef ARDUINO_M5STACK_ATOMS3
 String OTADeviceType = "Gen2";
@@ -565,12 +566,16 @@ void loop() {
   if (otastatus == HTTPS_OTA_SUCCESS) {
     printCurrentTime();
     DEBUG_PRINTLN(F("Firmware updated successfully - Rebooting..."));
+    update_summary = "Update Successful - Rebooting";
+    UpdateReport();  // Send MQTT Status out
+    delay(1000);
     ESP.restart();
   } else if (otastatus == HTTPS_OTA_FAIL) {
     printCurrentTime();
     DEBUG_PRINTLN(F("Firmware Update Failed"));
+    update_summary = "Update Failed";
     update_in_progress = false;
-    UpdateReport(); // Send MQTT Status out
+    UpdateReport();  // Send MQTT Status out
   }
 #endif
 
@@ -1164,6 +1169,10 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
         InstallOTAUpdates();
 #endif
       }  // Skip OTA updates when running Norm DHW or this status would be lost mid-run
+      else {
+        update_summary = "Update blocked during DHW Boost - please try again later";
+        UpdateReport();  // Send MQTT Status out
+      }
     } else if (Payload.toInt() == 994) {
       DEBUG_PRINTLN(F("Requested Bridge Latest Firmware Available"));
       DEBUG_PRINTLN(F(": UNAVAILABLE"));
@@ -1721,14 +1730,23 @@ void SystemReport(void) {
 
   if (HeatPump.Status.ThreeWayValve == 1 || HeatPump.Status.SystemOperationMode == 1 || HeatPump.Status.SystemOperationMode == 6) { DHW_Mode = true; }
 
-  float x = 0;
-  if (HeatPump.Status.HeatCool == 0 || DHW_Mode) {
-    x = ((((((float)HeatPump.Status.CompressorFrequency * 2) * ((float)HeatPump.Status.HeaterOutputFlowTemperature * 0.8)) / 1000) / 2) * UnitSizeFactor);
-  } else if (HeatPump.Status.HeatCool == 1) {
-    float tempDifference = 20.25f - (float)HeatPump.Status.HeaterOutputFlowTemperature;
-    if (tempDifference < 1.0f) { tempDifference = 1.0f; }  // Guard: Prevent negative multipliers if flow temp is 23C or higher in cooling
-    float coolingTempFactor = tempDifference * 4.2f;       // 23C is the zero-effort threshold where cooling requires minimal lift
-    x = ((((((float)HeatPump.Status.CompressorFrequency * 2) * coolingTempFactor) / 1000) / 2) * UnitSizeFactor);
+  float x = 0.0f;
+  if (HeatPump.Status.CompressorFrequency > 0) {
+    float baseRunOverhead = 0.15f * UnitSizeFactor;   // Start with a fixed physical overhead (e.g., 150W scaled by unit size)
+    if (HeatPump.Status.HeatCool == 0 || DHW_Mode) {  // Dynamic heating calculation
+      float dynamicFactor = (((((float)HeatPump.Status.CompressorFrequency * 2) * ((float)HeatPump.Status.HeaterOutputFlowTemperature * 0.8)) / 1000) / 2) * UnitSizeFactor;
+      x = baseRunOverhead + dynamicFactor;
+    } else if (HeatPump.Status.HeatCool == 1) {  // Dynamic cooling calculation
+      float tempDifference = 20.25f - (float)HeatPump.Status.HeaterOutputFlowTemperature;
+      if (tempDifference < 1.0f) {
+        tempDifference = 1.0f;
+      }
+      float coolingTempFactor = tempDifference * 4.2f;
+      float dynamicFactor = (((((float)HeatPump.Status.CompressorFrequency * 2) * coolingTempFactor) / 1000) / 2) * UnitSizeFactor;
+      x = baseRunOverhead + dynamicFactor;
+    }
+  } else {
+    x = 0.015f * UnitSizeFactor;  // Compressor is off. (Note: Standby heater/controller draw is usually ~15W-40W, which you can optionally set here)
   }
 
   EstInputPower = ((x - Min_Input_Power) * (Max_Input_Power - Min_Input_Power) / (Max_Input_Power - Min_Input_Power) + Min_Input_Power);  // Constrain Input Power to FTC Onboard Reading range
@@ -2155,6 +2173,10 @@ void UpdateReport(void) {
   } else {
     doc[F("in_progress")] = false;
   }
+  if (update_summary != "") {
+    doc[F("release_summary")] = update_summary;
+  }
+
   serializeJson(doc, Buffer);
   MQTTClient1.publish(MQTT_STATUS_WIFISTATUS_UPDATE.c_str(), Buffer, false);
   MQTTClient2.publish(MQTT_2_STATUS_WIFISTATUS_UPDATE.c_str(), Buffer, false);
