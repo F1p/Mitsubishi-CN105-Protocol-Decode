@@ -82,7 +82,7 @@
 
 #endif  // ESP8266 || ESP32
 
-String FirmwareVersion = "7.0.27";
+String FirmwareVersion = "7.0.28";
 String LatestFirmwareVersion;
 
 // Language for OTA Check
@@ -830,6 +830,7 @@ void loop() {
   if (FrequencyLastLoop > 0 && HeatPump.Status.CompressorFrequency == 0) {                       // Transition of Compressor On to Off
     HeatPump.WriteServiceCodeCMD(19);                                                            // Trigger Fan Speed Request Service Code
     HeatPump.WriteServiceCodeCMD(20);                                                            // Trigger Fan Speed Request Service Code
+    if (HeatPump.Status.HasGeodan) { HeatPump.WriteServiceCodeCMD(28); }                         // For Geodan Only
     if (HeatPump.Status.Defrost == 0) {                                                          // If Not Defrosting
       CompressorPeriodDurations[1] = CompressorPeriodDurations[0];                               // Transfer Last Compressor Period to Array Pos 1
       CompressorPeriodDurations[0] = (millis() / 1000) - CompressorStopStartTimer[0];            // Current Time from Stop > Stop (Seconds) to Array Pos 0
@@ -1583,8 +1584,8 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
         AC.SetTempSetpoint(doc["SetTempSetpoint"], AC.Status.tempMode);
 
         // Optimistic HA
-        if (AC.Status.tempMode) {
-          AC.Status.Temperature = (AC.lookupByteMapIndex(AC.TEMP_MAP, 16, doc["SetTempSetpoint"]), AC.Status.tempMode);
+        if (!AC.Status.tempMode) {
+          AC.Status.Temperature = AC.lookupByteMapIndex(AC.TEMP_MAP, 16, doc["SetTempSetpoint"]);
         } else {
           AC.Status.Temperature = doc["SetTempSetpoint"].as<float>();
         }
@@ -2173,9 +2174,7 @@ void UpdateReport(void) {
   } else {
     doc[F("in_progress")] = false;
   }
-  if (update_summary != "") {
-    doc[F("release_summary")] = update_summary;
-  }
+  doc[F("release_summary")] = update_summary;
 
   serializeJson(doc, Buffer);
   MQTTClient1.publish(MQTT_STATUS_WIFISTATUS_UPDATE.c_str(), Buffer, false);
