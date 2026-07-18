@@ -82,7 +82,7 @@
 
 #endif  // ESP8266 || ESP32
 
-String FirmwareVersion = "7.0.28";
+String FirmwareVersion = "7.0.29";
 String LatestFirmwareVersion;
 
 // Language for OTA Check
@@ -1165,6 +1165,10 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
       StatusReport();
     } else if (Payload.toInt() == 995) {
       DEBUG_PRINTLN(F("Requested Bridge Firmware Update"));
+      if (WiFi.RSSI() < -75) {
+        update_summary = "Warning! WiFi signal weak";
+        UpdateReport();  // Send MQTT Status out
+      }
       if (NormalHWBoostOperating != 1 && LatestFirmwareVersion != FirmwareVersion) {
 #ifdef ESP32  // Define the M5Stack AtomS3
         InstallOTAUpdates();
@@ -1433,10 +1437,13 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
       // Activation Of Mode per Zone (Bool)
       if (doc["zone1"]["active"].is<bool>()) {
         bool wc_z1_active = doc["zone1"]["active"];
-        if (!unitSettings.z1_active && wc_z1_active) {                                                    // On transition from Inactive > Active
-          if (HeatPump.Status.HeatingControlModeZ1 != 1) {                                                // Check if not already in Fixed Flow Mode
-            HeatPump.SetHeatingControlMode(HEATING_CONTROL_MODE_FLOW_TEMP, SET_HEATING_CONTROL_MODE_Z1);  // Swap to Fixed Flow for Onboard WC to input the flow temperature
-            HeatPump.Status.HeatingControlModeZ1 = HEATING_CONTROL_MODE_FLOW_TEMP;
+        if (!unitSettings.z1_active && wc_z1_active) {                                                         // On transition from Inactive > Active
+          if (HeatPump.Status.HeatCool == 0 && HeatPump.Status.HeatingControlModeZ1 != 1) {                    // Check if not already in Heating Mode Fixed Flow Mode
+            HeatPump.SetHeatingControlMode(HEATING_CONTROL_MODE_FLOW_TEMP, SET_HEATING_CONTROL_MODE_Z1);       // Swap to Fixed Flow for Onboard WC to input the flow temperature
+            HeatPump.Status.HeatingControlModeZ1 = HEATING_CONTROL_MODE_FLOW_TEMP;                             // Optimistic Write
+          } else if (HeatPump.Status.HeatCool == 1 && HeatPump.Status.HeatingControlModeZ1 != 4) {             // Check if not already in Cooling Mode Fixed Flow Mode
+            HeatPump.SetHeatingControlMode(HEATING_CONTROL_MODE_COOL_FLOW_TEMP, SET_HEATING_CONTROL_MODE_Z1);  // Swap to Fixed Flow for Onboard WC to input the flow temperature
+            HeatPump.Status.HeatingControlModeZ1 = HEATING_CONTROL_MODE_COOL_FLOW_TEMP;                        // Optimistic Write
           }
         }
         ModifyCompCurveState(1, wc_z1_active, 1, 0);  // State Save
@@ -1451,10 +1458,13 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
 
       if (doc["zone2"]["active"].is<bool>()) {
         bool wc_z2_active = doc["zone2"]["active"];
-        if (!unitSettings.z2_active && wc_z2_active) {                                                    // On transition from Inactive > Active
-          if (HeatPump.Status.HeatingControlModeZ2 != 1) {                                                // Check if not already in Fixed Flow Mode
-            HeatPump.SetHeatingControlMode(HEATING_CONTROL_MODE_FLOW_TEMP, SET_HEATING_CONTROL_MODE_Z2);  // Swap to Fixed Flow for Onboard WC to input the flow temperature
-            HeatPump.Status.HeatingControlModeZ2 = HEATING_CONTROL_MODE_FLOW_TEMP;
+        if (!unitSettings.z2_active && wc_z2_active) {                                                         // On transition from Inactive > Active
+          if (HeatPump.Status.HeatCool == 0 && HeatPump.Status.HeatingControlModeZ2 != 1) {                    // Check if not already in Fixed Flow Mode
+            HeatPump.SetHeatingControlMode(HEATING_CONTROL_MODE_FLOW_TEMP, SET_HEATING_CONTROL_MODE_Z2);       // Swap to Fixed Flow for Onboard WC to input the flow temperature
+            HeatPump.Status.HeatingControlModeZ2 = HEATING_CONTROL_MODE_FLOW_TEMP;                             // Optimistic Write
+          } else if (HeatPump.Status.HeatCool == 1 && HeatPump.Status.HeatingControlModeZ2 != 4) {             // Check if not already in Cooling Mode Fixed Flow Mode
+            HeatPump.SetHeatingControlMode(HEATING_CONTROL_MODE_COOL_FLOW_TEMP, SET_HEATING_CONTROL_MODE_Z2);  // Swap to Fixed Flow for Onboard WC to input the flow temperature
+            HeatPump.Status.HeatingControlModeZ2 = HEATING_CONTROL_MODE_COOL_FLOW_TEMP;                        // Optimistic Write
           }
         }
         ModifyCompCurveState(2, wc_z2_active, 1, 0);  // State Save
@@ -1558,26 +1568,49 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
         bool systempower = doc["systempower"];
         AC.SetSystemPowerMode(systempower);
         AC.Status.SystemPowerMode = systempower ? 0x01 : 0x00;  // Optimistic HA
+        AC.Status.PendingPower = AC.Status.SystemPowerMode;
+        AC.Status.PendingPowerUntil = millis() + AC_PENDING_HOLD_MS;
       }
       if (doc["SetMode"].is<const char*>()) {
         DEBUG_PRINTLN("SetMode");
-        AC.SetMode(doc["SetMode"]);
-        AC.Status.Buffer04 = AC.MODE[AC.lookupByteMapIndex(AC.MODE_MAP, 5, doc["SetMode"])];  // Optimistic HA
+        if (doc["SetMode"] == "off") {  // HA "off" mode = system power off; the unit's mode register is untouched
+          AC.SetSystemPowerMode(false);
+          AC.Status.SystemPowerMode = 0x00;  // Optimistic HA
+          AC.Status.PendingPower = 0x00;
+          AC.Status.PendingPowerUntil = millis() + AC_PENDING_HOLD_MS;
+        } else {
+          if (AC.Status.SystemPowerMode == 0x00) {  // Selecting a mode while off powers the unit on (HA climate semantic)
+            AC.SetSystemPowerMode(true);
+            AC.Status.SystemPowerMode = 0x01;  // Optimistic HA
+            AC.Status.PendingPower = 0x01;
+            AC.Status.PendingPowerUntil = millis() + AC_PENDING_HOLD_MS;
+          }
+          AC.SetMode(doc["SetMode"]);
+          AC.Status.PendingMode = AC.MODE[AC.lookupByteMapIndex(AC.MODE_MAP, 5, doc["SetMode"])];
+          AC.Status.Buffer04 = AC.Status.isee ? AC.Status.PendingMode + 0x08 : AC.Status.PendingMode;  // Optimistic HA (keep the i-See offset the report decode expects)
+          AC.Status.PendingModeUntil = millis() + AC_PENDING_HOLD_MS;
+        }
       }
       if (doc["SetFanSpeed"].is<const char*>()) {
         DEBUG_PRINTLN("SetFan");
         AC.SetFanSpeed(doc["SetFanSpeed"]);
         AC.Status.fan = AC.FAN[AC.lookupByteMapIndex(AC.FAN_MAP, 6, doc["SetFanSpeed"])];  // Optimistic HA
+        AC.Status.PendingFan = AC.Status.fan;
+        AC.Status.PendingFanUntil = millis() + AC_PENDING_HOLD_MS;
       }
       if (doc["SetVane"].is<const char*>()) {
         DEBUG_PRINTLN("SetVane");
         AC.SetVane(doc["SetVane"]);
         AC.Status.vane = AC.VANE[AC.lookupByteMapIndex(AC.VANE_MAP, 7, doc["SetVane"])];  // Optimistic HA
+        AC.Status.PendingVane = AC.Status.vane;
+        AC.Status.PendingVaneUntil = millis() + AC_PENDING_HOLD_MS;
       }
       if (doc["SetWideVane"].is<const char*>()) {
         DEBUG_PRINTLN("SetWideVane");
         AC.SetWideVane(doc["SetWideVane"]);
         AC.Status.wideVane = AC.WIDEVANE[AC.lookupByteMapIndex(AC.WIDEVANE_MAP, 7, doc["SetWideVane"])];  // Optimistic HA
+        AC.Status.PendingWideVane = AC.Status.wideVane;
+        AC.Status.PendingWideVaneUntil = millis() + AC_PENDING_HOLD_MS;
       }
       if (doc["SetTempSetpoint"].is<float>()) {
         DEBUG_PRINTLN("SetTempSetpoint");
@@ -1589,6 +1622,8 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
         } else {
           AC.Status.Temperature = doc["SetTempSetpoint"].as<float>();
         }
+        AC.Status.PendingTemperature = AC.Status.Temperature;
+        AC.Status.PendingTempUntil = millis() + AC_PENDING_HOLD_MS;
       }
       if (doc["SetRemoteTemp"].is<float>()) {
         DEBUG_PRINTLN("SetRemoteTemp");
@@ -2350,11 +2385,16 @@ void ACReport(void) {
   doc[F("Vane")] = AC.lookupByteMapValue(AC.VANE_MAP, AC.VANE, 7, AC.Status.vane);
   doc[F("wideVane")] = AC.lookupByteMapValue(AC.WIDEVANE_MAP, AC.WIDEVANE, 7, AC.Status.wideVane & 0x0F);
   doc[F("iSee")] = AC.Status.isee;
-  doc[F("mode")] = AC.lookupByteMapValue(AC.MODE_MAP, AC.MODE, 5, AC.Status.isee ? (AC.Status.Buffer04 - 0x08) : AC.Status.Buffer04);
-  if (!AC.Status.Operating) {
-    doc[F("action")] = "idle";
+  if (AC.Status.SystemPowerMode == 0x00) {  // Powered off - present as the HA climate "off" mode
+    doc[F("mode")] = "off";
+    doc[F("action")] = "off";
   } else {
-    doc[F("action")] = AC.lookupByteMapValue(AC.MODE_HA_MAP, AC.MODE, 5, AC.Status.isee ? (AC.Status.Buffer04 - 0x08) : AC.Status.Buffer04);
+    doc[F("mode")] = AC.lookupByteMapValue(AC.MODE_MAP, AC.MODE, 5, AC.Status.isee ? (AC.Status.Buffer04 - 0x08) : AC.Status.Buffer04);
+    if (!AC.Status.Operating) {
+      doc[F("action")] = "idle";
+    } else {
+      doc[F("action")] = AC.lookupByteMapValue(AC.MODE_HA_MAP, AC.MODE, 5, AC.Status.isee ? (AC.Status.Buffer04 - 0x08) : AC.Status.Buffer04);
+    }
   }
   doc[F("compressorFreq")] = AC.Status.CompressorFrequency;
 
@@ -2648,12 +2688,12 @@ void CalculateCompCurve(void) {
 
     // Write the Flow Setpoints to Heat Pump
     if (unitSettings.z1_active && Flow_Inc_Count == 0 && HeatPump.Status.DHWActive != 1 && Z1_CurveFSP != HeatPump.Status.Zone1FlowTemperatureSetpoint) {
-      HeatPump.SetFlowSetpoint(Z1_CurveFSP, HEATING_CONTROL_MODE_FLOW_TEMP, ZONE1);
+      HeatPump.SetFlowSetpoint(Z1_CurveFSP, HeatPump.Status.HeatingControlModeZ1, ZONE1);
       write_thermostats();
       HeatPump.Status.Zone1FlowTemperatureSetpoint = Z1_CurveFSP;
     }
     if (unitSettings.z2_active && HeatPump.Status.Has2Zone && !HeatPump.Status.Simple2Zone && Z2_CurveFSP != HeatPump.Status.Zone2FlowTemperatureSetpoint) {  // User must have Complex 2 zone to set different flow temp in different zones
-      HeatPump.SetFlowSetpoint(Z2_CurveFSP, HEATING_CONTROL_MODE_FLOW_TEMP, ZONE2);
+      HeatPump.SetFlowSetpoint(Z2_CurveFSP, HeatPump.Status.HeatingControlModeZ2, ZONE2);
       write_thermostats();
       HeatPump.Status.Zone2FlowTemperatureSetpoint = Z2_CurveFSP;
     }

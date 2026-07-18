@@ -948,6 +948,7 @@ void readSettingsFromConfig() {
         Config["modes"][2] = "dry";
         Config["modes"][3] = "heat";
         Config["modes"][4] = "fan_only";
+        Config["modes"][5] = "off";
         Config["mode_cmd_t"] = BASETOPIC + String("/Command/AC");  // Shortened from mode_command_topic
         Config["mode_cmd_tpl"] = "{\"SetMode\": \"{{ value }}\"}";
         Config["mode_stat_t"] = BASETOPIC + String("/Status/AC");  // Shortened from mode_state_topic

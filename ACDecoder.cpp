@@ -1,4 +1,5 @@
 #include "ACDecoder.h"
+#include <Arduino.h>
 #include <cstdio>
 #include <ESPTelnet.h>
 extern ESPTelnet TelnetServer;
@@ -184,6 +185,26 @@ void ACDECODER::WriteOK(uint8_t *Buffer, ACStatus *Status) {
 
 
 
+// Optimistic-write reconcile guard: after MQTTonData writes a commanded value into
+// ACStatus, a read cycle already in flight can return the pre-write value and would
+// briefly publish stale state. Hold the commanded value until the unit reads it back
+// (clears the hold) or AC_PENDING_HOLD_MS lapses (unit clamped/rejected - accept truth).
+static bool holdPending(uint8_t decoded, uint8_t pending, unsigned long *until) {
+  if (*until == 0) return false;
+  if (decoded == pending) { *until = 0; return false; }  // unit confirmed the write
+  if ((long)(millis() - *until) < 0) return true;        // still settling - hold commanded value
+  *until = 0;                                            // window lapsed - accept the unit's value
+  return false;
+}
+
+static bool holdPendingFloat(float decoded, float pending, unsigned long *until) {
+  if (*until == 0) return false;
+  if (decoded == pending) { *until = 0; return false; }
+  if ((long)(millis() - *until) < 0) return true;
+  *until = 0;
+  return false;
+}
+
 void ACDECODER::Process0x02(uint8_t *Buffer, ACStatus *Status) {
   for (int i = 1; i < 16; i++) {
     Array0x02[i] = Buffer[i];
@@ -192,21 +213,37 @@ void ACDECODER::Process0x02(uint8_t *Buffer, ACStatus *Status) {
   //fc, 62, 01, 30, 10, 02, 00, 00, 01, 03, 0d, 00, 00, 00, 00, 85, a4, 46, 00, 00, 00, db,
   //                                [3] [4][5]                 [10][11][12]
 
-  Status->SystemPowerMode = Buffer[3];             // Power
-  Status->isee = Buffer[4] > 0x08 ? true : false;  // Op Mode
-  Status->Buffer04 = Buffer[4];                    // Op Mode
+  if (!holdPending(Buffer[3], Status->PendingPower, &Status->PendingPowerUntil)) {
+    Status->SystemPowerMode = Buffer[3];  // Power
+  }
+  // Mode compares i-See-normalised base codes; isee and Buffer04 are held as a pair
+  // so the report's (Buffer04 - 0x08 when isee) decode stays consistent.
+  if (!holdPending(Buffer[4] > 0x08 ? Buffer[4] - 0x08 : Buffer[4], Status->PendingMode, &Status->PendingModeUntil)) {
+    Status->isee = Buffer[4] > 0x08 ? true : false;  // Op Mode
+    Status->Buffer04 = Buffer[4];                    // Op Mode
+  }
   //Status->legacyTargetTemp = Buffer[5];               // Legacy Target Temperature
-  Status->fan = Buffer[6];             // Fan Speed
-  Status->vane = Buffer[7];            // Vertical Vane
+  if (!holdPending(Buffer[6], Status->PendingFan, &Status->PendingFanUntil)) {
+    Status->fan = Buffer[6];  // Fan Speed
+  }
+  if (!holdPending(Buffer[7], Status->PendingVane, &Status->PendingVaneUntil)) {
+    Status->vane = Buffer[7];  // Vertical Vane
+  }
   Status->remoteProhibit = Buffer[8];  // Remote Prohibit
-  Status->wideVane = Buffer[10];       // Horizonal Vane
-  if (Buffer[11] != 0x00) {            // Target Temperature
+  if (!holdPending(Buffer[10] & 0x0F, Status->PendingWideVane & 0x0F, &Status->PendingWideVaneUntil)) {
+    Status->wideVane = Buffer[10];  // Horizonal Vane
+  }
+  if (Buffer[11] != 0x00) {  // Target Temperature
     int temp = Buffer[11];
     temp -= 128;
-    Status->Temperature = (float)temp / 2;
-    Status->tempMode = true;  // FloatMode
+    if (!holdPendingFloat((float)temp / 2, Status->PendingTemperature, &Status->PendingTempUntil)) {
+      Status->Temperature = (float)temp / 2;
+      Status->tempMode = true;  // FloatMode
+    }
   } else {
-    Status->Temperature = Buffer[5];
+    if (!holdPendingFloat((float)Buffer[5], Status->PendingTemperature, &Status->PendingTempUntil)) {
+      Status->Temperature = Buffer[5];
+    }
   }
   //Buffer[12];                                         // (UNCONFIRMED) Target Humidity
   //Buffer[13];                                         // (UNCONFIRMED) Power Saving Mode

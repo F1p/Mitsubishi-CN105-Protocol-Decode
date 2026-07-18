@@ -22,6 +22,8 @@
 #define HEADERSIZE 5
 #define MAXDATABLOCKSIZE 16
 
+#define AC_PENDING_HOLD_MS 5000  // How long an optimistic write shields a field from stale read-backs
+
 #define PREAMBLESIZE 2
 
 
@@ -46,6 +48,14 @@ typedef struct _ACStatus {
   uint8_t SystemPowerMode, fan, vane, remoteProhibit, wideVane, Buffer04;
   float Temperature;
   bool tempMode, isee;
+
+  // Optimistic-write reconcile guard: last commanded values, held until the unit
+  // reads them back or the hold window lapses (see holdPending in ACDecoder.cpp).
+  // Pending*Until == 0 means no hold is active for that field.
+  uint8_t PendingPower = 0, PendingMode = 0, PendingFan = 0, PendingVane = 0, PendingWideVane = 0;
+  float PendingTemperature = 0;
+  unsigned long PendingPowerUntil = 0, PendingModeUntil = 0, PendingFanUntil = 0,
+    PendingVaneUntil = 0, PendingWideVaneUntil = 0, PendingTempUntil = 0;
 
   // From Message 0x03
   float OAT, RoomTempFloat;
