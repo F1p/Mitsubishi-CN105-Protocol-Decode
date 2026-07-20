@@ -335,6 +335,12 @@ void readSettingsFromConfig() {
             } else {                    // For upgrading from <6.5.6, create the entry
               shouldSaveConfig = true;  // Save config after exit to update the file
             }
+            // AC Remote Temp
+            if (doc.containsKey(unitSettings.remote_ac_identifier)) {
+              unitSettings.RemoteTempOn = doc[unitSettings.remote_ac_identifier].as<bool>();
+            } else {                    // For upgrading from <6.5.6, create the entry
+              shouldSaveConfig = true;  // Save config after exit to update the file
+            }
           }
         }
         configFile.close();
@@ -483,6 +489,7 @@ void readSettingsFromConfig() {
       doc[unitSettings.compcurve_identifier] = unitSettings.CompCurve;
       doc[unitSettings.act_ctrl_sc_identifier] = unitSettings.shortcycleprotectionenabled;
       doc[unitSettings.mel_block_identifier] = unitSettings.BlockWriteFromMELCloud;
+      doc[unitSettings.remote_ac_identifier] = unitSettings.RemoteTempOn;
 
       if (serializeJson(doc, configFile) == 0) {
         DEBUG_PRINTLN(F("[FAILED]"));

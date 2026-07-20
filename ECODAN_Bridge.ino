@@ -288,6 +288,7 @@ struct UnitSettings {
   char compcurve_identifier[10] = "compcurve";
   char act_ctrl_sc_identifier[9] = "shortcyc";
   char mel_block_identifier[10] = "melblock";
+  char remote_ac_identifier[10] = "ac_rmt";
   String CompCurve = "{\"base\":{\"zone1\":{\"curve\":[{\"flow\":60,\"outside\":-10},{\"flow\":35,\"outside\":0},{\"flow\":20,\"outside\":15},{\"flow\":10,\"outside\":20}]},\"zone2\":{\"curve\":[{\"flow\":60,\"outside\":-10},{\"flow\":35,\"outside\":0},{\"flow\":20,\"outside\":15}]}},\"zone1\":{\"active\":false,\"manual_offset\":0,\"temp_offset\": 0,\"wind_offset\":0},\"zone2\":{\"active\":false,\"manual_offset\":0,\"temp_offset\": 0,\"wind_offset\":0},\"use_local_outdoor\":true,\"max_flow_overshoot\": 3,\"fixedlockoutduration\": 0}";
   float z1_manual_offset = 0;
   float z1_wind_offset = 0;
@@ -977,36 +978,12 @@ void HeatPumpKeepAlive(void) {
       HeatPump.SetStream(&HEATPUMP_STREAM);                                               // Set & Connect
       AC.SetStream(&HEATPUMP_STREAM);                                                     // Set & Connect
       CableConnected = false;
-
-      /*
-      HeatPump.Connect();
-      delay(1000);
-      HeatPump.Process();
-
-      if (!HeatPump.HeatPumpConnected()) {  // If the A2W Request was not successful
-        AC.Connect();
-        delay(1000);
-        AC.Process();
-      }
-      */
-
     } else {
       DEBUG_PRINTLN("Trying to connect via Cable");
       HEATPUMP_STREAM.begin(SERIAL_BAUD, SERIAL_CONFIG, FTCCable_RxPin, FTCCable_TxPin);  // Rx, Tx
       HeatPump.SetStream(&HEATPUMP_STREAM);
       AC.SetStream(&HEATPUMP_STREAM);
       CableConnected = true;
-      /*
-      HeatPump.Connect();
-      delay(1000);
-      HeatPump.Process();
-
-      if (!HeatPump.HeatPumpConnected()) {  // If the A2W Request was not successful
-        AC.Connect();
-        delay(1000);
-        AC.Process();
-      }
-      */
     }
 #else
     // For WT32 Ethernet and ESP8266 Devices switching between A2A and A2W Connect Messages
@@ -1638,6 +1615,7 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
         } else {
           AC.SetRemoteTemp(18);  // 18 = Inputting starting figure of 18C
         }
+        shouldSaveConfig = true;
       }
 
       PublishAllACReports();
