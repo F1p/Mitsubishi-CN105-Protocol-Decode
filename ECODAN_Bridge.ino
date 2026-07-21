@@ -2659,11 +2659,6 @@ void CalculateCompCurve(void) {
     Z1_CurveFSP = roundToOneDecimal(Z1_CurveFSP + Z1_Room_Offset + unitSettings.z1_wind_offset + unitSettings.z1_temp_offset + unitSettings.z1_manual_offset);
     Z2_CurveFSP = roundToOneDecimal(Z2_CurveFSP + Z2_Room_Offset + unitSettings.z2_wind_offset + unitSettings.z2_temp_offset + unitSettings.z2_manual_offset);
 
-    // Apply Clamping based on FTC Settings For Min/Max Flow Temperature
-    if (Z1_CurveFSP > HeatPump.Status.FlowTempMax) { Z1_CurveFSP = HeatPump.Status.FlowTempMax; }
-    if (Z1_CurveFSP < HeatPump.Status.FlowTempMin) { Z1_CurveFSP = HeatPump.Status.FlowTempMin; }
-
-
     // Write the Flow Setpoints to Heat Pump
     if (unitSettings.z1_active && Flow_Inc_Count == 0 && HeatPump.Status.DHWActive != 1 && Z1_CurveFSP != HeatPump.Status.Zone1FlowTemperatureSetpoint) {
       HeatPump.SetFlowSetpoint(Z1_CurveFSP, HeatPump.Status.HeatingControlModeZ1, ZONE1);
