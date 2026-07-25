@@ -32,3 +32,37 @@ Gen 1 ESP8266 (Generic)
 2. Connect your board and install [ESPHome](https://web.esphome.io/?dashboard_install) from ESP Tool
 
 3. The Pins on the Wemos D1 Mini are: D0 = Tx, D5 = Rx
+
+
+# Compile from scratch
+
+
+
+I am using IDE: 2.3.5
+
+Boards Manager > ESP32 by Espressif 
+
+<img width="373" height="186" alt="Image" src="https://github.com/user-attachments/assets/5a85eaf1-67d7-45ba-a148-2a27988d00b7" />
+
+
+Library Manager: 
+ArduinoJson v7.4.3 by Benoit Blanchon
+
+AsyncTCP v3.4.10 by ESP32Async
+
+ESP Async WebServer v3.8.1 by ESP32Async
+
+ESPAysncTCP v1.2.4 by dvarrel
+
+ESP Telnet v2.2.3 by Lennart Hennigs
+
+LiteLED v3.0.1 by Xylopyrographer
+
+PubSubClient v2.8 by Nick O'Leary
+
+WiFiManager v2.0.17 by tzapu
+
+
+Compiled with M5Stack settings:
+
+<img width="425" height="591" alt="Image" src="https://github.com/user-attachments/assets/2a693718-001a-486e-af43-db72ed0cfeb8" />
