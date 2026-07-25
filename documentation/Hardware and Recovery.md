@@ -34,8 +34,8 @@ Gen 1 ESP8266 (Generic)
 3. The Pins on the Wemos D1 Mini are: D0 = Tx, D5 = Rx
 
 
-# Compile from scratch
-
+# Compile from scratch 
+ESP32
 
 
 I am using IDE: 2.3.5
@@ -66,3 +66,31 @@ WiFiManager v2.0.17 by tzapu
 Compiled with M5Stack settings:
 
 <img width="425" height="591" alt="Image" src="https://github.com/user-attachments/assets/2a693718-001a-486e-af43-db72ed0cfeb8" />
+
+
+
+
+
+
+ESP8266
+
+Boards Manager > ESP8266 by ESP8266 Community (v3.1.2)
+
+Library Manager (Same as ESP32 above): ArduinoJson v7.4.3 by Benoit Blanchon 
+
+AsyncTCP v3.4.10 by ESP32Async 
+
+ESP Async WebServer v3.8.1 by ESP32Async 
+
+ESPAysncTCP v1.2.4 by dvarrel 
+
+ESP Telnet v2.2.3 by Lennart Hennigs 
+
+LiteLED v3.0.1 by Xylopyrographer 
+
+PubSubClient v2.8 by Nick O'Leary 
+
+WiFiManager v2.0.17 by tzapu
+
+
+Compiled with settings: 160MHz CPU, 4M (1M FS, 1M OTA), Balanced MMU
