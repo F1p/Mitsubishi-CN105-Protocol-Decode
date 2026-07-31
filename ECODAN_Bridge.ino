@@ -82,7 +82,7 @@
 
 #endif  // ESP8266 || ESP32
 
-String FirmwareVersion = "7.0.29";
+String FirmwareVersion = "7.0.30";
 String LatestFirmwareVersion;
 
 // Language for OTA Check
@@ -2222,6 +2222,7 @@ void ConfigurationReport(void) {
   if (HeatPump.SVCPopulated || HeatPump.Status.Fan2RPM != 0) { doc[F("Fan2RPM")] = HeatPump.Status.Fan2RPM; }
   if (HeatPump.SVCPopulated || HeatPump.Status.LEVA != 0) { doc[F("LEVA")] = HeatPump.Status.LEVA; }
   if (HeatPump.SVCPopulated || HeatPump.Status.LEVB != 0) { doc[F("LEVB")] = HeatPump.Status.LEVB; }
+  if (HeatPump.SVCPopulated || HeatPump.Status.HasR290DualComp) { doc[F("LEVC")] = HeatPump.Status.LEVC; }  // Only Applies to multi-compressor units e.g. R290
   if (HeatPump.SVCPopulated || HeatPump.Status.TH33 != 0) { doc[F("TH33")] = HeatPump.Status.TH33; }
 
   doc[F("HB_ID")] = Heart_Value;
@@ -2658,6 +2659,10 @@ void CalculateCompCurve(void) {
     // Apply Post Calculation Offsets to Calculated Curve Flow Setpoint
     Z1_CurveFSP = roundToOneDecimal(Z1_CurveFSP + Z1_Room_Offset + unitSettings.z1_wind_offset + unitSettings.z1_temp_offset + unitSettings.z1_manual_offset);
     Z2_CurveFSP = roundToOneDecimal(Z2_CurveFSP + Z2_Room_Offset + unitSettings.z2_wind_offset + unitSettings.z2_temp_offset + unitSettings.z2_manual_offset);
+
+    // Apply Clamping based on FTC Settings For Min/Max Flow Temperature
+    if (Z1_CurveFSP > HeatPump.Status.FlowTempMax) { Z1_CurveFSP = HeatPump.Status.FlowTempMax; }     // Protect UFH from high temp
+    //if (Z1_CurveFSP < HeatPump.Status.FlowTempMin) { Z1_CurveFSP = HeatPump.Status.FlowTempMin; }   // Removed due to Cooling
 
     // Write the Flow Setpoints to Heat Pump
     if (unitSettings.z1_active && Flow_Inc_Count == 0 && HeatPump.Status.DHWActive != 1 && Z1_CurveFSP != HeatPump.Status.Zone1FlowTemperatureSetpoint) {

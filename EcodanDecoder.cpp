@@ -360,8 +360,6 @@ void ECODANDECODER::Process0x03(uint8_t *Buffer, EcodanStatus *Status) {
     TwoZone_Z2Working = 0;
   }
 
-  //MasterCascadeFreq = Buffer[9];
-
   Status->RefrigeFltCode = RefrigeFltCode;
   Status->ErrCode1 = ErrCode1;
   Status->ErrCode2 = ErrCode2;
@@ -382,6 +380,10 @@ void ECODANDECODER::Process0x04(uint8_t *Buffer, EcodanStatus *Status) {
   CompressorFrequency = Buffer[1];
 
   Status->CompressorFrequency = CompressorFrequency;
+  Status->Compressor1Freq = Buffer[2];
+  Status->Compressor2Freq = Buffer[3];
+  Status->Compressor3Freq = Buffer[4];
+  Status->Compressor4Freq = Buffer[5];
 }
 
 
@@ -1003,6 +1005,13 @@ void ECODANDECODER::Process0xA3(uint8_t *Buffer, EcodanStatus *Status) {
       Status->LEVA = ExtractInt16_v2_Signed(Buffer, 4);
     } else if (ServiceCode == 23) {
       Status->LEVB = ExtractInt16_v2_Signed(Buffer, 4);
+    } else if (ServiceCode == 24) {
+      Status->LEVC = ExtractInt16_v2_Signed(Buffer, 4);
+      if (Status->LEVC != 5) {
+        Status->HasR290DualComp = true;
+      } else {
+        Status->HasR290DualComp = false;
+      }
     } else if (ServiceCode == 27) {
       Status->TH32 = ExtractInt16_v2_Signed(Buffer, 4);
       Status->HasGeodan = true;

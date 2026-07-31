@@ -159,6 +159,7 @@ typedef struct _EcodanStatus {
   //From Message 0x03
   uint8_t RefrigeFltCode, ErrCode1, ErrCode2, FltCode1, FltCode2;
   uint8_t TwoZone_Z1Working, TwoZone_Z2Working;
+  uint8_t Compressor1Freq, Compressor2Freq, Compressor3Freq, Compressor4Freq;
 
   // From Message 0x04
   uint8_t CompressorFrequency;
@@ -208,7 +209,7 @@ typedef struct _EcodanStatus {
 
   //From Message 0x11
   uint8_t DipSwitch1, DipSwitch2, DipSwitch3, DipSwitch4, DipSwitch5, DipSwitch6, DipSwitch7;
-  bool HasCooling, Has2Zone, Simple2Zone, HasAnsweredDips, HasGeodan;
+  bool HasCooling, Has2Zone, Simple2Zone, HasAnsweredDips, HasGeodan, HasR290DualComp;
 
   //From Message 0x13
   uint32_t RunHours;
@@ -253,7 +254,7 @@ typedef struct _EcodanStatus {
   float DeliveredHotWaterEnergy;
 
   //From Message 0xa3
-  int16_t Fan1RPM, Fan2RPM, LEVA, LEVB, LiquidTemp, TH4Discharge, CompOpTimes, Subcool, TH8HeatSink, TH6Pipe, TH32Pipe, TH32, TH33, TH34, Superheat, ServiceCodeReply;
+  int16_t Fan1RPM, Fan2RPM, LEVA, LEVB, LEVC, LiquidTemp, TH4Discharge, CompOpTimes, Subcool, TH8HeatSink, TH6Pipe, TH32Pipe, TH32, TH33, TH34, Superheat, ServiceCodeReply;
   uint8_t LastServiceCodeNumber, OutdoorUnitCapacity;
   char OutdoorFirmware[6];
 
