@@ -1,3 +1,19 @@
+/*
+    Copyright (C) <2020>  <Mike Roberts>
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 #include "Ecodan.h"
 
 #include <ESPTelnet.h>
@@ -6,28 +22,21 @@ extern ESPTelnet TelnetServer;
 
 // Initialisation Commands
 uint8_t Init3[] = { 0xfc, 0x5a, 0x02, 0x7a, 0x02, 0xca, 0x01, 0x5d };  // Air to Water Connect
-uint8_t Init4[] = { 0xfc, 0x5a, 0x02, 0x7a, 0x02, 0xca, 0x02, 0x5c };  // Air to Water Disconnect
 
-
-#define FIRST_READ_NUMBER_COMMANDS 38
-uint8_t FirstReadActiveCommand[] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
-                                     0x10, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20,
-                                     0x26, 0x27, 0x28, 0x29, 0xA1, 0xA2, 0x11, 0x00 };
-
-#define NUMBER_COMMANDS 56
-uint8_t ActiveCommand[] = { 0x00, 0x26, 0x14, 0x28, 0x03, 0x0C, 0x04, 0x05, 0x06, 0x15, 0x07, 0x08, 0x09, 0x04,
-                            0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x0C, 0x04, 0x10, 0x13, 0x14, 0x04, 0x15, 0x0C, 0x16,
-                            0x17, 0x18, 0x04, 0x0C, 0x19, 0x1A, 0x1B, 0x1C, 0x04, 0x15, 0x1D, 0x0C, 0x1E, 0x1F,
-                            0x20, 0x04, 0x01, 0x0C, 0x27, 0x14, 0x02, 0x29, 0x04, 0xA1, 0x0C, 0xA2, 0x15, 0x00 };
+#define NUMBER_COMMANDS 38
+uint8_t ActiveCommand[] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
+                            0x10, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20,
+                            0x26, 0x27, 0x28, 0x29, 0xA1, 0xA2, 0x11, 0x00 };
 
 #define FIRST_READ_NUMBER_SVC_COMMANDS 17
 int FirstReadActiveServiceCode[] = { 70, 3, 4, 5, 6, 7, 10, 12, 13, 19, 20, 22, 23, 24, 90, 27, 3 };
 
-#define NUMBER_SVC_COMMANDS 32
-int ActiveServiceCode[] = { 3, 4, 5, 12, 13, 7, 4, 5, 10, 4, 5, 12, 13, 6, 4, 5, 12, 13, 19, 4, 5, 13, 20, 4, 5, 12, 13, 22, 4, 5, 23, 5 };
+#define NUMBER_SVC_COMMANDS 13
+int ActiveServiceCode[] = { 3, 4, 5, 6, 7, 10, 12, 13, 19, 20, 22, 23, 3 };
 
-#define NUMBER_SVC_COMMANDS_FTC7 7
-int ActiveServiceCodeFTC7[] = { 70, 3, 19, 20, 22, 23, 5, 90, 3 };
+#define NUMBER_SVC_COMMANDS_FTC7 8
+int ActiveServiceCodeFTC7[] = { 70, 3, 19, 20, 22, 23, 24, 5, 90, 3 };
+
 
 unsigned long lastmsgdispatchedMillis = 0;  // variable for comparing millis counter
 int cmd_queue_length = 0;
@@ -56,26 +65,24 @@ void ECODAN::Process(void) {
   while (DeviceStream->available()) {
     if (!ProcessFlag) {
       printCurrentTime();
-      DEBUG_PRINT(F("[FTC > Bridge] "));
+      DEBUG_PRINT("[FTC > Bridge] ");
       ProcessFlag = true;
     }
     c = DeviceStream->read();
 
     if (c == 0)
-      DEBUG_PRINT(F("00, "));
+      DEBUG_PRINT("00, ");
     else {
-      if (c < 0x10) DEBUG_PRINT(F("0"));
+      if (c < 0x10) DEBUG_PRINT("0");
       DEBUG_PRINT(String(c, HEX));
-      DEBUG_PRINT(F(", "));
+      DEBUG_PRINT(", ");
     }
 
     if (ECODANDECODER::Process(c)) {
       ProcessFlag = false;
       msbetweenmsg = millis() - lastmsgdispatchedMillis;
       DEBUG_PRINTLN();
-      if (!Connected) { DEBUG_PRINTLN("A2W Connected!"); }
       Connected = true;
-      PrevConnected = true;
     }
   }
 }
@@ -115,6 +122,7 @@ void ECODAN::StopStateMachine(void) {
 
 void ECODAN::StatusSVCMachine(void) {
   if (CurrentSVCMessage > 0) {
+
     if (Status.FTCVersion == FTC7 && Status.OutdoorExtendedSensors) {
       if (Status.HasGeodan && (ActiveServiceCodeFTC7[CurrentSVCMessage - 1]) == 23) {
         WriteServiceCodeCMD(27);
@@ -158,21 +166,17 @@ void ECODAN::StatusSVCMachine(void) {
 }
 
 
+
 void ECODAN::StatusStateMachine(void) {
   uint8_t Buffer[COMMANDSIZE];
   uint8_t CommandSize;
   uint8_t i;
 
   if (CurrentMessage != 0 && !PauseStateMachine) {
-    printCurrentTime();
-    DEBUG_PRINT(F("[Bridge > FTC] "));
+    DEBUG_PRINT("[Bridge > FTC] ");
     ECODANDECODER::CreateBlankTxMessage(GET_REQUEST, 0x10);
 
-    if (Status.FTCVersion == 0 || !Status.HasAnsweredDips) {
-      ECODANDECODER::SetPayloadByte(FirstReadActiveCommand[CurrentMessage], 0);
-    } else {
-      ECODANDECODER::SetPayloadByte(ActiveCommand[CurrentMessage], 0);
-    }
+    ECODANDECODER::SetPayloadByte(ActiveCommand[CurrentMessage], 0);
 
     CommandSize = ECODANDECODER::PrepareTxCommand(Buffer);
     DeviceStream->write(Buffer, CommandSize);
@@ -180,20 +184,16 @@ void ECODAN::StatusStateMachine(void) {
     DeviceStream->flush();
 
     for (i = 0; i < CommandSize; i++) {
-      if (Buffer[i] < 0x10) DEBUG_PRINT(F("0"));
+      if (Buffer[i] < 0x10) DEBUG_PRINT("0");
       DEBUG_PRINT(String(Buffer[i], HEX));
-      DEBUG_PRINT(F(", "));
+      DEBUG_PRINT(", ");
       Buffer[i] = 0x00;
     }
     DEBUG_PRINTLN();
 
     CurrentMessage++;
 
-    if (Status.FTCVersion == 0 || !Status.HasAnsweredDips) {
-      CurrentMessage %= FIRST_READ_NUMBER_COMMANDS;  // Once none left
-    } else {
-      CurrentMessage %= NUMBER_COMMANDS;  // Once none left
-    }
+    CurrentMessage %= NUMBER_COMMANDS;  // Once none left
 
     // Straight to end
     if (CurrentMessage == 0) {
@@ -213,13 +213,11 @@ void ECODAN::WriteStateMachine(void) {
   if (cmd_queue_length > 0 && cmd_queue_length < 11) {
     CurrentWriteAttempt++;
     StopStateMachine();
-    printCurrentTime();
     DEBUG_PRINT(F("Writing msg at position: "));
     DEBUG_PRINT(cmd_queue_position);
     DEBUG_PRINT(F(", attempt: "));
     DEBUG_PRINTLN(CurrentWriteAttempt);
 
-    printCurrentTime();
     DEBUG_PRINT(F("[Bridge > FTC] "));
     ECODANDECODER::CreateBlankTxMessage(ECODANDECODER::ReturnNextCommandType(cmd_queue_position), 0x10);
     ECODANDECODER::EncodeNextCommand(cmd_queue_position);
@@ -237,36 +235,23 @@ void ECODAN::WriteStateMachine(void) {
     DEBUG_PRINTLN();
 
     WriteInProgress = true;
-  } /*else {
+  } else {
     PauseStateMachine = false;
-  }*/
+  }
 }
 
 
 
 void ECODAN::Connect(void) {
-  DEBUG_PRINTLN("Connecting to A2W Devices...");
+  DEBUG_PRINTLN(F("Connecting to Heat Pump..."));
   DeviceStream->write(Init3, 8);
   DeviceStream->flush();
-  delay(1000);  // Await Reply
   Process();
 }
-
-
-void ECODAN::Disconnect(void) {
-  StopStateMachine();
-  DEBUG_PRINTLN(F("Disconnecting from Heat Pump..."));
-  DeviceStream->write(Init4, 8);
-  DeviceStream->flush();
-  Process();
-  Connected = false;
-}
-
 
 uint8_t ECODAN::HeatPumpConnected(void) {
   return Connected;
 }
-
 
 uint8_t ECODAN::UpdateComplete(void) {
   if (UpdateFlag) {
@@ -277,7 +262,6 @@ uint8_t ECODAN::UpdateComplete(void) {
   }
 }
 
-
 uint8_t ECODAN::SVCUpdateComplete(void) {
   if (SVCUpdateFlag) {
     SVCUpdateFlag = 0;
@@ -287,7 +271,6 @@ uint8_t ECODAN::SVCUpdateComplete(void) {
     return 0;
   }
 }
-
 
 uint8_t ECODAN::Lastmsbetweenmsg(void) {
   return msbetweenmsg;
@@ -329,6 +312,10 @@ void ECODAN::SetDHWMode(String *Mode) {
 
 
 void ECODAN::ForceDHW(uint8_t OnOff) {
+  uint8_t Buffer[COMMANDSIZE];
+  uint8_t CommandSize = 0;
+  uint8_t i;
+
   ECODANDECODER::EncodeForcedDHW(OnOff);
   if (cmd_queue_length < 10) {
     cmd_queue_length++;
@@ -389,7 +376,7 @@ void ECODAN::SetHeatingControlMode(uint8_t Mode, uint8_t Zone) {
 
 
 void ECODAN::SetSystemPowerMode(uint8_t OnOff) {
-  ECODANDECODER::EncodePower(OnOff);
+  ECODANDECODER::EncodePower(OnOff, Status.HotWaterSetpoint);
   if (cmd_queue_length < 10) {
     cmd_queue_length++;
     ECODANDECODER::TransfertoBuffer(SET_REQUEST, cmd_queue_length);

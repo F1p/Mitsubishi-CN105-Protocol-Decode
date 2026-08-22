@@ -1,9 +1,21 @@
+/*
+    Copyright (C) <2020>  <Mike Roberts>
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 #include "EcodanDecoder.h"
 #include <cstdio>
-#include <ESPTelnet.h>
-extern ESPTelnet TelnetServer;
-#include "Debug.h"
-
 
 uint8_t Array0x01[] = {};
 uint8_t Array0x02[] = {};
@@ -227,7 +239,7 @@ uint8_t ECODANDECODER::BuildRxMessage(MessageStruct *Message, uint8_t c) {
           case EXCONNECT_RESPONSE:
             break;
           default:
-            //DEBUG_PRINTLN("Unknown PacketType");
+            //Serial.println("Unknown PacketType");
             BufferPos = 0;
             return false;  // Unknown Packet Type
         }
@@ -235,7 +247,7 @@ uint8_t ECODANDECODER::BuildRxMessage(MessageStruct *Message, uint8_t c) {
 
       case 2:
         if (c != Preamble[0]) {
-          //DEBUG_PRINTLN("Preamble 1 Error");
+          //Serial.println("Preamble 1 Error");
           BufferPos = 0;
           return false;
         }
@@ -243,7 +255,7 @@ uint8_t ECODANDECODER::BuildRxMessage(MessageStruct *Message, uint8_t c) {
 
       case 3:
         if (c != Preamble[1]) {
-          //DEBUG_PRINTLN("Preamble 1 Error");
+          //Serial.println("Preamble 1 Error");
           BufferPos = 0;
           return false;
         }
@@ -252,7 +264,7 @@ uint8_t ECODANDECODER::BuildRxMessage(MessageStruct *Message, uint8_t c) {
       case 4:
         PayloadSize = c;
         if (c > MAXDATABLOCKSIZE) {
-          //DEBUG_PRINTLN("Oversize Payload");
+          //Serial.println("Oversize Payload");
           BufferPos = 0;
           return false;
         }
@@ -271,7 +283,7 @@ uint8_t ECODANDECODER::BuildRxMessage(MessageStruct *Message, uint8_t c) {
     Buffer[BufferPos] = c;
     BufferPos = 0;
     if (CheckSum(Buffer, PayloadSize + HEADERSIZE) == c) {
-      //DEBUG_PRINTLN("CS OK");
+      //Serial.println("CS OK");
       Message->SyncByte = Buffer[0];
       Message->PacketType = Buffer[1];
       Message->Preamble[0] = Buffer[2];
@@ -281,7 +293,7 @@ uint8_t ECODANDECODER::BuildRxMessage(MessageStruct *Message, uint8_t c) {
       memcpy(Message->Payload, &Buffer[5], Message->PayloadSize);
       return true;
     } else {
-      //DEBUG_PRINTLN("Checksum Fail");
+      //Serial.println("Checksum Fail");
       return false;
     }
   }
@@ -318,7 +330,7 @@ void ECODANDECODER::Process0x01(uint8_t *Buffer, EcodanStatus *Status) {
 void ECODANDECODER::Process0x02(uint8_t *Buffer, EcodanStatus *Status) {
   uint8_t Defrost, ThermostatZ1, ThermostatZ2;
 
-  Status->LastDefrost = Status->Defrost;
+  Status->LastDefrost = Status->Defrost;  // Transfer the defrost state
 
   for (int i = 1; i < 16; i++) {
     Array0x02[i] = Buffer[i];
@@ -430,6 +442,7 @@ void ECODANDECODER::Process0x07(uint8_t *Buffer, EcodanStatus *Status) {
   OutputPower = Buffer[6];
   EnergyConsumedIncreasing = ExtractUInt16(Buffer, 11) / 10.0f;
 
+
   Status->InputPower = InputPower;
   Status->OutputPower = OutputPower;
   Status->EnergyConsumedIncreasing = EnergyConsumedIncreasing;
@@ -440,8 +453,6 @@ void ECODANDECODER::Process0x08(uint8_t *Buffer, EcodanStatus *Status) {
   for (int i = 1; i < 16; i++) {
     Array0x08[i] = Buffer[i];
   }
-
-  // To be confirmed - LEVA & LEVB for FTC7
 }
 
 
@@ -542,8 +553,9 @@ void ECODANDECODER::Process0x0D(uint8_t *Buffer, EcodanStatus *Status) {
   Status->Zone2ReturnTemperature = Zone2ReturnTemperature;
 }
 
+
 void ECODANDECODER::Process0x0E(uint8_t *Buffer, EcodanStatus *Status) {
-  float ExternalBoilerFlowTemperature, ExternalBoilerReturnTemperature;
+  float ExternalBoilerFlowTemperature, ExternalBoilerReturnTemperature, BrineInletTemp, BrineOutletTemp;
 
   for (int i = 1; i < 16; i++) {
     Array0x0e[i] = Buffer[i];
@@ -590,6 +602,7 @@ void ECODANDECODER::Process0x0F(uint8_t *Buffer, EcodanStatus *Status) {  // FTC
   }
 }
 
+
 void ECODANDECODER::Process0x10(uint8_t *Buffer, EcodanStatus *Status) {
   uint8_t Zone1ThermostatDemand, Zone2ThermostatDemand, OutdoorThermostatDemand;
 
@@ -621,7 +634,7 @@ void ECODANDECODER::Process0x11(uint8_t *Buffer, EcodanStatus *Status) {
   DipSwitch4 = Buffer[7];
   DipSwitch5 = Buffer[9];
   DipSwitch6 = Buffer[11];
-  DipSwitch7 = Buffer[13];  // FTC7 only
+  DipSwitch7 = Buffer[13]; // FTC7 only
 
   // Bitmask Translation
   if (IS_BIT_SET(DipSwitch2, 3)) {  // SW2-4
@@ -663,13 +676,13 @@ void ECODANDECODER::Process0x12(uint8_t *Buffer, EcodanStatus *Status) {
 
 void ECODANDECODER::Process0x13(uint8_t *Buffer, EcodanStatus *Status) {
   uint32_t RunHours;
-  bool CompressorRunning;
 
   for (int i = 1; i < 16; i++) {
     Array0x13[i] = Buffer[i];
   }
 
-  CompressorRunning = Buffer[1];  // 0 When off, on/off 1's when running
+  Status->CompressorRunning = Buffer[1];
+  Status->SlaveCompressorRunning = Buffer[2];
 
   RunHours = Buffer[4];
   RunHours = RunHours << 8;
@@ -677,7 +690,6 @@ void ECODANDECODER::Process0x13(uint8_t *Buffer, EcodanStatus *Status) {
   RunHours *= 100;
   RunHours += Buffer[3];
 
-  Status->CompressorRunning = CompressorRunning;
   Status->RunHours = RunHours;
 }
 
@@ -724,14 +736,24 @@ void ECODANDECODER::Process0x15(uint8_t *Buffer, EcodanStatus *Status) {
   } else if (Buffer[2] == 0x64) {
     PrimaryWaterPumpSpeed = 0;
   }
+  /*       PWM Duty 52 => "1",  0x34
+                    41 => "2",  0x29
+                    31 => "3",  0x1F
+                    20 => "4",  0x14
+                    0 => "5",   0x00
+                    100 => "0", 0x64 */
+  /*
+  
+  } else if (value > 73 && value < 77) { // 74-76
+    return std::string("Warning");
+  } else if (value > 83 && value < 87) { // 84-86
+    return std::string("Electrical error");
+  } else if (value > 88 && value < 92) { // 89-91
+      return std::string("Blocked error");
 
-  PumpPower = Buffer[3];  // Primary Power Power Est.
-  // 74-76 = Warning
-  // 84-86 = Electrical Error
-  // 89-91 = Blockage
-  // 255 = Stopped
+  */
 
-
+  PumpPower = Buffer[3];       // Primary Power Power Est.
   WaterPump2 = Buffer[4];      // Water Pump 2 Active
   WaterPump3a = Buffer[5];     // Complex Zone2 Water Pump OUT3
   ThreeWayValve = Buffer[6];   // 3 Way Valve Position
@@ -824,6 +846,8 @@ void ECODANDECODER::Process0x20(uint8_t *Buffer, EcodanStatus *Status) {
     Array0x20[i] = Buffer[i];
   }
 }
+
+
 
 void ECODANDECODER::Process0x26(uint8_t *Buffer, EcodanStatus *Status) {
   float DHWSetpoint;
@@ -962,6 +986,8 @@ void ECODANDECODER::Process0xA2(uint8_t *Buffer, EcodanStatus *Status) {
 }
 
 
+
+
 void ECODANDECODER::Process0xA3(uint8_t *Buffer, EcodanStatus *Status) {
   uint8_t ServiceCode;
   bool Write_To_Ecodan_OK;
@@ -969,7 +995,7 @@ void ECODANDECODER::Process0xA3(uint8_t *Buffer, EcodanStatus *Status) {
   for (int i = 1; i < 16; i++) {
     Array0xa3[i] = Buffer[i];
   }
-  if (Buffer[3] == 1 || Buffer[3] == 2) {  // Valid Reply is "1" or "2" (result)
+  if (Buffer[3] == 1 || Buffer[3] == 2) {  // Valid Reply is 1 or 2 (result)
     Write_To_Ecodan_OK = true;             // For de-queue
     Status->Write_To_Ecodan_OK = Write_To_Ecodan_OK;
 
@@ -1113,13 +1139,11 @@ void ECODANDECODER::CreateBlankTxMessage(uint8_t PacketType, uint8_t PayloadSize
   CreateBlankMessageTemplate(&TxMessage, PacketType, PayloadSize);
 }
 
-
 void ECODANDECODER::PayloadWipe(void) {
   for (int i = 0; i < 16; i++) {
     TxMessage.Payload[i] = 0;
   }
 }
-
 
 void ECODANDECODER::CreateBlankMessageTemplate(MessageStruct *Message, uint8_t PacketType, uint8_t PayloadSize) {
   uint8_t i;
@@ -1209,10 +1233,21 @@ void ECODANDECODER::EncodeControlMode(uint8_t ControlMode, uint8_t Zone) {
 }
 
 
-void ECODANDECODER::EncodePower(uint8_t Power) {
+void ECODANDECODER::EncodePower(uint8_t Power, float SetpointDHW) {
+  uint8_t UpperByte, LowerByte;
+  uint16_t ScaledTarget;
+
   TxMessage.Payload[0] = TX_MESSAGE_BASIC;
   TxMessage.Payload[1] = SET_SYSTEM_POWER;
   TxMessage.Payload[3] = Power;
+
+  // DHW Anti 0 Setpoint 
+  ScaledTarget = SetpointDHW * 100;
+  UpperByte = (uint8_t)(ScaledTarget >> 8);
+  LowerByte = (uint8_t)(ScaledTarget & 0x00ff);
+
+  TxMessage.Payload[8] = UpperByte;
+  TxMessage.Payload[9] = LowerByte;
 }
 
 
@@ -1247,7 +1282,7 @@ void ECODANDECODER::EncodeFlowTemperature(float Setpoint, uint8_t ControlMode, u
   TxMessage.Payload[1] = 0x00;
   TxMessage.Payload[2] = Zone;
 
-  // DHW Anti 0 Setpoint
+  // DHW Anti 0 Setpoint 
   ScaledTarget = SetpointDHW * 100;
   UpperByte = (uint8_t)(ScaledTarget >> 8);
   LowerByte = (uint8_t)(ScaledTarget & 0x00ff);

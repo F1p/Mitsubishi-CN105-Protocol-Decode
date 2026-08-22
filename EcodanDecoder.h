@@ -1,3 +1,20 @@
+/*
+    Copyright (C) <2020>  <Mike Roberts>
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #ifndef ECODANDECODER_h
 #define ECODANDECODER_h
 
@@ -69,8 +86,8 @@ const char SystemPowerModeString[2][8] = { "Standby", "On" };
 #define SYSTEM_OPERATION_MODE_HEATING_ECO 7
 const char SystemOperationModeString[8][14] = { "Off", "Hot Water", "Heating", "Cooling", "Zero V", "Frost Protect", "Legionella", "Heating Eco" };
 
-const int HeatingRunningBinary[] = { 0, 0, 1, 0, 0, 0, 0, 0 };
-const int CoolingRunningBinary[] = { 0, 0, 0, 1, 0, 0, 0, 0 };
+const int HeatingRunningBinary[] = { 0, 0, 1, 0 };
+const int CoolingRunningBinary[] = { 0, 0, 0, 1 };
 
 #define HOT_WATER_CONTROL_MODE_NORMAL 0
 #define HOT_WATER_CONTROL_MODE_ECO 1
@@ -78,7 +95,6 @@ const char HotWaterControlModeString[2][7] = { "Normal", "Eco" };
 
 const char HPControlModeString[2][5] = { "Heat", "Cool" };
 const char ShortCycleReason[3][33] = { "", "Flow Temp Exceeded Flow Setpoint", "Thermostat Demand" };
-
 
 #define HEATING_CONTROL_MODE_ZONE_TEMP 0x00
 #define HEATING_CONTROL_MODE_FLOW_TEMP 0x01
@@ -114,7 +130,7 @@ const char FltCodeLetterTwo[22][2] = { "0", "1", "2", "3", "4", "5", "6", "7", "
 #define FTC5 2
 #define FTC6 3
 #define FTC7 5
-const char FTCString[6][6] = { "FTC2B", "FTC4", "FTC5", "FTC6", "", "FTC7" };
+const char FTCString[6][7] = { "FTC2B", "FTC4", "FTC5", "FTC6", "", "FTC7" };
 
 
 // System Flags
@@ -159,10 +175,10 @@ typedef struct _EcodanStatus {
   //From Message 0x03
   uint8_t RefrigeFltCode, ErrCode1, ErrCode2, FltCode1, FltCode2;
   uint8_t TwoZone_Z1Working, TwoZone_Z2Working;
-  uint8_t Compressor1Freq, Compressor2Freq, Compressor3Freq, Compressor4Freq;
 
   // From Message 0x04
   uint8_t CompressorFrequency;
+  uint8_t Compressor1Freq, Compressor2Freq, Compressor3Freq, Compressor4Freq;
 
   // From Message 0x05
   uint8_t DHWActive;
@@ -171,9 +187,6 @@ typedef struct _EcodanStatus {
   // From Message 0x07
   uint8_t InputPower, OutputPower;
   float EnergyConsumedIncreasing;
-
-  // From Message 0x08
-
 
   //From Message 0x09
   float Zone1TemperatureSetpoint;
@@ -213,7 +226,7 @@ typedef struct _EcodanStatus {
 
   //From Message 0x13
   uint32_t RunHours;
-  bool CompressorRunning;
+  bool CompressorRunning, SlaveCompressorRunning;
 
   //From Message 0x14
   uint8_t PrimaryFlowRate;
@@ -254,7 +267,7 @@ typedef struct _EcodanStatus {
   float DeliveredHotWaterEnergy;
 
   //From Message 0xa3
-  int16_t Fan1RPM, Fan2RPM, LEVA, LEVB, LEVC, LiquidTemp, TH4Discharge, CompOpTimes, Subcool, TH8HeatSink, TH6Pipe, TH32Pipe, TH32, TH33, TH34, Superheat, ServiceCodeReply;
+  int16_t Fan1RPM, Fan2RPM, LEVA, LEVB, LEVC, LiquidTemp, TH4Discharge, CompOpTimes, Subcool, TH8HeatSink, TH6Pipe, TH32Pipe, TH32, TH34, TH33, Superheat, ServiceCodeReply;
   uint8_t LastServiceCodeNumber, OutdoorUnitCapacity;
   char OutdoorFirmware[6];
 
@@ -272,12 +285,11 @@ class ECODANDECODER {
 public:
   ECODANDECODER(void);
   uint8_t Process(uint8_t c);
-
-  void CreateBlankTxMessage(uint8_t PacketType, uint8_t PayloadSize);
   void PayloadWipe(void);
+  void CreateBlankTxMessage(uint8_t PacketType, uint8_t PayloadSize);
   void SetPayloadByte(uint8_t Data, uint8_t Location);
   uint8_t PrepareTxCommand(uint8_t *Buffer);
-  void EncodePower(uint8_t Power);
+  void EncodePower(uint8_t Power, float SetpointDHW);
   void EncodeControlMode(uint8_t ControlMode, uint8_t Zone);
   void EncodeDHWMode(uint8_t HotWaterMode);
   void EncodeDHWSetpoint(float HotWaterSetpoint);
@@ -299,6 +311,7 @@ protected:
 private:
   MessageStruct RxMessage;
   MessageStruct TxMessage;
+
 
   bool IS_BIT_SET(uint8_t value, uint8_t bit);
 
