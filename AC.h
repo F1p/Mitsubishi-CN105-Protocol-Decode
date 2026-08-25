@@ -35,6 +35,7 @@ public:
   void WriteMELCloudCMD(uint8_t cmd);
 
   void Connect(void);
+  void Disconnect(void);
   void GetVersion(uint8_t type);
   bool PauseStateMachine;
   bool PrevConnected;

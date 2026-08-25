@@ -10,15 +10,16 @@ This software is to communicate with the Mitsubishi Ecodan FTC controller or AC 
 To learn about the Hardware and Device Recovery, please read [Hardware and Recovery.md](https://github.com/F1p/Mitsubishi-CN105-Protocol-Decode/blob/master/documentation/Hardware%20and%20Recovery.md)
 
 Pre-Compiled software is for offical hardware:
-- Witty ESP8266
-- WT32-ETH
-- M5stack Atom S3 lite
+
+ - [All variations of **PayPal** sold hardware](https://www.paypal.com/ncp/payment/5664MSMETNMVY)
+ - [Generation 2 WiFi ESP32 ebay sold hardware (with or without MELCloud port)](https://www.ebay.co.uk/itm/326373657740?var=515493740627)
+ - [ESP32 Ethernet ebay sold hardware](https://www.ebay.co.uk/itm/326373657740?var=515493740625)
+- [Generation 1 WiFi ESP8266 ebay sold hardware (No longer available)](https://www.ebay.co.uk/itm/325967595655)
 
 
-You can bring your own hardware, compile in Arduino or flash the same hardware above with pre-compiled files.
+You can bring your own hardware, compile in Arduino or flash the same hardware above with pre-compiled files Or buy directly!
 
-⚠️ August 2026: Primarily due to the implementation of the EU Packaging and Packaging Waste Regulation (PPWR, Regulation EU 2025/40), combined with the elimination of de-minimis customs exemptions and escalating international shipment costs, offering hardware is no longer financially or operationally viable at this time. 
-
+[<img width="250" height="67" alt="image" src="https://github.com/user-attachments/assets/1a4b0bf3-1b9b-4bb3-b389-b32293dfd7b3" />](https://www.paypal.com/ncp/payment/5664MSMETNMVY)
 
 
 # Detailed Setup Instructions

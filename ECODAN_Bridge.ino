@@ -82,7 +82,7 @@
 
 #endif  // ESP8266 || ESP32
 
-String FirmwareVersion = "7.0.30";
+String FirmwareVersion = "7.0.31";
 String LatestFirmwareVersion;
 
 // Language for OTA Check
@@ -362,7 +362,7 @@ void HeatPumpQueryStateEngine(void);
 void WriteStateEngine(void);
 void MELCloudQueryReplyEngine(void);
 void HeatPumpQuerySVCEngine(void);
-void HeatPumpKeepAlive(void);
+void TriggerStateMachines(void);
 void Zone1Report(void);
 void Zone2Report(void);
 void HotWaterReport(void);
@@ -384,7 +384,7 @@ void CheckForOTAUpdates(void);
 #endif
 
 TimerCallBack HeatPumpQuery1(400, HeatPumpQueryStateEngine);  // Set to 400ms (Safe), 320-350ms best time between messages
-TimerCallBack HeatPumpQuery2(30000, HeatPumpKeepAlive);       // Set to 20-30s for heat pump query frequency
+TimerCallBack HeatPumpQuery2(30000, TriggerStateMachines);    // Set to 20-30s for heat pump query frequency
 TimerCallBack HeatPumpQuery3(30000, handleMQTTState);         // Re-connect attempt timer if MQTT is not online
 TimerCallBack HeatPumpQuery4(30000, handleMQTT2State);        // Re-connect attempt timer if MQTT Stream 2 is not online
 TimerCallBack HeatPumpQuery5(1000, WriteStateEngine);         // Set to 1000ms (Safe), 320-350ms best time between messages
@@ -521,11 +521,10 @@ void setup() {
   AC.Status.SupportsHozVane = true;
 
 #ifdef ESP32
-  CheckForOTAUpdates();
+  if (WiFi.status() == WL_CONNECTED) { CheckForOTAUpdates(); }
 #endif
 
   CalculateCompCurve();
-  HeatPumpKeepAlive();
   for (int i = 0; i < OAT_Window_Size; i++) { OAT_readings[i] = 0; }
 }
 
@@ -546,6 +545,11 @@ void loop() {
   HeatPumpQuery8.Process();
 #endif
   HeatPumpQuery9.Process();
+
+  // -- Heat Pump Connection Handler -- //
+  if (!HeatPump.HeatPumpConnected() && !AC.HeatPumpConnected()) {
+    HandleConnectionAttempts();
+  }
 
   MELCloudQueryReplyEngine();
   MQTTClient1.loop();
@@ -968,7 +972,8 @@ void loop() {
   CPULoopSpeed = micros() - looppreviousMicros;  // Loop Speed End Monitor
 }
 
-void HeatPumpKeepAlive(void) {
+
+void HandleConnectionAttempts(void) {
   if (!HeatPump.HeatPumpConnected() && !AC.HeatPumpConnected()) {
 #ifdef ARDUINO_M5STACK_ATOMS3
     // Swap to the other pins and test the connection
@@ -993,14 +998,17 @@ void HeatPumpKeepAlive(void) {
     }
 #endif
   }
+}
 
-  ftcpreviousMillis = millis();
+
+void TriggerStateMachines(void) {
   if (AC.HeatPumpConnected()) {
     DEBUG_PRINTLN("Trigger AC Status State Machine");
     AC.TriggerStatusStateMachine();
   } else {
     DEBUG_PRINTLN("AC Disconnected");
   }
+
   if (HeatPump.HeatPumpConnected()) {
     DEBUG_PRINTLN("Trigger A2W Status State Machine");
     HeatPump.TriggerStatusStateMachine();
@@ -1008,7 +1016,9 @@ void HeatPumpKeepAlive(void) {
     DEBUG_PRINTLN("A2W Disconnected");
   }
 
-  if (MQTTReconnect()) { StatusReport(); }
+  if (MQTTReconnect()) {
+    StatusReport();
+  }
 }
 
 
@@ -2209,6 +2219,8 @@ void ConfigurationReport(void) {
   doc[F("Has2Zone")] = HeatPump.Status.Has2Zone;
   doc[F("HasSimple2Zone")] = HeatPump.Status.Simple2Zone;
   doc[F("RefrigerantType")] = HeatPump.Status.RefrigerantType;
+  doc[F("ExtUnitSensors")] = HeatPump.Status.OutdoorExtendedSensors;
+  doc[F("HasR290DualComp")] = HeatPump.Status.HasR290DualComp;
   // Publish only when available
   if (HeatPump.SVCPopulated || HeatPump.Status.CompOpTimes != 0) { doc[F("CompOpTimes")] = HeatPump.Status.CompOpTimes; }
   if (HeatPump.SVCPopulated || HeatPump.Status.LiquidTemp != 0) { doc[F("LiquidTemp")] = HeatPump.Status.LiquidTemp; }
@@ -2661,7 +2673,7 @@ void CalculateCompCurve(void) {
     Z2_CurveFSP = roundToOneDecimal(Z2_CurveFSP + Z2_Room_Offset + unitSettings.z2_wind_offset + unitSettings.z2_temp_offset + unitSettings.z2_manual_offset);
 
     // Apply Clamping based on FTC Settings For Min/Max Flow Temperature
-    if (Z1_CurveFSP > HeatPump.Status.FlowTempMax) { Z1_CurveFSP = HeatPump.Status.FlowTempMax; }     // Protect UFH from high temp
+    if (Z1_CurveFSP > HeatPump.Status.FlowTempMax) { Z1_CurveFSP = HeatPump.Status.FlowTempMax; }  // Protect UFH from high temp
     //if (Z1_CurveFSP < HeatPump.Status.FlowTempMin) { Z1_CurveFSP = HeatPump.Status.FlowTempMin; }   // Removed due to Cooling
 
     // Write the Flow Setpoints to Heat Pump
