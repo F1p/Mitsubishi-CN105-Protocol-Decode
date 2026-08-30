@@ -81,8 +81,7 @@ void ECODAN::Process(void) {
 }
 
 void ECODAN::SetStream(Stream *HeatPumpStream) {
-  DeviceStream = HeatPumpStream;  // Must set stream first
-  Disconnect();
+  DeviceStream = HeatPumpStream;
   Connect();
 }
 
@@ -256,10 +255,9 @@ void ECODAN::Connect(void) {
 
 void ECODAN::Disconnect(void) {
   StopStateMachine();
-  DEBUG_PRINTLN("Clearing previous A2W Connections...");
+  DEBUG_PRINTLN(F("Disconnecting from Heat Pump..."));
   DeviceStream->write(Init4, 8);
   DeviceStream->flush();
-  delay(1000);  // Await Reply
   Process();
   Connected = false;
 }
