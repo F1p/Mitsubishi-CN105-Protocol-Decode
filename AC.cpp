@@ -6,7 +6,7 @@ extern ESPTelnet TelnetServer;
 
 // Initialisation Commands
 uint8_t Init5[] = { 0xfc, 0x5a, 0x01, 0x30, 0x02, 0xca, 0x01, 0xa8 };  // Air to Air Connect
-//uint8_t Init6[] = { 0xfc, 0x5a, 0x01, 0x30, 0x02, 0xca, 0x02, 0xa7 };  // Air to Air Disconnect
+uint8_t Init6[] = { 0xfc, 0x5a, 0x01, 0x30, 0x02, 0xca, 0x02, 0xa7 };  // Air to Air Disconnect
 
 
 
@@ -64,13 +64,13 @@ void AC::Process(void) {
       if (!Connected) { DEBUG_PRINTLN("A2A Connected!"); }
       Connected = true;
       PrevConnected = true;
-      //DEBUG_PRINTLN("AC Connected!");
     }
   }
 }
 
 void AC::SetStream(Stream* ACStream) {
-  DeviceStream = ACStream;
+  DeviceStream = ACStream;  // Must set stream first
+  Disconnect();
   Connect();
 }
 
@@ -182,6 +182,15 @@ void AC::Connect(void) {
   Process();
 }
 
+void AC::Disconnect(void) {
+  StopStateMachine();
+  DEBUG_PRINTLN("Clearing previous A2A Connections...");
+  DeviceStream->write(Init6, 8);
+  DeviceStream->flush();
+  delay(1000);  // Await Reply
+  Process();
+  Connected = false;
+}
 
 void AC::GetVersion(uint8_t type) {
   uint8_t Buffer[COMMANDSIZE];

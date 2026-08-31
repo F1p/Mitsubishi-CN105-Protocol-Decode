@@ -55,7 +55,7 @@ uint8_t ACDECODER::Process(uint8_t c) {
           Process0x16(RxMessage.Payload, &Status);
           break;
         case 0x17:
-          Process0x09(RxMessage.Payload, &Status);
+          Process0x17(RxMessage.Payload, &Status);
           break;
         case 0x18:
           Process0x18(RxMessage.Payload, &Status);
@@ -536,9 +536,9 @@ void ACDECODER::EncodeMELCloud(uint8_t cmd) {
   for (int i = 1; i < 16; i++) {
     if (cmd == 0x40) {
       TxMessage.Payload[i] = ACWriteArray0x01[i];
-    } else if (cmd = 0x41) {
+    } else if (cmd == 0x41) {
       TxMessage.Payload[i] = ACWriteArray0x07[i];
-    } else if (cmd = 0x30) {
+    } else if (cmd == 0x30) {
       TxMessage.Payload[i] = ACWriteArray0x30[i];
     }
   }
