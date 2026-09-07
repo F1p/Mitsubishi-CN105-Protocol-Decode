@@ -16,9 +16,11 @@ Pre-Compiled software is for offical hardware:
 - [Generation 1 WiFi ESP8266 ebay sold hardware (No longer available)](https://www.ebay.co.uk/itm/325967595655)
 
 
-⚠️ August 2026: Primarily due to the implementation of the EU Packaging and Packaging Waste Regulation (PPWR, Regulation EU 2025/40), combined with the elimination of de-minimis customs exemptions and escalating international shipment costs, offering hardware is no longer financially or operationally viable at this time. 
-
 You can bring your own hardware, compile in Arduino or flash the same hardware above with pre-compiled files Or buy directly!
+
+[UK Buy Direct on ebay](https://www.ebay.co.uk/itm/327324402794)
+
+⚠️ August 2026: Primarily due to the implementation of the EU Packaging and Packaging Waste Regulation (PPWR, Regulation EU 2025/40), combined with the elimination of de-minimis customs exemptions and escalating international shipment costs, offering hardware is no longer financially or operationally viable at this time. 
 
 
 # Detailed Setup Instructions

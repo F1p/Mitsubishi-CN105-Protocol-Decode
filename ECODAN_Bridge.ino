@@ -1933,14 +1933,28 @@ void EnergyReport(void) {
   // Energy Substitution and Data Checking
   bool DeliveredYesterday = false;
   bool ConsumedYesterday = false;
+  // Check if we are in the 5-minute window right after midnight (12:00 AM - 12:05 AM)
+  bool inMidnightWindow = (HeatPump.Status.DateTimeStamp.tm_hour == 0 && HeatPump.Status.DateTimeStamp.tm_min < 5);
 
-  yesterday = HeatPump.Status.DateTimeStamp;
-  yesterday.tm_mday -= 1;
-  mktime(&yesterday);
-  if (yesterday.tm_mday == HeatPump.Status.DeliveredDateTimeStamp.tm_mday && yesterday.tm_mon == HeatPump.Status.DeliveredDateTimeStamp.tm_mon && yesterday.tm_year == HeatPump.Status.DeliveredDateTimeStamp.tm_year) { DeliveredYesterday = true; }  // Must be Yesterday
-  if (yesterday.tm_mday == HeatPump.Status.ConsumedDateTimeStamp.tm_mday && yesterday.tm_mon == HeatPump.Status.ConsumedDateTimeStamp.tm_mon && yesterday.tm_year == HeatPump.Status.ConsumedDateTimeStamp.tm_year) { ConsumedYesterday = true; }      // Must be Yesterday
-  if (!DeliveredYesterday) { HeatPump.Status.DeliveredHeatingEnergy = HeatPump.Status.DeliveredCoolingEnergy = HeatPump.Status.DeliveredHotWaterEnergy = 0; }
-  if (!ConsumedYesterday) { HeatPump.Status.ConsumedHeatingEnergy = HeatPump.Status.ConsumedCoolingEnergy = HeatPump.Status.ConsumedHotWaterEnergy = 0; }
+  if (!inMidnightWindow) {
+    // Use exact 24h offset (86400 seconds) for yesterday's date check
+    time_t now_sec = mktime(&HeatPump.Status.DateTimeStamp);
+    time_t yesterday_sec = now_sec - 86400;
+    yesterday = *localtime(&yesterday_sec);
+
+    if (yesterday.tm_mday == HeatPump.Status.DeliveredDateTimeStamp.tm_mday && yesterday.tm_mon == HeatPump.Status.DeliveredDateTimeStamp.tm_mon && yesterday.tm_year == HeatPump.Status.DeliveredDateTimeStamp.tm_year) {
+      DeliveredYesterday = true;
+    }
+
+    if (yesterday.tm_mday == HeatPump.Status.ConsumedDateTimeStamp.tm_mday && yesterday.tm_mon == HeatPump.Status.ConsumedDateTimeStamp.tm_mon && yesterday.tm_year == HeatPump.Status.ConsumedDateTimeStamp.tm_year) {
+      ConsumedYesterday = true;
+    }
+
+    // Only zero out data outside the 5-minute rollover period
+    if (!DeliveredYesterday) {      HeatPump.Status.DeliveredHeatingEnergy = HeatPump.Status.DeliveredCoolingEnergy = HeatPump.Status.DeliveredHotWaterEnergy = 0;}
+    if (!ConsumedYesterday) {      HeatPump.Status.ConsumedHeatingEnergy = HeatPump.Status.ConsumedCoolingEnergy = HeatPump.Status.ConsumedHotWaterEnergy = 0;    }
+  }
+
   // Re-write the onboard data into the memory locations
   if (cumulativeEnergyYesterday[0] > 0 && HeatPump.Status.ConsumedHeatingEnergy == 0) { HeatPump.Status.ConsumedHeatingEnergy = cumulativeEnergyYesterday[0]; }
   if (cumulativeEnergyYesterday[1] > 0 && HeatPump.Status.ConsumedCoolingEnergy == 0) { HeatPump.Status.ConsumedCoolingEnergy = cumulativeEnergyYesterday[1]; }
