@@ -1098,7 +1098,7 @@ void readSettingsFromConfig() {
   }
 
   void initializeMQTTClient1() {
-    DEBUG_PRINT(F("Attempting MQTT connection to: "));
+    DEBUG_PRINT(F("Attempting MQTT 1 connection to: "));
     DEBUG_PRINT(mqttSettings.hostname);
     DEBUG_PRINT(F(":"));
     DEBUG_PRINTLN(mqttSettings.port);
@@ -1333,7 +1333,7 @@ void readSettingsFromConfig() {
 
 
   void initializeMQTTClient2() {
-    DEBUG_PRINT(F("Attempting MQTT connection to: "));
+    DEBUG_PRINT(F("Attempting MQTT 2 connection to: "));
     DEBUG_PRINT(mqttSettings.hostname2);
     DEBUG_PRINT(F(":"));
     DEBUG_PRINTLN(mqttSettings.port2);

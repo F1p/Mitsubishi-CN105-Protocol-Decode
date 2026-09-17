@@ -445,6 +445,7 @@ static bool eth_connected = false;
 
 
 void setup() {
+  LatestFirmwareVersion = FirmwareVersion;
 
   WiFi.mode(WIFI_STA);         // explicitly set mode, esp defaults to STA+AP
   DEBUGPORT.begin(DEBUGBAUD);  // Start Debug
@@ -1049,16 +1050,19 @@ void HeatPumpQueryStateEngine(void) {
       DEBUG_PRINTLN(F("A2W Update Complete"));
       FTCLoopSpeed = millis() - ftcpreviousMillis;  // Loop Speed End
 
+      bool primaryMQTTok = MQTTReconnect();
+      bool secondaryMQTTok = MQTT2Reconnect();
+
       if (HeatPump.Status.FTCVersion == 0) { HeatPump.GetFTCVersion(); }
       if (!HeatPump.Status.HasAnsweredDips) {
-        if (MQTTReconnect()) {
+        if (primaryMQTTok || secondaryMQTTok) {
           StatusReport();
           CalculateCompCurve();
         }
       } else {
         HeatPump.SVCUpdateComplete();
         HeatPump.StatusSVCMachine();  // Call service codes
-        if (MQTTReconnect()) {
+        if (primaryMQTTok || secondaryMQTTok) {
           PublishAllReports();
         }
       }
@@ -1924,23 +1928,29 @@ void AdvancedReport(void) {
 }
 
 
+
 void EnergyReport(void) {
   JsonDocument doc;
   char Buffer[2048];
-  struct tm yesterday;
+  time_t now;
+  struct tm timeinfo;
   float heat_cop, cool_cop, dhw_cop, ctotal, dtotal, total_cop, ob_ctotal, ob_dtotal, ob_total_cop;
 
   // Energy Substitution and Data Checking
   bool DeliveredYesterday = false;
   bool ConsumedYesterday = false;
   // Check if we are in the 5-minute window right after midnight (12:00 AM - 12:05 AM)
-  bool inMidnightWindow = (HeatPump.Status.DateTimeStamp.tm_hour == 0 && HeatPump.Status.DateTimeStamp.tm_min < 5);
+  time(&now);
+  localtime_r(&now, &timeinfo);
+
+
+  bool inMidnightWindow = (timeinfo.tm_hour == 0 && timeinfo.tm_min < 5) || (timeinfo.tm_hour == 23 && timeinfo.tm_min > 58);
 
   if (!inMidnightWindow) {
     // Use exact 24h offset (86400 seconds) for yesterday's date check
-    time_t now_sec = mktime(&HeatPump.Status.DateTimeStamp);
-    time_t yesterday_sec = now_sec - 86400;
-    yesterday = *localtime(&yesterday_sec);
+    struct tm yesterday = timeinfo;
+    yesterday.tm_mday -= 1;
+    mktime(&yesterday);  // Auto-normalizes day/month/year boundaries
 
     if (yesterday.tm_mday == HeatPump.Status.DeliveredDateTimeStamp.tm_mday && yesterday.tm_mon == HeatPump.Status.DeliveredDateTimeStamp.tm_mon && yesterday.tm_year == HeatPump.Status.DeliveredDateTimeStamp.tm_year) {
       DeliveredYesterday = true;
@@ -1951,8 +1961,10 @@ void EnergyReport(void) {
     }
 
     // Only zero out data outside the 5-minute rollover period
-    if (!DeliveredYesterday) {      HeatPump.Status.DeliveredHeatingEnergy = HeatPump.Status.DeliveredCoolingEnergy = HeatPump.Status.DeliveredHotWaterEnergy = 0;}
-    if (!ConsumedYesterday) {      HeatPump.Status.ConsumedHeatingEnergy = HeatPump.Status.ConsumedCoolingEnergy = HeatPump.Status.ConsumedHotWaterEnergy = 0;    }
+    if (!DeliveredYesterday) { HeatPump.Status.DeliveredHeatingEnergy = HeatPump.Status.DeliveredCoolingEnergy = HeatPump.Status.DeliveredHotWaterEnergy = 0; }
+    if (!ConsumedYesterday) { HeatPump.Status.ConsumedHeatingEnergy = HeatPump.Status.ConsumedCoolingEnergy = HeatPump.Status.ConsumedHotWaterEnergy = 0; }
+  } else {   // Skip publishing during the volatile midnight rollover window
+    return;  // Don't output misleading zeroed-out telemetry to MQTT
   }
 
   // Re-write the onboard data into the memory locations
