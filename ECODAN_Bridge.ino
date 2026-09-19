@@ -82,7 +82,7 @@
 
 #endif  // ESP8266 || ESP32
 
-String FirmwareVersion = "7.0.31";
+String FirmwareVersion = "7.0.32";
 String LatestFirmwareVersion;
 
 // Language for OTA Check
@@ -207,6 +207,7 @@ bool OAT_isFull = false;
 bool inDefrostWindow = false;
 bool A2APrevConnectedLastLoop = false;
 bool A2WPrevConnectedLastLoop = false;
+int Connection_attempt_counter = 0;
 
 #ifdef ESP32  // Define the M5Stack AtomS3
 const char* ISGR_root_ca =
@@ -457,6 +458,19 @@ void setup() {
   MELCloud.SetStream(&MEL_STREAM);
 
 #ifdef ARDUINO_WT32_ETH01
+  // For stability, toggle the Oscillator Clock Synchronization pin
+  // 1. Allow 5V rail, 3.3V LDO, and 50MHz crystal to fully stabilize
+  delay(250); 
+
+  // 2. Drive PHY Hardware Reset (GPIO16) LOW
+  pinMode(16, OUTPUT);
+  digitalWrite(16, LOW);
+  delay(50); // Holding reset for 50ms ensures PHY internal state clear
+
+  // 3. Drive PHY Hardware Reset (GPIO16) HIGH
+  digitalWrite(16, HIGH);
+  delay(100); // Allow PHY MDIO/MDC registers & PLL to lock post-reset
+
   Network.onEvent(onEvent);
   ETH.begin();
 #endif
@@ -550,6 +564,8 @@ void loop() {
   // -- Heat Pump Connection Handler -- //
   if (!HeatPump.HeatPumpConnected() && !AC.HeatPumpConnected() && !HeatPump.PrevConnected && !AC.PrevConnected) {
     HandleConnectionAttempts();
+  } else {
+    Connection_attempt_counter = 0;  // Reset the counter
   }
 
   MELCloudQueryReplyEngine();
@@ -976,6 +992,12 @@ void loop() {
 
 void HandleConnectionAttempts(void) {
   if (!HeatPump.HeatPumpConnected() && !AC.HeatPumpConnected()) {
+    if (Connection_attempt_counter > 20) {  // Request/Attempt disconnect if no reply
+      DEBUG_PRINTLN(F("No reply after 20+ attempts, forcing disconnect first..."));
+      HeatPump.Disconnect();
+      AC.Disconnect();
+    }
+
 #ifdef ARDUINO_M5STACK_ATOMS3
     // Swap to the other pins and test the connection
     if (CableConnected) {
@@ -998,6 +1020,7 @@ void HandleConnectionAttempts(void) {
       AC.Connect();
     }
 #endif
+    Connection_attempt_counter++;
   }
   TriggerStateMachines();
 }

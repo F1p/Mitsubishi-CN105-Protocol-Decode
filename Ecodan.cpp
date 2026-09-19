@@ -82,7 +82,6 @@ void ECODAN::Process(void) {
 
 void ECODAN::SetStream(Stream *HeatPumpStream) {
   DeviceStream = HeatPumpStream;  // Must set stream first
-  Disconnect();
   Connect();
 }
 

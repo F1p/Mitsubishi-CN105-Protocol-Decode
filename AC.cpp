@@ -70,7 +70,6 @@ void AC::Process(void) {
 
 void AC::SetStream(Stream* ACStream) {
   DeviceStream = ACStream;  // Must set stream first
-  Disconnect();
   Connect();
 }
 
