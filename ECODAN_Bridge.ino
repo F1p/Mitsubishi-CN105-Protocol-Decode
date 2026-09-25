@@ -144,7 +144,7 @@ int Red_RGB_LED = 15;
 #include <LiteLED.h>
 #define LED_TYPE LED_STRIP_WS2812
 #define LED_TYPE_IS_RGBW 0
-#define LED_GPIO 35
+int LED_GPIO = 35;
 #define LED_BRIGHT 100
 static const crgb_t L_RED = 0xff0000;
 static const crgb_t L_GREEN = 0x00ff00;
@@ -208,6 +208,7 @@ bool inDefrostWindow = false;
 bool A2APrevConnectedLastLoop = false;
 bool A2WPrevConnectedLastLoop = false;
 int Connection_attempt_counter = 0;
+bool Reset_Button_pressed_at_boot = false;
 
 #ifdef ESP32  // Define the M5Stack AtomS3
 const char* ISGR_root_ca =
@@ -409,6 +410,10 @@ unsigned long compressorrundurationMillis = 0;   // variable for comparing milli
 unsigned long postdhwfspdurationMillis = 0;      // variable for comparing millis counter
 unsigned long lastConsumedEnergyTimestamp = 0;   // variable for comparing millis counter
 unsigned long lastDeliveredEnergyTimestamp = 0;  // variable for comparing millis counter
+unsigned long buttonPressStartTime = 0;          // variable for comparing millis counter
+unsigned long lastBlinkTime = 0;                 // variable for comparing millis counter
+bool buttonWasPressed = false;
+bool ledState = false;
 int FTCLoopSpeed, CPULoopSpeed;                  // variable for holding loop time in ms
 uint16_t SvcRequested = 0;
 int16_t SvcReply = 0;
@@ -479,6 +484,11 @@ void setup() {
   pinMode(Reset_Button, INPUT);  // Pushbutton on other modules
 #endif
 
+  if (digitalRead(Reset_Button) == LOW) {  // Inverted (Button Pushed is LOW at boot)
+    LED_GPIO = 42;                         // Change for Asgard Firmware
+    Reset_Button_pressed_at_boot = true;   // Ignoring push button state after boot
+  }
+
 
 // -- Lights for ESP8266 and ESP32 -- //
 #ifdef ARDUINO_M5STACK_ATOMS3    // Define the M5Stack LED
@@ -504,7 +514,7 @@ void setup() {
     saveConfig();
   }
   setupTelnet();
-  startTelnet();
+  //startTelnet();                  // Enable for Debugging Messages
 
   MQTTClient1.setBufferSize(2048);  // Increase MQTT Buffer Size
   MQTTClient2.setBufferSize(2048);  // Increase MQTT Buffer Size
@@ -744,58 +754,94 @@ void loop() {
     WiFiConnectedLastLoop = true;
   }
 
-  // -- Push Button Action Handler -- //
+// -- Push Button Action Handler -- //
 #ifndef ARDUINO_WT32_ETH01
-  if (digitalRead(Reset_Button) == LOW) {                                                                                                                                                                    // Inverted (Button Pushed is LOW)
-    HeatPump.SetSvrControlMode(0, HeatPump.Status.ProhibitDHW, HeatPump.Status.ProhibitHeatingZ1, HeatPump.Status.ProhibitCoolingZ1, HeatPump.Status.ProhibitHeatingZ2, HeatPump.Status.ProhibitCoolingZ2);  // Exit SCM leaving state
-    ModifyCompCurveState(1, false, 1, 0);                                                                                                                                                                    // Escape Local WC Mode
-    ModifyCompCurveState(2, false, 1, 0);                                                                                                                                                                    // Escape Local WC Mode
-#ifdef ESP8266                                                                                                                                                                                               // Define the Witty ESP8266 Ports
-    digitalWrite(Red_RGB_LED, HIGH);                                                                                                                                                                         // Flash the Red LED
-    delay(500);
-    digitalWrite(Red_RGB_LED, LOW);
-    delay(500);
-    digitalWrite(Red_RGB_LED, HIGH);
-    delay(500);
-    digitalWrite(Red_RGB_LED, LOW);
-    delay(500);
-    digitalWrite(Red_RGB_LED, HIGH);
-    delay(500);
-#endif
-#ifdef ARDUINO_M5STACK_ATOMS3     // Define the M5Stack LED
-    myLED.setPixel(0, L_RED, 1);  // Flash the Red LED
-    delay(500);
-    myLED.brightness(0, 1);
-    delay(500);
-    myLED.brightness(LED_BRIGHT, 1);
-    delay(500);
-    myLED.brightness(0, 1);
-    delay(500);
-    myLED.brightness(LED_BRIGHT, 1);
-    delay(500);
-#endif
 
-    if (digitalRead(Reset_Button) == LOW) {  // If still pressed after flashing seq - reset
-#ifdef ESP8266
+bool buttonIsCurrentlyPressed = (digitalRead(Reset_Button) == LOW) && !Reset_Button_pressed_at_boot;
+unsigned long currentMillis = millis();
+
+// -------------------------------------------------------------------
+// 1. BUTTON PRESS DETECTED (Transition to LOW)
+// -------------------------------------------------------------------
+if (buttonIsCurrentlyPressed && !buttonWasPressed) {
+  buttonPressStartTime = currentMillis;
+  buttonWasPressed = true;
+  lastBlinkTime = currentMillis;
+  ledState = true;
+}
+
+// -------------------------------------------------------------------
+// 2. BUTTON HELD DOWN (Active Feedback)
+// -------------------------------------------------------------------
+if (buttonIsCurrentlyPressed && buttonWasPressed) {
+  unsigned long holdDuration = currentMillis - buttonPressStartTime;
+
+  if (holdDuration < 10000) {
+    // --- WHILE HOLDING (< 10s): Flash Red every 250ms --- //
+    if (currentMillis - lastBlinkTime >= 250) {
+      lastBlinkTime = currentMillis;
+      ledState = !ledState;
+
+      #ifdef ESP8266
+        digitalWrite(Red_RGB_LED, ledState ? HIGH : LOW);
+        digitalWrite(Blue_RGB_LED, LOW);
+      #endif
+      #ifdef ARDUINO_M5STACK_ATOMS3
+        myLED.setPixel(0, L_RED, 1);
+        myLED.brightness(ledState ? LED_BRIGHT : 0, 1);
+      #endif
+    }
+  } else {
+    // --- THRESHOLD REACHED (>= 10s): Solid Blue --- //
+    #ifdef ESP8266
       digitalWrite(Red_RGB_LED, LOW);
       digitalWrite(Blue_RGB_LED, HIGH);
-      delay(500);
-#endif
-#ifdef ARDUINO_M5STACK_ATOMS3  // Define the M5Stack LED
+    #endif
+    #ifdef ARDUINO_M5STACK_ATOMS3
       myLED.setPixel(0, L_BLUE, 1);
-#endif
-      delay(500);
-      wifiManager.resetSettings();  // Clear settings
-      LittleFS.format();            // Wipe Filesystem
-    }
-
-#ifdef ESP8266
-    ESP.reset();  // ESP8266 Restart Method
-#endif
-#ifdef ESP32        // ESP32 Action
-    ESP.restart();  // No button on ETH
-#endif
+      myLED.brightness(LED_BRIGHT, 1);
+    #endif
   }
+}
+
+// -------------------------------------------------------------------
+// 3. BUTTON RELEASE DETECTED (Transition to HIGH)
+// -------------------------------------------------------------------
+if (!buttonIsCurrentlyPressed && buttonWasPressed) {
+  unsigned long pressDuration = currentMillis - buttonPressStartTime;
+  buttonWasPressed = false; // Reset tracking state
+
+  // Run heat pump escape actions on valid press release
+  HeatPump.SetSvrControlMode(0, HeatPump.Status.ProhibitDHW, HeatPump.Status.ProhibitHeatingZ1, HeatPump.Status.ProhibitCoolingZ1, HeatPump.Status.ProhibitHeatingZ2, HeatPump.Status.ProhibitCoolingZ2);
+  ModifyCompCurveState(1, false, 1, 0);
+  ModifyCompCurveState(2, false, 1, 0);
+
+  if (pressDuration >= 10000) {
+    // --- LONG PRESS RELEASE (>= 10s): Factory Reset --- //
+    delay(500);                  // Keep solid blue visible briefly
+    wifiManager.resetSettings(); // Clear WiFi credentials
+    LittleFS.format();           // Wipe internal filesystem
+  } else {
+    // --- SHORT PRESS RELEASE (< 10s): Flash Red Once --- //
+    #ifdef ESP8266
+      digitalWrite(Red_RGB_LED, HIGH);
+      digitalWrite(Blue_RGB_LED, LOW);
+    #endif
+    #ifdef ARDUINO_M5STACK_ATOMS3
+      myLED.setPixel(0, L_RED, 1);
+      myLED.brightness(LED_BRIGHT, 1);
+    #endif
+    delay(200); // Brief feedback flash before restart
+  }
+
+  // --- Perform Board Reboot --- //
+  #ifdef ESP8266
+    ESP.reset();
+  #elif defined(ESP32)
+    ESP.restart();
+  #endif
+}
+
 #endif
 
   // -- Normal DHW Boost Handler (Enter SCM > Remove DHW Prohibit > Remain or Exit SCM) -- //
@@ -1099,7 +1145,7 @@ void HeatPumpQuerySVCEngine(void) {
 }
 
 void WriteStateEngine(void) {
-  if (HeatPump.PrevConnected) {
+  if (HeatPump.PrevConnected && HeatPump.Status.HasAnsweredDips) {
     HeatPump.WriteStateMachine();
   } else if (AC.PrevConnected) {
     AC.WriteStateMachine();
@@ -1935,6 +1981,7 @@ void AdvancedReport(void) {
   doc[F("Immersion")] = OFF_ON_String[HeatPump.Status.ImmersionActive];
   doc[F("Booster")] = OFF_ON_String[HeatPump.Status.Booster1Active];
   doc[F("Booster2")] = OFF_ON_String[HeatPump.Status.Booster2Active];
+  doc[F("Booster2Plus")] = OFF_ON_String[HeatPump.Status.Booster2PlusActive];
   doc[F("ThreeWayValve")] = HeatPump.Status.ThreeWayValve;
   doc[F("PrimaryWaterPump")] = OFF_ON_String[HeatPump.Status.PrimaryWaterPump];
   doc[F("RefrigeTemp")] = HeatPump.Status.RefrigeTemp;

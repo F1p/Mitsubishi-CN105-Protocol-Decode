@@ -684,7 +684,7 @@ void ECODANDECODER::Process0x13(uint8_t *Buffer, EcodanStatus *Status) {
 
 void ECODANDECODER::Process0x14(uint8_t *Buffer, EcodanStatus *Status) {
   uint8_t FlowRate;
-  uint8_t Booster1Active, Booster2Active, ImmersionActive;
+  uint8_t Booster1Active, Booster2Active, Booster2PlusActive, ImmersionActive;
 
   for (int i = 1; i < 16; i++) {
     Array0x14[i] = Buffer[i];
@@ -692,11 +692,13 @@ void ECODANDECODER::Process0x14(uint8_t *Buffer, EcodanStatus *Status) {
 
   Booster1Active = Buffer[2];
   Booster2Active = Buffer[3];
+  Booster2PlusActive = Buffer[4];
   ImmersionActive = Buffer[5];
   FlowRate = Buffer[12];
 
   Status->Booster1Active = Booster1Active;
   Status->Booster2Active = Booster2Active;
+  Status->Booster2PlusActive = Booster2PlusActive;
   Status->ImmersionActive = ImmersionActive;
   Status->PrimaryFlowRate = FlowRate;
 }
