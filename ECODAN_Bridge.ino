@@ -82,7 +82,7 @@
 
 #endif  // ESP8266 || ESP32
 
-String FirmwareVersion = "7.0.32";
+String FirmwareVersion = "7.0.33";
 String LatestFirmwareVersion;
 
 // Language for OTA Check
@@ -414,7 +414,7 @@ unsigned long buttonPressStartTime = 0;          // variable for comparing milli
 unsigned long lastBlinkTime = 0;                 // variable for comparing millis counter
 bool buttonWasPressed = false;
 bool ledState = false;
-int FTCLoopSpeed, CPULoopSpeed;                  // variable for holding loop time in ms
+int FTCLoopSpeed, CPULoopSpeed;  // variable for holding loop time in ms
 uint16_t SvcRequested = 0;
 int16_t SvcReply = 0;
 bool WiFiOneShot = true;
@@ -465,16 +465,16 @@ void setup() {
 #ifdef ARDUINO_WT32_ETH01
   // For stability, toggle the Oscillator Clock Synchronization pin
   // 1. Allow 5V rail, 3.3V LDO, and 50MHz crystal to fully stabilize
-  delay(250); 
+  delay(250);
 
   // 2. Drive PHY Hardware Reset (GPIO16) LOW
   pinMode(16, OUTPUT);
   digitalWrite(16, LOW);
-  delay(50); // Holding reset for 50ms ensures PHY internal state clear
+  delay(50);  // Holding reset for 50ms ensures PHY internal state clear
 
   // 3. Drive PHY Hardware Reset (GPIO16) HIGH
   digitalWrite(16, HIGH);
-  delay(100); // Allow PHY MDIO/MDC registers & PLL to lock post-reset
+  delay(100);  // Allow PHY MDIO/MDC registers & PLL to lock post-reset
 
   Network.onEvent(onEvent);
   ETH.begin();
@@ -528,7 +528,7 @@ void setup() {
   initializeMQTTClient2();
   MQTTClient2.setCallback(MQTTonData);
 
-
+  wifiManager.setWebPortalAuth("admin", mqttSettings.deviceId, "admin/deviceID (Serial Number in Home Assistant)");
   wifiManager.startWebPortal();
 
   MDNS.begin("heatpump");
@@ -728,6 +728,9 @@ void loop() {
       ESP.restart();
 #endif
     }  // Wait for 5 mins to try reconnects then force restart
+#if defined(ESP32) && !defined(ARDUINO_WT32_ETH01)
+    WiFiRoamUnlock(millis() - wifipreviousMillis);  // Patch local : relâche la borne choisie si elle a disparu
+#endif
     WiFiConnectedLastLoop = false;
   } else if (WiFi.status() != WL_CONNECTED && wifiManager.getConfigPortalActive()) {
 #ifdef ESP8266                         // Define the Witty ESP8266 Ports
@@ -750,6 +753,9 @@ void loop() {
       myLED.setPixel(0, L_GREEN, 1);
 #endif
     }
+#if defined(ESP32) && !defined(ARDUINO_WT32_ETH01)
+    WiFiRoamHandler(!WiFiConnectedLastLoop);  // Patch local : borne au meilleur signal
+#endif
     WiFiOneShot = true;
     WiFiConnectedLastLoop = true;
   }
@@ -757,90 +763,90 @@ void loop() {
 // -- Push Button Action Handler -- //
 #ifndef ARDUINO_WT32_ETH01
 
-bool buttonIsCurrentlyPressed = (digitalRead(Reset_Button) == LOW) && !Reset_Button_pressed_at_boot;
-unsigned long currentMillis = millis();
+  bool buttonIsCurrentlyPressed = (digitalRead(Reset_Button) == LOW) && !Reset_Button_pressed_at_boot;
+  unsigned long currentMillis = millis();
 
-// -------------------------------------------------------------------
-// 1. BUTTON PRESS DETECTED (Transition to LOW)
-// -------------------------------------------------------------------
-if (buttonIsCurrentlyPressed && !buttonWasPressed) {
-  buttonPressStartTime = currentMillis;
-  buttonWasPressed = true;
-  lastBlinkTime = currentMillis;
-  ledState = true;
-}
+  // -------------------------------------------------------------------
+  // 1. BUTTON PRESS DETECTED (Transition to LOW)
+  // -------------------------------------------------------------------
+  if (buttonIsCurrentlyPressed && !buttonWasPressed) {
+    buttonPressStartTime = currentMillis;
+    buttonWasPressed = true;
+    lastBlinkTime = currentMillis;
+    ledState = true;
+  }
 
-// -------------------------------------------------------------------
-// 2. BUTTON HELD DOWN (Active Feedback)
-// -------------------------------------------------------------------
-if (buttonIsCurrentlyPressed && buttonWasPressed) {
-  unsigned long holdDuration = currentMillis - buttonPressStartTime;
+  // -------------------------------------------------------------------
+  // 2. BUTTON HELD DOWN (Active Feedback)
+  // -------------------------------------------------------------------
+  if (buttonIsCurrentlyPressed && buttonWasPressed) {
+    unsigned long holdDuration = currentMillis - buttonPressStartTime;
 
-  if (holdDuration < 10000) {
-    // --- WHILE HOLDING (< 10s): Flash Red every 250ms --- //
-    if (currentMillis - lastBlinkTime >= 250) {
-      lastBlinkTime = currentMillis;
-      ledState = !ledState;
+    if (holdDuration < 10000) {
+      // --- WHILE HOLDING (< 10s): Flash Red every 250ms --- //
+      if (currentMillis - lastBlinkTime >= 250) {
+        lastBlinkTime = currentMillis;
+        ledState = !ledState;
 
-      #ifdef ESP8266
+#ifdef ESP8266
         digitalWrite(Red_RGB_LED, ledState ? HIGH : LOW);
         digitalWrite(Blue_RGB_LED, LOW);
-      #endif
-      #ifdef ARDUINO_M5STACK_ATOMS3
+#endif
+#ifdef ARDUINO_M5STACK_ATOMS3
         myLED.setPixel(0, L_RED, 1);
         myLED.brightness(ledState ? LED_BRIGHT : 0, 1);
-      #endif
-    }
-  } else {
-    // --- THRESHOLD REACHED (>= 10s): Solid Blue --- //
-    #ifdef ESP8266
+#endif
+      }
+    } else {
+// --- THRESHOLD REACHED (>= 10s): Solid Blue --- //
+#ifdef ESP8266
       digitalWrite(Red_RGB_LED, LOW);
       digitalWrite(Blue_RGB_LED, HIGH);
-    #endif
-    #ifdef ARDUINO_M5STACK_ATOMS3
+#endif
+#ifdef ARDUINO_M5STACK_ATOMS3
       myLED.setPixel(0, L_BLUE, 1);
       myLED.brightness(LED_BRIGHT, 1);
-    #endif
+#endif
+    }
   }
-}
 
-// -------------------------------------------------------------------
-// 3. BUTTON RELEASE DETECTED (Transition to HIGH)
-// -------------------------------------------------------------------
-if (!buttonIsCurrentlyPressed && buttonWasPressed) {
-  unsigned long pressDuration = currentMillis - buttonPressStartTime;
-  buttonWasPressed = false; // Reset tracking state
+  // -------------------------------------------------------------------
+  // 3. BUTTON RELEASE DETECTED (Transition to HIGH)
+  // -------------------------------------------------------------------
+  if (!buttonIsCurrentlyPressed && buttonWasPressed) {
+    unsigned long pressDuration = currentMillis - buttonPressStartTime;
+    buttonWasPressed = false;  // Reset tracking state
 
-  // Run heat pump escape actions on valid press release
-  HeatPump.SetSvrControlMode(0, HeatPump.Status.ProhibitDHW, HeatPump.Status.ProhibitHeatingZ1, HeatPump.Status.ProhibitCoolingZ1, HeatPump.Status.ProhibitHeatingZ2, HeatPump.Status.ProhibitCoolingZ2);
-  ModifyCompCurveState(1, false, 1, 0);
-  ModifyCompCurveState(2, false, 1, 0);
+    // Run heat pump escape actions on valid press release
+    HeatPump.SetSvrControlMode(0, HeatPump.Status.ProhibitDHW, HeatPump.Status.ProhibitHeatingZ1, HeatPump.Status.ProhibitCoolingZ1, HeatPump.Status.ProhibitHeatingZ2, HeatPump.Status.ProhibitCoolingZ2);
+    ModifyCompCurveState(1, false, 1, 0);
+    ModifyCompCurveState(2, false, 1, 0);
 
-  if (pressDuration >= 10000) {
-    // --- LONG PRESS RELEASE (>= 10s): Factory Reset --- //
-    delay(500);                  // Keep solid blue visible briefly
-    wifiManager.resetSettings(); // Clear WiFi credentials
-    LittleFS.format();           // Wipe internal filesystem
-  } else {
-    // --- SHORT PRESS RELEASE (< 10s): Flash Red Once --- //
-    #ifdef ESP8266
+    if (pressDuration >= 10000) {
+      // --- LONG PRESS RELEASE (>= 10s): Factory Reset --- //
+      delay(500);                   // Keep solid blue visible briefly
+      wifiManager.resetSettings();  // Clear WiFi credentials
+      LittleFS.format();            // Wipe internal filesystem
+    } else {
+// --- SHORT PRESS RELEASE (< 10s): Flash Red Once --- //
+#ifdef ESP8266
       digitalWrite(Red_RGB_LED, HIGH);
       digitalWrite(Blue_RGB_LED, LOW);
-    #endif
-    #ifdef ARDUINO_M5STACK_ATOMS3
+#endif
+#ifdef ARDUINO_M5STACK_ATOMS3
       myLED.setPixel(0, L_RED, 1);
       myLED.brightness(LED_BRIGHT, 1);
-    #endif
-    delay(200); // Brief feedback flash before restart
-  }
+#endif
+      delay(200);  // Brief feedback flash before restart
+    }
 
-  // --- Perform Board Reboot --- //
-  #ifdef ESP8266
+// --- Perform Board Reboot --- //
+#ifdef ESP8266
     ESP.reset();
-  #elif defined(ESP32)
+#elif defined(ESP32)
     ESP.restart();
-  #endif
-}
+#endif
+  }
 
 #endif
 
@@ -2970,6 +2976,83 @@ void HttpEvent(HttpEvent_t* event) {
     case HTTP_EVENT_ON_FINISH: DEBUG_PRINTLN("Http Event On Finish"); break;
     case HTTP_EVENT_DISCONNECTED: DEBUG_PRINTLN("Http Event Disconnected"); break;
     case HTTP_EVENT_REDIRECT: DEBUG_PRINTLN("Http Event Redirect"); break;
+  }
+}
+#endif
+
+#if defined(ESP32) && !defined(ARDUINO_WT32_ETH01)
+#define ROAM_CHECK_INTERVAL 300000UL  // Vérification toutes les 5 min
+#define ROAM_FIRST_CHECK 20000UL      // Première vérification 20 s après chaque (re)connexion
+#define ROAM_WEAK_RSSI -70            // Au-dessus : signal correct, aucun scan
+#define ROAM_MIN_GAIN 8               // Gain minimum (dB) pour changer de borne
+#define ROAM_UNLOCK_AFTER 30000UL     // Borne choisie injoignable depuis 30 s : on accepte n'importe quelle borne
+unsigned long RoamLastCheck = 0;
+bool RoamScanRunning = false;
+bool RoamBssidLocked = false;
+String RoamSSID = "";
+String RoamPSK = "";
+
+void WiFiRoamHandler(bool JustConnected) {
+  if (JustConnected) {
+    RoamLastCheck = millis() - ROAM_CHECK_INTERVAL + ROAM_FIRST_CHECK;
+    RoamScanRunning = false;
+  }
+  if (!RoamScanRunning) {
+    if (millis() - RoamLastCheck < ROAM_CHECK_INTERVAL) { return; }
+    RoamLastCheck = millis();
+    if (WiFi.RSSI() > ROAM_WEAK_RSSI) { return; }
+    if (WiFi.scanNetworks(true, false) == WIFI_SCAN_FAILED) { return; }  // Scan asynchrone : la boucle CN105 continue
+    RoamScanRunning = true;
+    return;
+  }
+  int16_t n = WiFi.scanComplete();
+  if (n == WIFI_SCAN_RUNNING) { return; }
+  RoamScanRunning = false;
+  if (n <= 0) {
+    WiFi.scanDelete();
+    return;
+  }
+  String CurrentSSID = WiFi.SSID();
+  int32_t CurrentRSSI = WiFi.RSSI();
+  uint8_t CurrentBSSID[6];
+  memcpy(CurrentBSSID, WiFi.BSSID(), 6);
+  int Best = -1;
+  int32_t BestRSSI = -127;
+  for (int i = 0; i < n; i++) {
+    if (WiFi.SSID(i) == CurrentSSID && WiFi.RSSI(i) > BestRSSI) {
+      Best = i;
+      BestRSSI = WiFi.RSSI(i);
+    }
+  }
+  if (Best >= 0 && BestRSSI >= CurrentRSSI + ROAM_MIN_GAIN && memcmp(WiFi.BSSID(Best), CurrentBSSID, 6) != 0) {
+    uint8_t TargetBSSID[6];
+    memcpy(TargetBSSID, WiFi.BSSID(Best), 6);
+    int32_t TargetChannel = WiFi.channel(Best);
+    RoamSSID = CurrentSSID;
+    RoamPSK = WiFi.psk();
+    WiFi.scanDelete();
+    DEBUG_PRINT(F("WiFi roam: "));
+    DEBUG_PRINT(CurrentRSSI);
+    DEBUG_PRINT(F(" dBm -> "));
+    DEBUG_PRINT(BestRSSI);
+    DEBUG_PRINTLN(F(" dBm"));
+    WiFi.persistent(false);  // Le choix de borne reste en RAM : au redémarrage, connexion standard
+    WiFi.begin(RoamSSID.c_str(), RoamPSK.c_str(), TargetChannel, TargetBSSID);
+    WiFi.persistent(true);
+    RoamBssidLocked = true;
+    return;
+  }
+  WiFi.scanDelete();
+}
+
+void WiFiRoamUnlock(unsigned long DisconnectedFor) {
+  if (RoamBssidLocked && DisconnectedFor >= ROAM_UNLOCK_AFTER) {
+    RoamBssidLocked = false;
+    DEBUG_PRINTLN(F("WiFi roam: borne perdue, reconnexion sans verrouillage"));
+    WiFi.persistent(false);
+    WiFi.disconnect(false, false);
+    WiFi.begin(RoamSSID.c_str(), RoamPSK.c_str());
+    WiFi.persistent(true);
   }
 }
 #endif
