@@ -1164,12 +1164,12 @@ void readSettingsFromConfig() {
   else if (strcmp(mqttSettings.hostname, "IPorDNS") != 0 && strcmp(mqttSettings.hostname, "") != 0 && WiFi.status() == WL_CONNECTED) {  // WiFi should be active to attempt connections (as MQTT connect is blocking)
 #endif
       initializeMQTTClient1();
-      DEBUG_PRINT(F("With Client ID: "));
-      DEBUG_PRINT(mqttSettings.deviceId);
-      DEBUG_PRINT(F(", Username: "));
-      DEBUG_PRINT(mqttSettings.user);
-      DEBUG_PRINT(F(" and Password: "));
-      DEBUG_PRINTLN(mqttSettings.password);
+      //DEBUG_PRINT(F("With Client ID: "));
+      //DEBUG_PRINT(mqttSettings.deviceId);
+      //DEBUG_PRINT(F(", Username: "));
+      //DEBUG_PRINT(mqttSettings.user);
+      //DEBUG_PRINT(F(" and Password: "));
+      //DEBUG_PRINTLN(mqttSettings.password);
 
       if (MQTTClient1.connect(mqttSettings.deviceId, mqttSettings.user, mqttSettings.password, MQTT_LWT.c_str(), 0, true, "offline")) {
         DEBUG_PRINTLN(F("MQTT Server Connected"));
@@ -1386,12 +1386,12 @@ void readSettingsFromConfig() {
       return 1;
     } else if (strcmp(mqttSettings.hostname2, "IPorDNS") != 0 && strcmp(mqttSettings.hostname2, "") != 0) {
       initializeMQTTClient2();
-      DEBUG_PRINT(F("With Client ID: "));
-      DEBUG_PRINT(mqttSettings.deviceId);
-      DEBUG_PRINT(F(", Username: "));
-      DEBUG_PRINT(mqttSettings.user2);
-      DEBUG_PRINT(F(" and Password: "));
-      DEBUG_PRINTLN(mqttSettings.password2);
+      //DEBUG_PRINT(F("With Client ID: "));
+      //DEBUG_PRINT(mqttSettings.deviceId);
+      //DEBUG_PRINT(F(", Username: "));
+      //DEBUG_PRINT(mqttSettings.user2);
+      //DEBUG_PRINT(F(" and Password: "));
+      //DEBUG_PRINTLN(mqttSettings.password2);
 
       if (MQTTClient2.connect(mqttSettings.deviceId, mqttSettings.user2, mqttSettings.password2, MQTT_2_LWT.c_str(), 0, true, "offline")) {
         DEBUG_PRINTLN(F("MQTT Server 2 Connected"));

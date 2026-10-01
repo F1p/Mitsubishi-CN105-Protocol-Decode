@@ -449,6 +449,21 @@ double cumulativeEnergyYesterday[6] = { 0, 0, 0, 0, 0, 0 };  // Format: Heating 
 static bool eth_connected = false;
 #endif
 
+#if defined(ESP32) && !defined(ARDUINO_WT32_ETH01)
+#define ROAM_CHECK_INTERVAL 300000UL  // Vérification toutes les 5 min
+#define ROAM_FIRST_CHECK 20000UL      // Première vérification 20 s après chaque (re)connexion
+#define ROAM_WEAK_RSSI -70            // Au-dessus : signal correct, aucun scan
+#define ROAM_MIN_GAIN 8               // Gain minimum (dB) pour changer de borne
+#define ROAM_UNLOCK_AFTER 30000UL     // Borne choisie injoignable depuis 30 s : on accepte n'importe quelle borne
+unsigned long RoamLastCheck = 0;
+bool RoamScanRunning = false;
+bool RoamBssidLocked = false;
+unsigned long RoamCount = 0;  // Number of WiFi reconnection attempts launched by the roam code (AP change + unlock)
+String RoamSSID = "";
+String RoamPSK = "";
+#endif
+
+
 
 void setup() {
   LatestFirmwareVersion = FirmwareVersion;
@@ -514,7 +529,7 @@ void setup() {
     saveConfig();
   }
   setupTelnet();
-  //startTelnet();                  // Enable for Debugging Messages
+  startTelnet();                  // Enable for Debugging Messages
 
   MQTTClient1.setBufferSize(2048);  // Increase MQTT Buffer Size
   MQTTClient2.setBufferSize(2048);  // Increase MQTT Buffer Size
@@ -2199,6 +2214,9 @@ void StatusReport(void) {
 
   doc[F("SSID")] = WiFi.SSID();
   doc[F("RSSI")] = WiFi.RSSI();
+#if defined(ESP32) && !defined(ARDUINO_WT32_ETH01)
+  doc[F("RoamCount")] = RoamCount;
+#endif
   doc[F("Uptime")] = (millis() / 1000 / 60);  // Subject to rollover
 #ifdef ARDUINO_WT32_ETH01
   doc[F("IP")] = ETH.localIP().toString();
@@ -2980,18 +2998,8 @@ void HttpEvent(HttpEvent_t* event) {
 }
 #endif
 
-#if defined(ESP32) && !defined(ARDUINO_WT32_ETH01)
-#define ROAM_CHECK_INTERVAL 300000UL  // Vérification toutes les 5 min
-#define ROAM_FIRST_CHECK 20000UL      // Première vérification 20 s après chaque (re)connexion
-#define ROAM_WEAK_RSSI -70            // Au-dessus : signal correct, aucun scan
-#define ROAM_MIN_GAIN 8               // Gain minimum (dB) pour changer de borne
-#define ROAM_UNLOCK_AFTER 30000UL     // Borne choisie injoignable depuis 30 s : on accepte n'importe quelle borne
-unsigned long RoamLastCheck = 0;
-bool RoamScanRunning = false;
-bool RoamBssidLocked = false;
-String RoamSSID = "";
-String RoamPSK = "";
 
+#if defined(ESP32) && !defined(ARDUINO_WT32_ETH01)
 void WiFiRoamHandler(bool JustConnected) {
   if (JustConnected) {
     RoamLastCheck = millis() - ROAM_CHECK_INTERVAL + ROAM_FIRST_CHECK;
@@ -3037,6 +3045,7 @@ void WiFiRoamHandler(bool JustConnected) {
     DEBUG_PRINT(BestRSSI);
     DEBUG_PRINTLN(F(" dBm"));
     WiFi.persistent(false);  // Le choix de borne reste en RAM : au redémarrage, connexion standard
+    RoamCount++;
     WiFi.begin(RoamSSID.c_str(), RoamPSK.c_str(), TargetChannel, TargetBSSID);
     WiFi.persistent(true);
     RoamBssidLocked = true;
@@ -3051,6 +3060,7 @@ void WiFiRoamUnlock(unsigned long DisconnectedFor) {
     DEBUG_PRINTLN(F("WiFi roam: borne perdue, reconnexion sans verrouillage"));
     WiFi.persistent(false);
     WiFi.disconnect(false, false);
+    RoamCount++;
     WiFi.begin(RoamSSID.c_str(), RoamPSK.c_str());
     WiFi.persistent(true);
   }
