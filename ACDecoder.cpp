@@ -374,6 +374,7 @@ void ACDECODER::Process0xCD(uint8_t *Buffer, ACStatus *Status) {
   // Sample Data
   // fc, 7b, 01, 30, 10, cd, a0, be, a0, be, a0, be, 04, 11, 02, ff, ff, 00, 00, 00, 00, 48, CS OK with wide vane
   // fc, 7b, 01, 30, 10, cd, a0, be, a0, be, a0, be, 84, 11, 00, b4, 0a, 00, 00, 00, 00, 0a, CS OK with No Wide Vane
+  // fc, 7b, 01, 30, 10, cd, a0, be, a0, be, a0, be, 1c, 11, 03, b4, 14, 00, 00, 00, 00, 65, CS OK (MSZ-LN35VG2)
   //                                                 [7]     [9][10][11]
 
   Status->CD = true;  // Arbitary to know its been read at least once
@@ -405,6 +406,7 @@ void ACDECODER::Process0xC9(uint8_t *Buffer, ACStatus *Status) {
   // Sample Data
   // fc, 7b, 01, 30, 10, c9, 03, 00, 20, 00, 14, 07, f5, 8c, 25, a0, be, 94, be, a0, be, 89, CS OK
   // fc, 7b, 01, 30, 10, c9, 03, 00, 20, 00, 14, 07, f5, 8c, 25, a0, be, 94, be, a0, be, 89 (AP15)
+  // fc, 7b, 01, 30, 10, c9, 03, 00, 20, 00, 14, 07, f5, 8c, 25, a0, be, 94, be, a0, be, 89, CS OK (MSZ-LN35VG2)
 
   Status->C9 = true;  // Arbitary to know its been read at least once
   Status->FanBitA = ((Buffer[7] & 0x10) == 0x10);
