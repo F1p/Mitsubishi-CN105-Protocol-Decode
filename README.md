@@ -20,7 +20,10 @@ You can bring your own hardware, compile in Arduino or flash the same hardware a
 
 [UK Buy Direct on ebay](https://www.ebay.co.uk/itm/327324402794)
 
-⚠️ August 2026: Primarily due to the implementation of the EU Packaging and Packaging Waste Regulation (PPWR, Regulation EU 2025/40), combined with the elimination of de-minimis customs exemptions and escalating international shipment costs, offering hardware is no longer financially or operationally viable at this time. 
+philip.thomson@f1p.co.uk
+
+
+⚠️ August 2026: Primarily due to the implementation of the EU Packaging and Packaging Waste Regulation (PPWR, Regulation EU 2025/40), combined with the elimination of de-minimis customs exemptions and escalating international shipment costs, offering hardware is no longer financially or operationally viable to some countries at this time. 
 
 
 # Detailed Setup Instructions
