@@ -229,7 +229,7 @@ void readSettingsFromConfig() {
             }
             if (doc.containsKey(unitSettings.webauth_identifier)) {
               unitSettings.WebAuthEnabled = doc[unitSettings.webauth_identifier].as<bool>();
-            } else {                    // For upgrading from earlier firmware, create the entry (login stays enabled)
+            } else {                    // For upgrading from earlier firmware, create the entry (keeps the build default: login on for WiFi, off for Ethernet until a password is set)
               shouldSaveConfig = true;  // Save config after exit to update the file
             }
             DEBUG_PRINTLN(F("Parsed JSON: "));
@@ -491,6 +491,7 @@ void readSettingsFromConfig() {
 
 
   // Web interface login: disabled (empty password = no login), the password set from Home Assistant, otherwise the device ID (Serial Number in Home Assistant)
+  // Ethernet (WT32-ETH01) builds default to disabled, so first-time setup is not locked out; setting a password in Home Assistant enables the login
   void ApplyWebPortalAuth() {
     if (!unitSettings.WebAuthEnabled) {
       wifiManager.setWebPortalAuth("admin", "", "");
@@ -921,7 +922,22 @@ void readSettingsFromConfig() {
   }
 
 
-  void PublishA2ADiscoveryTopics(uint8_t MQTTStream, String BASETOPIC) {
+  const int AC_CLIMATE_ENTITY = 24;  // Discovery index of the A2A climate entity, so it can be re-published on its own
+
+  // A2A climate setpoint minimum: 10C while the unit is in Heat mode, 16C in every other mode.
+  // Below 16C only the half degree setpoint encoding can carry the value (the legacy index covers 16-31C), so 10C is only
+  // offered once the unit has reported that encoding (tempMode). Follows the unit's mode register, whatever the power state.
+  bool ACHeatLowRange() {
+    uint8_t mode = AC.Status.isee ? (AC.Status.Buffer04 - 0x08) : AC.Status.Buffer04;  // Strip the i-See offset
+    return AC.Status.tempMode && (mode == AC.MODE[0]);                                 // MODE[0] = Heat
+  }
+
+  int ACMinTemp() {
+    return ACHeatLowRange() ? 10 : 16;
+  }
+
+  // OnlyEntity = -1 publishes everything, otherwise just that one entity index (e.g. AC_CLIMATE_ENTITY)
+  void PublishA2ADiscoveryTopics(uint8_t MQTTStream, String BASETOPIC, int OnlyEntity = -1) {
 
     snprintf(MQTTIDs, 40, "%s%s", ClientPrefixA2A, mqttSettings.deviceId);
 
@@ -944,6 +960,7 @@ void readSettingsFromConfig() {
 
     // Publish all the discovery topics
     for (int i = 0; i < 30; i++) {
+      if (OnlyEntity >= 0 && i != OnlyEntity) { continue; }  // Single entity re-publish
 
       if (i == 0) {  // If the first topic
         Config["dev"]["ids"] = MQTTIDs;
@@ -1004,7 +1021,8 @@ void readSettingsFromConfig() {
 
 
       // Main Climate
-      if (i == 24) {
+      if (i == AC_CLIMATE_ENTITY) {
+        const int MinTemp = ACMinTemp();  // 10C in Heat mode, otherwise 16C
         Config["default_entity_id"] = String(MQTT_OBJECT_ID[1]);
         Config["curr_temp_t"] = BASETOPIC + String("/Status/AC");  // Shortened from curr_temp_topic
         Config["curr_temp_tpl"] = "{{ value_json.RoomTemp }}";
@@ -1012,11 +1030,11 @@ void readSettingsFromConfig() {
         Config["temp_cmd_t"] = BASETOPIC + String("/Command/AC");  // Shortened from temperature_command_topic
         Config["temp_cmd_tpl"] = "{\"SetTempSetpoint\": {{ value }}}";
         Config["temp_stat_t"] = BASETOPIC + String("/Status/AC");  // Shortened from temperature_state_topic
-        Config["temp_stat_tpl"] = "{% if (value_json is defined and value_json.SetpointTemp is defined) %}{% if (value_json.SetpointTemp|int >= 16 and value_json.SetpointTemp|int <= 31) %}{{ value_json.SetpointTemp }}{% else %}22{% endif %}{% else %}22{% endif %}";
+        Config["temp_stat_tpl"] = String("{% if (value_json is defined and value_json.SetpointTemp is defined) %}{% if (value_json.SetpointTemp|int >= ") + MinTemp + " and value_json.SetpointTemp|int <= 31) %}{{ value_json.SetpointTemp }}{% else %}22{% endif %}{% else %}22{% endif %}";  // Range check follows min_temp
 
         Config["temp_unit"] = String(MQTT_SENSOR_UNITS[9]);
         Config["max_temp"] = 31;
-        Config["min_temp"] = 16;
+        Config["min_temp"] = MinTemp;
         Config["temp_step"] = 1;
         Config["precision"] = 1;
         Config["init"] = 16;

@@ -238,10 +238,10 @@ uint8_t AC::Lastmsbetweenmsg(void) {
 
 void AC::SetTempSetpoint(float setting, bool floatMode) {
 
-  if (floatMode) {
+  if (floatMode && setting >= 16) {
     ACDECODER::EncodeSetpoint(lookupByteMapIndex(TEMP_MAP, 16, setting), floatMode);
-  } else {
-    ACDECODER::EncodeSetpoint((setting * 2) + 128, floatMode);
+  } else {  // Also anything below 16C (Heat mode down to 10C): the legacy index above only covers 16-31C
+    ACDECODER::EncodeSetpoint((setting * 2) + 128, false);
   }
 
 
