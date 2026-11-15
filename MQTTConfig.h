@@ -612,7 +612,7 @@ void readSettingsFromConfig() {
     // Reset Wifi settings for testing
     //wifiManager.resetSettings();
     //wifiManager.setDebugOutput(true);
-    wifiManager.setTitle("Mitsibushi Bridge");
+    wifiManager.setTitle("Mitsi Bridge");
 
     // Set or Update the values
     custom_device_id.setValue(mqttSettings.deviceId, deviceId_max_length);
@@ -658,7 +658,7 @@ void readSettingsFromConfig() {
 
 #ifndef ARDUINO_WT32_ETH01
     wifiManager.setConfigPortalTimeout(600);  // Timeout before launching the config portal (WiFi Only)
-    if (!wifiManager.autoConnect("Mitsibushi Bridge AP")) {
+    if (!wifiManager.autoConnect("Mitsubishi Bridge AP")) {
       DEBUG_PRINTLN(F("Failed to connect and hit timeout"));
     } else {
       DEBUG_PRINTLN(F("WiFi Connected!"));
@@ -967,7 +967,7 @@ void readSettingsFromConfig() {
         Config["dev"]["mf"] = "F1p";
         Config["dev"]["model"] = ChipModel;
         Config["dev"]["sn"] = ChipID;
-        Config["dev"]["name"] = "Mitsibushi A2A ASHP";
+        Config["dev"]["name"] = "Mitsubishi A2A ASHP";
 #ifdef ARDUINO_WT32_ETH01
         Config["dev"]["cu"] = "http://" + ETH.localIP().toString() + ":80";
 #else

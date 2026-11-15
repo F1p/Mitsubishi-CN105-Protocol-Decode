@@ -82,7 +82,17 @@
 
 #endif  // ESP8266 || ESP32
 
-String FirmwareVersion = "7.1.2";
+String FirmwareVersion = "7.1.3";
+// 7.1.3 - Floor-aware Anti-Stop Flow Following (heating, fixed flow)
+//         * Learns the compressor floor frequency per 1C outdoor bucket (any model, including compressors that reduce to 16Hz),
+//           persisted to /floorhz.bin. Service code 991 clears it.
+//         * Follower runs once per completed FTC read and writes an absolute target (FSP = flow - 1.0C) instead of +/-0.5C steps:
+//           follows up at flow - FSP >= 1.5C, follows down at <= 0.5C (2 reads), never below the curve, waits for the write queue
+//         * Opt-in floor_allowance (CompCurve JSON): while at the floor frequency the FSP may follow up to curve + floor_allowance
+//           (capped at FlowTempMax), so oversized units reach the emitter balance point instead of stopping on the +2.0C rule.
+//           Optional room_stop_hyst ends a floor run once the room is satisfied. floor_allowance = 0 keeps the 7.1.2 behaviour
+//         * Post DHW letdown offset 0.5C -> 1.0C
+//         * OAT running average now float (int buffer truncated 0.1C readings toward zero)
 String LatestFirmwareVersion;
 
 // Language for OTA Check
@@ -202,12 +212,34 @@ int Flow_Inc_Count = 0;
 const unsigned long PostDHW_Window_ms = 900000;  // Post DHW flow letdown safety cap (15min). The normal exit is much earlier, as soon as the Comp Curve is reachable
 const float PostDHW_Descent_Offset = 0.5;        // During the letdown the flow setpoint is held this far BELOW the actual flow temperature (C), and it is also the hand-back point:
                                                  // the Comp Curve takes over as soon as flow - curve <= this. The FTC stops when flow > setpoint + 2.0C and flow reads in 0.5C steps,
-                                                 // so 0.5 aims to survive the gap
+                                                 // so 1.0 leaves one full 0.5C step either side (logged data: ~0.7 FTC step-ups/h at +1.0C vs ~1.1/h at +0.5C)
+
+// -- Floor-aware Anti-Stop Flow Following (7.1.3) -- //
+const float FOLLOW_MARGIN = 1.0;        // Following holds FSP this far below the measured flow (fewest FTC frequency step-ups in logged data)
+const float FOLLOW_STEP_UP_ERR = 1.5;   // Follow up once flow - FSP reaches this (the FTC stops the outdoor unit at > +2.0C, flow reads in 0.5C steps)
+const float FOLLOW_STEP_DOWN_ERR = 0.5; // Follow down once flow - FSP falls to this, before it reaches 0 (logged: ~30+ step-ups/h with flow at or below FSP)
+const int FLOOR_BUCKETS = 41;           // 1C outdoor buckets, -20C .. +20C (clamped at the ends)
+const int FLOOR_MIN_VALID_HZ = 10;      // Lowest frequency accepted as a floor. Some compressors reduce to 16Hz, so nothing above this is assumed
+const int FLOOR_CONFIRM_RUNS = 3;       // A bucket's floor is only trusted once it has been held in this many separate compressor runs
+const unsigned long FLOOR_LEARN_RUN_S = 900;        // Ignore the first 15 min of a run (16Hz > 20Hz > floor start ramp, cold start ramp up)
+const unsigned long FLOOR_LEARN_HOLD_MS = 300000;   // A frequency must be held 5 min to count
+const unsigned long FLOOR_SAVE_INTERVAL_MS = 600000; // Write the learned table at most every 10 min (it only changes while learning)
+const char FloorTableFile[] = "/floorhz.bin";
+uint8_t FloorHz[FLOOR_BUCKETS] = { 0 };    // Lowest held heating frequency per bucket, 0 = not learned
+uint8_t FloorSeen[FLOOR_BUCKETS] = { 0 };  // Number of separate runs that held FloorHz in this bucket
+bool FloorTableDirty = false;
+unsigned long FloorTableSavedMs = 0;
+bool AtFloorNow = false;      // Compressor at or below the learned floor for the current outdoor temperature
+int FloorHzNow = 0;           // Learned (trusted) floor for the current outdoor temperature, 0 = unknown
+bool FloorRunEnded = false;   // Room satisfied during a floor run: stop following until the next compressor start
+float FollowOffset = 0;       // Current Zone 1 FSP offset above the curve / user target, from flow following (C)
+uint8_t FollowLowReads = 0;   // Consecutive reads at or below FOLLOW_STEP_DOWN_ERR (persistence before a downward write)
+
 int lastResetDay = -1;
 const int OAT_Window_Size = 300;
-int OAT_readings[OAT_Window_Size];
+float OAT_readings[OAT_Window_Size];
 int OAT_readIndex = 0;
-int OAT_total = 0;
+float OAT_total = 0;
 float OAT_average = 0;
 bool OAT_isFull = false;
 bool inDefrostWindow = false;
@@ -315,7 +347,7 @@ struct UnitSettings {
 #else
   bool WebAuthEnabled = true;  // False = login disabled (an empty password was sent from Home Assistant)
 #endif
-  String CompCurve = "{\"base\":{\"zone1\":{\"curve\":[{\"flow\":60,\"outside\":-10},{\"flow\":35,\"outside\":0},{\"flow\":20,\"outside\":15},{\"flow\":10,\"outside\":20}]},\"zone2\":{\"curve\":[{\"flow\":60,\"outside\":-10},{\"flow\":35,\"outside\":0},{\"flow\":20,\"outside\":15}]}},\"zone1\":{\"active\":false,\"manual_offset\":0,\"temp_offset\": 0,\"wind_offset\":0},\"zone2\":{\"active\":false,\"manual_offset\":0,\"temp_offset\": 0,\"wind_offset\":0},\"use_local_outdoor\":true,\"max_flow_overshoot\": 3,\"fixedlockoutduration\": 0}";
+  String CompCurve = "{\"base\":{\"zone1\":{\"curve\":[{\"flow\":60,\"outside\":-10},{\"flow\":35,\"outside\":0},{\"flow\":20,\"outside\":15},{\"flow\":10,\"outside\":20}]},\"zone2\":{\"curve\":[{\"flow\":60,\"outside\":-10},{\"flow\":35,\"outside\":0},{\"flow\":20,\"outside\":15}]}},\"zone1\":{\"active\":false,\"manual_offset\":0,\"temp_offset\": 0,\"wind_offset\":0},\"zone2\":{\"active\":false,\"manual_offset\":0,\"temp_offset\": 0,\"wind_offset\":0},\"use_local_outdoor\":true,\"max_flow_overshoot\": 3,\"floor_allowance\": 0,\"room_stop_hyst\": 0.5,\"fixedlockoutduration\": 0}";
   float z1_manual_offset = 0;
   float z1_wind_offset = 0;
   float z1_temp_offset = 0;
@@ -330,6 +362,8 @@ struct UnitSettings {
   bool shortcycleprotectionenabled = false;
   bool BlockWriteFromMELCloud = false;
   float max_flow_overshoot = 3;
+  float floor_allowance = 0;       // C above the curve the FSP may follow WHILE AT THE FLOOR FREQUENCY. Only used when > max_flow_overshoot. 0 = off
+  float room_stop_hyst = 0.5;      // C above the room setpoint that ends a floor-allowance run (needs a room temperature and setpoint)
   float fixedlockoutduration = 0;  // 0 = auto
   bool z1_room_influence_active = false;
   bool z2_room_influence_active = false;
@@ -416,6 +450,11 @@ void FastPublish(void);
 void dhw_flow_follower(void);
 void post_dhw_flow_follower(void);
 void ReleaseFlowFollowing(void);
+void LearnFloor(void);
+void HeatingFlowFollower(void);
+void LoadFloorTable(void);
+void SaveFloorTable(void);
+int EffectiveFloorHz(float oat);
 
 #ifdef ESP32  // Define the M5Stack AtomS3
 void CheckForOTAUpdates(void);
@@ -565,6 +604,7 @@ void setup() {
 #endif
 
   readSettingsFromConfig();
+  LoadFloorTable();  // Learned compressor floor frequencies (file system is mounted by readSettingsFromConfig)
   SCMRestorePending = unitSettings.scm_active;  // Restore Server Control Mode once MQTT has connected
   initializeWifiManager();
   if (shouldSaveConfig) {
@@ -1034,6 +1074,7 @@ void loop() {
       HeatPump.WriteServiceCodeCMD(20);                                                            // Trigger Fan Speed Request Service Code
       if (HeatPump.Status.Defrost == 0) {                                                          // If Not Defrosting
         CompressorStopStartTimer[1] = (millis() / 1000);                                           // Last Compressor Start Time (Seconds)
+        FloorRunEnded = false;                                                                     // New run: floor following allowed again
       }
     }
   }
@@ -1088,30 +1129,7 @@ void loop() {
   // Not during the post DHW letdown: its setpoint sits below the flow on purpose, and this block would step it back up against the letdown.
   if (HeatPump.Status.HasAnsweredDips && HeatPump.Status.CompressorFrequency > 0 && HeatPump.Status.Zone1FlowTemperatureSetpoint > 0 && (HeatPump.Status.SystemOperationMode == 2 || HeatPump.Status.SystemOperationMode == 3) && unitSettings.shortcycleprotectionenabled && !PostDHWTimer) {
     if (HeatPump.Status.HeatCool == 0 && HeatPump.Status.HeatingControlModeZ1 == 1) {  // Heating and Fixed Flow
-      if ((HeatPump.Status.HeaterOutputFlowTemperature - HeatPump.Status.Zone1FlowTemperatureSetpoint > 1.0) && (FlowTemp_Last < HeatPump.Status.HeaterOutputFlowTemperature)) {
-        // On entry of a new high flow temperature
-        if (Flow_Inc_Count == 0) {
-          FlowTemp_Target = HeatPump.Status.Zone1FlowTemperatureSetpoint;
-          FlowFollowingActive = false;
-        }                                                                                                                               // On First entry, set flow setpoint before
-        if (Flow_Inc_Count < (unitSettings.max_flow_overshoot / 0.5)) {                                                                 // Maximum increases is 0.5C * setting
-          HeatPump.SetFlowSetpoint((HeatPump.Status.Zone1FlowTemperatureSetpoint + 0.5), HeatPump.Status.HeatingControlModeZ1, ZONE1);  // Need to avoid overwriting by onboard weather curve..
-          HeatPump.Status.Zone1FlowTemperatureSetpoint += 0.5;
-          write_thermostats();
-          Flow_Inc_Count++;  // This will be cancelled at the next compressor stop
-          FlowFollowingActive = true;
-        }
-        if (HeatPump.Status.Zone1FlowTemperatureSetpoint < Z1_CurveFSP) {  // Cancel Flow Following if FSP exceeds Comp Curve Target
-          FlowTemp_Target = HeatPump.Status.Zone1FlowTemperatureSetpoint;
-          FlowFollowingActive = false;
-        }
-      } else if ((Flow_Inc_Count > 0) && (HeatPump.Status.HeaterOutputFlowTemperature - HeatPump.Status.Zone1FlowTemperatureSetpoint < 0.5)) {  // Flow Temp reducer if within 0.5C
-        HeatPump.SetFlowSetpoint((HeatPump.Status.Zone1FlowTemperatureSetpoint - 0.5), HeatPump.Status.HeatingControlModeZ1, ZONE1);            // Need to avoid overwriting by onboard weather curve..
-        HeatPump.Status.Zone1FlowTemperatureSetpoint -= 0.5;
-        write_thermostats();
-        Flow_Inc_Count--;                                          // This will be cancelled at the next compressor stop
-        if (Flow_Inc_Count == 0) { FlowFollowingActive = false; }  // End Flow Following
-      }
+      // 7.1.3: handled once per completed FTC read by HeatingFlowFollower() (absolute target, floor aware), not on every loop pass
     } else if (HeatPump.Status.HeatCool == 1 && HeatPump.Status.HeatingControlModeZ1 == HEATING_CONTROL_MODE_COOL_FLOW_TEMP) {  // Cooling and Fixed Flow
       if ((HeatPump.Status.HeaterOutputFlowTemperature - HeatPump.Status.Zone1FlowTemperatureSetpoint < -1.0) && (FlowTemp_Last > HeatPump.Status.HeaterOutputFlowTemperature)) {
         // On entry of a new high flow temperature
@@ -1359,6 +1377,8 @@ void HeatPumpQueryStateEngine(void) {
           CalculateCompCurve();
         }
       } else {
+        LearnFloor();           // Once per completed read: fresh frequency / OAT / mode
+        HeatingFlowFollower();  // Anti-Stop flow following (heating, fixed flow) works on fresh flow + FSP values
         HeatPump.SVCUpdateComplete();
         HeatPump.StatusSVCMachine();  // Call service codes
         if (primaryMQTTok || secondaryMQTTok) {
@@ -1508,6 +1528,15 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
       }
       SvcRequested = 992;
       shouldSaveConfig = true;
+    } else if (Payload.toInt() == 991) {
+      DEBUG_PRINTLN(F("Clearing learned compressor floor frequencies"));
+      for (int i = 0; i < FLOOR_BUCKETS; i++) { FloorHz[i] = FloorSeen[i] = 0; }
+      SaveFloorTable();
+      AtFloorNow = false;
+      FloorHzNow = 0;
+      SvcReply = 1;
+      SvcRequested = 991;
+      ActiveControlReport();
     } else if (Payload.toInt() >= 880 && Payload.toInt() <= 900) {
       DEBUG_PRINT(F("SCP - Max Flow Overshoot Set: "));
       SvcReply = unitSettings.max_flow_overshoot = Payload.toInt() - 880;
@@ -1533,6 +1562,9 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
     MQTTWriteReceived("MQTT Set Zone1 Flow Setpoint", 6);
     HeatPump.SetFlowSetpoint(Payload.toFloat(), HeatPump.Status.HeatingControlModeZ1, ZONE1);
     FlowFollowingActive = false;
+    Flow_Inc_Count = 0;                     // A user setpoint replaces any following offset
+    FollowOffset = 0;
+    FlowTemp_Target = Payload.toFloat();    // ...and is the value restored after following
     write_thermostats();
     HeatPump.Status.Zone1FlowTemperatureSetpoint = Payload.toFloat();
   }
@@ -1809,6 +1841,17 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
       if (doc["max_flow_overshoot"].is<float>()) {
         unitSettings.max_flow_overshoot = doc["max_flow_overshoot"];
         ModifyCompCurveState(1, true, 6, unitSettings.max_flow_overshoot);
+      }
+
+      // Floor Allowance (Floor-aware Anti-Stop Following, C above the curve while at the floor frequency, 0 = off)
+      if (doc["floor_allowance"].is<float>()) {
+        unitSettings.floor_allowance = constrain((float)doc["floor_allowance"], 0.0f, 15.0f);
+        ModifyCompCurveState(1, true, 10, unitSettings.floor_allowance);
+      }
+      // Room Stop Hysteresis (ends a floor-allowance run once room >= room setpoint + this)
+      if (doc["room_stop_hyst"].is<float>()) {
+        unitSettings.room_stop_hyst = constrain((float)doc["room_stop_hyst"], 0.0f, 3.0f);
+        ModifyCompCurveState(1, true, 11, unitSettings.room_stop_hyst);
       }
 
       // Fixed Lockout Duration (Short Cycle Protection)
@@ -2673,6 +2716,8 @@ void CompCurveReport(void) {
   storeddoc[F("use_local_outdoor")] = unitSettings.use_local_outdoor;
   storeddoc[F("cloud_outdoor")] = unitSettings.cloud_outdoor;
   storeddoc[F("max_flow_overshoot")] = unitSettings.max_flow_overshoot;
+  storeddoc[F("floor_allowance")] = unitSettings.floor_allowance;
+  storeddoc[F("room_stop_hyst")] = unitSettings.room_stop_hyst;
 
   storeddoc[F("HB_ID")] = Heart_Value;
 
@@ -2688,7 +2733,7 @@ void ActiveControlReport(void) {
 
   doc[F("ShortCycleProtectionEnabled")] = unitSettings.shortcycleprotectionenabled ? 1 : 0;
 
-  if (FlowFollowingActive || Flow_Inc_Count > 0) { CycleProtectionStatus = "Anti-Stop Flow Temperature Following Active (" + String(Flow_Inc_Count * 0.5) + "C)"; }
+  if (FlowFollowingActive || Flow_Inc_Count > 0) { CycleProtectionStatus = "Anti-Stop Flow Temperature Following Active (+" + String(FollowOffset, 1) + "C" + (AtFloorNow && unitSettings.floor_allowance > unitSettings.max_flow_overshoot ? ", at floor" : "") + ")"; }
   if (DHWFlowFollowingActive) { CycleProtectionStatus = "DHW Flow Temperature Following Active"; }
   if (PostDHWTimer) { CycleProtectionStatus = "Post DHW Flow Temperature Letdown Active"; }  // After the DHW line, so it takes over once Hot Water has ended
   if (ShortCycleProtectionActive) { CycleProtectionStatus = "Short Cycle Lockout Active"; }
@@ -2707,6 +2752,11 @@ void ActiveControlReport(void) {
   doc[F("LastCompressorPeriods")][1] = CompressorPeriodDurations[1];
   doc[F("FlowTemp_Target")] = FlowTemp_Target;
   doc[F("FlowIncrementCounter")] = Flow_Inc_Count;
+  doc[F("FollowOffset")] = roundToOneDecimal(FollowOffset);
+  doc[F("LearnedFloorHz")] = FloorHzNow;  // 0 = not yet learned for the current outdoor temperature
+  doc[F("AtFloor")] = AtFloorNow ? 1 : 0;
+  doc[F("FloorAllowance")] = unitSettings.floor_allowance;
+  doc[F("FloorRunEnded")] = FloorRunEnded ? 1 : 0;
   doc[F("HB_ID")] = Heart_Value;
 
   serializeJson(doc, Buffer);
@@ -2987,12 +3037,14 @@ void post_dhw_flow_follower(void) {
   // when not following, or at the safety cap. Writing the curve then leaves the FTC a gap of at most PostDHW_Descent_Offset, the same as it was just seeing.
   if (!canFollow || Follow_FSP <= Z1_CurveFSP || (millis() - postdhwfspdurationMillis >= PostDHW_Window_ms)) {
     PostDHWTimer = false;  // End
+    Flow_Inc_Count = 0;    // Reset Flow Following Counter first: CalculateCompCurve() skips its write while it is set
+    FollowOffset = 0;
     CalculateCompCurve();  // Write the Comp Curve flow setpoint back
-    Flow_Inc_Count = 0;    // Reset Flow Following Counter
     return;
   }
 
   Flow_Inc_Count = 0;  // The DHW follower has already moved FSP off the curve, so the overshoot counter no longer applies (its reducer would fight this follower)
+  FollowOffset = 0;
   FlowFollowingActive = false;
 
   // Only write on a change (flow is read in 0.5C steps) and never on top of a write that is still queued
@@ -3015,7 +3067,212 @@ void ReleaseFlowFollowing(void) {
     HeatPump.Status.Zone1FlowTemperatureSetpoint = RestoreFSP;  // Optimistic, the FTC is slow to report it back
   }
   Flow_Inc_Count = 0;  // Reset the Flow Temp Incrementer
+  FollowOffset = 0;
   FlowFollowingActive = false;
+}
+
+
+// ===================================================================================================================================
+// Floor-aware Anti-Stop Flow Following (7.1.3)
+//
+// Logged data (Ecodan, Nov 2025 - Nov 2026) showed:
+//  - The compressor has a minimum (floor) frequency set by outdoor temperature (and operating mode), not by flow temperature or FSP.
+//    The floor and its OAT thresholds differ between models, and some compressors reduce to 16Hz, so it is learned per unit, not assumed.
+//  - At the floor the output is fixed, so the flow rises until the emitters can pass it (mean water temp ~12-13K above room),
+//    whatever the FSP. An FSP below that point only decides when the +2.0C rule stops the outdoor unit.
+//  - The FTC steps the frequency up mainly when flow drops to or below FSP: ~30+/h at flow <= FSP, ~4/h at flow = FSP,
+//    ~1/h at +0.5C, ~0.7/h at +1.0C, ~0.3/h at +1.5C. So following holds FSP 1.0C below the flow.
+// ===================================================================================================================================
+
+int OATBucket(float oat) {
+  int b = (int)floorf(oat) + 20;  // floorf: 4.9C -> bucket of 4C, 5.0C -> bucket of 5C (Ecodan thresholds observed on whole degrees)
+  if (b < 0) { b = 0; }
+  if (b > FLOOR_BUCKETS - 1) { b = FLOOR_BUCKETS - 1; }
+  return b;
+}
+
+// Trusted floor for an outdoor temperature, 0 = unknown.
+// The bucket itself must be confirmed. Floors never rise as it gets warmer, so a lower confirmed floor in a colder bucket
+// shows this bucket's estimate is still too high and is used instead (errs low = AtFloor less often = the 7.1.2 behaviour).
+int EffectiveFloorHz(float oat) {
+  int b = OATBucket(oat);
+  if (FloorHz[b] == 0 || FloorSeen[b] < FLOOR_CONFIRM_RUNS) { return 0; }
+  int best = FloorHz[b];
+  for (int k = 0; k < b; k++) {
+    if (FloorHz[k] > 0 && FloorSeen[k] >= FLOOR_CONFIRM_RUNS && FloorHz[k] < best) { best = FloorHz[k]; }
+  }
+  return best;
+}
+
+void LoadFloorTable(void) {
+  File f = LittleFS.open(FloorTableFile, "r");
+  if (!f) { return; }  // Nothing learned yet
+  if (f.size() == (size_t)(FLOOR_BUCKETS * 2)) {
+    f.read(FloorHz, FLOOR_BUCKETS);
+    f.read(FloorSeen, FLOOR_BUCKETS);
+  }
+  f.close();
+}
+
+void SaveFloorTable(void) {
+  File f = LittleFS.open(FloorTableFile, "w");
+  if (!f) { return; }
+  f.write(FloorHz, FLOOR_BUCKETS);
+  f.write(FloorSeen, FLOOR_BUCKETS);
+  f.close();
+  FloorTableDirty = false;
+  FloorTableSavedMs = millis();
+}
+
+// Called once per completed FTC read. Records the lowest heating frequency held for 5 min, after the first 15 min of a run,
+// away from defrost, per 1C outdoor bucket. Nothing is assumed about the value (16Hz compressors included): the 16Hz start step
+// lasts seconds and the start ramp is excluded by the 15 min rule, so only a genuinely held 16Hz is learned.
+void LearnFloor(void) {
+  static int heldHz = -1;
+  static unsigned long heldSinceMs = 0;
+  static unsigned long lastCountedRunStart = 0;
+  static int lastCountedBucket = -1;
+
+  int hz = (int)HeatPump.Status.CompressorFrequency;
+  if (hz != heldHz) {
+    heldHz = hz;
+    heldSinceMs = millis();
+  } else {
+    unsigned long runSeconds = (millis() / 1000) - CompressorStopStartTimer[1];
+    bool steady = (HeatPump.Status.SystemOperationMode == 2) && (HeatPump.Status.HeatCool == 0)  // Space heating only, DHW has its own higher floor
+                  && (HeatPump.Status.Defrost == 0) && !inDefrostWindow
+                  && (hz >= FLOOR_MIN_VALID_HZ) && (hz <= 255)
+                  && (runSeconds >= FLOOR_LEARN_RUN_S)
+                  && (millis() - heldSinceMs >= FLOOR_LEARN_HOLD_MS);
+    if (steady) {
+      int b = OATBucket(HeatPump.Status.OutsideTemperature);  // The FTC switches floor on its own instantaneous OAT, not OAT_average
+      if (FloorHz[b] == 0 || hz < FloorHz[b]) {               // New lowest: restart its confirmation count
+        FloorHz[b] = (uint8_t)hz;
+        FloorSeen[b] = 1;
+        lastCountedRunStart = CompressorStopStartTimer[1];
+        lastCountedBucket = b;
+        FloorTableDirty = true;
+      } else if (hz == FloorHz[b] && (CompressorStopStartTimer[1] != lastCountedRunStart || b != lastCountedBucket) && FloorSeen[b] < 255) {
+        FloorSeen[b]++;  // Same floor held again, counted once per run per bucket
+        lastCountedRunStart = CompressorStopStartTimer[1];
+        lastCountedBucket = b;
+        if (FloorSeen[b] <= FLOOR_CONFIRM_RUNS) { FloorTableDirty = true; }  // Only worth a flash write until it is trusted
+      }
+    }
+  }
+
+  FloorHzNow = EffectiveFloorHz(HeatPump.Status.OutsideTemperature);
+  AtFloorNow = (FloorHzNow > 0 && hz > 0 && hz <= FloorHzNow);
+
+  if (FloorTableDirty && (FloorTableSavedMs == 0 || millis() - FloorTableSavedMs >= FLOOR_SAVE_INTERVAL_MS)) { SaveFloorTable(); }
+}
+
+// Room temperature + setpoint used by the floor-run stop, from the same source as Room Influence
+bool GetZ1Room(float &room, float &setpoint) {
+  if (unitSettings.z1_use_local_sensor) {
+    room = HeatPump.Status.Zone1Temperature;
+    setpoint = HeatPump.Status.Zone1TemperatureSetpoint;
+  } else {
+    room = unitSettings.z1_room_temperature;
+    setpoint = unitSettings.z1_room_setpoint;
+  }
+  return (room > 0 && setpoint > 0);  // Not saved, 0 until supplied after a reboot
+}
+
+// Anti-Stop flow following for Zone 1, heating, fixed flow. Called once per completed FTC read (after LearnFloor).
+// Writes an absolute FSP target (flow - FOLLOW_MARGIN) between the base (curve, or the user's FSP when the curve is off) and a ceiling:
+//   - not at floor: base + max_flow_overshoot (as 7.1.2), so the FTC is still pushed to reduce frequency
+//   - at the learned floor with floor_allowance > max_flow_overshoot: base + floor_allowance (max FlowTempMax), so the flow can reach
+//     the emitter balance point instead of being stopped by the +2.0C rule
+//   - left the floor mid-run: the ceiling never pulls the FSP down (that alone would stop the outdoor unit), it only stops further rises
+// Flow_Inc_Count keeps its 7.1.2 meaning for the rest of the code: > 0 while following (blocks CalculateCompCurve writes,
+// ReleaseFlowFollowing at the compressor stop hands back to the base).
+void HeatingFlowFollower(void) {
+  bool gate = HeatPump.Status.HasAnsweredDips && HeatPump.Status.CompressorFrequency > 0 && HeatPump.Status.Zone1FlowTemperatureSetpoint > 0
+              && (HeatPump.Status.SystemOperationMode == 2 || HeatPump.Status.SystemOperationMode == 3)
+              && HeatPump.Status.HeatCool == 0 && HeatPump.Status.HeatingControlModeZ1 == 1
+              && unitSettings.shortcycleprotectionenabled && !PostDHWTimer;
+  if (!gate) {
+    FollowLowReads = 0;
+    return;
+  }
+  if (cmd_queue_length > 0 || WriteInProgress) { return; }  // Never stack writes or work from a setpoint the FTC has not acknowledged
+
+  static float FollowBase = 0;  // FSP following started from (as 7.1.2: offsets and the overshoot cap are counted from here)
+
+  float flow = HeatPump.Status.HeaterOutputFlowTemperature;
+  float fsp = HeatPump.Status.Zone1FlowTemperatureSetpoint;
+  if (Flow_Inc_Count == 0) { FlowTemp_Target = fsp; }  // Not following: the current FSP is the user's target (restored when the curve is off)
+  float base = unitSettings.z1_active ? Z1_CurveFSP : FlowTemp_Target;
+  if (base <= 0) { return; }
+  // Not following: start from the current FSP if it is above the curve (a pending curve drop stays CalculateCompCurve's job, as 7.1.2).
+  // Following: a curve rise lifts the base, a curve drop does not.
+  if (Flow_Inc_Count == 0) {
+    FollowBase = (fsp > base) ? fsp : base;
+  } else if (base > FollowBase) {
+    FollowBase = base;
+  }
+  float err = flow - fsp;
+  bool floorMode = (unitSettings.floor_allowance > unitSettings.max_flow_overshoot);
+
+  // Floor run ends once the room is satisfied: drop back to the base, the FTC stops on its +2.0C rule. Latched until the next start
+  if (floorMode && AtFloorNow && !FloorRunEnded) {
+    float room, roomsp;
+    if (GetZ1Room(room, roomsp) && room >= roomsp + unitSettings.room_stop_hyst) {
+      FloorRunEnded = true;
+      DEBUG_PRINTLN(F("Floor run ended: room satisfied"));
+    }
+  }
+
+  // Ceiling
+  float ceiling = FollowBase + unitSettings.max_flow_overshoot;
+  if (FloorRunEnded) {
+    ceiling = base;
+  } else if (floorMode && AtFloorNow) {
+    float floorCeiling = FollowBase + unitSettings.floor_allowance;
+    if (HeatPump.Status.FlowTempMax > 0) {
+      float maxAllowed = (HeatPump.Status.FlowTempMax > ceiling) ? HeatPump.Status.FlowTempMax : ceiling;  // The extension stops at FlowTempMax, the normal overshoot is unchanged
+      if (floorCeiling > maxAllowed) { floorCeiling = maxAllowed; }
+    }
+    if (floorCeiling > ceiling) { ceiling = floorCeiling; }
+  } else if (fsp > ceiling) {
+    ceiling = fsp;  // Left the floor with the FSP above the normal cap: hold, do not pull it down
+  }
+
+  // Target
+  float target = fsp;
+  if (FloorRunEnded) {
+    target = base;
+  } else if (err >= FOLLOW_STEP_UP_ERR - 0.05f) {  // Approaching the +2.0C stop: follow up
+    target = flow - FOLLOW_MARGIN;
+    FollowLowReads = 0;
+  } else if (err <= FOLLOW_STEP_DOWN_ERR + 0.05f && fsp > FollowBase + 0.05f) {  // Flow eased: follow down before it reaches the FSP (2 reads, writes are disruptive)
+    if (++FollowLowReads >= 2) {
+      target = flow - FOLLOW_MARGIN;
+      FollowLowReads = 0;
+    }
+  } else {
+    FollowLowReads = 0;
+  }
+  if (target > ceiling) { target = ceiling; }
+  if (FloorRunEnded) {
+    if (target < base) { target = base; }
+  } else if (target < FollowBase) {
+    target = FollowBase;  // Never below where following started / the curve (a curve rise mid-run is applied here)
+  }
+  target = roundToOneDecimal(target);
+
+  if (fabsf(target - fsp) >= 0.25f) {
+    HeatPump.SetFlowSetpoint(target, HeatPump.Status.HeatingControlModeZ1, ZONE1);  // Need to avoid overwriting by onboard weather curve..
+    write_thermostats();
+    HeatPump.Status.Zone1FlowTemperatureSetpoint = target;  // Optimistic, the FTC is slow to report it back
+    fsp = target;
+  }
+
+  FollowOffset = fsp - FollowBase;
+  if (FollowOffset < 0.05f) { FollowOffset = 0; }
+  Flow_Inc_Count = (FollowOffset > 0) ? (int)ceilf(FollowOffset / 0.5f) : 0;
+  FlowFollowingActive = (Flow_Inc_Count > 0);
 }
 
 
@@ -3042,6 +3299,8 @@ void CalculateCompCurve(void) {
       unitSettings.z2_temp_offset = doc["zone2"]["temp_offset"];
       unitSettings.use_local_outdoor = doc["use_local_outdoor"];
       unitSettings.max_flow_overshoot = doc["max_flow_overshoot"];
+      unitSettings.floor_allowance = doc["floor_allowance"] | 0.0f;  // Missing in pre 7.1.3 saved curves = off
+      unitSettings.room_stop_hyst = doc["room_stop_hyst"] | 0.5f;
       unitSettings.fixedlockoutduration = doc["fixedlockoutduration"];
       unitSettings.z1_room_influence_active = doc["zone1"]["room_influence_active"];  // Room Influence state survives a reboot (missing key = off)
       unitSettings.z1_use_local_sensor = doc["zone1"]["use_local_tsensor"];
@@ -3165,7 +3424,7 @@ float calculateRoomInfluence(float actual, float setpoint, float gain) {
 }
 
 void ModifyCompCurveState(int Zone, bool Active, int ModType, float Value) {
-  // Mod Types: 1 = Activate, 2 = manual_offset, 3 = temp_offset, 4 = wind_offset, 5 = use_local_outdoor, 6 = max_flow_overshoot, 7 = fixed lockout duration, 8 = room_influence_active, 9 = use_local_tsensor
+  // Mod Types: 1 = Activate, 2 = manual_offset, 3 = temp_offset, 4 = wind_offset, 5 = use_local_outdoor, 6 = max_flow_overshoot, 7 = fixed lockout duration, 8 = room_influence_active, 9 = use_local_tsensor, 10 = floor_allowance, 11 = room_stop_hyst
   JsonDocument local_stored_doc;                                                           // Variable for the locally decoded JSON
   DeserializationError error = deserializeJson(local_stored_doc, unitSettings.CompCurve);  // Unpack the local stored JSON document
   if (error) {
@@ -3197,6 +3456,10 @@ void ModifyCompCurveState(int Zone, bool Active, int ModType, float Value) {
       local_stored_doc[target_zone]["room_influence_active"] = Active;
     } else if (ModType == 9) {
       local_stored_doc[target_zone]["use_local_tsensor"] = Active;
+    } else if (ModType == 10) {
+      local_stored_doc["floor_allowance"] = Value;
+    } else if (ModType == 11) {
+      local_stored_doc["room_stop_hyst"] = Value;
     }
   }
   local_stored_doc.shrinkToFit();
@@ -3252,6 +3515,8 @@ bool getOATRunningAverage(float newOAT) {
   if (OAT_readIndex >= OAT_Window_Size) {
     OAT_readIndex = 0;
     OAT_isFull = true;
+    OAT_total = 0;  // Re-sum once per window so float rounding in the running total cannot accumulate
+    for (int i = 0; i < OAT_Window_Size; i++) { OAT_total += OAT_readings[i]; }
   }
 
   if (OAT_isFull) {
