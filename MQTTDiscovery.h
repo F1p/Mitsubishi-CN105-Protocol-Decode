@@ -1210,7 +1210,7 @@ const char MQTT_SENSOR_NAME[][45] PROGMEM = {
   "Heating CoP Yesterday",
   "Cooling CoP Yesterday",
   "DHW CoP Yesterday",
-  "Total CoP Yesterday",  //50
+  "Overall CoP Yesterday",  //50
   "Refrigerant Fault Code",
   "Error Code",
   "Fault Code",
@@ -1263,7 +1263,7 @@ const char MQTT_SENSOR_NAME[][45] PROGMEM = {
   "Water Pump 1 PWM Speed",
   "Brine Inlet Temperature",
   "Brine Outlet Temperature",
-  "Total CoP Today",
+  "Cumulative CoP Today",
   "Booster Heater 2 Stage 2",
 
   "DHW Thermostat",

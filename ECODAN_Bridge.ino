@@ -1115,13 +1115,15 @@ void loop() {
     }
 
     ActiveControlReport();  // Publish MQTT on occurance
-  } else if ((ShortCycleProtectionActive && (millis() - lockoutpreviousMillis > lockoutdurationMillis)) || shortcycleprotectionexit) {
-    ShortCycleProtectionActive = shortcycleprotectionexit = false;
+  } else if (ShortCycleProtectionActive && (shortcycleprotectionexit || (millis() - lockoutpreviousMillis > lockoutdurationMillis))) {  // Only restore if a lockout is actually active, otherwise
+    ShortCycleProtectionActive = false;                                                                                                  // shortcycleprotection_svc_pre is unset/stale and would write SCM off
+    shortcycleprotectionexit = false;
     HeatPump.SetSvrControlMode(shortcycleprotection_svc_pre[0], shortcycleprotection_svc_pre[1], shortcycleprotection_svc_pre[2], shortcycleprotection_svc_pre[3], shortcycleprotection_svc_pre[4], shortcycleprotection_svc_pre[5]);  // Restore Server Control Mode + Prohibits
     HeatPump.Status.SvrControlMode = shortcycleprotection_svc_pre[0];
     CompressorPeriodDurations[0] = CompressorPeriodDurations[1] = lockoutdurationMillis = ShortCycleCauseNumber = 0;  // Reset the compressor timers, lockout duration and cause factor
     ActiveControlReport();                                                                                            // Publish MQTT on occurance
   }
+  shortcycleprotectionexit = false;  // Consumed above, or there was no lockout to exit (Active Control off / 992 with no lockout must not touch Server Control Mode)
 
   // -- Flow Temperature Overshoot Hysterisis -- //
   // Only while the outdoor unit is running (the FTC's +2.0C stop rule is what this protects against), after the first full read cycle, and never from a zero flow setpoint.
@@ -1528,6 +1530,10 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
       }
       SvcRequested = 992;
       shouldSaveConfig = true;
+    } else if (Payload.toInt() == 990) {
+      DEBUG_PRINTLN(F("Publishing learned compressor floor frequencies"));
+      SvcRequested = 990;    // AdvancedTwoReport() publishes the table as LastSvcReply while this is the last code requested
+      AdvancedTwoReport();
     } else if (Payload.toInt() == 991) {
       DEBUG_PRINTLN(F("Clearing learned compressor floor frequencies"));
       for (int i = 0; i < FLOOR_BUCKETS; i++) { FloorHz[i] = FloorSeen[i] = 0; }
@@ -2478,7 +2484,7 @@ void EnergyReport(void) {
 
 void AdvancedTwoReport(void) {
   JsonDocument doc;
-  char Buffer[1024];
+  char Buffer[1536];  // 1.5KB: room for the learned floor table (service code 990)
 
   int ErrorCode = ((String(HeatPump.Status.ErrCode1, HEX)).toInt() * 100) + (String(HeatPump.Status.ErrCode2, HEX)).toInt();
 
@@ -2518,9 +2524,21 @@ void AdvancedTwoReport(void) {
   }
 
   doc[F("LastSvc")] = SvcRequested;
-  doc[F("LastSvcReply")] = SvcReply;
+  if (SvcRequested == 990) {  // Learned floor table: [[outdoor bucket C, floor Hz, runs], ...] for learned buckets only
+    JsonArray table = doc[F("LastSvcReply")].to<JsonArray>();
+    for (int i = 0; i < FLOOR_BUCKETS; i++) {
+      if (FloorHz[i] == 0) { continue; }
+      JsonArray row = table.add<JsonArray>();
+      row.add(i - 20);       // Bucket covers (i - 20)C to (i - 19)C
+      row.add(FloorHz[i]);   // Lowest heating frequency held 5 min
+      row.add(FloorSeen[i]); // Runs that held it (trusted at FLOOR_CONFIRM_RUNS)
+    }
+  } else {
+    doc[F("LastSvcReply")] = SvcReply;
+  }
   doc[F("HB_ID")] = Heart_Value;
 
+  if (measureJson(doc) >= sizeof(Buffer)) { doc[F("LastSvcReply")] = -1; }  // Never publish truncated JSON (-1 = table too large for the buffer)
   serializeJson(doc, Buffer);
   MQTTClient1.publish(MQTT_STATUS_ADVANCED_TWO.c_str(), Buffer, false);
   MQTTClient2.publish(MQTT_2_STATUS_ADVANCED_TWO.c_str(), Buffer, false);
@@ -2737,7 +2755,7 @@ void ActiveControlReport(void) {
   if (DHWFlowFollowingActive) { CycleProtectionStatus = "DHW Flow Temperature Following Active"; }
   if (PostDHWTimer) { CycleProtectionStatus = "Post DHW Flow Temperature Letdown Active"; }  // After the DHW line, so it takes over once Hot Water has ended
   if (ShortCycleProtectionActive) { CycleProtectionStatus = "Short Cycle Lockout Active"; }
-  if ((!FlowFollowingActive && Flow_Inc_Count == 0) && !DHWFlowFollowingActive && !PostDHWTimer && !ShortCycleProtectionActive) { CycleProtectionStatus = "Inactive"; }
+  if ((!FlowFollowingActive && Flow_Inc_Count == 0) && !DHWFlowFollowingActive && !PostDHWTimer && !ShortCycleProtectionActive) { CycleProtectionStatus = unitSettings.shortcycleprotectionenabled ? "Inactive" : "Disabled"; }
 
   doc[F("ShortCycleProtectionActive")] = CycleProtectionStatus;
   doc[F("ShortCycleReason")] = ShortCycleReason[ShortCycleCauseNumber];
