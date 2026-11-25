@@ -220,17 +220,15 @@ const float FOLLOW_STEP_UP_ERR = 1.5;   // Follow up once flow - FSP reaches thi
 const float FOLLOW_STEP_DOWN_ERR = 0.5; // Follow down once flow - FSP falls to this, before it reaches 0 (logged: ~30+ step-ups/h with flow at or below FSP)
 const int FLOOR_BUCKETS = 41;           // 1C outdoor buckets, -20C .. +20C (clamped at the ends)
 const int FLOOR_MIN_VALID_HZ = 10;      // Lowest frequency accepted as a floor. Some compressors reduce to 16Hz, so nothing above this is assumed
-const int FLOOR_CONFIRM_RUNS = 3;       // A bucket's floor is only trusted once it has been held in this many separate compressor runs
 const unsigned long FLOOR_LEARN_RUN_S = 900;        // Ignore the first 15 min of a run (16Hz > 20Hz > floor start ramp, cold start ramp up)
 const unsigned long FLOOR_LEARN_HOLD_MS = 300000;   // A frequency must be held 5 min to count
-const unsigned long FLOOR_SAVE_INTERVAL_MS = 600000; // Write the learned table at most every 10 min (it only changes while learning)
+const unsigned long FLOOR_SAVE_INTERVAL_MS = 600000; // Write the learned table at most every 10 min (it only changes when a lower floor is seen)
 const char FloorTableFile[] = "/floorhz.bin";
-uint8_t FloorHz[FLOOR_BUCKETS] = { 0 };    // Lowest held heating frequency per bucket, 0 = not learned
-uint8_t FloorSeen[FLOOR_BUCKETS] = { 0 };  // Number of separate runs that held FloorHz in this bucket
+uint8_t FloorHz[FLOOR_BUCKETS] = { 0 };  // Lowest held heating frequency per bucket, 0 = not learned. Only ever lowered (991 clears)
 bool FloorTableDirty = false;
 unsigned long FloorTableSavedMs = 0;
 bool AtFloorNow = false;      // Compressor at or below the learned floor for the current outdoor temperature
-int FloorHzNow = 0;           // Learned (trusted) floor for the current outdoor temperature, 0 = unknown
+int FloorHzNow = 0;           // Learned floor for the current outdoor temperature, 0 = unknown
 bool FloorRunEnded = false;   // Room satisfied during a floor run: stop following until the next compressor start
 float FollowOffset = 0;       // Current Zone 1 FSP offset above the curve / user target, from flow following (C)
 uint8_t FollowLowReads = 0;   // Consecutive reads at or below FOLLOW_STEP_DOWN_ERR (persistence before a downward write)
@@ -1536,7 +1534,7 @@ void MQTTonData(char* topic, byte* payload, unsigned int length) {
       AdvancedTwoReport();
     } else if (Payload.toInt() == 991) {
       DEBUG_PRINTLN(F("Clearing learned compressor floor frequencies"));
-      for (int i = 0; i < FLOOR_BUCKETS; i++) { FloorHz[i] = FloorSeen[i] = 0; }
+      for (int i = 0; i < FLOOR_BUCKETS; i++) { FloorHz[i] = 0; }
       SaveFloorTable();
       AtFloorNow = false;
       FloorHzNow = 0;
@@ -2524,14 +2522,13 @@ void AdvancedTwoReport(void) {
   }
 
   doc[F("LastSvc")] = SvcRequested;
-  if (SvcRequested == 990) {  // Learned floor table: [[outdoor bucket C, floor Hz, runs], ...] for learned buckets only
+  if (SvcRequested == 990) {  // Learned floor table: [[outdoor bucket C, floor Hz], ...] for learned buckets only
     JsonArray table = doc[F("LastSvcReply")].to<JsonArray>();
     for (int i = 0; i < FLOOR_BUCKETS; i++) {
       if (FloorHz[i] == 0) { continue; }
       JsonArray row = table.add<JsonArray>();
-      row.add(i - 20);       // Bucket covers (i - 20)C to (i - 19)C
-      row.add(FloorHz[i]);   // Lowest heating frequency held 5 min
-      row.add(FloorSeen[i]); // Runs that held it (trusted at FLOOR_CONFIRM_RUNS)
+      row.add(i - 20);      // Bucket covers (i - 20)C to (i - 19)C
+      row.add(FloorHz[i]);  // Lowest heating frequency held 5 min
     }
   } else {
     doc[F("LastSvcReply")] = SvcReply;
@@ -3109,15 +3106,15 @@ int OATBucket(float oat) {
   return b;
 }
 
-// Trusted floor for an outdoor temperature, 0 = unknown.
-// The bucket itself must be confirmed. Floors never rise as it gets warmer, so a lower confirmed floor in a colder bucket
-// shows this bucket's estimate is still too high and is used instead (errs low = AtFloor less often = the 7.1.2 behaviour).
+// Learned floor for an outdoor temperature, 0 = unknown.
+// Floors never rise as it gets warmer, so a lower floor learned in a colder bucket shows this bucket's value is still too high
+// and is used instead (errs low = AtFloor less often = the 7.1.2 behaviour).
 int EffectiveFloorHz(float oat) {
   int b = OATBucket(oat);
-  if (FloorHz[b] == 0 || FloorSeen[b] < FLOOR_CONFIRM_RUNS) { return 0; }
+  if (FloorHz[b] == 0) { return 0; }
   int best = FloorHz[b];
   for (int k = 0; k < b; k++) {
-    if (FloorHz[k] > 0 && FloorSeen[k] >= FLOOR_CONFIRM_RUNS && FloorHz[k] < best) { best = FloorHz[k]; }
+    if (FloorHz[k] > 0 && FloorHz[k] < best) { best = FloorHz[k]; }
   }
   return best;
 }
@@ -3125,9 +3122,17 @@ int EffectiveFloorHz(float oat) {
 void LoadFloorTable(void) {
   File f = LittleFS.open(FloorTableFile, "r");
   if (!f) { return; }  // Nothing learned yet
-  if (f.size() == (size_t)(FLOOR_BUCKETS * 2)) {
+  size_t size = f.size();
+  if (size == (size_t)FLOOR_BUCKETS) {
     f.read(FloorHz, FLOOR_BUCKETS);
-    f.read(FloorSeen, FLOOR_BUCKETS);
+  } else if (size == (size_t)(FLOOR_BUCKETS * 2)) {  // 7.1.3 beta format (floor + run count): keep only the floors that were confirmed (3+ runs)
+    uint8_t seen[FLOOR_BUCKETS];
+    f.read(FloorHz, FLOOR_BUCKETS);
+    f.read(seen, FLOOR_BUCKETS);
+    for (int i = 0; i < FLOOR_BUCKETS; i++) {
+      if (seen[i] < 3) { FloorHz[i] = 0; }
+    }
+    FloorTableDirty = true;  // Rewritten in the new format at the first save
   }
   f.close();
 }
@@ -3136,7 +3141,6 @@ void SaveFloorTable(void) {
   File f = LittleFS.open(FloorTableFile, "w");
   if (!f) { return; }
   f.write(FloorHz, FLOOR_BUCKETS);
-  f.write(FloorSeen, FLOOR_BUCKETS);
   f.close();
   FloorTableDirty = false;
   FloorTableSavedMs = millis();
@@ -3145,15 +3149,18 @@ void SaveFloorTable(void) {
 // Called once per completed FTC read. Records the lowest heating frequency held for 5 min, after the first 15 min of a run,
 // away from defrost, per 1C outdoor bucket. Nothing is assumed about the value (16Hz compressors included): the 16Hz start step
 // lasts seconds and the start ramp is excluded by the 15 min rule, so only a genuinely held 16Hz is learned.
+// The outdoor bucket must also be unchanged for the whole hold: the outdoor sensor can flip between two readings, and a hold
+// must not be credited to the neighbouring bucket. A bucket's floor is only ever lowered, and a write happens only when it is.
 void LearnFloor(void) {
   static int heldHz = -1;
+  static int heldBucket = -1;
   static unsigned long heldSinceMs = 0;
-  static unsigned long lastCountedRunStart = 0;
-  static int lastCountedBucket = -1;
 
   int hz = (int)HeatPump.Status.CompressorFrequency;
-  if (hz != heldHz) {
+  int bNow = OATBucket(HeatPump.Status.OutsideTemperature);  // The FTC switches floor on its own instantaneous OAT, not OAT_average
+  if (hz != heldHz || bNow != heldBucket) {                  // Frequency or outdoor bucket changed: restart the hold
     heldHz = hz;
+    heldBucket = bNow;
     heldSinceMs = millis();
   } else {
     unsigned long runSeconds = (millis() / 1000) - CompressorStopStartTimer[1];
@@ -3162,20 +3169,9 @@ void LearnFloor(void) {
                   && (hz >= FLOOR_MIN_VALID_HZ) && (hz <= 255)
                   && (runSeconds >= FLOOR_LEARN_RUN_S)
                   && (millis() - heldSinceMs >= FLOOR_LEARN_HOLD_MS);
-    if (steady) {
-      int b = OATBucket(HeatPump.Status.OutsideTemperature);  // The FTC switches floor on its own instantaneous OAT, not OAT_average
-      if (FloorHz[b] == 0 || hz < FloorHz[b]) {               // New lowest: restart its confirmation count
-        FloorHz[b] = (uint8_t)hz;
-        FloorSeen[b] = 1;
-        lastCountedRunStart = CompressorStopStartTimer[1];
-        lastCountedBucket = b;
-        FloorTableDirty = true;
-      } else if (hz == FloorHz[b] && (CompressorStopStartTimer[1] != lastCountedRunStart || b != lastCountedBucket) && FloorSeen[b] < 255) {
-        FloorSeen[b]++;  // Same floor held again, counted once per run per bucket
-        lastCountedRunStart = CompressorStopStartTimer[1];
-        lastCountedBucket = b;
-        if (FloorSeen[b] <= FLOOR_CONFIRM_RUNS) { FloorTableDirty = true; }  // Only worth a flash write until it is trusted
-      }
+    if (steady && (FloorHz[heldBucket] == 0 || hz < FloorHz[heldBucket])) {  // New lowest floor for this bucket
+      FloorHz[heldBucket] = (uint8_t)hz;
+      FloorTableDirty = true;
     }
   }
 
